@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: mitlogic
+      POSTGRES_PASSWORD: mitlogic
+      POSTGRES_DB: mitlogic
+    ports: ["5432:5432"]
+    volumes: [mitlogic_postgres_data:/var/lib/postgresql/data]
+
+volumes:
+  mitlogic_postgres_data:

@@ -1,0 +1,87 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "shell",
+            "label": "(local dev) backend (django): run dev server",
+            "isBackground": true,
+            "command": "${command:python.interpreterPath} -m uvicorn mitlogic.asgi:application --reload --host 0.0.0.0",
+            "problemMatcher": [],
+            "presentation": {
+                "group": "dev"
+            },
+            "options": {
+                "cwd": "${workspaceFolder}/backend",
+            },
+        },
+        {
+            "type": "shell",
+            "label": "(local dev) frontend (vue): run dev server",
+            "isBackground": true,
+            "command": "npm run dev",
+            "problemMatcher": [],
+            "presentation": {
+                "group": "dev"
+            },
+            "options": {
+                "cwd": "${workspaceFolder}/frontend"
+            },
+        },
+        {
+            "type": "shell",
+            "label": "(local dev) frontend+backend: run dev servers",
+            "dependsOn": [
+                "(local dev) backend (django): run dev server",
+                "(local dev) frontend (vue): run dev server"
+            ],
+            "problemMatcher": [],
+            "presentation": {
+                "group": "dev"
+            }
+        },
+        {
+            "type": "shell",
+            "label": "(prod testing) build production docker container",
+            "command": "docker build -t mitlogic ${workspaceFolder}",
+            "problemMatcher": []
+        },
+        {
+            "type": "shell",
+            "label": "(prod testing) run production docker container",
+            "command": [
+                "docker run -it",
+                "-p 8000:8000",
+                "-e DATABASE_URL=sqlite:///app/localdb.sqlite3",
+                "-e SECRET_KEY=bad-secret",
+                "mitlogic",
+                "bash"
+            ],
+            "options": {
+                "env": {
+                    "DATABASE_URL": "sqlite:///app/localdb.sqlite3",
+                    // We change this becuase of a check that prevents running in production with a bad secret key
+                    // It checks for a specific string, so changing it to anything that isn't that string works.
+                    "SECRET_KEY": "bad-secret-key",
+                }
+            },
+            "problemMatcher": []
+        },
+        {
+            "type": "shell",
+            "label": "(prod testing) Build and run docker container",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "(prod testing) build production docker container",
+                "(prod testing) run production docker container"
+            ],
+            "command": "",
+            "problemMatcher": []
+        },
+        {
+            "type": "shell",
+            "label": "(prod testing) run local postgres database",
+            "command": "docker compose -f ${workspaceFolder}/.docker/docker-compose.yml up -d",
+            "problemMatcher": []
+        }
+    ]
+}
