@@ -1,0 +1,4 @@
+-r base.txt
+
+# For allauth openapi page
+PyYAML==6.0.2

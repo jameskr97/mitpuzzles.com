@@ -18,10 +18,11 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.core.exceptions import ImproperlyConfigured
 from django.contrib.staticfiles import finders
 from django.contrib import admin
-from django.urls import path, re_path
+from django.urls import include, path, re_path
 from django.views.generic.base import RedirectView
 from django.views.generic import TemplateView
 from django.conf import settings
+from mitlogic import views
 
 def serve_frontend(*args, **kwargs):
     """
@@ -32,7 +33,9 @@ def serve_frontend(*args, **kwargs):
 
     :return: the response (either a redirect or a render response).
     """
-    root_filepath = finders.find("index.html", all=False)
+    if settings.DJANGO_ENV == "local" and settings.DEBUG:
+        return HttpResponseRedirect(redirect_to=settings.VUE_FRONTEND_URL)
+    root_filepath = finders.find("frontend/index.html", all=False)
     if not root_filepath:
         raise ImproperlyConfigured("Could not find frontend root in static file!")
     with open(root_filepath, "r") as root_file:
@@ -40,12 +43,18 @@ def serve_frontend(*args, **kwargs):
     return response
 
 urlpatterns = [
+    # URLs with views
     path('admin/', admin.site.urls),
-    # redirect to frontend if no other path matches (excluding "static/" path)
-    re_path(r"^(?!static/)(?P<path>.*)$", serve_frontend),
-    # redirect static files (*.css, *.js, *.jpg etc.) served on root ("/") to the static directory ("/static/")
-    re_path(
-        r"^(?!/?static/)(?P<path>.*\..*)$",
-        RedirectView.as_view(url="/static/%(path)s", permanent=False),
-    ),
+
+    # API URLs
+    ## AllAuth
+    path('accounts/', include('allauth.urls')),
+    path('_allauth/', include('allauth.headless.urls')),
+    ## Private APIs
+    path('api/config/game-settings', views.game_settings_view),
+    path('api/puzzle/random', views.get_random_puzzle),
+
+    # Frontend URLS
+    re_path(r'^(?P<url>.*)/$', serve_frontend),
+    path('', serve_frontend)
 ]

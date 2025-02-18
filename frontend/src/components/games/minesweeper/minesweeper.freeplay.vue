@@ -1,22 +1,19 @@
 <script setup lang="ts">
-import minesweeper from "./Minesweeper.vue";
+import GameLayout from "@/components/ui/layout/game.layout.vue";
+import MinesweeperPuzzle from "@/components/games/minesweeper/minesweeper.puzzle.vue";
+import { getRandomPuzzle } from "@/api/app";
+
+const p = await getRandomPuzzle();
 </script>
 
 <template>
-  <div class="container justify-center w-full p-2 flex">
-    <div class="flex gap-2 flex-col">
-      <p class="text-3xl">Minesweeper (three boards)</p>
 
-      <div class="flex flex-row">
-        <minesweeper :rows="10" :cols="10" :mine-count="10" :scale="3" />
-      </div>
-
-      <!-- <minesweeper
-        :rows="20"
-        :cols="30"
-        :mine-count="1"
-        :scale="1.5"
-      /> -->
-    </div>
+  <div class="justify-center w-full flex flex-row">
+    <GameLayout title="Minesweeper" v-slot="{ controlbar }">
+      <MinesweeperPuzzle
+        :puzzle="p"
+        :scale="controlbar.size_scaled"
+      />
+    </GameLayout>
   </div>
 </template>

@@ -1,0 +1,17 @@
+############################################################
+##### Build Arguments
+ARG POSTGRESQL_MAJOR=17
+ARG PGX_ULID_RELEASE=0.2.0
+
+############################################################
+##### Install pgx_ulid
+FROM postgres:${POSTGRESQL_MAJOR} AS base
+ARG PGX_ULID_RELEASE
+ARG POSTGRESQL_MAJOR
+ARG TARGETARCH
+
+### Download and install pgx_ulid
+ADD "https://github.com/pksunkara/pgx_ulid/releases/download/v${PGX_ULID_RELEASE}/pgx_ulid-v${PGX_ULID_RELEASE}-pg${POSTGRESQL_MAJOR}-${TARGETARCH}-linux-gnu.deb" /tmp/pgx_ulid.deb
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    /tmp/pgx_ulid.deb \
+    && rm -rf /var/lib/apt/lists/* /tmp/pgx_ulid.deb

@@ -45,7 +45,7 @@ STATIC_URL = "/static/"
 STATIC_ROOT = "staticfiles"
 STATICFILES_DIRS = [FRONTEND_DIR / "dist"]
 WHITENOISE_ROOT = FRONTEND_DIR / "dist"
-WHITENOISE_INDEX_FILE = "index.html"
+WHITENOISE_INDEX_FILE = True
 
 # Internationalization
 LANGUAGE_CODE = "en-us"
@@ -65,6 +65,14 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+
+    # 3rd-Party Apps
+    "allauth.account",
+    "allauth.headless",
+    "rest_framework",
+
+    # Local Apps
+    "mitlogic"
 ]
 
 MIDDLEWARE = [
@@ -77,13 +85,16 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+
+    # Allauth
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": ["mitlogic/templates"],
-        "APP_DIRS": False,
+        "DIRS": [BACKEND_DIR / "mitlogic/templates"],
+        "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
                 "django.template.context_processors.debug",
@@ -102,3 +113,20 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
+
+# allauth config
+HEADLESS_ONLY = True  # disable allauth's default views, we'll use the vue frontend
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+HEADLESS_FRONTEND_URLS = {
+    "account_confirm_email": f"https://{APP_DOMAIN}/account/verify-email/{{key}}",
+    "account_reset_password_from_key": f"https://{APP_DOMAIN}/account/password/reset/key/{{key}}",
+    "account_signup": f"https://{APP_DOMAIN}/account/signup",
+}
+
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_EMAIL_VERIFICATION = "none"
+ACCOUNT_LOGIN_METHODS = ["email"]
