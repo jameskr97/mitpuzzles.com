@@ -13,6 +13,7 @@
   "dependencies": {
     "@tailwindcss/vite": "^4.0.6",
     "@vee-validate/zod": "^4.15.0",
+    "@vueuse/core": "^12.7.0",
     "axios": "^1.7.9",
     "oh-vue-icons": "^1.0.0-rc3",
     "pinia": "^3.0.1",

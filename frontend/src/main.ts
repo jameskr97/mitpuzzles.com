@@ -21,7 +21,7 @@ const path = (path: string, name: string, comp: string) => {
 
 const game = (name: string) => {
     return {
-        path: `/game/${name}`,
+        path: `/${name}`,
         name: `game-${name}`,
         component: () => import(`./components/games/${name}/${name}.freeplay.vue`)
     }
@@ -34,6 +34,9 @@ const routerConfig: RouterOptions = {
         path('/about-us', 'about-us', 'AboutUs'),
         game('minesweeper'),
         game('sudoku'),
+        game('tents'),
+        game('kakurasu'),
+        { path: '/:pathMatch(.*)*', name: '404', component: () => import('./components/views/404.vue') }
     ]
 };
 

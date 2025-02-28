@@ -1,79 +1,63 @@
 <script setup lang="ts">
-import type PuzzleMinesweeper from "@/model/PuzzleMinesweeper";
+import type { PuzzleMinesweeper } from "@/api/app";
 import { ModelMinesweeperPuzzle } from "@/components/games/minesweeper/minesweeper.model";
+import GameGrid from "@/components/ui/game/game.grid.vue";
+import type { useMinesweeperStore } from "@/store/game";
 import { reactive } from "vue";
 
 ////////////////////////////////////////////////////////////////////////////////
 // Props + Events
 const props = withDefaults(
   defineProps<{
+    store: ReturnType<typeof useMinesweeperStore>;
     puzzle: PuzzleMinesweeper;
     scale?: number;
   }>(),
   { scale: 2 }
 );
+const emits = defineEmits<{
+  (e: "game-event", event_type: string, payload: object): void;
+}>();
 
 const model = reactive<ModelMinesweeperPuzzle>(
-    new ModelMinesweeperPuzzle(props.puzzle.rows, props.puzzle.cols, props.puzzle.board)
+  new ModelMinesweeperPuzzle(props.store, (event: string, payload: object) => {
+    emits("game-event", event, payload);
+  })
 );
 </script>
 
 <template>
   <!-- Grid container for the game board itself -->
-  <div class="flex">
-    <div class="minesweeper-board w-max flex-col" :style="{ '--scale': scale }">
-      <!-- Each Row for the board -->
-      <div v-for="(_, row) in puzzle.rows" class="flex flex-row">
-        <div
-          v-for="(_, col) in puzzle.cols"
-          :key="'m' + row + '_' + col"
-          :class="'cell w-full ' + model.getCellClass(row, col)"
-          @mousedown.prevent="model.onCellMouseDown(row, col)"
-          @mouseup.prevent="model.onCellMouseUp(row, col)"
-          @mouseenter.prevent="model.onCellMouseEnter(row, col)"
-          @mouseleave.prevent
-          @click.prevent
-          @contextmenu.prevent
-        ></div>
-      </div>
-    </div>
+  <div class="flex flex-row gap-10">
+    <GameGrid
+      :rows="store.puzzle.rows"
+      :cols="store.puzzle.cols"
+      :size="scale"
+      class="rounded border-1 border-[#757575] bg-[#757575]"
+      @grid-leave="() => model.onGridLeave()"
+      @mouse-down="model.onCellMouseDown($event.row, $event.col)"
+      @mouse-up="model.onCellMouseUp($event.row, $event.col)"
+      @cell-enter="model.onCellMouseEnter($event.row, $event.col)"
+      @cell-leave="model.onCellMouseLeave($event.row, $event.col)"
+    >
+      <!-- prettier-ignore -->
+      <template v-slot:cell="props">
+        <!-- Number Specific Background Options -->
+        <div v-if="model.getCellNumber(props.row, props.col) === 1"  class="w-full h-full rounded-sm bg-[url(/assets/minesweeper/number-1.svg),_url(/assets/minesweeper/cell-empty.svg)]"></div>
+        <div v-if="model.getCellNumber(props.row, props.col) === 2"  class="w-full h-full rounded-sm bg-[url(/assets/minesweeper/number-2.svg),_url(/assets/minesweeper/cell-empty.svg)]"></div>
+        <div v-if="model.getCellNumber(props.row, props.col) === 3"  class="w-full h-full rounded-sm bg-[url(/assets/minesweeper/number-3.svg),_url(/assets/minesweeper/cell-empty.svg)]"></div>
+        <div v-if="model.getCellNumber(props.row, props.col) === 4"  class="w-full h-full rounded-sm bg-[url(/assets/minesweeper/number-4.svg),_url(/assets/minesweeper/cell-empty.svg)]"></div>
+        <div v-if="model.getCellNumber(props.row, props.col) === 5"  class="w-full h-full rounded-sm bg-[url(/assets/minesweeper/number-5.svg),_url(/assets/minesweeper/cell-empty.svg)]"></div>
+        <div v-if="model.getCellNumber(props.row, props.col) === 6"  class="w-full h-full rounded-sm bg-[url(/assets/minesweeper/number-6.svg),_url(/assets/minesweeper/cell-empty.svg)]"></div>
+        <div v-if="model.getCellNumber(props.row, props.col) === 7"  class="w-full h-full rounded-sm bg-[url(/assets/minesweeper/number-7.svg),_url(/assets/minesweeper/cell-empty.svg)]"></div>
+        <div v-if="model.getCellNumber(props.row, props.col) === 8"  class="w-full h-full rounded-sm bg-[url(/assets/minesweeper/number-8.svg),_url(/assets/minesweeper/cell-empty.svg)]"></div>
+
+        <!-- State Specific Background Options -->
+        <div v-if="model.isCellUnmarked(props.row, props.col)"       class="w-full h-full rounded-sm bg-[url(/assets/minesweeper/unopened-square.svg),_url(/assets/minesweeper/cell-empty.svg)]"></div>
+        <div v-if="model.isCellFlagged(props.row, props.col)"        class="w-full h-full rounded-sm bg-[url(/assets/minesweeper/flag.svg),_url(/assets/minesweeper/unopened-square.svg)]"></div>
+        <div v-if="model.isCellSafe(props.row, props.col)"           class="w-full h-full rounded-sm bg-[url(/assets/minesweeper/cell-safe.svg),_url(/assets/minesweeper/cell-empty.svg)]"></div>
+        <div v-if="model.isCellInDangerZone(props.row, props.col)"   class="w-full h-full rounded-sm bg-[url(/assets/minesweeper/cell-empty.svg)]"></div>
+      </template>
+    </GameGrid>
   </div>
 </template>
-
-<!-- prettier-ignore -->
-<style scoped>
-.minesweeper-board {
-  --cell-size: 16px;
-  --scale: 1;
-}
-
-.cell {
-  height: calc(var(--cell-size) * var(--scale));
-  width: calc(var(--cell-size) * var(--scale));
-  background-size: contain;
-}
-
-/* All Minesweeper Specific Cells */
-.cell-unrevealed    { background-image: url("/assets/minesweeper/unopened-square.svg"); background-size: 100%; }
-.cell-00            { background-image: url("/assets/minesweeper/number-0.svg"); }
-.cell-01            { background-image: url("/assets/minesweeper/number-1.svg"),    url("/assets/minesweeper/number-0.svg"); }
-.cell-02            { background-image: url("/assets/minesweeper/number-2.svg"),    url("/assets/minesweeper/number-0.svg"); }
-.cell-03            { background-image: url("/assets/minesweeper/number-3.svg"),    url("/assets/minesweeper/number-0.svg"); }
-.cell-04            { background-image: url("/assets/minesweeper/number-4.svg"),    url("/assets/minesweeper/number-0.svg"); }
-.cell-05            { background-image: url("/assets/minesweeper/number-5.svg"),    url("/assets/minesweeper/number-0.svg"); }
-.cell-06            { background-image: url("/assets/minesweeper/number-6.svg"),    url("/assets/minesweeper/number-0.svg"); }
-.cell-07            { background-image: url("/assets/minesweeper/number-7.svg"),    url("/assets/minesweeper/number-0.svg"); }
-.cell-08            { background-image: url("/assets/minesweeper/number-8.svg"),    url("/assets/minesweeper/number-0.svg"); }
-.cell-mine          { background-image: url("/assets/minesweeper/bomb.svg"),        url("/assets/minesweeper/number-0.svg"); }
-.cell-mine-explode  { background-image: url("/assets/minesweeper/bomb.svg"),        url("/assets/minesweeper/bomb-explode.svg"); }
-.cell-flag          { background-image: url("/assets/minesweeper/flag.svg"),        url("/assets/minesweeper/unopened-square.svg"); }
-.cell-flag-incorrect   {
-  background-image:
-    url("/assets/minesweeper/flag-missed.svg"),
-    url("/assets/minesweeper/flag.svg"),
-    url("/assets/minesweeper/unopened-square.svg");
-  background-size: calc(var(--cell-size) * calc(var(--scale) - 0.5)), contain, contain;
-  background-position: center, center, center;
-  background-repeat: no-repeat;
-}
-</style>
