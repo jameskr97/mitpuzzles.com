@@ -13,6 +13,7 @@ from rest_framework.response import Response
 @api_view(['GET'])
 def get_random_puzzle(request):
     x = models.Puzzles.objects.order_by('?').first()
+    print(x.puzzle_data["board"])
     serialized = serializers.PuzzleMinesweeperSerializer(x)
     return Response(serialized.data)
 

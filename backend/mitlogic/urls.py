@@ -24,7 +24,8 @@ from django.views.generic import TemplateView
 from django.conf import settings
 from mitlogic import views
 
-def serve_frontend(*args, **kwargs):
+
+def serve_root(*args, **kwargs):
     """
     View function which wraps the basic logic behind serving the root html for the frontend.
     In debug mode, a redirect response is sent which can direct the browser to a local vue server.
@@ -33,8 +34,8 @@ def serve_frontend(*args, **kwargs):
 
     :return: the response (either a redirect or a render response).
     """
-    if settings.DJANGO_ENV == "local" and settings.DEBUG:
-        return HttpResponseRedirect(redirect_to=settings.VUE_FRONTEND_URL)
+    if settings.DEBUG:
+        return HttpResponseRedirect("http://localhost:3000/")
     root_filepath = finders.find("frontend/index.html", all=False)
     if not root_filepath:
         raise ImproperlyConfigured("Could not find frontend root in static file!")
@@ -43,18 +44,24 @@ def serve_frontend(*args, **kwargs):
     return response
 
 urlpatterns = [
-    # URLs with views
+    path("robots.txt", TemplateView.as_view(template_name="robots.txt", content_type='text/plain')),
     path('admin/', admin.site.urls),
 
-    # API URLs
-    ## AllAuth
+    # 3rd-party app endpoints
     path('accounts/', include('allauth.urls')),
     path('_allauth/', include('allauth.headless.urls')),
-    ## Private APIs
-    path('api/config/game-settings', views.game_settings_view),
-    path('api/puzzle/random', views.get_random_puzzle),
 
-    # Frontend URLS
-    re_path(r'^(?P<url>.*)/$', serve_frontend),
-    path('', serve_frontend)
+    # api endpoints
+    path('api/puzzle/random', views.get_random_puzzle),
+    path('api/puzzle/submit', views.post_game_recording),
+    path('api/config/game-settings', views.game_settings_view),
+
+    # redirect static files (*.css, *.js, *.jpg etc.) served on root ("/") to the static directory ("/static/")
+    re_path(
+        r"^(?!/?static/)(?P<path>.*\..*)$",
+        RedirectView.as_view(url="/static/%(path)s", permanent=False),
+    ),
+
+    # All other paths are served the root html file.
+    re_path(r'^.*$', serve_root),
 ]

@@ -10,7 +10,7 @@ class Puzzles(models.Model):
     class Meta:
         db_table = "generated_puzzles"
         ordering = ["-created_at"]
-    id = fields.ULIDField(primary_key=True, db_default=models.Func(function="gen_monotonic_ulid"))
+    id = models.AutoField(primary_key=True)
     created_at = models.DateTimeField(db_default=timezone.now(), auto_now_add=True)
     updated_at = models.DateTimeField(db_default=timezone.now(), auto_now=True)
     puzzle_type = models.CharField(max_length=32) # minesweeper, sudoku, tents, battleship...
