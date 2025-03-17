@@ -5,15 +5,9 @@ import LoginModal from "@/components/ui/modal/account.login.vue";
 
 <template>
   <!-- Sidebar Footer -->
-  <div
-    class="flex flex-row justify-between gap-2 mt-auto bg-base-200 w-full"
-  >
-    <button class="btn btn-info grow" onclick="login_modal.showModal()">
-      Log in
-    </button>
-    <button class="btn btn-success grow" onclick="create_account_modal.showModal()">
-      Sign up
-    </button>
+  <div class="flex flex-row justify-between gap-2 mt-auto bg-base-200 w-full">
+    <button class="btn btn-info grow" onclick="login_modal.showModal()">Log in</button>
+    <button class="btn btn-success grow" onclick="create_account_modal.showModal()">Sign up</button>
 
     <!-- Modals -->
     <LoginModal id="login_modal" />

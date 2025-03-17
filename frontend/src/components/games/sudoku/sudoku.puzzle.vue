@@ -3,7 +3,7 @@ import { ModelSudokuPuzzle } from "@/components/games/sudoku/sudoku.model";
 import GameGrid from "@/components/ui/game/game.grid.vue";
 
 defineProps({
-  scale: { type: Number, required: false, default: 1 },
+  scale: { type: Number, required: false },
 });
 
 const model = new ModelSudokuPuzzle();
@@ -17,20 +17,23 @@ const model = new ModelSudokuPuzzle();
     @mouse-up="model.onCellClick($event.row, $event.col, $event.input_event)"
     @key-down="model.onCellKeyDown($event.row, $event.col, $event.input_event)"
     class="rounded border-5 bg-black"
-    cell-style="nth-[3n]:not-last:mr-(--border-thickness-bold) mr-(--border-thickness) bg-white"
-    row-style="nth-[3n]:not-last:mb-(--border-thickness-bold) mb-(--border-thickness)"
+    cell-class="nth-[3n]:not-last:mr-(--border-thickness-bold) mr-(--border-thickness) w-full"
+    row-class="nth-[3n]:not-last:mb-(--border-thickness-bold) mb-(--border-thickness)"
   >
     <template v-slot:cell="{ row, col }">
       <div
         :style="{
-          fontSize: scale + 'rem',
+          fontSize: '2cqmin',
         }"
         :class="{
           'border-cyan-800 border-2': model.isCellActive(row, col),
-          'bg-slate-300': model.isSquareSelected(row, col) || model.isRowSelected(row) || model.isColSelected(col),
+          'bg-slate-300':
+            model.isSquareSelected(row, col) ||
+            model.isRowSelected(row) ||
+            model.isColSelected(col),
           'text-blue-600': model.canModifyCell(row, col),
         }"
-        class="h-full leading-[0.8] grid grid-cols-1 place-items-center align-middle select-none"
+        class="h-full bg-white leading-[0.8] grid grid-cols-1 place-items-center align-middle select-none"
       >
         <span>{{ model.getCellDisplay(row, col) }}</span>
       </div>

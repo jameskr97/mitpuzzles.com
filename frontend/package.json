@@ -8,7 +8,9 @@
     "build": "vue-tsc -b && vite build",
     "build-prod": "vue-tsc -b && vite build --base=/static/frontend --outDir=./dist/static/frontend",
     "watch": "vue-tsc -b && vite build --watch",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "fmt": "prettier --write src/",
+    "check": "prettier --check src/"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.0.6",
@@ -26,6 +28,7 @@
     "@vitejs/plugin-vue": "^5.2.1",
     "@vue/tsconfig": "^0.7.0",
     "daisyui": "^5.0.0-beta.7",
+    "prettier": "^3.5.3",
     "typescript": "~5.7.2",
     "vite": "^6.1.1",
     "vite-plugin-vue-devtools": "^7.7.2",

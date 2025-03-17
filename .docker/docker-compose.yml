@@ -2,9 +2,7 @@ version: '3.8'
 
 services:
   postgres:
-    build:
-      dockerfile: Dockerfile.postgres
-      context: .
+    image: postgres:17
     environment:
       POSTGRES_USER: mitlogic
       POSTGRES_PASSWORD: mitlogic
@@ -18,6 +16,15 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@example.com
       PGADMIN_DEFAULT_PASSWORD: admin
+
+  app:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    ports: ["1234:8000"]
+    environment:
+      DATABASE_URL: postgres://mitlogic:mitlogic@postgres:5432/mitlogic
+
 
 volumes:
   mitlogic_postgres_data:

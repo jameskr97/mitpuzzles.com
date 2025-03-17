@@ -2,7 +2,7 @@
 import { KakurasuCellStates, ModelKakurasuPuzzle } from '@/components/games/kakurasu/kakurasu.model';
 import GameGrid from '@/components/ui/game/game.grid.vue';
 defineProps({
-  scale: { type: Number, required: false, default: 1 },
+  scale: { type: Number, required: false },
 });
 
 const model = new ModelKakurasuPuzzle();
@@ -14,7 +14,7 @@ const model = new ModelKakurasuPuzzle();
     :cols="model.COLS"
     :size="scale"
     grid-class="border-5"
-    cell-style="border-1"
+    cell-class="border-1"
     @mouse-up="model.onCellClick($event.row, $event.col, $event.input_event)"
   >
     <template v-slot:cell="{ row, col }">

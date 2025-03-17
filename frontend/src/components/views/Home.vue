@@ -1,20 +1,19 @@
 <script setup lang="ts">
-import { useAppConfig } from '@/store/config';
+import HomeGamebox from "@/components/ui/elements/home.gamebox.vue";
+import PuzzleMinesweeeper from "@/components/games/minesweeper/minesweeper.puzzle.vue";
+import PuzzleTents from "@/components/games/tents/tents.puzzle.vue";
+import PuzzleSudoku from "@/components/games/sudoku/sudoku.puzzle.vue";
+import PuzzleKakurasu from "@/components/games/kakurasu/kakurasu.puzzle.vue";
+import { useAppConfig } from "@/store/config";
 const settings = useAppConfig();
 settings.fetchGameSettings();
 </script>
 
 <template>
-  <div class="flex p-4 flex-col rounded shadow-2xl rev justify-center mx-auto sm:w-120 text-xl border">
-
-    <p class="text-4xl">Welcome to mitpuzzles.com</p>
-    <div class="divider m-0"></div>
-    <p>This is an early version of a logic games website.</p>
-    <div class="divider m-0"></div>
-    <p>Currently, only minesweeper with previously used stimuli will be randomly presented.</p>
-    <div class="divider m-0"></div>
-    <div class="flex flex-col sm:flex-row w-full justify-between gap-2">
-      <router-link to="/minesweeper" class="btn btn-primary">Play Minesweeper Puzzle</router-link>
-    </div>
+  <div class="grid md:grid-cols-3 gap-2 items-end">
+    <HomeGamebox title="Minesweeper"><PuzzleMinesweeeper /></HomeGamebox>
+    <HomeGamebox title="Tents"><PuzzleTents /></HomeGamebox>
+    <HomeGamebox title="Sudoku"><PuzzleSudoku /></HomeGamebox>
+    <HomeGamebox title="Kakurasu"><PuzzleKakurasu /></HomeGamebox>
   </div>
 </template>

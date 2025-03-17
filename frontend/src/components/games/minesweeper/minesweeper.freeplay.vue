@@ -73,7 +73,7 @@ watchEffect(async () => {
           <p class="text-2xl text-center md:text-left">Game Instructions</p>
           <ul class="list-inside list-decimal">
             <li>
-              Your goal is to correctly mark each of the cells 
+              Your goal is to correctly mark each of the cells
               (<i class="cell cell-unrevealed"></i>) as safe
               (<i class="cell w-full cell-empty inline-block"></i>) or flagged
               (<i class="cell cell-flag"></i>).
@@ -104,15 +104,12 @@ watchEffect(async () => {
 
 
       <template v-slot:default="props">
+        {{ props.scale }}
         <MinesweeperPuzzle
-          :class="
-            'bg-gray-600 rounded-md border-5 mx-auto max-w-fit ' +
-            (display_unsolved
-              ? 'border-red-500'
-              : ms.puzzle.completed_at
-              ? 'border-green-500'
-              : '')
-          "
+          :class="[
+            'bg-gray-600 rounded-md border-5 mx-auto max-w-fit',
+            ms.puzzle.completed_at ? 'border-green-500' : '',
+            display_unsolved ? 'border-red-500' : '']"
           :store="ms"
           :puzzle="ms.puzzle"
           :scale="props.scale"

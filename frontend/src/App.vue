@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import Sidebar from "@/components/ui/sidebar/sidebar.vue";
-localStorage.clear()
 </script>
 
 <template>

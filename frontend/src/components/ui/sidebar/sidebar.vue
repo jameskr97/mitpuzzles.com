@@ -1,29 +1,25 @@
 <script setup lang="ts">
-import SidebarUserAnon from "@/components/ui/sidebar/sidebar.user.anon.vue";
-import SidebarUserAuth from "@/components/ui/sidebar/sidebar.user.auth.vue";
+// import SidebarUserAnon from "@/components/ui/sidebar/sidebar.user.anon.vue";
+// import SidebarUserAuth from "@/components/ui/sidebar/sidebar.user.auth.vue";
 import { useAuthStore } from "@/store/auth";
 
 const auth = useAuthStore();
 auth.updateStore();
 const games = [
-  { name: "Minesweeper 💣", slug: "game-minesweeper", newBadge: true },
-  { name: "Sudoku 🧩", slug: "game-sudoku", newBadge: true },
-  { name: "About Us", slug: 'about-us', newBadge: true}
+  { name: "💣 Minesweeper", slug: "game-minesweeper", badge: "New" },
+  { name: "🧩 Sudoku", slug: "game-sudoku", badge: "New"},
+  { name: "⛺ Tents", slug: "game-tents", badge: "WIP", badgeColor: 'badge-warning'},
 ];
 </script>
 
 <template>
-  <div class="flex flex-row max-w-55 p-0">
+  <div class="flex flex-row max-w-60 p-0">
     <div class="menu bg-base-200 text-base-content min-h-full p-0">
-      <!-- Sidebar Header Image -->
+      <!-- Sidebar Header -->
       <router-link to="/">
-        <img
-          class="max-w-full"
-          src="https://placehold.co/1000x600?text=Wow\nPlaceholder\nText"
-        />
+        <li class="text-lg mx-auto mt-2 sticky top-0 text-center">mitpuzzles.com</li>
       </router-link>
-      <!-- Games List -->
-      <!-- <li class="text-lg mx-auto mt-2 sticky top-0">Logic Games</li> -->
+      <div class="divider m-0"></div>
       <div class="p-2">
         <router-link
           v-for="game in games"
@@ -34,23 +30,23 @@ const games = [
             <a href="#">
               {{ game.name }}
               <span
-                v-if="game.newBadge"
-                class="inline badge badge-success badge-sm"
+                v-if="game.badge"
+                :class="'inline badge badge-sm ' + (game.badgeColor ?? 'badge-success')"
               >
-                New!
+                {{ game.badge }}
               </span>
             </a>
           </li>
         </router-link>
       </div>
+      <!-- Hide sidebar for now. -->
       <!-- Sidebar Footer -->
-
-      <div
+      <!-- <div
         class="mt-auto border-t-2 h-19 border-red-60 sticky bottom-0 bg-base-200 w-full"
       >
         <SidebarUserAnon v-if="!auth.isAuthenticated" class="p-4" />
         <SidebarUserAuth v-else class="p-2" />
-      </div>
+      </div> -->
     </div>
   </div>
 </template>

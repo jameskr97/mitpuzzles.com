@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import Button from "@/components/ui/elements/button.vue";
 import { z, ZodEffects, ZodObject } from "zod";
-import { type PropType, ref, watch  } from "vue";
+import { type PropType, ref, watch } from "vue";
 import { useField, useForm } from "vee-validate";
 import { toTypedSchema } from "@vee-validate/zod";
 
@@ -64,11 +64,14 @@ const generate_fields = (schema: Schema) => {
 
 /* Generate an object containing {item: useField(ITEM).value} */
 const generate_vee_fields = (schema: any) => {
-  const raw_object = Object.keys(schema).reduce((res, current) => {
-    // The "undefined, { validateOnValueUpdate: false}" stops validation from being run as the user is typing
-    res[current] = useField(current, undefined, { validateOnValueUpdate: false}).value;
-    return res;
-  }, {} as Record<string, any>);
+  const raw_object = Object.keys(schema).reduce(
+    (res, current) => {
+      // The "undefined, { validateOnValueUpdate: false}" stops validation from being run as the user is typing
+      res[current] = useField(current, undefined, { validateOnValueUpdate: false }).value;
+      return res;
+    },
+    {} as Record<string, any>,
+  );
   return ref(raw_object);
 };
 
@@ -80,16 +83,19 @@ const fields = generate_fields(base_schema);
 const field_model = generate_vee_fields(base_schema);
 
 const submitForm = handleSubmit(async (values) => {
-  emit('submit', values)
+  emit("submit", values);
 });
 
 ////////////////////////////////////////////////////////////////////////////////
 // Watcher
-watch(() => props.externalErrors, (current, _) => {
-  Object.keys(current).forEach(key => {
-    errors.value[key] = current[key].join("<br>")
-  })
-})
+watch(
+  () => props.externalErrors,
+  (current, _) => {
+    Object.keys(current).forEach((key) => {
+      errors.value[key] = current[key].join("<br>");
+    });
+  },
+);
 </script>
 
 <template>
@@ -111,9 +117,7 @@ watch(() => props.externalErrors, (current, _) => {
           {{ errors[field.name] }}
         </p>
       </div>
-      <Button class="btn btn-neutral mt-4 mx-auto" :loading="loading">
-        Submit
-      </Button>
+      <Button class="btn btn-neutral mt-4 mx-auto" :loading="loading"> Submit </Button>
     </fieldset>
   </form>
 </template>
