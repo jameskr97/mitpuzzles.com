@@ -1,9 +1,15 @@
-import { getRandomPuzzle } from "@/api/app";
-import { GameResultStatus } from "@/api/types";
-import { format_game_stopwatch } from "@/lib/util";
+import { getRandomPuzzle } from "@/services/app";
+import { format_game_stopwatch } from "@/services/util";
 import { useLocalStorage } from "@vueuse/core";
 import { defineStore } from "pinia";
 import { computed, ref, watch, type Ref, type ComputedRef } from "vue";
+
+export const enum GameResultStatus {
+  Idle = "idle",
+  Checking = "checking",
+  Correct = "correct",
+  Wrong = "wrong",
+}
 
 export class PuzzleTimer {
   private intervalId: number | null = null;

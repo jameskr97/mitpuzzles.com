@@ -30,7 +30,6 @@ export function useGameLayout() {
 
   const instructions_visible = store.booleanFor("instructions");
   const leaderboard_visible = store.booleanFor("leaderboard");
-  console.log(instructions_visible.value, leaderboard_visible.value);
 
   return {
     instructions_visible,

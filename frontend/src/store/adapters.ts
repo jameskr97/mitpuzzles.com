@@ -1,9 +1,9 @@
 import type { PuzzleAdapter } from "@/store/game";
-import { MinesweeperCellStates, type MinesweeperState } from "@/components/games/minesweeper/minesweeper.model";
-import type { PuzzleMinesweeper, PuzzleSudoku, PuzzleTents } from "@/api/types";
-import type { SudokuState } from "@/components/games/sudoku/sudoku.model";
-import type { TentsState } from "@/components/games/tents/tents.model";
-import { sha256 } from "@/lib/util";
+import { MinesweeperCellStates, type MinesweeperState } from "@/features/games/minesweeper/minesweeper.model";
+import type { PuzzleMinesweeper, PuzzleSudoku, PuzzleTents } from "@/services/types";
+import type { SudokuState } from "@/features/games/sudoku/sudoku.model";
+import type { TentsState } from "@/features/games/tents/tents.model";
+import { sha256 } from "@/services/util";
 
 export const minesweeperAdapter: PuzzleAdapter<PuzzleMinesweeper, MinesweeperState> = {
   normalize: (raw) => ({
@@ -38,7 +38,6 @@ export const minesweeperAdapter: PuzzleAdapter<PuzzleMinesweeper, MinesweeperSta
 
 export const sudokuAdapter: PuzzleAdapter<PuzzleSudoku, SudokuState> = {
   normalize: (raw) => {
-    console.log(raw);
     const base_grid = [...raw.board].map((ch) => (ch === "-" ? 0 : Number(ch)));
     return {
       rows: raw.rows,
@@ -58,7 +57,7 @@ export const sudokuAdapter: PuzzleAdapter<PuzzleSudoku, SudokuState> = {
     };
   },
 
-  validate: (state, raw) => {
+  validate: (_state, _raw) => {
     return false;
   },
 };
@@ -76,7 +75,7 @@ export const tentsAdapter: PuzzleAdapter<PuzzleTents, TentsState> = {
     tents: new Array(raw.rows * raw.cols).fill(0),
   }),
 
-  async validate(state, raw): Promise<boolean> {
+  async validate(state, _raw): Promise<boolean> {
     const hash_current_state = await sha256(state.tents.join(""));
     return hash_current_state === state.solution_hash;
   },

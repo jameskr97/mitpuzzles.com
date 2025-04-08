@@ -1,9 +1,9 @@
 import { defineStore } from "pinia";
-import * as app from "@/api/app";
+import * as app from "@/services/app";
 
 export const useAppConfig = defineStore("app_config", {
   state: () => ({
-    games: null as unknown as app.GameSettings,
+    games: null as unknown,
   }),
   actions: {
     async fetchGameSettings() {

@@ -1,4 +1,4 @@
-import { remap } from "@/lib/util";
+import { remap } from "@/services/util";
 import { defineStore } from "pinia";
 import { computed } from "vue";
 import { useRoute } from "vue-router";

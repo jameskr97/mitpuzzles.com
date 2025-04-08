@@ -27,7 +27,7 @@ const path = (path: string, name: string, comp: string) => {
   return {
     path: path,
     name: name,
-    component: () => import(`./components/views/${comp}.vue`),
+    component: () => import(`./views/${comp}.vue`),
   };
 };
 
@@ -35,7 +35,7 @@ const game = (name: string) => {
   return {
     path: `/${name}`,
     name: `game-${name}`,
-    component: () => import(`./components/games/${name}/${name}.freeplay.vue`),
+    component: () => import(`./features/games/${name}/${name}.freeplay.vue`),
     meta: { game_type: name },
   };
 };
@@ -46,7 +46,7 @@ const routerConfig: RouterOptions = {
     path("", "Home", "Home"),
     path("/about-us", "about-us", "AboutUs"),
     ...ACTIVE_GAMES.map((gameObj) => game(gameObj.key)),
-    { path: "/:pathMatch(.*)*", name: "404", component: () => import("./components/views/404.vue") },
+    { path: "/:pathMatch(.*)*", name: "404", component: () => import("./views/404.vue") },
   ],
 };
 

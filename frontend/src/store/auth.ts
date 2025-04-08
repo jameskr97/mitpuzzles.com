@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import * as allauth from "@/lib/allauth";
+import * as allauth from "@/services/allauth";
 
 /* We allow the user to login with either an email or a username */
 export interface LoginPayload {
