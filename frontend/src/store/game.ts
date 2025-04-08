@@ -1,187 +1,219 @@
-import { defineStore } from "pinia";
-import { useLocalStorage, StorageSerializers } from "@vueuse/core";
-import { b64decode_array as b64d, b64encode_array as b64e, remap } from "@/lib/util";
 import { getRandomPuzzle } from "@/api/app";
+import { GameResultStatus } from "@/api/types";
+import { format_game_stopwatch } from "@/lib/util";
+import { useLocalStorage } from "@vueuse/core";
+import { defineStore } from "pinia";
+import { computed, ref, watch, type Ref, type ComputedRef } from "vue";
 
-// TODO(james): Abstract this out
-import { MinesweeperCellStates } from "@/components/games/minesweeper/minesweeper.model";
-import type { PuzzleMinesweeper } from "@/api/types";
+export class PuzzleTimer {
+  private intervalId: number | null = null;
 
-type GameConfig<T> = {
-    get_solution: (puzzle: number[]) => string;
-    get_puzzle_state: (new_puzzle: T) => any;
-    default_state: () => any[];
-};
+  private time_started: Ref<number>;
+  private time_completed: Ref<number | undefined>;
+  time_elapsed: Ref<number>;
+  display_time: ComputedRef<string>;
 
-function createGameStore<T>(game: string, game_class: string, config: GameConfig<T>): any {
-    const storage_prefix = `mitlogic.${game}.${game_class}`
-    return defineStore(storage_prefix, {
-        state: () => ({
-            scale: useLocalStorage(`${storage_prefix}.scale`, 30, { serializer: StorageSerializers.number }),
-            puzzle: useLocalStorage(`${storage_prefix}.puzzle`, null, {
-                // A custom serializer is used to encode the gameboard + game state into base64.
-                serializer: {
-                    read: (raw) => {
-                        if (!raw) return null;
-                        const parsed = JSON.parse(raw);
-                        return {
-                            received_at: parsed.received_at,
-                            completed_at: parsed.completed_at,
-                            rows: parsed.rows,
-                            cols: parsed.cols,
-                            board: b64d(parsed.board),
-                            gamestate: b64d(parsed.gamestate),
-                            solution_hash: parsed.solution_hash,
-                        }
-                    },
-                    write: (value) => {
-                        if (!value) return "null";
-                        return JSON.stringify({
-                            received_at: value.received_at,
-                            completed_at: value.completed_at,
-                            rows: value.rows,
-                            cols: value.cols,
-                            board: b64e(value.board),
-                            gamestate: b64e(value.gamestate),
-                            solution_hash: value.solution_hash,
-                        })
-                    }
-                }
-            }),
-            history: useLocalStorage(`${storage_prefix}.history`, null, { serializer: StorageSerializers.object }),
-        }),
-        getters: {
-            /**
-             * This remapped scale is tied to the scale setting, and remaps to a range.
-             * Review the `remap` function documentation for more information.
-             *
-             * Note: The [0, 100] paremeter should be inline with the range of the getScale   .
-             *
-             * @param max
-             * @returns
-             */
-            scale_remapped: (state) => {
-                return (max: number = 5) => remap([0, 100], [2, max], state.scale)
-            },
+  constructor(time_started: number, time_completed?: number) {
+    this.intervalId = null;
+    this.time_started = ref(time_started);
+    this.time_completed = ref(time_completed);
+    this.time_elapsed = ref(0);
+    this.display_time = computed(() => format_game_stopwatch(this.time_elapsed.value));
 
-            /**
-             * @returns True if we have a saved puzzle, false otherwise.
-             */
-            has_puzzle_saved: (state) => !!state.puzzle,
-
-            is_puzzle_solved: (state) => {
-                if (!state.puzzle) return false;
-                return state.puzzle.solution_hash === b64e(state.puzzle.gamestate);
-            },
-
-            validation: (state) => {
-                if (!state.puzzle) return null;
-                return config.get_solution(state.puzzle.gamestate)
-            },
-        },
-        actions: {
-            async fetchPuzzle(shouldForce:boolean = false) {
-                if (this.has_puzzle_saved && !shouldForce) return;
-                const puzzle = await getRandomPuzzle(); // TODO(james): Update this to use the game 
-                const timestamp = Date.now(); // Save the time we fetched the puzzle
-                const pstate = config.get_puzzle_state(puzzle as T);
-
-                // Prepare the puzzle history with initial fetch event
-                this.history = { events: [{ timestamp, event_type: 'fetch_puzzle' }] };
-
-                // TODO(james): we should probably validate puzzle.board for correct format (regex?)
-                this.puzzle = {
-                    ...pstate,
-                    received_at: timestamp,
-                    completed_at: null,
-                    gamestate: config.default_state(),
-                }
-            },
-
-            /**
-             * Clear the game state.
-             */
-            clear_state() {
-                if (!this.puzzle) return;
-                if (b64e(this.puzzle.gamestate) === b64e(config.default_state())) return; // No need to clear if we're already clear
-                this.puzzle.gamestate = config.default_state()
-                this.record_event('clear_state');
-            },
-
-            /** Add an a event to the history list */
-            record_event(event_type: string, payload: any = null) {
-                if (!this.history) this.history = { events: [] };
-                this.history.events.push({ timestamp: Date.now(), event_type, payload });
-            },
-
-            submit_game() {
-                this.record_event('submit_game');
-            },
-
-            mark_solved() {
-                if (!this.puzzle) return;
-                this.puzzle.completed_at = Date.now();
-            },
+    this.updateScreenTime();
+    watch(
+      [this.time_started, this.time_completed],
+      () => {
+        if (this.time_completed.value === undefined) {
+          this.updateScreenTime();
+          if (this.intervalId === null) {
+            this.intervalId = setInterval(this.updateScreenTime, 1000);
+          }
+        } else {
+          if (this.intervalId !== null) {
+            clearInterval(this.intervalId);
+            this.intervalId = null;
+          }
+          this.updateScreenTime();
         }
+      },
+      { immediate: true },
+    );
+  }
+
+  protected complete() {
+    if (this.time_completed.value === null) {
+      this.time_completed.value = Date.now();
+    }
+
+    this.updateScreenTime();
+    if (this.intervalId !== null) {
+      clearInterval(this.intervalId);
+      this.intervalId = null;
+    }
+  }
+
+  reset() {
+    this.time_started.value = Date.now();
+    this.time_completed.value = undefined;
+    this.time_elapsed.value = 0;
+  }
+
+  updateScreenTime = () => {
+    if (this.time_completed.value !== undefined) {
+      this.time_elapsed.value = this.time_completed.value - this.time_started.value;
+    } else {
+      this.time_elapsed.value = Date.now() - this.time_started.value;
+    }
+  };
+
+  protected stop() {}
+}
+
+/**
+ * Adapter to be used in the usePuzzleStore
+ * @param Raw The raw payload from the backend
+ * @param State The client-side structure
+ */
+export interface PuzzleAdapter<Raw, State = Raw> {
+  /**
+   * Convert the payload from the backend into the client-side structure
+   * @param raw The raw payload from the backend
+   */
+  normalize(raw: Raw): State;
+
+  /**
+   * Convert the payload from the backend into an empty state
+   * Different from normalize: maybe on initial request of a board, some inital state is also
+   * sent over to display with the board. This empty state will also clear that.
+   * (imagine a board sent with some initial state [a tent already placed], this will clear that)
+   * (though without that particular case, this is identical to normalize)
+   * @param raw
+   */
+  empty_state(raw: Raw): State;
+
+  /**
+   * Validate the game board with the solution hash from the backend
+   * or agains another solution
+   * @param state The current state
+   * @param raw The raw payload from the backend
+   * @returns True if the game is solved, false otherwise
+   */
+  validate(state: State, raw: Raw): Promise<boolean> | boolean;
+}
+
+type Key = `${string}:${string}`; // "type:variant"
+interface Stored<Raw, State> {
+  /** The raw payload from the backend */
+  raw: Raw;
+  /** The reactive state the user modifies as they play */
+  state: State;
+  /** The log of changes as the user plays */
+  history: { ts: number; type: string; payload?: any }[];
+  /** The time the game was retrieved from the server */
+  time_started: number;
+  time_completed?: number;
+  /** The solution hash from the backend */
+  solution_hash?: string;
+}
+
+export const usePuzzleStore = defineStore("mitlogic.puzzles", () => {
+  /* All game data is stored in this mitlogic.puzzles localstorage entry */
+  const store = useLocalStorage<Record<Key, Stored<any, any>>>("mitlogic.puzzles", {});
+  const as_key = (t: string, v: string) => `${t}:${v}` as Key;
+
+  async function usePuzzle<Raw, State>(game_type: string, game_variant: string, adapter: PuzzleAdapter<Raw, State>) {
+    // Create key, request initial puzzle, create computed wrapper for state modification
+    const key = as_key(game_type, game_variant);
+
+    /** Request a new puzzle from the backend, and update existing store, or create new. */
+    async function load_new_puzzle() {
+      const raw = await getRandomPuzzle(game_type);
+      const time_received = Date.now();
+
+      // Don't have data stored. Store new!
+      if (!store.value[key]) {
+        store.value[key] = {
+          raw,
+          state: adapter.normalize(raw),
+          history: [{ ts: Date.now(), type: "fetch" }],
+          time_started: time_received,
+        };
+      }
+      // We do have data stored? Update existing to keep reactivity
+      else {
+        // Reload: mutate in-place to preserve reactivity
+        store.value[key].raw = raw;
+        Object.assign(store.value[key].state, adapter.empty_state(raw));
+        store.value[key].history = [{ ts: time_received, type: "fetch" }];
+        store.value[key].time_started = time_received;
+        store.value[key].time_completed = undefined;
+      }
+    }
+
+    if (!store.value[key]) await load_new_puzzle();
+
+    // Computed wrappers
+    const wrapper = computed<State>({ get: () => store.value[key].state, set: (v) => (store.value[key].state = v) });
+    const wrapper_history = computed({
+      get: () => store.value[key].history,
+      set: (v) => (store.value[key].history = v),
     });
-}
 
-export function useMinesweeperStore(rows: number, cols: number) {
-    return createGameStore<PuzzleMinesweeper>('minesweeper', '5x5', {
-        default_state: () => new Array(rows * cols).fill(MinesweeperCellStates.Unmarked),
-        get_puzzle_state: (puzzle: PuzzleMinesweeper) => {
-            const MINESWEEPER_MAP: Record<string, number> = {
-                "U": 10,
-                "F": 11,
-                "S": 12,
-            }
-            return {
-                rows: puzzle.rows,
-                cols: puzzle.cols,
-                solution_hash: puzzle.solution_hash,
-                board: puzzle.board.split('').map(c => {
-                    const num = parseInt(c)
-                    return isNaN(num) ? MINESWEEPER_MAP[c] : num
-                }),
-            }
-        },
-        get_solution: (puzzle: number[]) => puzzle.map(c => {
-            if (c === MinesweeperCellStates.Unmarked) return 0;
-            if (c === MinesweeperCellStates.Flagged) return 1;
-            if (c === MinesweeperCellStates.Safe) return 2;
-            return c;
-        }).join(''),
-    })();
-}
+    // Refs that are used for this puzzle
+    const game_result_status = ref<GameResultStatus>(GameResultStatus.Idle);
+    const timer = new PuzzleTimer(store.value[key].time_started);
 
-export function useSudokuStore() {
-    return createGameStore<PuzzleMinesweeper>('minesweeper', '5x5', {
-        default_state: () => new Array(9 * 9).fill(0),
-        get_puzzle_state: (puzzle: PuzzleMinesweeper) => {
-            const MINESWEEPER_MAP: Record<string, number> = {
-                "U": 10,
-                "F": 11,
-                "S": 12,
-            }
-            console.log(puzzle)
-            return {
-                rows: puzzle.rows,
-                cols: puzzle.cols,
-                solution_hash: puzzle.solution_hash,
-                board: puzzle.board.split('').map(c => {
-                    const num = parseInt(c)
-                    return isNaN(num) ? MINESWEEPER_MAP[c] : num
-                }),
-            }
-        },
-        get_solution: (puzzle: number[]) => puzzle.map(c => {
-            if (c === MinesweeperCellStates.Unmarked) return 0;
-            if (c === MinesweeperCellStates.Flagged) return 1;
-            if (c === MinesweeperCellStates.Safe) return 2;
-            return c;
-        }).join(''),
-    })();
-}
+    // Watches + Intervals
+    /* reset when the user edits the board */
+    watch(
+      () => wrapper.value,
+      () => {
+        game_result_status.value = GameResultStatus.Idle;
+      },
+      { deep: true },
+    );
 
-// export const useMinesweeperStore = createGameStore('minesweeper', '5x5');
-// export const useSudokuStore = createGameStore('sudoku', '3x3easy')
+    // Create functions relevate to the puzzle
+    function push_event(event_name: string, payload?: any) {
+      wrapper_history.value.push({ ts: Date.now(), type: event_name, payload });
+    }
+    function puzzle_reset() {
+      const fresh = adapter.empty_state(store.value[key].raw);
+      Object.assign(store.value[key].state, fresh);
+      wrapper_history.value = [{ ts: Date.now(), type: "fetch" }];
+    }
+    function puzzle_check_solution() {
+      game_result_status.value = GameResultStatus.Checking;
+      const solved = adapter.validate(wrapper.value, store.value[key].raw);
+
+      if (solved === true) {
+        game_result_status.value = GameResultStatus.Correct;
+        push_event("solved");
+      } else if (solved === false) {
+        game_result_status.value = GameResultStatus.Wrong;
+      } else {
+        game_result_status.value = GameResultStatus.Idle;
+      }
+
+      return solved;
+    }
+    async function puzzle_request_new() {
+      await load_new_puzzle();
+      timer.reset();
+    }
+
+    return {
+      state: wrapper,
+      game_result_status,
+      history: wrapper_history,
+      timer,
+      push_event,
+      reset: puzzle_reset,
+      request_new: puzzle_request_new,
+      check_solution: puzzle_check_solution,
+    };
+  }
+
+  return { usePuzzle };
+});

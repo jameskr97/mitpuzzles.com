@@ -1,91 +1,110 @@
-import { type Ref, ref } from 'vue';
-
+type EmitCallback = (event: string, payload?: any) => void;
+export interface TentsState {
+  rows: number;
+  cols: number;
+  trees: number[];
+  tents: number[];
+  row_counts: number[];
+  col_counts: number[];
+  solution_hash: string;
+}
 
 export class ModelTentsPuzzle {
-    readonly ROWS: number;
-    readonly COLS: number;
+  readonly ROWS: number;
+  readonly COLS: number;
 
-    top_numbers: number[];
-    left_numbers: number[];
-    readonly grid_trees: number[];
-    grid_tents: Ref<number[]>;
+  // Event Tracking
+  private HOVER_TIME_MINIMUM: number = 2000; // ms
+  private hover_enter_time?: number;
 
-    constructor() {
-        this.ROWS = 6;
-        this.COLS = 6;
-        this.top_numbers = [2, 0, 2, 0, 1, 2];
-        this.left_numbers = [1, 1, 1, 2, 0, 2];
-        this.grid_trees = [0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0];
-        this.grid_tents = ref(new Array(this.ROWS * this.COLS).fill(0));
+  constructor(
+    private puzzle: TentsState,
+    private emit: EmitCallback,
+  ) {
+    this.ROWS = puzzle.rows;
+    this.COLS = puzzle.cols;
+  }
+
+  ////////////////////////////////////////////////////////////
+  //// Game Creation + Model Request
+  isCellTree(row: number, col: number) {
+    return this.puzzle.trees[row * this.COLS + col] === 1;
+  }
+  isCellTent(row: number, col: number) {
+    return this.puzzle.tents[row * this.COLS + col] === 1;
+  }
+  getTopNumber(col: number) {
+    return this.puzzle.row_counts[col];
+  }
+  getLeftNumber(row: number) {
+    return this.puzzle.col_counts[row];
+  }
+
+  // return true if the cell is next to a tree horizontally, vertically, or diagonally
+  isCellAdjacentToTent(row: number, col: number) {
+    const neighbors = this.getNeighboringCells(row, col);
+    neighbors.push([row, col]); // include the current cell
+    for (const [r, c] of neighbors) {
+      if (this.puzzle.tents[r * this.COLS + c] === 1) {
+        return true;
+      }
     }
+  }
 
-    ////////////////////////////////////////////////////////////
-    //// Game Creation + Model Request
-    isCellTree = (row: number, col: number) => this.grid_trees[row * this.COLS + col] === 1;
-    isCellTent = (row: number, col: number) => this.grid_tents.value[row * this.COLS + col] === 1;
-    getTopNumber = (col: number) => this.top_numbers[col];
-    getLeftNumber = (row: number) => this.left_numbers[row];
+  getNeighboringCells(row: number, col: number): [number, number][] {
+    const neighbors: [number, number][] = [];
 
-    // return true if the cell is next to a tree horizontally, vertically, or diagonally
-    isCellAdjacentToTent = (row: number, col: number) => {
-        const neighbors = this.getNeighboringCells(row, col);
-        neighbors.push([row, col]); // include the current cell
-        for (const [r, c] of neighbors) {
-            if (this.grid_tents.value[r * this.COLS + c] === 1) {
-                return true;
-            }
-        }
+    // -1 to 1 inclusive so we can just add the offset to the current row/col
+    for (let i = -1; i <= 1; i++) {
+      for (let j = -1; j <= 1; j++) {
+        // Skip the current cell
+        if (i === 0 && j === 0) continue;
+
+        // Calculate the new row and column
+        const newRow = row + i;
+        const newCol = col + j;
+
+        // Skip if out of bounds
+        if (newRow < 0 || newRow >= this.ROWS) continue;
+        if (newCol < 0 || newCol >= this.COLS) continue;
+
+        // Add the neighbor
+        neighbors.push([newRow, newCol]);
+      }
     }
+    return neighbors;
+  }
 
-    getNeighboringCells(row: number, col: number): [number, number][] {
-        const neighbors: [number, number][] = [];
+  ////////////////////////////////////////////////////////////
+  //// Event Handlers
+  onCellMouseEnter(row: number, col: number): void {
+    if (this.isCellTree(row, col)) return;
+    this.hover_enter_time = Date.now();
+  }
 
-        // -1 to 1 inclusive so we can just add the offset to the current row/col
-        for (let i = -1; i <= 1; i++) {
-            for (let j = -1; j <= 1; j++) {
-                // Skip the current cell
-                if (i === 0 && j === 0) continue;
+  onCellMouseLeave(row: number, col: number): void {
+    const time_leave = Date.now();
+    if (this.hover_enter_time === undefined) return;
+    const time_diff = time_leave - this.hover_enter_time;
+    if (time_diff < this.HOVER_TIME_MINIMUM) return;
 
-                // Calculate the new row and column
-                const newRow = row + i;
-                const newCol = col + j;
+    const index = row * this.COLS + col;
+    this.emit("cell-hovered", { index: index, hover_time: time_diff });
+  }
 
-                // Skip if out of bounds
-                if (newRow < 0 || newRow >= this.ROWS) continue;
-                if (newCol < 0 || newCol >= this.COLS) continue;
+  onCellClick(row: number, col: number) {
+    const index = row * this.COLS + col;
+    if (this.puzzle.trees[index] === 1) return;
 
-                // Add the neighbor
-                neighbors.push([newRow, newCol]);
-            }
-        }
-        return neighbors;
+    // if we click on a tent, remove it
+    if (this.puzzle.tents[index] === 1) {
+      this.puzzle.tents[index] = 0;
+      this.emit("cell-changed", { index, has_tent: false });
+      return;
     }
-
-    ////////////////////////////////////////////////////////////
-    //// Event Handlers
-    onCellClick(row: number, col: number) {
-        const index = row * this.COLS + col;
-        if (this.grid_trees[index] === 1) return;
-
-
-        // if we click on a tent, remove it
-        if (this.grid_tents.value[index] === 1) {
-            this.grid_tents.value[index] = 0;
-            return;
-        }
-        // invariant - we are clicking on an empty cell
-        // check if a cell is adjacent to a tree
-        // prevent placing a tent if it's adjacent to a tent
-        console.log('checking')
-        const neighbors = this.getNeighboringCells(row, col);
-        for (const [r, c] of neighbors) {
-            if (this.grid_tents.value[r * this.COLS + c] === 1) {
-                return;
-            }
-        }
-
-        // place the tent
-        this.grid_tents.value[index] = 1;
-
-    }
+    // invariant - we are clicking on an empty cell
+    // place the tent
+    this.puzzle.tents[index] = 1;
+    this.emit("cell-changed", { index, has_tent: true });
+  }
 }

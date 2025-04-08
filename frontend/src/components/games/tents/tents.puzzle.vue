@@ -1,40 +1,51 @@
 <script setup lang="ts">
 import { ModelTentsPuzzle } from "@/components/games/tents/tents.model";
 import GameGrid from "@/components/ui/game/game.grid.vue";
+import { reactive } from "vue";
 
-defineProps<{
+const props = defineProps<{
   scale?: number;
+  state: any;
 }>();
 
-const model = new ModelTentsPuzzle();
+const emits = defineEmits<{
+  (e: "game-event", event_type: string, payload: object): void;
+}>();
+const model = reactive(
+  new ModelTentsPuzzle(props.state, (event: string, payload: object) => {
+    emits("game-event", event, payload);
+  }),
+);
 </script>
 
 <template>
   <GameGrid
-    :rows="6"
-    :cols="6"
+    :rows="model.ROWS"
+    :cols="model.COLS"
     :size="scale"
     class="rounded"
-    grid-class="border-r-0 max-w-fit"
+    grid-class="max-w-fit border-3 rounded"
+    cell-class="border-1"
     @mouse-up="model.onCellClick($event.row, $event.col)"
+    @cell-enter="model.onCellMouseEnter($event.row, $event.col)"
+    @cell-leave="model.onCellMouseLeave($event.row, $event.col)"
   >
-
     <!-- prettier-ignore -->
     <template v-slot:cell="{ row, col }">
-      <div class="w-full h-full border-1" :class="{ 'bg-green-400': model.isCellAdjacentToTent(row, col) }">
+      <div class="w-full h-full">
         <img v-if="model.isCellTent(row, col)" src="/assets/tents/tent.svg" alt="Tent" class="w-full h-full rounded-sm" />
         <img v-else-if="model.isCellTree(row, col)" src="/assets/tents/tree.svg" alt="Tree" class="w-full h-full rounded-sm" />
       </div>
     </template>
 
-  <template v-slot:top="{ col }">
+    <template v-slot:top="{ col }">
       <div class="text-center font-bold w-full">
         {{ model.getTopNumber(col) }}
       </div>
     </template>
 
-    <template v-slot:left="{ row, size }">
-      <div class="grid font-bold text-end align-middle" >
+    <template v-slot:left="{ row }">
+      <div class="grid h-full font-bold text-end items-center justify-center">
         {{ model.getLeftNumber(row) }}
       </div>
     </template>

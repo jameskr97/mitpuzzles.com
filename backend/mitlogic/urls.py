@@ -53,7 +53,9 @@ urlpatterns = [
 
     # api endpoints
     path('api/puzzle/random', views.get_random_puzzle),
-    path('api/puzzle/submit', views.post_game_recording),
+    path('api/puzzle/random/minesweeper', views.get_random_puzzle_ms),
+    path('api/puzzle/random/sudoku', views.get_random_puzzle_sudoku),
+    # path('api/puzzle/submit', views.post_game_recording),
     path('api/config/game-settings', views.game_settings_view),
 
     # redirect static files (*.css, *.js, *.jpg etc.) served on root ("/") to the static directory ("/static/")

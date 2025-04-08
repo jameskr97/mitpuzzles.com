@@ -5,8 +5,9 @@ import { reactive } from "vue";
 
 ////////////////////////////////////////////////////////////////////////////////
 // Props + Events
-defineProps<{
+const props = defineProps<{
   scale?: number;
+  state: any;
 }>();
 
 const emits = defineEmits<{
@@ -14,9 +15,9 @@ const emits = defineEmits<{
 }>();
 
 const model = reactive<ModelMinesweeperPuzzle>(
-  new ModelMinesweeperPuzzle((event: string, payload: object) => {
+  new ModelMinesweeperPuzzle(props.state, (event: string, payload: object) => {
     emits("game-event", event, payload);
-  })
+  }),
 );
 </script>
 

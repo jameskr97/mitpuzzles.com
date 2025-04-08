@@ -22,111 +22,135 @@
  *
  */
 
-import { type Ref, ref } from 'vue';
+type EmitCallback = (event: string, payload?: any) => void;
+export interface SudokuState {
+  rows: number;
+  cols: number;
+  /** The base grid of the sudoku board that will remain unmodified */
+  base_grid: number[];
+  /** The grid of the sudoku board which the user entered */
+  user_grid: number[];
+}
+
 export class ModelSudokuPuzzle {
-    readonly ROWS: number = 9;
-    readonly COLS: number = 9;
-    private VALID_SUBDIVISION: Set<number> = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  readonly ROWS: number = 9;
+  readonly COLS: number = 9;
+  private VALID_SUBDIVISION: Set<number> = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9]);
 
-    active_cell: Ref<[number, number] | null>;
-    base_grid: Ref<number[]>; // 9x9 grid
-    user_grid: Ref<number[]>; // 9x9 grid
+  active_cell: [number, number] | null;
 
+  constructor(
+    private puzzle: SudokuState,
+    private emit: EmitCallback,
+  ) {
+    this.active_cell = null;
+  }
 
-    constructor() {
-        this.base_grid = ref(this.createGrid());
-        this.user_grid = ref(new Array(this.ROWS * this.COLS).fill(0));
-        this.active_cell = ref(null);
+  ////////////////////////////////////////////////////////////
+  //// Game Creation + Model Request
+  canModifyCell(row: number, col: number) {
+    return this.puzzle.base_grid[row * this.COLS + col] === 0;
+  }
+
+  isSquareSelected(row: number, col: number) {
+    if (this.active_cell === null) return false;
+    const [active_row, active_col] = this.active_cell;
+    return Math.floor(active_row / 3) === Math.floor(row / 3) && Math.floor(active_col / 3) === Math.floor(col / 3);
+  }
+
+  isRowSelected(row: number) {
+    this.active_cell && this.active_cell[0] === row;
+  }
+  isColSelected(col: number) {
+    this.active_cell && this.active_cell[1] === col;
+  }
+  isCellActive(row: number, col: number) {
+    return this.active_cell && this.active_cell[0] === row && this.active_cell[1] === col;
+  }
+
+  getCellDisplay(row: number, col: number) {
+    const index = row * this.COLS + col;
+    if (this.puzzle.base_grid[index] !== 0) return this.puzzle.base_grid[index];
+
+    const user_value = this.puzzle.user_grid[index];
+    return user_value === 0 ? " " : user_value;
+  }
+
+  ////////////////////////////////////////////////////////////
+  //// Grid Subdivision
+  getRow(row: number) {
+    return this.puzzle.base_grid.slice(row * this.COLS, row * this.COLS + this.COLS);
+  }
+  getCol(col: number) {
+    return this.puzzle.base_grid.filter((_, i) => i % this.COLS === col);
+  }
+  getSquare(row: number, col: number) {
+    const startRow = Math.floor(row / 3) * 3;
+    const startCol = Math.floor(col / 3) * 3;
+    const square = [];
+    for (let i = startRow; i < startRow + 3; i++) {
+      for (let j = startCol; j < startCol + 3; j++) {
+        square.push(this.puzzle.base_grid[i * this.COLS + j]);
+      }
+    }
+    return square;
+  }
+
+  ////////////////////////////////////////////////////////////
+  //// Game Logic
+  isSubdivisionUnique(subdivision: number[]): boolean {
+    return new Set(subdivision).size === subdivision.length;
+  }
+  isGridValid(): boolean {
+    for (let i = 0; i < this.ROWS; i++) {
+      const row = this.getRow(i);
+      const col = this.getCol(i);
+      const square = this.getSquare(Math.floor(i / 3) * 3, (i % 3) * 3);
+      if (!this.isSubdivisionUnique(row) || !this.isSubdivisionUnique(col) || !this.isSubdivisionUnique(square)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  ////////////////////////////////////////////////////////////
+  //// Event Handlers
+  onCellClick(row: number, col: number, event: any) {
+    if (!this.canModifyCell(row, col)) return; // Do nothing if cell is not modifiable
+
+    if (this.isCellActive(row, col)) {
+      this.active_cell = null;
+      event.srcElement.blur();
+
+      return;
+    }
+    this.active_cell = [row, col];
+    this.emit("cell-selected", { index: row * this.COLS + col });
+  }
+
+  onCellKeyDown(row: number, col: number, event: any) {
+    if (this.active_cell === null) return; // Do nothing if no cell is active
+    if (!this.canModifyCell(row, col)) return; // Do nothing if cell is not modifiable
+
+    // If user preses escape, clear the active cell, and blur (unfocus) the currently focused cell
+    if (event.key === "Escape") {
+      this.active_cell = null;
+      this.emit("cell-unselected", { index: row * this.COLS + col });
+      event.srcElement.blur();
+      return;
     }
 
-    ////////////////////////////////////////////////////////////
-    //// Game Creation + Model Request
-    createGrid() {
-        const b1 = JSON.parse("[1,2,3,0,5,6,7,8,0,4,5,6,7,8,9,1,2,0,7,8,9,1,2,3,4,5,6,2,1,4,0,0,5,0,9,7,3,6,5,0,9,7,2,1,4,8,9,7,2,1,4,3,6,0,5,3,1,6,4,2,9,7,8,6,4,2,9,7,8,5,3,1,9,7,0,5,3,1,6,4,2]");
-        const b2 = JSON.parse("[1,0,3,4,5,6,7,0,9,4,5,6,7,0,9,1,2,0,7,8,9,1,0,3,4,5,6,2,0,4,3,6,0,8,9,7,3,6,5,8,9,0,2,1,4,8,9,7,0,1,4,0,6,5,0,0,1,6,0,0,9,7,8,6,4,2,9,7,8,5,3,1,0,7,8,5,0,0,6,0,2]");
-        const b3 = JSON.parse("[1,2,0,0,0,6,0,8,9,4,0,6,0,8,0,0,2,3,0,8,9,1,2,3,0,5,6,2,1,0,3,6,0,8,9,0,0,6,0,0,0,7,2,0,4,8,9,0,2,1,4,3,6,5,5,3,1,0,0,2,9,7,8,6,0,2,9,0,8,5,3,1,0,7,0,5,3,0,0,4,2]");
-        const b4 = JSON.parse("[0,0,0,4,5,6,7,0,0,4,5,0,0,8,0,1,2,3,0,8,9,0,2,3,4,0,6,2,1,4,3,0,0,8,9,7,3,0,0,0,9,7,2,1,4,0,0,0,0,1,4,3,6,5,5,0,1,0,0,2,0,7,0,0,0,2,9,0,8,0,0,0,9,7,0,5,3,0,0,0,0]");
-        const b5 = JSON.parse("[1,0,0,0,0,0,7,8,9,4,0,0,7,0,9,0,2,3,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,5,0,0,0,0,0,4,8,0,0,0,0,0,3,6,5,5,0,1,6,4,2,9,7,8,6,4,2,0,0,8,5,3,0,9,0,8,5,3,0,0,4,0]");
-        const b6 = JSON.parse("[1,0,0,0,5,0,7,0,0,0,0,0,0,0,0,0,0,0,7,0,0,0,0,0,4,0,6,0,1,4,3,6,5,0,0,7,0,0,5,8,0,7,2,1,4,0,9,0,0,0,0,0,0,5,0,3,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,1,9,0,0,0,3,0,6,4,0]");
-        return b2;
+    if (event.key === "Backspace") {
+      this.puzzle.user_grid[row * this.COLS + col] = 0;
+      this.emit("cell-cleared", { index: row * this.COLS + col });
+      return;
     }
 
-    canModifyCell = (row: number, col: number) => this.base_grid.value[row * this.COLS + col] === 0;
-
-    isSquareSelected = (row: number, col: number) => {
-        if (this.active_cell.value === null) return false;
-        const [active_row, active_col] = this.active_cell.value;
-        return Math.floor(active_row / 3) === Math.floor(row / 3) && Math.floor(active_col / 3) === Math.floor(col / 3);
+    // If user presses a number key, fill the active cell with that number
+    const number = parseInt(event.key);
+    if (1 <= number && number <= 9) {
+      this.puzzle.user_grid[row * this.COLS + col] = number;
+      this.emit("cell-number-changed", { index: row * this.COLS + col, number });
     }
-
-    isRowSelected = (row: number) => this.active_cell.value && this.active_cell.value[0] === row;
-    isColSelected = (col: number) => this.active_cell.value && this.active_cell.value[1] === col;
-
-    isCellActive = (row: number, col: number) => this.active_cell.value && this.active_cell.value[0] === row && this.active_cell.value[1] === col;
-    getCellDisplay(row: number, col: number) {
-        const index = row * this.COLS + col;
-        if (this.base_grid.value[index] !== 0)
-            return this.base_grid.value[index];
-
-        const user_value = this.user_grid.value[index];
-        return user_value === 0 ? ' ' : user_value;
-    }
-
-    ////////////////////////////////////////////////////////////
-    //// Grid Subdivision
-    getRow = (row: number) => this.base_grid.value.slice(row * this.COLS, row * this.COLS + this.COLS);
-    getCol = (col: number) => this.base_grid.value.filter((_, i) => i % this.COLS === col);
-    getSquare = (row: number, col: number) => {
-        const startRow = Math.floor(row / 3) * 3;
-        const startCol = Math.floor(col / 3) * 3;
-        const square = [];
-        for (let i = startRow; i < startRow + 3; i++) {
-            for (let j = startCol; j < startCol + 3; j++) {
-                square.push(this.base_grid.value[i * this.COLS + j]);
-            }
-        }
-        return square;
-    }
-
-    ////////////////////////////////////////////////////////////
-    //// Game Logic
-    isSubdivisionUnique = (subdivision: number[]): boolean => new Set(subdivision).size === subdivision.length;
-
-    ////////////////////////////////////////////////////////////
-    //// Event Handlers
-    onCellClick(row: number, col: number, event: any) {
-        if(!this.canModifyCell(row, col)) return; // Do nothing if cell is not modifiable
-
-        if (this.isCellActive(row, col)) {
-            this.active_cell.value = null;
-            event.srcElement.blur();
-
-            return;
-        }
-        this.active_cell.value = [row, col];
-    }
-
-    onCellKeyDown(row: number, col: number, event: any) {
-        if(this.active_cell.value === null) return; // Do nothing if no cell is active
-        if(!this.canModifyCell(row, col)) return; // Do nothing if cell is not modifiable
-
-        // If user preses escape, clear the active cell, and blur (unfocus) the currently focused cell
-        if (event.key === 'Escape'){
-            this.active_cell.value = null;
-            event.srcElement.blur();
-            return;
-        }
-
-        if (event.key === 'Backspace') {
-            this.user_grid.value[row * this.COLS + col] = 0;
-            return;
-        }
-
-        // If user presses a number key, fill the active cell with that number
-        const number = parseInt(event.key);
-        if (1 <= number && number <= 9) {
-            this.user_grid.value[row * this.COLS + col] = number;
-        }
-    }
-
+  }
 }
