@@ -1,63 +1,66 @@
-
-import { ref, type Ref } from 'vue';
+import { ref, type Ref } from "vue";
 
 export enum KakurasuCellStates {
-    Empty = 0,
-    Filled,
-    Crossed,
-    NUM_STATES
+  Empty = 0,
+  Filled,
+  Crossed,
+  NUM_STATES,
 }
 
+export interface KakurasuState {
+  cols: number;
+  rows: number;
+  col_sum: number[];
+  row_sum: number[];
+  cell_black: number[];
+}
+
+type EmitCallback = (event: string, payload?: any) => void;
 export class ModelKakurasuPuzzle {
-    readonly ROWS: number;
-    readonly COLS: number;
+  readonly ROWS: number;
+  readonly COLS: number;
 
-    readonly hintRow: number[];
-    readonly hintCol: number[];
-    gamestate: Ref<number[]>; // 0: empty, 1: filled, 2: crossed
+  constructor(
+    public store: KakurasuState,
+    private emit: EmitCallback,
+  ) {
+    this.ROWS = store.rows;
+    this.COLS = store.cols;
+  }
 
-    constructor() {
-        this.ROWS = 4;
-        this.COLS = 4;
-        this.hintRow = [4, 6, 4, 9]
-        this.hintCol = [5, 6, 9, 5]
-        this.gamestate = ref(Array(this.ROWS * this.COLS).fill(0));
+  getCellState(row: number, col: number): number {
+    return this.store.cell_black[row * this.COLS + col];
+  }
+
+  getRowSum(row: number): number {
+    let sum = 0;
+    for (let i = 0; i < this.COLS; i++) {
+      if (this.getCellState(row, i) === KakurasuCellStates.Filled) {
+        sum += i + 1;
+      }
     }
+    return sum;
+  }
 
-    getCellState(row: number, col: number): number {
-        return this.gamestate.value[row * this.COLS + col];
+  getColSum(col: number): number {
+    let sum = 0;
+    for (let i = 0; i < this.ROWS; i++) {
+      if (this.getCellState(i, col) === KakurasuCellStates.Filled) {
+        sum += i + 1;
+      }
     }
+    return sum;
+  }
 
-    getRowSum(row: number): number {
-        let sum = 0;
-        for (let i = 0; i < this.COLS; i++) {
-            if (this.getCellState(row, i) === KakurasuCellStates.Filled) {
-                sum += i + 1;
-            }
-        }
-        return sum;
+  onCellClick(row: number, col: number, event: MouseEvent): void {
+    const index = row * this.COLS + col;
+    const state = this.store.cell_black[index];
+
+    // go backwards if right click
+    if (event.button === 2) {
+      this.store.cell_black[index] = (state + KakurasuCellStates.NUM_STATES - 1) % KakurasuCellStates.NUM_STATES;
+    } else {
+      this.store.cell_black[index] = (state + 1) % KakurasuCellStates.NUM_STATES;
     }
-
-    getColSum(col: number): number {
-        let sum = 0;
-        for (let i = 0; i < this.ROWS; i++) {
-            if (this.getCellState(i, col) === KakurasuCellStates.Filled) {
-                sum += i + 1;
-            }
-        }
-        return sum;
-    }
-
-
-    onCellClick(row: number, col: number, event: MouseEvent): void {
-        const index = row * this.COLS + col;
-        const state = this.gamestate.value[index];
-
-        // go backwards if right click
-        if (event.button === 2) {
-            this.gamestate.value[index] = (state + KakurasuCellStates.NUM_STATES - 1) % KakurasuCellStates.NUM_STATES;
-        } else {
-            this.gamestate.value[index] = (state + 1) % KakurasuCellStates.NUM_STATES;
-        }
-    }
+  }
 }

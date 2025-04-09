@@ -1,58 +1,64 @@
 <script setup lang="ts">
-import { KakurasuCellStates, ModelKakurasuPuzzle } from '@/features/games/kakurasu/kakurasu.model';
-import GameGrid from '@/components/game/game.grid.vue';
-defineProps({
-  scale: { type: Number, required: false },
+import { KakurasuCellStates, ModelKakurasuPuzzle } from "@/features/games/kakurasu/kakurasu.model";
+import GameGrid from "@/components/game/game.grid.vue";
+
+const props = defineProps<{
+  scale?: number;
+  state: any;
+}>();
+
+const emits = defineEmits<{
+  (e: "game-event", event_type: string, payload: object): void;
+}>();
+
+const model = new ModelKakurasuPuzzle(props.state, (event: string, payload: object) => {
+  emits("game-event", event, payload);
 });
-
-const model = new ModelKakurasuPuzzle();
+//
 </script>
-
 <template>
   <GameGrid
     :rows="model.ROWS"
     :cols="model.COLS"
-    :size="scale"
-    grid-class="border-5"
-    cell-class="border-1"
-    @mouse-up="model.onCellClick($event.row, $event.col, $event.input_event)"
+    :scale="scale"
+    :cell-size="12"
+    class-game-cell="border-black"
+    @cell-click="model.onCellClick($event.row, $event.col, $event.input_event)"
+    @cell-right-click="model.onCellClick($event.row, $event.col, $event.input_event)"
   >
     <template v-slot:cell="{ row, col }">
-        <div v-if="model.getCellState(row, col) === KakurasuCellStates.Filled" class="h-full flex items-center justify-center">
-            <div class="bg-black h-11/12 w-11/12"></div>
-        </div>
-
-        <div v-if="model.getCellState(row, col) === KakurasuCellStates.Crossed" class="h-full flex items-center justify-center">
-            <div class="bg-[url(/assets/kakurasu/cross.svg)] bg-contain h-[50%] w-[50%]"></div>
-        </div>
+      <div
+        v-if="model.getCellState(row, col) === KakurasuCellStates.Filled"
+        class="border-1 bg-black border-white h-full w-full"
+      ></div>
+      <div
+        v-if="model.getCellState(row, col) === KakurasuCellStates.Crossed"
+        class="bg-[url(/assets/kakurasu/cross.svg)] bg-contain w-full h-full"
+      ></div>
     </template>
 
-    <template v-slot:top="{ col, size }">
-        <span
-            :style="{ fontSize: size / 2 + 'rem' }"
-            class="h-full text-gray-500 grid place-items-center align-middle"
-        >{{ col + 1 }}</span>
+    <template v-slot:top="props">
+      <div class="flex justify-center items-center text-gray-400">
+        {{ props.col + 1 }}
+      </div>
     </template>
 
-    <template v-slot:left="{ row, size }">
-        <span
-            :style="{ fontSize: size / 2 + 'rem' }"
-            class="h-full text-gray-500 grid place-items-center align-middle"
-        >{{ row + 1 }}</span>
+    <template v-slot:left="props">
+      <div class="flex justify-center items-center text-gray-400">
+        {{ props.row + 1 }}
+      </div>
     </template>
 
-    <template v-slot:bottom="{ col, size }">
-        <span
-            :style="{ fontSize: size + 'rem' }"
-            class="h-full grid place-items-center align-middle"
-        >{{ model.hintCol[col] }}</span>
+    <template v-slot:right="props">
+      <div class="grid place-items-center text-blue-500">
+        {{ model.store.row_sum[props.row] }}
+      </div>
     </template>
 
-    <template v-slot:right="{ row, size }">
-        <span
-            :style="{ fontSize: size + 'rem' }"
-            class="h-full grid place-items-center align-middle"
-        >{{ model.hintRow[row] }}</span>
+    <template v-slot:bottom="props">
+      <div class="grid place-items-center text-blue-500">
+        {{ model.store.col_sum[props.row] }}
+      </div>
     </template>
   </GameGrid>
 </template>

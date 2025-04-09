@@ -1,79 +1,14 @@
 import { getRandomPuzzle } from "@/services/app";
-import { format_game_stopwatch } from "@/services/util";
+import { PuzzleTimer } from "@/services/puzzle.timer";
 import { useLocalStorage } from "@vueuse/core";
 import { defineStore } from "pinia";
-import { computed, ref, watch, type Ref, type ComputedRef } from "vue";
+import { computed, ref, watch } from "vue";
 
 export const enum GameResultStatus {
   Idle = "idle",
   Checking = "checking",
   Correct = "correct",
   Wrong = "wrong",
-}
-
-export class PuzzleTimer {
-  private intervalId: number | null = null;
-
-  private time_started: Ref<number>;
-  private time_completed: Ref<number | undefined>;
-  time_elapsed: Ref<number>;
-  display_time: ComputedRef<string>;
-
-  constructor(time_started: number, time_completed?: number) {
-    this.intervalId = null;
-    this.time_started = ref(time_started);
-    this.time_completed = ref(time_completed);
-    this.time_elapsed = ref(0);
-    this.display_time = computed(() => format_game_stopwatch(this.time_elapsed.value));
-
-    this.updateScreenTime();
-    watch(
-      [this.time_started, this.time_completed],
-      () => {
-        if (this.time_completed.value === undefined) {
-          this.updateScreenTime();
-          if (this.intervalId === null) {
-            this.intervalId = setInterval(this.updateScreenTime, 1000);
-          }
-        } else {
-          if (this.intervalId !== null) {
-            clearInterval(this.intervalId);
-            this.intervalId = null;
-          }
-          this.updateScreenTime();
-        }
-      },
-      { immediate: true },
-    );
-  }
-
-  protected complete() {
-    if (this.time_completed.value === null) {
-      this.time_completed.value = Date.now();
-    }
-
-    this.updateScreenTime();
-    if (this.intervalId !== null) {
-      clearInterval(this.intervalId);
-      this.intervalId = null;
-    }
-  }
-
-  reset() {
-    this.time_started.value = Date.now();
-    this.time_completed.value = undefined;
-    this.time_elapsed.value = 0;
-  }
-
-  updateScreenTime = () => {
-    if (this.time_completed.value !== undefined) {
-      this.time_elapsed.value = this.time_completed.value - this.time_started.value;
-    } else {
-      this.time_elapsed.value = Date.now() - this.time_started.value;
-    }
-  };
-
-  protected stop() {}
 }
 
 /**
@@ -135,6 +70,7 @@ export const usePuzzleStore = defineStore("mitlogic.puzzles", () => {
     /** Request a new puzzle from the backend, and update existing store, or create new. */
     async function load_new_puzzle() {
       const raw = await getRandomPuzzle(game_type);
+      console.log(`NEW GAME FOR ${game_type}`, raw);
       const time_received = Date.now();
 
       // Don't have data stored. Store new!
@@ -166,9 +102,23 @@ export const usePuzzleStore = defineStore("mitlogic.puzzles", () => {
       set: (v) => (store.value[key].history = v),
     });
 
+    const time_started = computed({
+      get: () => store.value[key].time_started,
+      set: (val: number) => (store.value[key].time_started = val),
+    });
+    const time_completed = computed({
+      get: () => store.value[key].time_completed,
+      set: (val: number | undefined) => (store.value[key].time_completed = val),
+    });
+
+    // Computed variables for easy referencing of other values (probably not to be exported)
+    const is_solved = computed(() => time_completed.value !== undefined);
+
     // Refs that are used for this puzzle
-    const game_result_status = ref<GameResultStatus>(GameResultStatus.Idle);
-    const timer = new PuzzleTimer(store.value[key].time_started);
+    const game_result_status = ref<GameResultStatus>(
+      is_solved.value ? GameResultStatus.Correct : GameResultStatus.Idle,
+    );
+    const timer = new PuzzleTimer(time_started, time_completed);
 
     // Watches + Intervals
     /* reset when the user edits the board */
@@ -179,22 +129,31 @@ export const usePuzzleStore = defineStore("mitlogic.puzzles", () => {
       },
       { deep: true },
     );
+    watch(is_solved, (solved) => {
+      if (solved && game_result_status.value !== GameResultStatus.Correct) {
+        game_result_status.value = GameResultStatus.Correct;
+      } else if (!solved && game_result_status.value === GameResultStatus.Correct) {
+        game_result_status.value = GameResultStatus.Idle;
+      }
+    });
 
     // Create functions relevate to the puzzle
     function push_event(event_name: string, payload?: any) {
       wrapper_history.value.push({ ts: Date.now(), type: event_name, payload });
     }
     function puzzle_reset() {
+      if (is_solved.value) return;
       const fresh = adapter.empty_state(store.value[key].raw);
       Object.assign(store.value[key].state, fresh);
       wrapper_history.value = [{ ts: Date.now(), type: "fetch" }];
     }
-    function puzzle_check_solution() {
-      game_result_status.value = GameResultStatus.Checking;
-      const solved = adapter.validate(wrapper.value, store.value[key].raw);
 
+    async function puzzle_check_solution() {
+      game_result_status.value = GameResultStatus.Checking;
+      const solved = await adapter.validate(wrapper.value, store.value[key].raw);
       if (solved === true) {
         game_result_status.value = GameResultStatus.Correct;
+        timer.complete();
         push_event("solved");
       } else if (solved === false) {
         game_result_status.value = GameResultStatus.Wrong;
@@ -218,6 +177,7 @@ export const usePuzzleStore = defineStore("mitlogic.puzzles", () => {
       reset: puzzle_reset,
       request_new: puzzle_request_new,
       check_solution: puzzle_check_solution,
+      is_solved,
     };
   }
 

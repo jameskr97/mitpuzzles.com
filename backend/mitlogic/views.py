@@ -17,22 +17,27 @@ def get_random_puzzle(request):
         return Response(query.errors, status=400)
     puzzle_type = query.validated_data["puzzle_type"]
     variant = query.validated_data["variant"]
-    if puzzle_type == "sudoku":
-        res = models.Puzzles.objects.filter(puzzle_type="sudoku").order_by("?").first()
-        serialized = serializers.PuzzleSudokuSerializer(res)
-    elif puzzle_type == "minesweeper":
-        res = models.Puzzles.objects.filter(puzzle_type="minesweeper").order_by("?").first()
-        serialized = serializers.PuzzleMinesweeperSerializer(res)
-    elif puzzle_type == "tents":
-        res = models.Puzzles.objects.filter(puzzle_type="tents").order_by("?").first()
-        serialized = serializers.PuzzleTentsSerializer(res)
-    else:
-        return Response({"error": "Invalid puzzle type"}, status=400)
 
+    res = models.Puzzles.objects.filter(puzzle_type=puzzle_type).order_by("?").first()
     if res is None:
         return Response({"error": "No puzzles found"}, status=404)
 
-    return Response(serialized.data)
+    serializers_map = {
+        "sudoku": serializers.PuzzleSudokuSerializer,
+        "minesweeper": serializers.PuzzleMinesweeperSerializer,
+        "tents": serializers.PuzzleTentsSerializer,
+        "kakurasu": serializers.PuzzleKakurasuSerializer,
+        "lightup": serializers.PuzzleLightupSerializer,
+    }
+
+    serializer_class = serializers_map.get(
+        puzzle_type, lambda _: Response({"error": "Invalid puzzle type"}, status=400)
+    )
+    serializer = serializer_class(res)
+    if isinstance(serializer, Response):
+        return serializer
+
+    return Response(serializer.data)
 
 
 @api_view(["GET"])

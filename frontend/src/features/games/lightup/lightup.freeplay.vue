@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import GameLayout from "@/components/layout/game.layout.vue";
 import { useCurrentPuzzle } from "@/composables";
-import Kakurasu from "@/features/games/kakurasu/kakurasu.puzzle.vue";
+import Lightup from "@/features/games/lightup/lightup.puzzle.vue";
 
 const { state, push_event } = await useCurrentPuzzle();
 </script>
@@ -16,7 +16,7 @@ const { state, push_event } = await useCurrentPuzzle();
     </template>
 
     <template v-slot:default="props">
-      <Kakurasu :scale="props.scale" :state="state" />
+      <Lightup :scale="props.scale" :state="state" />
     </template>
   </GameLayout>
 </template>

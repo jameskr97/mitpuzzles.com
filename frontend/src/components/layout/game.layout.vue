@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useCurrentPuzzle, useGameLayout } from "@/composables";
 import { getGameScale } from "@/store/scale";
+import { GameResultStatus } from "@/store/game";
 
 const layout = useGameLayout();
 const { scale, scale_remapped } = getGameScale();
@@ -38,9 +39,11 @@ const puzzle = await useCurrentPuzzle();
 
             <!-- Buttons -->
             <div class="grid grid-cols-3 w-full gap-1">
-              <button class="btn btn-error" @click="puzzle.reset">Clear</button>
-              <button class="btn btn-success" @click="puzzle.check_solution">Submit</button>
+              <button class="btn btn-error" @click="puzzle.reset" :disabled="puzzle.is_solved.value">Clear</button>
               <button class="btn btn-info" @click="puzzle.request_new">New Puzzle</button>
+              <button class="btn btn-success" @click="puzzle.check_solution" :disabled="puzzle.is_solved.value">
+                Submit
+              </button>
             </div>
           </div>
         </div>
@@ -48,41 +51,65 @@ const puzzle = await useCurrentPuzzle();
         <!-- Divider between control bar and game content -->
         <div class="divider divider-vertical my-2"></div>
 
-        <div class="grid gap-2 md:gap-0 md:grid-cols-[1fr_2fr_1fr] h-full">
+        <div class="grid gap-2 md:gap-0 md:grid-cols-[1fr_2fr_1fr] h-full items-start">
           <!-- The GameContent itself -->
           <div
-            class="order-first md:order-1 grid grid-cols-1 place-items-center mb-2"
+            class="z-100 order-first md:order-1 grid grid-cols-1 place-items-center mb-2 mx-2"
             :class="layout.instructions_visible.value ? '' : 'md:col-start-2'"
           >
-            <slot name="default" :scale="scale_remapped"></slot>
+            <div class="w-full mb-2">
+              <div :class="{ hidden: puzzle.game_result_status.value !== GameResultStatus.Correct }">
+                <div role="alert" class="alert alert-success flex flex-row justify-start">
+                  <v-icon name="fa-check-circle" scale="1.5" />
+                  <span>Your solution is correct</span>
+                  <button class="btn btn-outline ml-auto" @click="puzzle.request_new">New puzzle</button>
+                </div>
+              </div>
+
+              <div :class="{ hidden: puzzle.game_result_status.value !== GameResultStatus.Wrong }">
+                <div role="alert" class="alert alert-error flex flex-row">
+                  <v-icon name="io-close" scale="1.5" />
+                  <span>Not quite!</span>
+                </div>
+              </div>
+            </div>
+
+            <div
+              class="select-none"
+              :class="puzzle.game_result_status.value === GameResultStatus.Correct ? 'pointer-events-none' : ''"
+            >
+              <slot name="default" :scale="scale_remapped"></slot>
+            </div>
           </div>
 
           <!-- Game Instructions root container -->
-          <div
-            class="order-1 md:order-first border-2 border-yellow-300 shadow rounded p-2"
-            :class="{
-              hidden: !layout.instructions_visible.value,
-            }"
-          >
-            <div class="flex flex-col md:w-full">
-              <div class="flex flex-row align-middle justify-between">
-                <p class="text-xl text-center md:text-left">Game Instructions</p>
-                <v-icon
-                  class="mt-1 cursor-pointer"
-                  name="io-close"
-                  @click="layout.instructions_visible.value = false"
-                />
+          <div class="z-100 bg-white flex flex-col gap-2 order-1 md:order-first">
+            <div
+              class="border-2 border-yellow-300 shadow rounded p-2"
+              :class="{
+                hidden: !layout.instructions_visible.value,
+              }"
+            >
+              <div class="flex flex-col md:w-full">
+                <div class="flex flex-row align-middle justify-between">
+                  <p class="text-xl text-center md:text-left">Game Instructions</p>
+                  <v-icon
+                    class="mt-1 cursor-pointer"
+                    name="io-close"
+                    @click="layout.instructions_visible.value = false"
+                  />
+                </div>
+                <div class="divider divider-vertical p-0 m-0"></div>
+                <ul class="list-inside list-decimal text-xs">
+                  <slot name="instructions"></slot>
+                </ul>
               </div>
-              <div class="divider divider-vertical p-0 m-0"></div>
-              <ul class="list-inside list-decimal text-xs">
-                <slot name="instructions"></slot>
-              </ul>
             </div>
           </div>
 
           <!-- Leaderboard container -->
           <div
-            class="order-last border-2 border-yellow-300 shadow rounded p-2 w-full"
+            class="z-100 bg-white order-last border-2 border-yellow-300 shadow rounded p-2 w-full"
             :class="{
               hidden: !layout.leaderboard_visible.value,
             }"

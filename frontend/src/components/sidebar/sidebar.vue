@@ -17,7 +17,7 @@ auth.updateStore();
       </router-link>
       <div class="divider m-0"></div>
       <div class="p-2">
-        <router-link v-for="game in ACTIVE_GAMES" :key="game.key" :to="{ name: 'game-' + game.key }">
+        <router-link v-for="game in Object.values(ACTIVE_GAMES)" :key="game.key" :to="{ name: 'game-' + game.key }">
           <li class="m-0">
             <a href="#">
               {{ game.name }}

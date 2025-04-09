@@ -12,7 +12,7 @@ function on_game_event(event_type: string, payload: object) {
 
 <template>
   <div>
-    <p class="text-center text-2xl">Sudoku</p>
+    <p class="text-center text-2xl">Tents</p>
     <div class="divider m-0"></div>
     <GameLayout>
       <template #instructions>

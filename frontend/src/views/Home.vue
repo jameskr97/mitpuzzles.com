@@ -2,6 +2,7 @@
 import PuzzleMinesweeeper from "@/features/games/minesweeper/minesweeper.puzzle.vue";
 import PuzzleSudoku from "@/features/games/sudoku/sudoku.puzzle.vue";
 import PuzzleTents from "@/features/games/tents/tents.puzzle.vue";
+import PuzzleKakurasu from "@/features/games/kakurasu/kakurasu.puzzle.vue";
 import { useAppConfig } from "@/store/config";
 import { usePuzzleStore } from "@/store/game";
 import * as adapter from "@/store/adapters";
@@ -35,6 +36,7 @@ const { state: state_minesweeper } = await usePuzzleStore().usePuzzle(
 );
 const { state: state_sudoku } = await usePuzzleStore().usePuzzle("sudoku", "default", adapter.sudokuAdapter);
 const { state: state_tents } = await usePuzzleStore().usePuzzle("tents", "default", adapter.tentsAdapter);
+const { state: state_kakurasu } = await usePuzzleStore().usePuzzle("kakurasu", "default", adapter.kakurasuAdapter);
 </script>
 
 <template>
@@ -64,7 +66,6 @@ const { state: state_tents } = await usePuzzleStore().usePuzzle("tents", "defaul
     inventore consequatur non? Aspernatur quos sed culpa, quia animi corrupti qui in tempore delectus voluptatibus
     necessitatibus quod provident voluptates sit!
   </p>
-  <p>Writen by</p>
   <div class="divider my-0"></div>
   <div class="grid grid-cols-2 md:grid-cols-3 gap-2 items-end md:mx-10 p-1">
     <HomeGamebox title="Minesweeper" url="/minesweeper">
@@ -77,6 +78,10 @@ const { state: state_tents } = await usePuzzleStore().usePuzzle("tents", "defaul
 
     <HomeGamebox title="Tents" url="/tents">
       <PuzzleTents :state="state_tents" />
+    </HomeGamebox>
+
+    <HomeGamebox title="Kakurasu" url="/kakurasu">
+      <PuzzleKakurasu :state="state_kakurasu" />
     </HomeGamebox>
   </div>
 </template>

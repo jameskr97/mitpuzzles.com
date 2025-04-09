@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import GameLayout from "@/components/layout/game.layout.vue";
 import MinesweeperPuzzle from "@/features/games/minesweeper/minesweeper.puzzle.vue";
-import { ref } from "vue";
 import { useCurrentPuzzle } from "@/composables";
 
 const { state, push_event } = await useCurrentPuzzle();
@@ -50,7 +49,7 @@ function on_game_event(event_type: string, payload: object) {
       </template>
 
       <template v-slot:default="props">
-        <MinesweeperPuzzle :state="state" :scale="props.scale" @game-event="on_game_event" />
+        <MinesweeperPuzzle :scale="props.scale" :state="state" @game-event="on_game_event" />
       </template>
     </GameLayout>
   </div>

@@ -11,6 +11,7 @@ const props = defineProps<{
 const emits = defineEmits<{
   (e: "game-event", event_type: string, payload: object): void;
 }>();
+
 const model = reactive(
   new ModelTentsPuzzle(props.state, (event: string, payload: object) => {
     emits("game-event", event, payload);
@@ -22,10 +23,8 @@ const model = reactive(
   <GameGrid
     :rows="model.ROWS"
     :cols="model.COLS"
-    :size="scale"
+    :scale="scale"
     class="rounded"
-    grid-class="max-w-fit border-3 rounded"
-    cell-class="border-1"
     @mouse-up="model.onCellClick($event.row, $event.col)"
     @cell-enter="model.onCellMouseEnter($event.row, $event.col)"
     @cell-leave="model.onCellMouseLeave($event.row, $event.col)"
@@ -39,7 +38,7 @@ const model = reactive(
     </template>
 
     <template v-slot:top="{ col }">
-      <div class="text-center font-bold w-full">
+      <div class="font-bold flex justify-center items-center h-full w-full">
         {{ model.getTopNumber(col) }}
       </div>
     </template>

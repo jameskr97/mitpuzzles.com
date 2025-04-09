@@ -1,21 +1,6 @@
 <script setup lang="ts">
-import { computed, useSlots } from "vue";
-
-const props = defineProps({
-  rows: { type: Number, required: true },
-  cols: { type: Number, required: true },
-  size: { type: Number, required: false },
-  cellClass: { type: String, required: false, default: "" },
-  rowClass: { type: String, required: false, default: "" },
-  gridClass: { type: String, required: false, default: "" },
-
-  // Outer grid classes
-  topClass: { type: String, required: false, default: "" },
-  bottomClass: { type: String, required: false, default: "" },
-  leftClass: { type: String, required: false, default: "" },
-  rightClass: { type: String, required: false, default: "" },
-});
-
+import { computed, useSlots, reactive } from "vue";
+import { useGridLayout } from "@/composables";
 defineEmits<{
   (e: "cellClick", cell: any): void;
   (e: "cellRightClick", cell: any): void;
@@ -30,97 +15,132 @@ defineEmits<{
 }>();
 
 const slots = useSlots();
+const props = defineProps({
+  // Grid Dimensions
+  rows: { type: Number, required: true },
+  cols: { type: Number, required: true },
+  cellSize: { type: Number, required: false, default: 10 },
 
-const gridStyle = computed(() => {
-  const left = slots.left ? "min-content" : 0;
-  const right = slots.right ? "min-content" : 0;
-  const top = slots.top ? "min-content" : 0;
-  const bottom = slots.bottom ? "min-content" : 0;
+  // Grid Layout
+  gap: { type: Number, required: false, default: 1 },
+  scale: { type: Number, required: false },
+  fontSize: { type: Number, required: false, default: 10 },
 
-  return {
-    gridTemplateColumns: `${left} auto ${right}`,
-    gridTemplateRows: `${top} auto ${bottom}`,
+  // Grid Customization
+  borderRadius: { type: Number, required: false, default: 0 },
+  classGameCell: { type: String, required: false, default: "" },
+  classGameGrid: { type: String, required: false, default: "" },
+});
+
+const layout = useGridLayout(props.rows, props.cols, slots, props.cellSize, props.gap);
+
+const cellStyle = computed(() => (index: number) => {
+  const adjustedSize = props.cellSize; // Pixel size
+  const fontSize = Math.max(12, adjustedSize * 0.2).toFixed(0); // Font size in pixels
+
+  const col = index % props.cols;
+  const row = Math.floor(index / props.cols);
+
+  const styles: Record<string, string> = {
+    fontSize: `${fontSize}px`,
+    width: `${adjustedSize}px`,
+    height: `${adjustedSize}px`,
   };
+
+  // Optional radius on corners
+  if (index === 0) styles.borderTopLeftRadius = `${props.borderRadius}px`;
+  if (col === props.cols - 1 && row === 0) styles.borderTopRightRadius = `${props.borderRadius}px`;
+  if (index === (props.rows - 1) * props.cols) styles.borderBottomLeftRadius = `${props.borderRadius}px`;
+  if (index === props.rows * props.cols - 1) styles.borderBottomRightRadius = `${props.borderRadius}px`;
+
+  return styles;
 });
 
-const cellDimensions = computed(() => {
-  if (props.size) {
-    return { width: props.size + "rem", height: props.size + "rem" };
-  } else {
-    return {};
-  }
+const coord = (ci: number) => ({
+  row: Math.floor(ci / props.cols),
+  col: ci % props.cols,
+  index: ci,
 });
+
+const dims_px = computed(() => ({
+  width: layout.dims.NUM_ROWS * props.cellSize + (layout.dims.NUM_ROWS - 1) * props.gap,
+  height: layout.dims.NUM_COLS * props.cellSize + (layout.dims.NUM_COLS - 1) * props.gap,
+}));
+
+defineExpose({ dims_px });
 </script>
 
 <template>
-  <div class="grid grid-cols-3 leading-[0.92]" :style="gridStyle">
-    <!-- EXTERNAL GRID TOP -->
-    <div v-if="$slots.top" class="w-full flex flex-row col-start-2">
-      <div v-for="(_col, ic) in cols" :class="['grow', topClass]" :style="{ fontSize: '2rem' }">
-        <slot name="top" :col="ic"></slot>
-      </div>
-    </div>
-
-    <!-- EXTERNAL GRID BOTTOM -->
-    <div v-if="$slots.bottom" class="w-full flex flex-row col-start-2 row-start-3">
-      <div
-        v-for="(_col, ic) in cols"
-        :class="['h-full grow', bottomClass]"
-        :style="{ width: size + 'rem', height: size + 'rem' }"
-      >
-        <slot name="bottom" :col="ic" :size="size"></slot>
-      </div>
-    </div>
-
-    <!-- EXTERNAL GRID LEFT -->
-    <div v-if="$slots.left" class="flex flex-col col-start-1 row-start-2">
-      <div v-for="(_row, ir) in rows" :class="['grow', leftClass]" :style="{ fontSize: '2rem' }">
-        <slot name="left" :row="ir" :size="size"></slot>
-      </div>
-    </div>
-
-    <!-- EXTERNAL GRID RIGHT  -->
-    <div v-if="$slots.right" class="w-full flex flex-col col-start-3 row-start-2">
-      <div
-        v-for="(_row, ir) in rows"
-        :class="['h-full grow', rightClass]"
-        :style="{ width: size + 'rem', height: size + 'rem' }"
-      >
-        <slot name="right" :row="ir" :size="size"></slot>
-      </div>
-    </div>
-
-    <!-- CENTER GAME GRID -->
-    <div :class="['w-full h-full col-start-2 row-start-2', gridClass]">
-      <div @mouseenter="$emit('gridEnter', { ts: Date.now() })" @mouseleave="$emit('gridLeave', { ts: Date.now() })">
-        <div v-for="(row, ir) in rows" :class="['h-full flex flex-row', rowClass]">
-          <!-- prettier-ignore -->
-          <div
-            v-for="(col, ic) in cols"
-            :class="['w-full h-full flex flex-row aspect-square grow', cellClass]"
-            :style="cellDimensions"
-            @click="$emit('cellClick', { row: ir, col: ic, ts: Date.now()  })"
-            @contextmenu.prevent="$emit('cellRightClick', { row: ir, col: ic, ts: Date.now()  })"
-            @mousedown="$emit('mouseDown', { row: ir, col: ic, ts: Date.now()  })"
-            @mouseup="$emit('mouseUp', { row: ir, col: ic, input_event: $event, ts: Date.now() })"
-            @keydown="$emit('keyDown', { row: ir, col: ic, input_event: $event, ts: Date.now()  })"
-            @keyup="$emit('keyUp', { row: ir, col: ic, input_event: $event, ts: Date.now()  })"
-            @mouseenter="$emit('cellEnter', { row: ir, col: ic, ts: Date.now()  })"
-            @mouseleave="$emit('cellLeave', { row: ir, col: ic, ts: Date.now()  })"
-            tabindex="-1"
-          >
-            <div class="w-full focus:outline-none grow" tabindex="-1">
-              <slot
-                name="cell"
-                class="h-full"
-                :row="row - 1"
-                :col="col - 1"
-                :index="ir * rows + ic"
-                :size="size"
-              >
-              </slot>
-            </div>
+  <div
+    :class="['grid origin-top']"
+    :style="[
+      layout.rootGridStyle.value,
+      {
+        transform: `scale(${props.scale})`,
+      },
+    ]"
+  >
+    <div v-if="$slots.top" class="grid grid-cols-subgrid" :style="layout.styleGutterTop.value">
+      <div v-for="(_, ic) in cols" :style="cellStyle(ic)">
+        <div class="@container static overflow-hidden focus:outline-none w-full h-full">
+          <div class="text-[70cqw] w-full h-full focus:outline-none mb-10">
+            <slot name="top" :row="ic" :col="ic"></slot>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="$slots.bottom" class="grid grid-cols-subgrid" :style="layout.styleGutterBottom.value">
+      <div v-for="(_, ic) in cols" :style="cellStyle(ic)">
+        <div class="@container static overflow-hidden focus:outline-none w-full h-full">
+          <div class="text-[70cqw] w-full h-full focus:outline-none">
+            <slot name="bottom" :row="ic" :col="ic"></slot>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="$slots.left" class="grid grid-rows-subgrid" :style="layout.styleGutterLeft.value">
+      <div v-for="(_, ir) in rows" :style="cellStyle(ir)">
+        <div class="@container static overflow-hidden focus:outline-none w-full h-full">
+          <div class="text-[70cqw] w-full h-full focus:outline-none">
+            <slot name="left" :row="ir" :col="ir"></slot>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="$slots.right" class="grid grid-rows-subgrid" :style="layout.styleGutterRight.value">
+      <div v-for="(_, ir) in rows" :style="cellStyle(ir)">
+        <div class="@container static overflow-hidden focus:outline-none w-full h-full">
+          <div class="text-[70cqw] w-full h-full focus:outline-none">
+            <slot name="right" :row="ir" :col="ir"></slot>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="grid grid-rows-subgrid grid-cols-subgrid border-[1px] -top-[1px] -left-[1px] bg-black"
+      :style="layout.styleGameGrid.value"
+    >
+      <div
+        v-for="(_, ci) in cols * rows"
+        class="@container bg-white overflow-hidden focus:outline-none text-[70cqw]"
+        :class="[classGameCell]"
+        :style="[cellStyle(ci)]"
+        @click="$emit('cellClick', { ...coord(ci), input_event: $event, ts: Date.now() })"
+        @contextmenu.prevent="$emit('cellRightClick', { ...coord(ci), input_event: $event, ts: Date.now() })"
+        @mousedown="$emit('mouseDown', { ...coord(ci), input_event: $event, ts: Date.now() })"
+        @mouseup="$emit('mouseUp', { ...coord(ci), input_event: $event, ts: Date.now() })"
+        @keydown="$emit('keyDown', { ...coord(ci), input_event: $event, ts: Date.now() })"
+        @keyup="$emit('keyUp', { ...coord(ci), input_event: $event, ts: Date.now() })"
+        @mouseenter="$emit('cellEnter', { ...coord(ci), ts: Date.now() })"
+        @mouseleave="$emit('cellLeave', { ...coord(ci), ts: Date.now() })"
+        tabindex="-1"
+      >
+        <div class="text-[70cqw] w-full h-full select-none">
+          <slot name="cell" v-bind="coord(ci)"></slot>
         </div>
       </div>
     </div>

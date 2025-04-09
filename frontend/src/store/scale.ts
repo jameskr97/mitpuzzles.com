@@ -17,7 +17,7 @@ const useScaleStore = defineStore("mitlogic.scale", () => {
   /** returns a computed<number> that you can read *and* write */
   function scaleFor(type: string, variant = "default") {
     return computed<number>({
-      get: () => scales.value[key(type, variant)] ?? 20,
+      get: () => scales.value[key(type, variant)] ?? 40,
       set: (v) => (scales.value[key(type, variant)] = v),
     });
   }
@@ -34,6 +34,6 @@ export function getGameScale(): any {
 
   // Create user-accessible scale properties
   const scale = store.scaleFor(game_type);
-  const scale_remapped = computed(() => remap([0, 100], [2, 6], scale.value));
+  const scale_remapped = computed(() => remap([0, 100], [1, 10], scale.value));
   return { scale, scale_remapped };
 }

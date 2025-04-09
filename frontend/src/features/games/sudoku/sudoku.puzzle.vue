@@ -18,37 +18,26 @@ const model = reactive(
 );
 </script>
 
-<style>
-:root {
-  --border-thickness: 10px;
-  --border-thickness-bold: 30px;
-}
-</style>
-
 <template>
   <GameGrid
     :rows="model.ROWS"
     :cols="model.COLS"
-    :size="scale"
+    :scale="scale"
+    :cell-size="7"
     @mouse-up="model.onCellClick($event.row, $event.col, $event.input_event)"
     @key-down="model.onCellKeyDown($event.row, $event.col, $event.input_event)"
-    class="rounded border-5 bg-black"
-    cell-class="nth-[3n]:not-last:mr-[5px] not-last:mr-[3px] w-full"
-    row-class="nth-[3n]:not-last:mb-[5px] not-last:mb-[3px]"
   >
     <template v-slot:cell="{ row, col }">
       <div
-        :style="{
-          fontSize: '4cqmin',
-        }"
+        v-if="model.getCellDisplay(row, col) !== null"
+        class="flex justify-center items-center h-full w-full"
         :class="{
-          'border-red-500 border-5': model.isCellActive(row, col),
+          'border-red-500 border-[1px]': model.isCellActive(row, col),
           'bg-slate-300': model.isSquareSelected(row, col) || model.isRowSelected(row) || model.isColSelected(col),
           'text-blue-600': model.canModifyCell(row, col),
         }"
-        class="h-full bg-white leading-[0.8] grid grid-cols-1 place-items-center align-middle select-none"
       >
-        <span>{{ model.getCellDisplay(row, col) }}</span>
+        {{ model.getCellDisplay(row, col) }}
       </div>
     </template>
   </GameGrid>

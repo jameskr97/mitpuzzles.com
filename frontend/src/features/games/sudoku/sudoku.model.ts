@@ -58,10 +58,10 @@ export class ModelSudokuPuzzle {
   }
 
   isRowSelected(row: number) {
-    this.active_cell && this.active_cell[0] === row;
+    return this.active_cell && this.active_cell[0] === row;
   }
   isColSelected(col: number) {
-    this.active_cell && this.active_cell[1] === col;
+    return this.active_cell && this.active_cell[1] === col;
   }
   isCellActive(row: number, col: number) {
     return this.active_cell && this.active_cell[0] === row && this.active_cell[1] === col;
