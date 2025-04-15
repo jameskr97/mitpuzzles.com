@@ -11,6 +11,7 @@ export interface PuzzleSudoku {
   cols: number;
   rows: number;
   board: string;
+  solution_hash: string;
 }
 
 export interface PuzzleTents {

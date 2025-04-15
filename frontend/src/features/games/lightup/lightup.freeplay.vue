@@ -4,6 +4,9 @@ import { useCurrentPuzzle } from "@/composables";
 import Lightup from "@/features/games/lightup/lightup.puzzle.vue";
 
 const { state, push_event } = await useCurrentPuzzle();
+function on_game_event(event_type: string, payload: object) {
+  push_event(event_type, payload);
+}
 </script>
 
 <template>
@@ -16,7 +19,7 @@ const { state, push_event } = await useCurrentPuzzle();
     </template>
 
     <template v-slot:default="props">
-      <Lightup :scale="props.scale" :state="state" />
+      <Lightup :scale="props.scale" :state="state" @game-event="on_game_event"/>
     </template>
   </GameLayout>
 </template>

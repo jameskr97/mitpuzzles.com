@@ -1,6 +1,10 @@
 <template>
-  <div class="flex flex-col gap-2 w-100 m-2">
-    <p class="text-5xl">404</p>
-    <p class="text-2xl">Maybe solve a puzzle instead?</p>
+  <div class="flex items-center justify-center min-h-screen">
+    <div class="flex flex-col gap-2 w-100 m-2 text-center">
+      <p class="text-5xl">404</p>
+      <router-link :to="{ name: 'Home' }" class="link link-primary">
+        Click here to see our puzzles!
+      </router-link>
+    </div>
   </div>
 </template>

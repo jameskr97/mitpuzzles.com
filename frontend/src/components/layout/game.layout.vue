@@ -58,18 +58,27 @@ const puzzle = await useCurrentPuzzle();
             :class="layout.instructions_visible.value ? '' : 'md:col-start-2'"
           >
             <div class="w-full mb-2">
-              <div :class="{ hidden: puzzle.game_result_status.value !== GameResultStatus.Correct }">
-                <div role="alert" class="alert alert-success flex flex-row justify-start">
+              <div v-if="puzzle.raw.value && puzzle.raw.value.error">
+                <div role="alert" class="alert alert-info flex flex-row justify-start mb-2">
                   <v-icon name="fa-check-circle" scale="1.5" />
-                  <span>Your solution is correct</span>
-                  <button class="btn btn-outline ml-auto" @click="puzzle.request_new">New puzzle</button>
+                  <span>{{ puzzle.raw.value.error }}</span>
                 </div>
               </div>
 
-              <div :class="{ hidden: puzzle.game_result_status.value !== GameResultStatus.Wrong }">
-                <div role="alert" class="alert alert-error flex flex-row">
-                  <v-icon name="io-close" scale="1.5" />
-                  <span>Not quite!</span>
+              <div v-else>
+                <div :class="{ hidden: puzzle.game_result_status.value !== GameResultStatus.Correct }">
+                  <div role="alert" class="alert alert-success flex flex-row justify-start">
+                    <v-icon name="fa-check-circle" scale="1.5" />
+                    <span>Your solution is correct</span>
+                    <button class="btn btn-outline ml-auto" @click="puzzle.request_new">New puzzle</button>
+                  </div>
+                </div>
+
+                <div :class="{ hidden: puzzle.game_result_status.value !== GameResultStatus.Wrong }">
+                  <div role="alert" class="alert alert-error flex flex-row">
+                    <v-icon name="io-close" scale="1.5" />
+                    <span>Not quite!</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -92,7 +101,7 @@ const puzzle = await useCurrentPuzzle();
             >
               <div class="flex flex-col md:w-full">
                 <div class="flex flex-row align-middle justify-between">
-                  <p class="text-xl text-center md:text-left">Game Instructions</p>
+                  <p class="text-xl text-center md:text-left">[WIP] Game Instructions</p>
                   <v-icon
                     class="mt-1 cursor-pointer"
                     name="io-close"
@@ -115,7 +124,7 @@ const puzzle = await useCurrentPuzzle();
             }"
           >
             <div class="flex flex-row align-middle justify-between">
-              <p class="text-xl text-center md:text-left">Leaderboard</p>
+              <p class="text-xl text-center md:text-left">[WIP] Leaderboard</p>
               <v-icon class="mt-1 cursor-pointer" name="io-close" @click="layout.leaderboard_visible.value = false" />
             </div>
             <div class="overflow-x-auto">

@@ -1,42 +1,18 @@
-<script setup lang="ts">
-import PuzzleMinesweeeper from "@/features/games/minesweeper/minesweeper.puzzle.vue";
-import PuzzleSudoku from "@/features/games/sudoku/sudoku.puzzle.vue";
-import PuzzleTents from "@/features/games/tents/tents.puzzle.vue";
-import PuzzleKakurasu from "@/features/games/kakurasu/kakurasu.puzzle.vue";
-import { useAppConfig } from "@/store/config";
-import { usePuzzleStore } from "@/store/game";
-import * as adapter from "@/store/adapters";
-import { defineComponent, h } from "vue";
+<script setup lang="tsx">
+import HomePuzzlePreview from "@/components/home.puzzlepreview.vue";
+import { ACTIVE_GAMES } from "@/main";
 
+import { useAppConfig } from "@/store/config";
 const settings = useAppConfig();
 settings.fetchGameSettings();
 
-// define component
-const HomeGamebox = defineComponent({
-  props: {
-    title: { type: String, required: true },
-    url: { type: String, required: true },
-  },
-  setup(props, { slots }) {
-    return () =>
-      h("div", { class: "aspect-square" }, [
-        h("a", { href: props.url }, [
-          h("div", { class: "select-none pointer-events-none" }, slots.default?.()),
-          h("p", { class: "text-2xl mt-1 w-full text-center underline" }, props.title),
-        ]),
-      ]);
-  },
-});
-
-// import game store
-const { state: state_minesweeper } = await usePuzzleStore().usePuzzle(
-  "minesweeper",
-  "default",
-  adapter.minesweeperAdapter,
+const game_entries = Object.values(ACTIVE_GAMES);
+const puzzleStates: Record<string, any> = {};
+await Promise.all(
+  game_entries.map(async (game) => {
+    puzzleStates[game.key] = (await game.store("default")).state.value;
+  }),
 );
-const { state: state_sudoku } = await usePuzzleStore().usePuzzle("sudoku", "default", adapter.sudokuAdapter);
-const { state: state_tents } = await usePuzzleStore().usePuzzle("tents", "default", adapter.tentsAdapter);
-const { state: state_kakurasu } = await usePuzzleStore().usePuzzle("kakurasu", "default", adapter.kakurasuAdapter);
 </script>
 
 <template>
@@ -61,27 +37,20 @@ const { state: state_kakurasu } = await usePuzzleStore().usePuzzle("kakurasu", "
     <div class="divider my-0"></div>
   </div>
 
-  <p>
-    mitpuzzles.com is a website that lets you lorem ipsum dolor sit amet consectetur adipisicing elit. Autem est
-    inventore consequatur non? Aspernatur quos sed culpa, quia animi corrupti qui in tempore delectus voluptatibus
-    necessitatibus quod provident voluptates sit!
+  <p class="max-w-xl mx-auto text-base">
+    This is a test version of our website. We're running a small trial to see what it's like to collect data from these
+    logic games. Please try out any of the games below - we'd love your help!
   </p>
   <div class="divider my-0"></div>
-  <div class="grid grid-cols-2 md:grid-cols-3 gap-2 items-end md:mx-10 p-1">
-    <HomeGamebox title="Minesweeper" url="/minesweeper">
-      <PuzzleMinesweeeper :state="state_minesweeper" />
-    </HomeGamebox>
-
-    <HomeGamebox title="Sudoku" url="/sudoku">
-      <PuzzleSudoku :state="state_sudoku" />
-    </HomeGamebox>
-
-    <HomeGamebox title="Tents" url="/tents">
-      <PuzzleTents :state="state_tents" />
-    </HomeGamebox>
-
-    <HomeGamebox title="Kakurasu" url="/kakurasu">
-      <PuzzleKakurasu :state="state_kakurasu" />
-    </HomeGamebox>
+  <div class="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3 mx-auto">
+    <HomePuzzlePreview
+      v-for="game in game_entries"
+      class="border-2 rounded border-gray-400"
+      :title="game.name"
+      :page="game.key"
+      :key="game.key"
+      :component="game.component"
+      :state="puzzleStates[game.key]"
+    />
   </div>
 </template>

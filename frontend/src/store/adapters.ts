@@ -65,8 +65,16 @@ export const sudokuAdapter: PuzzleAdapter<PuzzleSudoku, SudokuState> = {
     };
   },
 
-  validate: (_state, _raw) => {
-    return false;
+  validate: async (state, raw) => {
+    // apply user grid on top of base grid
+    // take hash
+    // compare result
+    // const hash_current_state = await sha256(state.)
+    const { base_grid, user_grid } = state;
+    const final_grid = base_grid.map((val, i) => (val !== 0 ? val : user_grid[i]));
+    const final_string = final_grid.join("");
+    const hash = await sha256(final_string);
+    return hash === raw.solution_hash;
   },
 };
 

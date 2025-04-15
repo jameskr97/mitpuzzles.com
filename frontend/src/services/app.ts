@@ -26,3 +26,12 @@ export async function getAppSettings(): Promise<any> {
 export async function getRandomPuzzle(puzzle_type: string): Promise<any> {
   return await request("get", "/api/puzzle/random", { puzzle_type, variant: "default" });
 }
+export async function submitGameRecording(puzzle_id: number, data: any): Promise<any> {
+  return await request("post", "/api/puzzle/submit", { puzzle_id, data });
+}
+export async function getUnsolvedPuzzleCount(params?: { puzzle_type?: string }): Promise<any> {
+  return await request("get", "/api/puzzle/unsolved_count", params);
+}
+export async function getUnsolvedPuzzle(params?: { puzzle_type?: string; variant?: string }): Promise<any> {
+  return await request("get", "/api/puzzle/unsolved", params);
+}

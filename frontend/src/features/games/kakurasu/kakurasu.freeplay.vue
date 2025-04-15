@@ -4,6 +4,10 @@ import { useCurrentPuzzle } from "@/composables";
 import Kakurasu from "@/features/games/kakurasu/kakurasu.puzzle.vue";
 
 const { state, push_event } = await useCurrentPuzzle();
+
+function on_game_event(event_type: string, payload: object) {
+  push_event(event_type, payload);
+}
 </script>
 
 <template>
@@ -16,7 +20,7 @@ const { state, push_event } = await useCurrentPuzzle();
     </template>
 
     <template v-slot:default="props">
-      <Kakurasu :scale="props.scale" :state="state" />
+      <Kakurasu :scale="props.scale" :state="state" @game-event="on_game_event"/>
     </template>
   </GameLayout>
 </template>

@@ -1,4 +1,4 @@
-import { getRandomPuzzle } from "@/services/app";
+import { getUnsolvedPuzzle, submitGameRecording } from "@/services/app";
 import { PuzzleTimer } from "@/services/puzzle.timer";
 import { useLocalStorage } from "@vueuse/core";
 import { defineStore } from "pinia";
@@ -56,6 +56,8 @@ interface Stored<Raw, State> {
   time_completed?: number;
   /** The solution hash from the backend */
   solution_hash?: string;
+  /** True if there are no more puzzles of this type to be solved */
+  all_solved?: boolean;
 }
 
 export const usePuzzleStore = defineStore("mitlogic.puzzles", () => {
@@ -67,24 +69,30 @@ export const usePuzzleStore = defineStore("mitlogic.puzzles", () => {
     // Create key, request initial puzzle, create computed wrapper for state modification
     const key = as_key(game_type, game_variant);
 
-    /** Request a new puzzle from the backend, and update existing store, or create new. */
     async function load_new_puzzle() {
-      const raw = await getRandomPuzzle(game_type);
-      console.log(`NEW GAME FOR ${game_type}`, raw);
+      let raw;
+      try {
+        raw = await getUnsolvedPuzzle({ puzzle_type: game_type });
+      } catch (err: any) {
+        if (err?.response?.status === 404) {
+          store.value[key].all_solved = true;
+          return;
+        }
+        throw err;
+      }
       const time_received = Date.now();
 
-      // Don't have data stored. Store new!
+      // We don't have data stored? Create a new entry
       if (!store.value[key]) {
         store.value[key] = {
           raw,
           state: adapter.normalize(raw),
           history: [{ ts: Date.now(), type: "fetch" }],
           time_started: time_received,
+          all_solved: false,
         };
-      }
-      // We do have data stored? Update existing to keep reactivity
-      else {
-        // Reload: mutate in-place to preserve reactivity
+      } else {
+        // important: Object.assign to preserve reactivity
         store.value[key].raw = raw;
         Object.assign(store.value[key].state, adapter.empty_state(raw));
         store.value[key].history = [{ ts: time_received, type: "fetch" }];
@@ -113,6 +121,7 @@ export const usePuzzleStore = defineStore("mitlogic.puzzles", () => {
 
     // Computed variables for easy referencing of other values (probably not to be exported)
     const is_solved = computed(() => time_completed.value !== undefined);
+    const raw = computed(() => store.value[key].raw)
 
     // Refs that are used for this puzzle
     const game_result_status = ref<GameResultStatus>(
@@ -145,7 +154,6 @@ export const usePuzzleStore = defineStore("mitlogic.puzzles", () => {
       if (is_solved.value) return;
       const fresh = adapter.empty_state(store.value[key].raw);
       Object.assign(store.value[key].state, fresh);
-      wrapper_history.value = [{ ts: Date.now(), type: "fetch" }];
     }
 
     async function puzzle_check_solution() {
@@ -155,8 +163,10 @@ export const usePuzzleStore = defineStore("mitlogic.puzzles", () => {
         game_result_status.value = GameResultStatus.Correct;
         timer.complete();
         push_event("solved");
+        await submitGameRecording(store.value[key].raw.id, {history: wrapper_history.value});
       } else if (solved === false) {
         game_result_status.value = GameResultStatus.Wrong;
+        push_event("submit_attempted")
       } else {
         game_result_status.value = GameResultStatus.Idle;
       }
@@ -178,6 +188,7 @@ export const usePuzzleStore = defineStore("mitlogic.puzzles", () => {
       request_new: puzzle_request_new,
       check_solution: puzzle_check_solution,
       is_solved,
+      raw
     };
   }
 

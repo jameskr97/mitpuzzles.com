@@ -34,10 +34,10 @@ export class ModelTentsPuzzle {
     return this.puzzle.tents[row * this.COLS + col] === 1;
   }
   getTopNumber(col: number) {
-    return this.puzzle.row_counts[col];
+    return this.puzzle.col_counts[col];
   }
   getLeftNumber(row: number) {
-    return this.puzzle.col_counts[row];
+    return this.puzzle.row_counts[row];
   }
 
   // return true if the cell is next to a tree horizontally, vertically, or diagonally

@@ -27,10 +27,10 @@ auth.updateStore();
       </div>
       <!-- Hide sidebar for now. -->
       <!-- Sidebar Footer -->
-      <div class="mt-auto border-t-2 h-19 border-red-60 sticky bottom-0 bg-base-200 w-full">
+      <!-- <div class="mt-auto border-t-2 h-19 border-red-60 sticky bottom-0 bg-base-200 w-full">
         <SidebarUserAnon v-if="!auth.isAuthenticated" class="p-4" />
         <SidebarUserAuth v-else class="p-2" />
-      </div>
+      </div> -->
     </div>
   </div>
 </template>

@@ -2,9 +2,15 @@ import { ref, type Ref } from "vue";
 
 export enum KakurasuCellStates {
   Empty = 0,
-  Filled,
-  Crossed,
+  Filled = 1,
+  Crossed = 2,
   NUM_STATES,
+}
+function cellStateAsString(state: number): string {
+  if(state === KakurasuCellStates.Empty) return "empty";
+  if(state === KakurasuCellStates.Filled) return "filled";
+  if(state === KakurasuCellStates.Crossed) return "crossed";
+  return "unknown";
 }
 
 export interface KakurasuState {
@@ -62,5 +68,8 @@ export class ModelKakurasuPuzzle {
     } else {
       this.store.cell_black[index] = (state + 1) % KakurasuCellStates.NUM_STATES;
     }
+
+    // Emit the event to update the store
+    this.emit('cell-changed', { index, cell_state: cellStateAsString(this.store.cell_black[index]) });
   }
 }
