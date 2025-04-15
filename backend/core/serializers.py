@@ -1,7 +1,23 @@
 from rest_framework import serializers
 import hashlib
 import re
+from core import models
 
+class GameRecordingCreateSerializer(serializers.Serializer):
+    puzzle_id = serializers.PrimaryKeyRelatedField(queryset=models.Puzzles.objects.all(), help_text="The ID of the puzzle being played")
+    data = serializers.JSONField(help_text="Recorded game data")
+
+    def create(self, validated_data):
+        request = self.context["request"]
+        user = request.user if request.user.is_authenticated else None
+        session_id = request.session.session_key
+
+        return models.GameRecording.objects.create(
+            user=user,
+            session_id=session_id,
+            puzzle=validated_data["puzzle_id"],
+            data=validated_data["data"],
+        )
 
 class PuzzleQuerySerializer(serializers.Serializer):
     puzzle_type = serializers.CharField(max_length=20, required=True, help_text="The type of puzzle to retrieve (e.g., 'sudoku', 'minesweeper')")
@@ -24,6 +40,11 @@ class PuzzleSudokuSerializer(serializers.Serializer):
     cols = serializers.IntegerField(source="puzzle_data.cols", min_value=9, help_text="The number of columns in the sudoku puzzle")
     rows = serializers.IntegerField(source="puzzle_data.rows", min_value=9, help_text="The number of rows in the sudoku puzzle")
     board = serializers.CharField(source="puzzle_data.board", help_text="The board solution must only contain digits (1-9) and '-'")
+    solution_hash = serializers.SerializerMethodField(help_text="Get the hash of the solution")
+
+    def get_solution_hash(self, obj):
+        return hashlib.sha256(obj.puzzle_data["solution"].encode()).hexdigest()
+
 
 
 class PuzzleTentsSerializer(serializers.Serializer):
@@ -49,6 +70,7 @@ class PuzzleKakurasuSerializer(serializers.Serializer):
 
     def get_solution_hash(self, obj):
         return hashlib.sha256(obj.puzzle_data["cells_black"].encode()).hexdigest()
+
 
 class PuzzleLightupSerializer(serializers.Serializer):
     id = serializers.CharField(help_text="Unique identifier for the puzzle")

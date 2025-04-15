@@ -1,0 +1,33 @@
+from django.db import models
+from django.conf import settings
+
+
+class Puzzles(models.Model):
+    """
+    All pre-generated puzzles of all types will be stored in this table.
+    """
+
+    class Meta:
+        db_table = "generated_puzzles"
+        ordering = ["-created_at"]
+
+    id = models.AutoField(primary_key=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    puzzle_type = models.CharField(max_length=32)  # minesweeper, sudoku, tents, battleship...
+    puzzle_class = models.CharField(max_length=32)  # 5x5easy, 9x9hard, 10x10easy...
+    puzzle_data = models.JSONField() # JSON Field for puzzle data, check serializers for structure
+
+
+class GameRecording(models.Model):
+    id = models.AutoField(primary_key=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="recordings")
+    session_id = models.CharField(max_length=40, null=True, blank=True, db_index=True)
+
+    puzzle = models.ForeignKey('Puzzles', on_delete=models.CASCADE, related_name='recordings')
+    data = models.JSONField()
+
+    class Meta:
+        constraints = [models.CheckConstraint(check=(models.Q(user__isnull=False) | models.Q(session_id__isnull=False)), name="user_or_session_required")]

@@ -22,7 +22,7 @@ from django.urls import include, path, re_path
 from django.views.generic.base import RedirectView
 from django.views.generic import TemplateView
 from django.conf import settings
-from mitlogic import views
+from core import views
 
 
 def serve_root(*args, **kwargs):
@@ -53,9 +53,9 @@ urlpatterns = [
 
     # api endpoints
     path('api/puzzle/random', views.get_random_puzzle),
-    path('api/puzzle/random/minesweeper', views.get_random_puzzle_ms),
-    path('api/puzzle/random/sudoku', views.get_random_puzzle_sudoku),
-    # path('api/puzzle/submit', views.post_game_recording),
+    path('api/puzzle/submit', views.submit_game_recording),
+    path('api/puzzle/unsolved', views.get_unsolved_puzzle),
+    path('api/puzzle/unsolved_count', views.unsolved_puzzle_count),
     path('api/config/game-settings', views.game_settings_view),
 
     # redirect static files (*.css, *.js, *.jpg etc.) served on root ("/") to the static directory ("/static/")

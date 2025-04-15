@@ -14,17 +14,14 @@ import os
 
 # Directory Paths
 BACKEND_DIR = Path(os.path.abspath(__file__)).parent.parent.parent
-FRONTEND_DIR = BACKEND_DIR.parent / "frontend"
 
 # App Specific Settings
 env = environ.FileAwareEnv(
     DEBUG=(bool, True),
     SECRET_KEY=(str, "unsafe-secret-key-dont-use-in-production"),
-    
     # App Specific
     APP_DOMAIN=(str, "localhost"),
     DATABASE_URL=(str, "postgres://mitlogic:mitlogic@localhost:5432/mitlogic"),
-
 )
 environ.Env.read_env(BACKEND_DIR / ".env")
 
@@ -35,16 +32,14 @@ SECRET_KEY = env("SECRET_KEY")
 DATABASES = {"default": env.db("DATABASE_URL")}
 
 # Essential Django settings
-ROOT_URLCONF = "mitlogic.urls"
-WSGI_APPLICATION = "mitlogic.wsgi.application"
+ROOT_URLCONF = "config.urls"
+WSGI_APPLICATION = "config.wsgi.application"
 ALLOWED_HOSTS = [APP_DOMAIN]
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"  # Django default for auto incrementing primary keys
 
 ## Static Files
 STATIC_URL = "/static/"
 STATIC_ROOT = "staticfiles"
-STATICFILES_DIRS = [FRONTEND_DIR / "dist"]
-WHITENOISE_ROOT = FRONTEND_DIR / "dist"
 WHITENOISE_INDEX_FILE = True
 
 # Internationalization
@@ -54,7 +49,7 @@ USE_I18N = True
 USE_TZ = True
 
 # Session Settings
-SESSION_COOKIE_AGE = 60 * 60 * 24 * 7 * 2  # 2 weeks
+SESSION_COOKIE_AGE = 86400 * 365  # 2 weeks
 
 # Django App + Middleware Settings
 INSTALLED_APPS = [
@@ -65,27 +60,24 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-
     # 3rd-Party Apps
     "allauth.account",
     "allauth.headless",
     "rest_framework",
-
     # Local Apps
-    "mitlogic"
+    "core.apps.CoreConfig",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "mitlogic.middleware.EnsureSessionMiddleware",  # must be below SessionMiddleware (gives anon + auth users a session)
-    "whitenoise.middleware.WhiteNoiseMiddleware",   # must be below SecurityMiddleware
+    "core.middleware.EnsureSessionMiddleware",  # must be below SessionMiddleware (gives anon + auth users a session)
+    "whitenoise.middleware.WhiteNoiseMiddleware",  # must be below SecurityMiddleware
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-
     # Allauth
     "allauth.account.middleware.AccountMiddleware",
 ]
@@ -117,8 +109,8 @@ AUTH_PASSWORD_VALIDATORS = [
 # allauth config
 HEADLESS_ONLY = True  # disable allauth's default views, we'll use the vue frontend
 AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',
-    'allauth.account.auth_backends.AuthenticationBackend',
+    "django.contrib.auth.backends.ModelBackend",
+    "allauth.account.auth_backends.AuthenticationBackend",
 ]
 
 HEADLESS_FRONTEND_URLS = {
