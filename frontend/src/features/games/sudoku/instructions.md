@@ -1,0 +1,6 @@
+- The puzzle consists of a 9x9 grid, divided into nine 3x3 subgrids (also called boxes or regions).
+- Each row must contain the numbers 1 through 9, with no repeats.
+- Each column must contain the numbers 1 through 9, with no repeats.
+- Each 3x3 subgrid must also contain the numbers 1 through 9, with no repeats.
+- Some numbers are given at the start as clues. These cannot be changed.
+- The goal is to fill in all the blank squares following the above rules.

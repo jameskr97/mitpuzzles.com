@@ -1,4 +1,3 @@
-import type { PuzzleAdapter } from "@/store/game";
 import { MinesweeperCellStates, type MinesweeperState } from "@/features/games/minesweeper/minesweeper.model";
 import type { PuzzleKakurasu, PuzzleLightup, PuzzleMinesweeper, PuzzleSudoku, PuzzleTents } from "@/services/types";
 import type { SudokuState } from "@/features/games/sudoku/sudoku.model";
@@ -7,26 +6,36 @@ import { sha256 } from "@/services/util";
 import { KakurasuCellStates, type KakurasuState } from "@/features/games/kakurasu/kakurasu.model";
 import type { LightupState } from "@/features/games/lightup/lightup.model";
 
+/**
+ * Adapter for converting raw board games to client-side board games,
+ * and for validating games client-side.
+ * @param Raw The raw payload from the backend
+ * @param State The client-side structure
+ */
+export interface PuzzleAdapter<Raw, State = Raw> {
+  /**
+   * Convert the payload from the backend into the client-side structure
+   * @param raw The raw payload from the backend
+   */
+  create_state(raw: Raw): State;
+
+  /**
+   * Validate the game board with the solution hash from the backend
+   * or agains another solution
+   * @param state The current state
+   * @param raw The raw payload from the backend
+   * @returns True if the game is solved, false otherwise
+   */
+  validate(state: State, raw: Raw): Promise<boolean> | boolean;
+}
+
 export const noopAdapter: PuzzleAdapter<{}, {}> = {
-  normalize: (raw) => raw,
-  empty_state: (raw) => raw,
+  create_state: (raw) => raw,
   validate: async (_state, _raw) => false,
 };
 
 export const minesweeperAdapter: PuzzleAdapter<PuzzleMinesweeper, MinesweeperState> = {
-  normalize: (raw) => ({
-    rows: raw.rows,
-    cols: raw.cols,
-    board: raw.board.split("").map((ch) => {
-      const map: Record<string, number> = { U: 10, F: 11, S: 12 };
-      const n = parseInt(ch);
-      return isNaN(n) ? map[ch] : n;
-    }),
-    gamestate: new Array(raw.rows * raw.cols).fill(MinesweeperCellStates.Unmarked),
-    completed_at: null,
-  }),
-
-  empty_state: (raw) => ({
+  create_state: (raw) => ({
     rows: raw.rows,
     cols: raw.cols,
     board: raw.board.split("").map((ch) => {
@@ -45,17 +54,7 @@ export const minesweeperAdapter: PuzzleAdapter<PuzzleMinesweeper, MinesweeperSta
 };
 
 export const sudokuAdapter: PuzzleAdapter<PuzzleSudoku, SudokuState> = {
-  normalize: (raw) => {
-    const base_grid = [...raw.board].map((ch) => (ch === "-" ? 0 : Number(ch)));
-    return {
-      rows: raw.rows,
-      cols: raw.cols,
-      base_grid,
-      user_grid: new Array(raw.rows * raw.cols).fill(0),
-    };
-  },
-
-  empty_state: (raw) => {
+  create_state: (raw) => {
     const base_grid = [...raw.board].map((ch) => (ch === "-" ? 0 : Number(ch)));
     return {
       rows: raw.rows,
@@ -79,13 +78,7 @@ export const sudokuAdapter: PuzzleAdapter<PuzzleSudoku, SudokuState> = {
 };
 
 export const tentsAdapter: PuzzleAdapter<PuzzleTents, TentsState> = {
-  normalize: (raw) => ({
-    ...raw,
-    trees: raw.trees.split("").map(Number),
-    tents: new Array(raw.rows * raw.cols).fill(0),
-  }),
-
-  empty_state: (raw) => ({
+  create_state: (raw) => ({
     ...raw,
     trees: raw.trees.split("").map(Number),
     tents: new Array(raw.rows * raw.cols).fill(0),
@@ -98,15 +91,7 @@ export const tentsAdapter: PuzzleAdapter<PuzzleTents, TentsState> = {
 };
 
 export const kakurasuAdapter: PuzzleAdapter<PuzzleKakurasu, KakurasuState> = {
-  normalize: (raw) => ({
-    rows: raw.rows,
-    cols: raw.cols,
-    row_sum: raw.row_sum,
-    col_sum: raw.col_sum,
-    cell_black: new Array(raw.rows * raw.cols).fill(0),
-  }),
-
-  empty_state: (raw) => ({
+  create_state: (raw) => ({
     rows: raw.rows,
     cols: raw.cols,
     row_sum: raw.row_sum,
@@ -115,6 +100,7 @@ export const kakurasuAdapter: PuzzleAdapter<PuzzleKakurasu, KakurasuState> = {
   }),
 
   async validate(state, raw): Promise<boolean> {
+
     const board = state.cell_black
       .map((i) => {
         if (i === KakurasuCellStates.Filled) return "1";
@@ -123,12 +109,15 @@ export const kakurasuAdapter: PuzzleAdapter<PuzzleKakurasu, KakurasuState> = {
       })
       .join("");
     const hash_current_state = await sha256(board);
+    console.log(state.cell_black.join(""))
+    console.log(hash_current_state)
+    console.log(raw.solution_hash)
     return hash_current_state === raw.solution_hash;
   },
 };
 
 export const lightupAdapter: PuzzleAdapter<PuzzleLightup, LightupState> = {
-  normalize: (raw) => {
+  create_state: (raw) => {
     const walls: number[] = raw.board.split("").map((ch) => {
       const n = parseInt(ch);
       return isNaN(n) ? 9 : n;
@@ -142,9 +131,6 @@ export const lightupAdapter: PuzzleAdapter<PuzzleLightup, LightupState> = {
     };
   },
 
-  empty_state: function (raw: PuzzleLightup) {
-    return this.normalize(raw);
-  },
   async validate(state, raw): Promise<boolean> {
     const hash_current_state = await sha256(state.bulbs.join(""));
     return hash_current_state === raw.solution_hash;

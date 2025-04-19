@@ -1,4 +1,28 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
+@theme {
+  --color-ashgray: #a2a7a5;
+  --color-platinum: #dcdcdd;
+  --color-offwhite: #f2f0ef;
+}
+
 @plugin "daisyui" {
   themes: corporate --default;
+}
+
+/* css for minesweeper instructions.md */
+.md-cell {
+  height: calc(16px * 1);
+  width: calc(16px * 1);
+  background-size: contain;
+  display: inline-block;
+}
+.md-cell-empty {
+  background-image: url("/assets/minesweeper/cell-safe.svg");
+}
+.md-cell-flag {
+  background-image: url("/assets/minesweeper/flag.svg"), url("/assets/minesweeper/unopened-square.svg");
+}
+.md-cell-unrevealed {
+  background-image: url("/assets/minesweeper/unopened-square.svg");
 }

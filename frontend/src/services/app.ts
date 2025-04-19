@@ -14,10 +14,15 @@ async function request(method: string, url: string, data?: any) {
     options.data = data;
   }
 
-  return api
-    .request(options)
-    .then((response) => response.data)
-    .catch((error) => error.response.data);
+  try {
+    const response = await api.request(options);
+    return {
+      data: response.data,
+      status: response.status,
+    };
+  } catch (error: any) {
+    throw error;
+  }
 }
 
 export async function getAppSettings(): Promise<any> {
@@ -26,8 +31,8 @@ export async function getAppSettings(): Promise<any> {
 export async function getRandomPuzzle(puzzle_type: string): Promise<any> {
   return await request("get", "/api/puzzle/random", { puzzle_type, variant: "default" });
 }
-export async function submitGameRecording(puzzle_id: number, data: any): Promise<any> {
-  return await request("post", "/api/puzzle/submit", { puzzle_id, data });
+export async function submitGameRecording(puzzle_id: number, timestamp: string, data: any): Promise<any> {
+  return await request("post", "/api/puzzle/submit", { puzzle_id, timestamp, data });
 }
 export async function getUnsolvedPuzzleCount(params?: { puzzle_type?: string }): Promise<any> {
   return await request("get", "/api/puzzle/unsolved_count", params);

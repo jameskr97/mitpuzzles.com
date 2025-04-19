@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { useElementSize } from "@vueuse/core";
+import { useElementSize, asyncComputed } from "@vueuse/core";
 import { computed, ref } from "vue";
-import { getUnsolvedPuzzleCount } from "@/services/app";
+import { getUnsolvedPuzzleCount } from "@/services/app.ts";
 
 const props = defineProps({
   title: { type: String, required: true },
@@ -17,17 +17,28 @@ const scale = computed(() => {
   const totalWidth = puzzleRef.value?.totalWidth ?? 1;
   return containerWidth.value / totalWidth / 80; // 80 is an arbitrary number to make the puzzle fit nicely on the homepage
 });
-const count = await getUnsolvedPuzzleCount({ puzzle_type: props.page });
+
+const title = asyncComputed(async () => {
+  try {
+    const res = await getUnsolvedPuzzleCount({ puzzle_type: props.page });
+    return `${props.title} | ${res.data.unsolved_count} unsolved`;
+  } catch {
+    return props.title;
+  }
+});
 </script>
 
 <template>
-  <a :href="page">
+  <router-link :to="{ name: 'game-' + page }">
     <div class="flex flex-col">
-      <div ref="container" class="@container aspect-square place-items-center grid select-none pointer-events-none">
-        <component :ref="puzzleRef" :is="component" :scale="scale" :state="state" class="!origin-center" />
+      <div
+        ref="container"
+        class="@container h-full aspect-square place-items-center grid select-none pointer-events-none items-center justify-center"
+      >
+        <component :ref="puzzleRef" :is="component" :scale="scale" :state="state" class="!origin-[50%_50%]" />
       </div>
       <div class="divider my-0 py-0 h-full"></div>
-      <div class="p-1">{{ title }} | {{ count.unsolved_count }} unsolved</div>
+      <div class="p-1">{{title}}</div>
     </div>
-  </a>
+  </router-link>
 </template>

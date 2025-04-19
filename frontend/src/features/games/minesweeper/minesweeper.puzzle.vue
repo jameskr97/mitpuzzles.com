@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { ModelMinesweeperPuzzle } from "@/features/games/minesweeper/minesweeper.model";
+import { type MinesweeperState, ModelMinesweeperPuzzle } from "@/features/games/minesweeper/minesweeper.model";
 import GameGrid from "@/components/game/game.grid.vue";
-import { reactive } from "vue";
+import { reactive, type Ref } from "vue";
 
 const props = defineProps<{
   scale?: number;
-  state: any;
+  state: Ref<MinesweeperState>;
 }>();
 
 const emits = defineEmits<{
@@ -13,7 +13,7 @@ const emits = defineEmits<{
 }>();
 
 const model = reactive<ModelMinesweeperPuzzle>(
-  new ModelMinesweeperPuzzle(props.state, (event: string, payload: object) => {
+  new ModelMinesweeperPuzzle(props.state.value, (event: string, payload: object) => {
     emits("game-event", event, payload);
   }),
 );

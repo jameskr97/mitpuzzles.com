@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import GameGrid from "@/components/game/game.grid.vue";
 import { ModelLightupPuzzle } from "@/features/games/lightup/lightup.model";
-import { reactive } from "vue";
+import { reactive, type Ref } from "vue";
 
 const props = defineProps<{
   scale?: number;
-  state: any;
+  state: Ref<any>;
 }>();
 
 const emits = defineEmits<{
@@ -13,7 +13,7 @@ const emits = defineEmits<{
 }>();
 
 const model = reactive(
-  new ModelLightupPuzzle(props.state, (event: string, payload: object) => {
+  new ModelLightupPuzzle(props.state.value, (event: string, payload: object) => {
     emits("game-event", event, payload);
   }),
 );

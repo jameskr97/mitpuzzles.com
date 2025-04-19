@@ -3,14 +3,15 @@ import HomePuzzlePreview from "@/components/home.puzzlepreview.vue";
 import { ACTIVE_GAMES } from "@/main";
 
 import { useAppConfig } from "@/store/config";
+import { ref, type Ref } from "vue";
 const settings = useAppConfig();
 settings.fetchGameSettings();
 
 const game_entries = Object.values(ACTIVE_GAMES);
-const puzzleStates: Record<string, any> = {};
+const puzzleStates: Record<string, Ref<any>> = {};
 await Promise.all(
   game_entries.map(async (game) => {
-    puzzleStates[game.key] = (await game.store("default")).state.value;
+    puzzleStates[game.key] = ref(await game.default());
   }),
 );
 </script>
@@ -38,8 +39,9 @@ await Promise.all(
   </div>
 
   <p class="max-w-xl mx-auto text-base">
-    This is a test version of our website. We're running a small trial to see what it's like to collect data from these
-    logic games. Please try out any of the games below - we'd love your help!
+    Welcome to the first test version of this website! We've made available a limited set of games. For each game you
+    play, your actions will be recorded once the game has been submitted and completed correctly. Please try out any of
+    the games below - we'd love your help!
   </p>
   <div class="divider my-0"></div>
   <div class="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3 mx-auto">

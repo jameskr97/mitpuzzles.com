@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, useSlots, reactive } from "vue";
-import { useGridLayout } from "@/composables";
+import { computed, useSlots } from "vue";
+import useGridLayout from "@/composables/useGridLayout";
 defineEmits<{
   (e: "cellClick", cell: any): void;
   (e: "cellRightClick", cell: any): void;
@@ -72,7 +72,7 @@ defineExpose({ dims_px });
 
 <template>
   <div
-    :class="['grid origin-top']"
+    class="grid origin-top"
     :style="[
       layout.rootGridStyle.value,
       {

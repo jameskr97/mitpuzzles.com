@@ -1,17 +1,18 @@
 <script setup lang="ts">
 import { KakurasuCellStates, ModelKakurasuPuzzle } from "@/features/games/kakurasu/kakurasu.model";
 import GameGrid from "@/components/game/game.grid.vue";
+import type { Ref } from "vue";
 
 const props = defineProps<{
   scale?: number;
-  state: any;
+  state: Ref<any>;
 }>();
 
 const emits = defineEmits<{
   (e: "game-event", event_type: string, payload: object): void;
 }>();
 
-const model = new ModelKakurasuPuzzle(props.state, (event: string, payload: object) => {
+const model = new ModelKakurasuPuzzle(props.state.value, (event: string, payload: object) => {
   emits("game-event", event, payload);
 });
 //

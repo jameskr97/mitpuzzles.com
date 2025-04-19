@@ -1,39 +1,6 @@
-import { useRoute } from "vue-router";
-import { usePuzzleStore, type PuzzleAdapter } from "@/store/game";
-import * as adapter from "@/store/adapters";
-import { useGameLayoutStore } from "./store/useGameLayout";
-import { ACTIVE_GAMES } from "@/main";
-import { computed, reactive, ref, type Ref, type useSlots } from "vue";
-import { useElementSize } from "@vueuse/core";
+import { computed, reactive, type useSlots } from "vue";
 
-/**
- * Returns the reactive puzzle module for *whatever* game the current
- * route points to. Call it once in a view component or another composable.
- */
-export async function useCurrentPuzzle() {
-  const route = useRoute();
-  const store = usePuzzleStore();
-
-  const type = route.meta.game_type as string;
-  const variant = "default"; // "default" for now, since each game only has one type
-  return await ACTIVE_GAMES[type].store(variant);
-}
-
-export function useGameLayout() {
-  const store = useGameLayoutStore();
-
-  const instructions_visible = store.booleanFor("instructions");
-  const leaderboard_visible = store.booleanFor("leaderboard");
-
-  return {
-    instructions_visible,
-    leaderboard_visible,
-    toggle_instructions: () => (instructions_visible.value = !instructions_visible.value),
-    toggle_leaderboard: () => (leaderboard_visible.value = !leaderboard_visible.value),
-  };
-}
-
-export function useGridLayout(
+export default function useGridLayout(
   rows: number,
   cols: number,
   slots: ReturnType<typeof useSlots>,
@@ -127,32 +94,5 @@ export function useGridLayout(
     styleGutterTop,
     styleGutterBottom,
     styleGameGrid,
-  };
-}
-
-// all numbers in pixels
-export class CellProperties {
-  cellSize: number = 15;
-  gap: number = 1;
-  border: number = 15;
-}
-
-export function useLayoutCalculation(rows: number, cols: number, props: CellProperties) {
-  const step = computed(() => props.cellSize + props.gap);
-  const pxGridStart = computed(() => ({ top: `${props.gap}`, left: `${props.gap}` }));
-
-  const cellStyle = computed(() => (r: number, c: number) => ({
-    width: `${props.cellSize}px`,
-    height: `${props.cellSize}px`,
-    // top: `${props.gap + r * step.value}px`,
-    // left: `${props.gap + c * step.value}px`,
-  }));
-
-  return {
-    step,
-    dimensions: {},
-    pxGridStart,
-    cellStyle,
-    border: props.border,
   };
 }

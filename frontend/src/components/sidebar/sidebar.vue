@@ -10,7 +10,7 @@ auth.updateStore();
 
 <template>
   <div class="flex flex-row max-w-60 p-0">
-    <div class="menu bg-base-200 text-base-content min-h-full p-0">
+    <div class="menu text-base-content min-h-full p-0 bg-platinum">
       <!-- Sidebar Header -->
       <router-link to="/">
         <li class="text-lg mx-auto mt-2 sticky top-0 text-center">mitpuzzles.com</li>

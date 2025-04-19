@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import { useCurrentPuzzle, useGameLayout } from "@/composables";
+import { useGameLayout } from "@/composables/useGameLayout";
+import { useCurrentPuzzle } from "@/composables/useCurrentPuzzle";
 import { getGameScale } from "@/store/scale";
-import { GameResultStatus } from "@/store/game";
+import { useRoute } from "vue-router";
+import Alert from "@/components/alert.vue";
 
+const route = useRoute();
 const layout = useGameLayout();
 const { scale, scale_remapped } = getGameScale();
 const puzzle = await useCurrentPuzzle();
@@ -39,9 +42,25 @@ const puzzle = await useCurrentPuzzle();
 
             <!-- Buttons -->
             <div class="grid grid-cols-3 w-full gap-1">
-              <button class="btn btn-error" @click="puzzle.reset" :disabled="puzzle.is_solved.value">Clear</button>
-              <button class="btn btn-info" @click="puzzle.request_new">New Puzzle</button>
-              <button class="btn btn-success" @click="puzzle.check_solution" :disabled="puzzle.is_solved.value">
+              <button
+                class="btn btn-error"
+                @click="puzzle.clear_state()"
+                :disabled="puzzle.correct || puzzle.no_puzzles"
+              >
+                Clear
+              </button>
+              <button
+                class="btn btn-info"
+                @click="puzzle.load_new_puzzle()"
+                :disabled="puzzle.no_puzzles || puzzle.checking"
+              >
+                New Puzzle
+              </button>
+              <button
+                class="btn btn-success"
+                @click="puzzle.submit_solution()"
+                :disabled="puzzle.correct || puzzle.no_puzzles"
+              >
                 Submit
               </button>
             </div>
@@ -54,54 +73,50 @@ const puzzle = await useCurrentPuzzle();
         <div class="grid gap-2 md:gap-0 md:grid-cols-[1fr_2fr_1fr] h-full items-start">
           <!-- The GameContent itself -->
           <div
-            class="z-100 order-first md:order-1 grid grid-cols-1 place-items-center mb-2 mx-2"
-            :class="layout.instructions_visible.value ? '' : 'md:col-start-2'"
+            class=""
+            :class="[
+              'z-100 order-first md:order-1 grid grid-cols-1 place-items-center mb-2 mx-2',
+              { 'md:col-start-2': !layout.instructions_visible.value },
+            ]"
           >
             <div class="w-full mb-2">
-              <div v-if="puzzle.raw.value && puzzle.raw.value.error">
-                <div role="alert" class="alert alert-info flex flex-row justify-start mb-2">
-                  <v-icon name="fa-check-circle" scale="1.5" />
-                  <span>{{ puzzle.raw.value.error }}</span>
-                </div>
-              </div>
+              <Alert v-if="puzzle.no_puzzles" class="alert-info">
+                Thank you for solving all of the {{ route.meta.game_type }} puzzles! That's all the
+                {{ route.meta.game_type }} puzzles that has been added for this test run. Feel free to try solving some
+                of
+                <router-link class="link" :to="{ name: 'Home' }">our other logic games.</router-link>
+              </Alert>
 
               <div v-else>
-                <div :class="{ hidden: puzzle.game_result_status.value !== GameResultStatus.Correct }">
-                  <div role="alert" class="alert alert-success flex flex-row justify-start">
-                    <v-icon name="fa-check-circle" scale="1.5" />
-                    <span>Your solution is correct</span>
-                    <button class="btn btn-outline ml-auto" @click="puzzle.request_new">New puzzle</button>
-                  </div>
+                <div v-if="puzzle.correct" role="alert" class="alert alert-success flex flex-row justify-start">
+                  <v-icon name="fa-check-circle" scale="1.5" />
+                  <span>Your solution is correct</span>
+                  <button class="btn btn-outline ml-auto" @click="puzzle.load_new_puzzle()">New puzzle</button>
                 </div>
 
-                <div :class="{ hidden: puzzle.game_result_status.value !== GameResultStatus.Wrong }">
-                  <div role="alert" class="alert alert-error flex flex-row">
-                    <v-icon name="io-close" scale="1.5" />
-                    <span>Not quite!</span>
-                  </div>
-                </div>
+                <Alert v-if="puzzle.wrong" class="alert-error" icon="io-close"> Not quite! </Alert>
               </div>
             </div>
 
             <div
               class="select-none"
-              :class="puzzle.game_result_status.value === GameResultStatus.Correct ? 'pointer-events-none' : ''"
+              :class="['select-none', { 'pointer-events-none': puzzle.correct || puzzle.no_puzzles }]"
             >
               <slot name="default" :scale="scale_remapped"></slot>
             </div>
           </div>
 
           <!-- Game Instructions root container -->
-          <div class="z-100 bg-white flex flex-col gap-2 order-1 md:order-first">
+          <div class="z-100 bg-white flex flex-col gap-2 order-1 md:order-first md:col-start-1">
             <div
-              class="border-2 border-yellow-300 shadow rounded p-2"
+              class="border-2 border-black shadow rounded p-2"
               :class="{
                 hidden: !layout.instructions_visible.value,
               }"
             >
               <div class="flex flex-col md:w-full">
                 <div class="flex flex-row align-middle justify-between">
-                  <p class="text-xl text-center md:text-left">[WIP] Game Instructions</p>
+                  <p class="text-xl text-center md:text-left">Game Instructions</p>
                   <v-icon
                     class="mt-1 cursor-pointer"
                     name="io-close"
@@ -118,7 +133,7 @@ const puzzle = await useCurrentPuzzle();
 
           <!-- Leaderboard container -->
           <div
-            class="z-100 bg-white order-last border-2 border-yellow-300 shadow rounded p-2 w-full"
+            class="z-100 bg-white order-last border-2 border-black shadow rounded p-2 w-full md:col-start-3"
             :class="{
               hidden: !layout.leaderboard_visible.value,
             }"
