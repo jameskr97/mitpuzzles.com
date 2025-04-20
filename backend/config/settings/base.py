@@ -36,6 +36,7 @@ ROOT_URLCONF = "config.urls"
 WSGI_APPLICATION = "config.wsgi.application"
 ALLOWED_HOSTS = [APP_DOMAIN]
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"  # Django default for auto incrementing primary keys
+AUTH_USER_MODEL = "accounts.User"
 
 ## Static Files
 STATIC_URL = "/static/"
@@ -64,8 +65,11 @@ INSTALLED_APPS = [
     "allauth.account",
     "allauth.headless",
     "rest_framework",
+    "django_json_widget",
     # Local Apps
-    "core.apps.CoreConfig",
+    "core",
+    "accounts",
+    "puzzles",
 ]
 
 MIDDLEWARE = [
@@ -85,7 +89,7 @@ MIDDLEWARE = [
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BACKEND_DIR / "mitlogic/templates"],
+        "DIRS": [BACKEND_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [

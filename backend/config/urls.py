@@ -14,6 +14,7 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
 from django.http import HttpResponse, HttpResponseRedirect
 from django.core.exceptions import ImproperlyConfigured
 from django.contrib.staticfiles import finders
@@ -43,27 +44,24 @@ def serve_root(*args, **kwargs):
         response = HttpResponse(root_file.read(), content_type="text/html")
     return response
 
+
 urlpatterns = [
-    path("robots.txt", TemplateView.as_view(template_name="robots.txt", content_type='text/plain')),
-    path('admin/', admin.site.urls),
-
+    path("admin/", admin.site.urls),
     # 3rd-party app endpoints
-    path('accounts/', include('allauth.urls')),
-    path('_allauth/', include('allauth.headless.urls')),
-
+    path("accounts/", include("allauth.urls")),
+    path("_allauth/", include("allauth.headless.urls")),
     # api endpoints
-    path('api/puzzle/random', views.get_random_puzzle),
-    path('api/puzzle/submit', views.submit_game_recording),
-    path('api/puzzle/unsolved', views.get_unsolved_puzzle),
-    path('api/puzzle/unsolved_count', views.unsolved_puzzle_count),
-    path('api/config/game-settings', views.game_settings_view),
-
+    path("api/puzzle/random", views.RandomPuzzleView.as_view()),
+    path("api/puzzle/submit", views.submit_game_recording),
+    path("api/puzzle/unsolved", views.UnsolvedPuzzleView.as_view()),
+    path("api/puzzle/unsolved_count", views.unsolved_puzzle_count),
+    path("api/config/game-settings", views.game_settings_view),
+    path("api/feedback", views.FeedbackAPIView.as_view()),
     # redirect static files (*.css, *.js, *.jpg etc.) served on root ("/") to the static directory ("/static/")
     re_path(
         r"^(?!/?static/)(?P<path>.*\..*)$",
         RedirectView.as_view(url="/static/%(path)s", permanent=False),
     ),
-
     # All other paths are served the root html file.
-    re_path(r'^.*$', serve_root),
+    re_path(r"^.*$", serve_root),
 ]

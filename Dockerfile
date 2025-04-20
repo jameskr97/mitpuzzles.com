@@ -50,4 +50,4 @@ ENV DEBUG="False"
 
 ### collectstatic + run
 RUN python manage.py collectstatic --noinput
-CMD ["/venv/bin/uvicorn", "mitlogic.asgi:application", "--host", "0.0.0.0"]
+CMD ["/venv/bin/uvicorn", "config.asgi:application", "--host", "0.0.0.0"]
