@@ -4,6 +4,7 @@ import { ACTIVE_GAMES } from "@/main";
 
 import { useAppConfig } from "@/store/config";
 import { ref, type Ref } from "vue";
+
 const settings = useAppConfig();
 settings.fetchGameSettings();
 
@@ -47,7 +48,7 @@ await Promise.all(
   <div class="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3 mx-auto">
     <HomePuzzlePreview
       v-for="game in game_entries"
-      class="border-2 rounded border-gray-400"
+      class="border-2 border-black rounded"
       :title="game.name"
       :page="game.key"
       :key="game.key"

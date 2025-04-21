@@ -21,6 +21,7 @@
   --|- - -|- - -|- - -|
  *
  */
+import { ref, type Ref } from "vue";
 
 type EmitCallback = (event: string, payload?: any) => void;
 export interface SudokuState {
@@ -33,16 +34,18 @@ export interface SudokuState {
 }
 
 export class ModelSudokuPuzzle {
-  readonly ROWS: number = 9;
-  readonly COLS: number = 9;
+  readonly ROWS: number;
+  readonly COLS: number;
 
-  active_cell: [number, number] | null;
+  active_cell: Ref<[number, number] | null>;
 
   constructor(
     private puzzle: SudokuState,
     private emit: EmitCallback,
   ) {
-    this.active_cell = null;
+    this.ROWS = puzzle.rows;
+    this.COLS = puzzle.cols;
+    this.active_cell = ref(null);
   }
 
   ////////////////////////////////////////////////////////////
@@ -52,19 +55,19 @@ export class ModelSudokuPuzzle {
   }
 
   isSquareSelected(row: number, col: number) {
-    if (this.active_cell === null) return false;
-    const [active_row, active_col] = this.active_cell;
+    if (this.active_cell.value === null) return false;
+    const [active_row, active_col] = this.active_cell.value;
     return Math.floor(active_row / 3) === Math.floor(row / 3) && Math.floor(active_col / 3) === Math.floor(col / 3);
   }
 
   isRowSelected(row: number) {
-    return this.active_cell && this.active_cell[0] === row;
+    return this.active_cell.value && this.active_cell.value[0] === row;
   }
   isColSelected(col: number) {
-    return this.active_cell && this.active_cell[1] === col;
+    return this.active_cell.value && this.active_cell.value[1] === col;
   }
   isCellActive(row: number, col: number) {
-    return this.active_cell && this.active_cell[0] === row && this.active_cell[1] === col;
+    return this.active_cell.value && this.active_cell.value[0] === row && this.active_cell.value[1] === col;
   }
 
   getCellDisplay(row: number, col: number) {
@@ -118,22 +121,22 @@ export class ModelSudokuPuzzle {
     if (!this.canModifyCell(row, col)) return; // Do nothing if cell is not modifiable
 
     if (this.isCellActive(row, col)) {
-      this.active_cell = null;
+      this.active_cell.value = null;
       event.srcElement.blur();
 
       return;
     }
-    this.active_cell = [row, col];
+    this.active_cell.value = [row, col];
     this.emit("cell-selected", { index: row * this.COLS + col });
   }
 
   onCellKeyDown(row: number, col: number, event: any) {
-    if (this.active_cell === null) return; // Do nothing if no cell is active
+    if (this.active_cell.value === null) return; // Do nothing if no cell is active
     if (!this.canModifyCell(row, col)) return; // Do nothing if cell is not modifiable
 
     // If user preses escape, clear the active cell, and blur (unfocus) the currently focused cell
     if (event.key === "Escape") {
-      this.active_cell = null;
+      this.active_cell.value = null;
       this.emit("cell-unselected", { index: row * this.COLS + col });
       event.srcElement.blur();
       return;

@@ -12,6 +12,10 @@ defineEmits<{
   (e: "gridLeave", metadata: any): void;
   (e: "keyDown", cell: any): void;
   (e: "keyUp", cell: any): void;
+  (e: "clickGutterRight", cell: any): void;
+  (e: "clickGutterLeft", cell: any): void;
+  (e: "clickGutterTop", cell: any): void;
+  (e: "clickGutterBottom", cell: any): void;
 }>();
 
 const slots = useSlots();
@@ -81,7 +85,10 @@ defineExpose({ dims_px });
     ]"
   >
     <div v-if="$slots.top" class="grid grid-cols-subgrid" :style="layout.styleGutterTop.value">
-      <div v-for="(_, ic) in cols" :style="cellStyle(ic)">
+      <div
+        v-for="(_, ic) in cols" :style="cellStyle(ic)"
+        @click="$emit('clickGutterTop', { col: ic, input_event: $event, ts: Date.now() })"
+      >
         <div class="@container static overflow-hidden focus:outline-none w-full h-full">
           <div class="text-[70cqw] w-full h-full focus:outline-none mb-10">
             <slot name="top" :row="ic" :col="ic"></slot>
@@ -91,7 +98,10 @@ defineExpose({ dims_px });
     </div>
 
     <div v-if="$slots.bottom" class="grid grid-cols-subgrid" :style="layout.styleGutterBottom.value">
-      <div v-for="(_, ic) in cols" :style="cellStyle(ic)">
+      <div
+        v-for="(_, ic) in cols" :style="cellStyle(ic)"
+        @click="$emit('clickGutterBottom', { col: ic, input_event: $event, ts: Date.now() })"
+      >
         <div class="@container static overflow-hidden focus:outline-none w-full h-full">
           <div class="text-[70cqw] w-full h-full focus:outline-none">
             <slot name="bottom" :row="ic" :col="ic"></slot>
@@ -101,7 +111,10 @@ defineExpose({ dims_px });
     </div>
 
     <div v-if="$slots.left" class="grid grid-rows-subgrid" :style="layout.styleGutterLeft.value">
-      <div v-for="(_, ir) in rows" :style="cellStyle(ir)">
+      <div
+        v-for="(_, ir) in rows" :style="cellStyle(ir)"
+        @click="$emit('clickGutterLeft', { row: ir, input_event: $event, ts: Date.now() })"
+      >
         <div class="@container static overflow-hidden focus:outline-none w-full h-full">
           <div class="text-[70cqw] w-full h-full focus:outline-none">
             <slot name="left" :row="ir" :col="ir"></slot>
@@ -111,7 +124,10 @@ defineExpose({ dims_px });
     </div>
 
     <div v-if="$slots.right" class="grid grid-rows-subgrid" :style="layout.styleGutterRight.value">
-      <div v-for="(_, ir) in rows" :style="cellStyle(ir)">
+      <div
+        v-for="(_, ir) in rows" :style="cellStyle(ir)"
+        @click="$emit('clickGutterRight', { row: ir, input_event: $event, ts: Date.now() })"
+      >
         <div class="@container static overflow-hidden focus:outline-none w-full h-full">
           <div class="text-[70cqw] w-full h-full focus:outline-none">
             <slot name="right" :row="ir" :col="ir"></slot>

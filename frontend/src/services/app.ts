@@ -40,3 +40,6 @@ export async function getUnsolvedPuzzleCount(params?: { puzzle_type?: string }):
 export async function getUnsolvedPuzzle(params?: { puzzle_type?: string; variant?: string }): Promise<any> {
   return await request("get", "/api/puzzle/unsolved", params);
 }
+export async function submitFeedback(message: string, metadata: any): Promise<any> {
+  return await request("post", "/api/feedback", { message, metadata });
+}

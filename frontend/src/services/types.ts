@@ -2,16 +2,16 @@ export interface PuzzleMinesweeper {
   id: number;
   cols: number;
   rows: number;
-  board: string;
-  solution_hash: string;
+  board_initial: string;
+  board_solution_hash: string;
 }
 
 export interface PuzzleSudoku {
   id: number;
   cols: number;
   rows: number;
-  board: string;
-  solution_hash: string;
+  board_initial: string;
+  board_solution_hash: string;
 }
 
 export interface PuzzleTents {
@@ -21,7 +21,8 @@ export interface PuzzleTents {
   trees: string;
   row_counts: number[];
   col_counts: number[];
-  solution_hash: string;
+  board_initial: string;
+  board_solution_hash: string;
 }
 
 export interface PuzzleKakurasu {
@@ -30,13 +31,14 @@ export interface PuzzleKakurasu {
   rows: number;
   row_sum: number[];
   col_sum: number[];
-  solution_hash: string;
+  board_initial: string;
+  board_solution_hash: string;
 }
 
 export interface PuzzleLightup {
   id: number;
   cols: number;
   rows: number;
-  board: string;
-  solution_hash: string;
+  board_initial: string;
+  board_solution_hash: string;
 }

@@ -11,11 +11,9 @@ const props = defineProps<{
 const emits = defineEmits<{
   (e: "game-event", event_type: string, payload: object): void;
 }>();
-const model = reactive(
-  new ModelSudokuPuzzle(props.state, (event: string, payload: object) => {
-    emits("game-event", event, payload);
-  }),
-);
+const model = new ModelSudokuPuzzle(props.state.value, (event: string, payload: object) => {
+  emits("game-event", event, payload);
+});
 </script>
 
 <template>

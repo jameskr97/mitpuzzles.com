@@ -1,5 +1,11 @@
-The goal is to make some of the cells black in such a way that:
+### Kakurasu Rules
 
-1. The black cells on each row sum up to the number on the right.
-2. The black cells on each column sum up to the number on the bottom.
-3. If a black cell is first on its row/column its value is 1. If it is second its value is 2 etc.
+- Each row and column has a target sum shown at the right and bottom.
+- Each black cell in a row or column has a value: 1 for the first cell, 2 for the second, and so on.
+- Black cells in each row and column must add up to the target sums.
+
+### How to Play
+
+1. Click each cell to cycle through the states of black <i class="md-cell bg-black"></i>, and crossed <i class="md-cell md-cell-kakurasu-cross"></i>, and empty.
+2. Ensure all the black cells in each row and column add up to the given sums.
+3. You will be able to submit your solution once there are no more white cells left.

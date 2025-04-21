@@ -34,6 +34,7 @@ const model = reactive<ModelMinesweeperPuzzle>(
     <!-- prettier-ignore -->
     <template v-slot:cell="props">
       <div class="w-full h-full select-none bg-[url(/assets/minesweeper/cell-empty.svg)]">
+        <img v-if="model.getCellNumber(props.row, props.col) === 0" src="/assets/minesweeper/cell-empty.svg" alt="1" class="bg-auto w-full h-full" draggable="false" />
         <img v-if="model.getCellNumber(props.row, props.col) === 1" src="/assets/minesweeper/number-1.svg" alt="1" class="bg-auto w-full h-full" draggable="false" />
         <img v-if="model.getCellNumber(props.row, props.col) === 2" src="/assets/minesweeper/number-2.svg" alt="2" class="bg-auto w-full h-full" draggable="false" />
         <img v-if="model.getCellNumber(props.row, props.col) === 3" src="/assets/minesweeper/number-3.svg" alt="3" class="bg-auto w-full h-full" draggable="false" />

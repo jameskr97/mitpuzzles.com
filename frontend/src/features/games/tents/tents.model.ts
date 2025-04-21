@@ -1,12 +1,20 @@
 type EmitCallback = (event: string, payload?: any) => void;
+
+export enum TentCellStates {
+  Empty = 0,
+  Tent = 1,
+  Green = 2,
+  NUM_STATES,
+}
+
 export interface TentsState {
   rows: number;
   cols: number;
   trees: number[];
-  tents: number[];
+  cell_states: number[];
   row_counts: number[];
   col_counts: number[];
-  solution_hash: string;
+  board_solution_hash: string;
 }
 
 export class ModelTentsPuzzle {
@@ -30,12 +38,19 @@ export class ModelTentsPuzzle {
   isCellTree(row: number, col: number) {
     return this.puzzle.trees[row * this.COLS + col] === 1;
   }
+
   isCellTent(row: number, col: number) {
-    return this.puzzle.tents[row * this.COLS + col] === 1;
+    return this.puzzle.cell_states[row * this.COLS + col] === TentCellStates.Tent;
   }
+
+  isCellGreen(row: number, col: number) {
+    return this.puzzle.cell_states[row * this.COLS + col] === TentCellStates.Green;
+  }
+
   getTopNumber(col: number) {
     return this.puzzle.col_counts[col];
   }
+
   getLeftNumber(row: number) {
     return this.puzzle.row_counts[row];
   }
@@ -45,7 +60,7 @@ export class ModelTentsPuzzle {
     const neighbors = this.getNeighboringCells(row, col);
     neighbors.push([row, col]); // include the current cell
     for (const [r, c] of neighbors) {
-      if (this.puzzle.tents[r * this.COLS + c] === 1) {
+      if (this.puzzle.cell_states[r * this.COLS + c] === TentCellStates.Tent) {
         return true;
       }
     }
@@ -92,19 +107,45 @@ export class ModelTentsPuzzle {
     this.emit("cell-hovered", { index: index, hover_time: time_diff });
   }
 
-  onCellClick(row: number, col: number) {
+  onCellClick(row: number, col: number, event: MouseEvent) {
     const index = row * this.COLS + col;
     if (this.puzzle.trees[index] === 1) return;
+    const state = this.puzzle.cell_states[index];
 
-    // if we click on a tent, remove it
-    if (this.puzzle.tents[index] === 1) {
-      this.puzzle.tents[index] = 0;
-      this.emit("cell-changed", { index, has_tent: false });
-      return;
+    // go backwards if right click
+    if (event.button === 2) {
+      this.puzzle.cell_states[index] = (state + TentCellStates.NUM_STATES - 1) % TentCellStates.NUM_STATES;
+    } else {
+      this.puzzle.cell_states[index] = (state + 1) % TentCellStates.NUM_STATES;
     }
-    // invariant - we are clicking on an empty cell
-    // place the tent
-    this.puzzle.tents[index] = 1;
     this.emit("cell-changed", { index, has_tent: true });
+  }
+
+onRowNumberClick(row: number) {
+  const modifiedIndexes: number[] = [];
+  for (let col = 0; col < this.COLS; col++) {
+    const index = row * this.COLS + col;
+    if (this.puzzle.trees[index] === 1) continue;
+    if (this.puzzle.cell_states[index] !== TentCellStates.Empty) continue;
+    this.puzzle.cell_states[index] = TentCellStates.Green;
+    modifiedIndexes.push(index);
+  }
+  if (modifiedIndexes.length > 0) {
+    this.emit("cells-changed", { indexes: modifiedIndexes, has_green: true });
+  }
+}
+
+  onColNumberClick(col: number) {
+    const modifiedIndexes: number[] = [];
+    for (let row = 0; row < this.ROWS; row++) {
+      const index = row * this.COLS + col;
+      if (this.puzzle.trees[index] === 1) continue;
+      if (this.puzzle.cell_states[index] !== TentCellStates.Empty) continue;
+      this.puzzle.cell_states[index] = TentCellStates.Green;
+      modifiedIndexes.push(index);
+    }
+    if (modifiedIndexes.length > 0) {
+      this.emit("cells-changed", { indexes: modifiedIndexes, has_green: true });
+    }
   }
 }

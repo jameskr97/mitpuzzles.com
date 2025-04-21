@@ -226,6 +226,10 @@ export class ModelMinesweeperPuzzle {
     }
     // invariant applies (validated above) - user released mouse on a number cell
 
+    // DO NOT REVEAL THE SURROUNDING CELLS WHEN A NUMBER IS CLICKED AND THERE IS A MATCHING NUMBER OF SURROUNDING FLAGGED CELLS
+    // Disabled upon request.
+    return;
+
     // check if surrounding flagged cells match the number
     const cell_value = this.getCellBoard(row, col); // (row,col) value (guranteed from above invariant)
 

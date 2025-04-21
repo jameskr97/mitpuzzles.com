@@ -26,3 +26,18 @@
 .md-cell-unrevealed {
   background-image: url("/assets/minesweeper/unopened-square.svg");
 }
+
+/* css for tents instructions.md */
+.md-cell-tree {
+  background-image: url("/assets/tents/tree.svg");
+}
+
+/* css for kakurasu instructions.md */
+.md-cell-kakurasu-cross {
+  background-image: url("/assets/kakurasu/cross.svg");
+}
+
+/* css for lightup instructions.md */
+.md-cell-lightup-bulb {
+  background-image: url("/assets/lightup/bulb.svg");
+}

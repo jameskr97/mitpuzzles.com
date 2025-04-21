@@ -38,6 +38,7 @@ interface RawWithGeneral {
   timestamp: string; // the time the game was retrieved from the server
   [key: string]: any; // allow any other properties
 }
+
 export interface PuzzleAdapter<Raw extends RawWithGeneral, State = Raw> {
   /**
    * Convert the payload from the backend into the client-side structure
@@ -62,8 +63,8 @@ export class PuzzleData<Raw extends RawWithGeneral, State> {
   private _history: Ref<HistoryEntry[]>;
   private _submitted: Ref<boolean>;
   /// time variables
-  private _time_started: Ref<number>;
-  private _time_completed: Ref<number>;
+  private _time_elapsed: Ref<number>;
+  private _time_completed: Ref<boolean>;
   readonly timer: PuzzleTimer;
 
   // reactive states for this puzzle instances
@@ -87,9 +88,9 @@ export class PuzzleData<Raw extends RawWithGeneral, State> {
     this._state = useLocalStorage<State | undefined>(`${this.key}:state`, {} as any);
     this._history = useLocalStorage<HistoryEntry[]>(`${this.key}:history`, []);
     this._submitted = useLocalStorage<boolean>(`${this.key}:submitted`, false);
-    this._time_started = useLocalStorage<number>(`${this.key}:time_started`, 0);
-    this._time_completed = useLocalStorage<number>(`${this.key}:time_completed`, 0);
-    this.timer = new PuzzleTimer(this._time_started, this._time_completed);
+    this._time_elapsed = useLocalStorage<number>(`${this.key}:time_elapsed`, 0);
+    this._time_completed = useLocalStorage<boolean>(`${this.key}:time_completed`, false);
+    this.timer = new PuzzleTimer(this._time_elapsed, this._time_completed);
     this.can_render_board = computed(
       () => this.is_state_valid() && this.is_gamedata_valid() && this.ui.value !== GameUIState.NoPuzzles,
     );
@@ -129,34 +130,45 @@ export class PuzzleData<Raw extends RawWithGeneral, State> {
       !!this._state.value && typeof this._gamedata.value === "object" && Object.keys(this._gamedata.value).length != 0
     );
   }
+
   private is_state_valid(): boolean {
     return !!this._state.value && typeof this._state.value === "object" && Object.keys(this._state.value).length != 0;
   }
 
   // property getters
   // // UI state getters
+  get puzzle_id(): number {
+    return this._gamedata.value?.id ?? -1;
+  }
+
   get ready(): boolean {
     return this.ui.value === GameUIState.Ready;
   }
+
   get loading(): boolean {
     return this.loader.showSpinner.value;
   }
+
   get checking(): boolean {
     return this.ui.value === GameUIState.CheckingSolution;
   }
+
   get correct(): boolean {
     return this.ui.value === GameUIState.Correct;
   }
+
   get wrong(): boolean {
     return this.ui.value === GameUIState.Wrong;
   }
+
   get no_puzzles(): boolean {
     return this.ui.value === GameUIState.NoPuzzles;
   }
+
   get history(): HistoryEntry[] {
     return this._history.value;
   }
-  //
+
   get state(): Ref<State | undefined> {
     if (!this.is_state_valid() && this.is_gamedata_valid()) {
       logger.warn(`State was invalid; regenerating from game_data for ${this.key}`);
@@ -170,6 +182,7 @@ export class PuzzleData<Raw extends RawWithGeneral, State> {
   clear_state() {
     if (!this.is_gamedata_valid() && !this.is_state_valid()) return;
     Object.assign(this._state.value!, this.adapter.create_state(this._gamedata.value!));
+    this.record_event("clear_clicked");
   }
 
   /** Request a new puzzle from the backend */
@@ -220,18 +233,19 @@ export class PuzzleData<Raw extends RawWithGeneral, State> {
     logger.debug(`Checking solution for ${this.GAME_TYPE} (${this.GAME_VARIANT})`);
     const solved = await this.adapter.validate(this.state.value!, this._gamedata.value!);
     this.ui.value = solved ? GameUIState.Correct : GameUIState.Wrong;
+    this.record_event("check_solution_clicked", { solved });
+    if (!solved) return false;
+    // invariant - solution is correct
 
-    if (solved) {
-      const res = await submitGameRecording(this._gamedata.value!.id, this._gamedata.value!.timestamp, {
-        history: this._history.value,
-      });
-      this.timer.complete();
-      if (res.status === 201) {
-        this._submitted.value = true;
-        logger.debug(`Submitted solution for ${this.GAME_TYPE} (${this.GAME_VARIANT})`, res);
-      } else {
-        logger.error(`Failed to submit solution for ${this.GAME_TYPE} (${this.GAME_VARIANT})`, res);
-      }
+    const res = await submitGameRecording(this._gamedata.value!.id, this._gamedata.value!.timestamp, {
+      history: this._history.value,
+    });
+    this.timer.complete();
+    if (res.status === 201) {
+      this._submitted.value = true;
+      logger.debug(`Submitted solution for ${this.GAME_TYPE} (${this.GAME_VARIANT})`, res);
+    } else {
+      logger.error(`Failed to submit solution for ${this.GAME_TYPE} (${this.GAME_VARIANT})`, res);
     }
 
     return solved;
@@ -244,6 +258,9 @@ export class PuzzleData<Raw extends RawWithGeneral, State> {
    * @param payload the data associated with the event
    */
   record_event(type: string, payload?: object) {
-    this._history.value.push({ ts: Date.now(), type, payload });
+    let event = { ts: Date.now(), type, payload };
+    // TODO(james): uncomment this line and properly change the log level in prod
+    // logger.trace(`Event recorded: ${event}`);
+    this._history.value.push(event);
   }
 }

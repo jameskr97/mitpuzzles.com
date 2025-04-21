@@ -3,7 +3,7 @@ import { format_game_stopwatch } from "@/services/util.ts";
 /** Simplifies resetting all of localStorage through a version variable. */
 export class StorageVersionManager {
   // Change this to current date when updating the storage version
-  private static readonly VERSION = "2025-04-18";
+  private static readonly VERSION = "2025-04-29";
   static clearOldStorage() {
     const saved = localStorage.getItem("mitlogic.storageVersion");
     if (saved !== StorageVersionManager.VERSION) {
@@ -17,38 +17,27 @@ export class StorageVersionManager {
   }
 }
 
-// src/services/PuzzleTimer.ts
 import { computed, type ComputedRef, ref, type Ref } from "vue";
 import logger from "@/services/logger.ts";
 
 export class PuzzleTimer {
   private timer_id: ReturnType<typeof setInterval> | null = null;
 
-  public time_started: Ref<number> = ref(0);
   public elapsed_ms: Ref<number> = ref(0);
-  public completed_ms: Ref<number> = ref(-1);
+  public time_completed: Ref<boolean> = ref(false);
   public display_time: ComputedRef<string> = computed(() => format_game_stopwatch(this.elapsed_ms.value));
 
-  constructor(time_started: Ref<number>, time_completed: Ref<number>) {
-    // bind storage refs
-    this.time_started.value = time_started.value;
-    this.completed_ms = time_completed;
-    // initialize elapsed time from stored values
-    if (this.completed_ms.value >= 0) {
-      // already completed
-      this.elapsed_ms.value = this.completed_ms.value;
-    } else if (this.time_started.value > 0) {
-      // resuming in-progress timer
-      this.elapsed_ms.value = Date.now() - this.time_started.value;
+  constructor(elapsed_ms: Ref<number>, time_completed: Ref<boolean>) {
+    this.elapsed_ms = elapsed_ms;
+    this.time_completed = time_completed;
+    if (!this.time_completed.value) {
       this.start();
     }
   }
 
   public reset() {
     this.stop();
-    this.time_started.value = 0;
     this.elapsed_ms.value = 0;
-    this.completed_ms.value = -1;
   }
 
   public start() {
@@ -56,7 +45,7 @@ export class PuzzleTimer {
     logger.debug("Timer started");
 
     this.timer_id = setInterval(() => {
-      this.elapsed_ms.value = Date.now() - this.time_started.value!;
+      this.elapsed_ms.value += 1000
     }, 1000);
   }
 
@@ -70,6 +59,6 @@ export class PuzzleTimer {
   public complete() {
     logger.debug("Timer marked complete");
     this.stop();
-    this.completed_ms.value = this.elapsed_ms.value;
+    this.time_completed.value = true
   }
 }
