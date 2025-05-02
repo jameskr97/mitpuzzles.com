@@ -24,6 +24,7 @@ from django.views.generic.base import RedirectView
 from django.views.generic import TemplateView
 from django.conf import settings
 from core import views
+from tracking import views as tracking_views
 
 
 def serve_root(*args, **kwargs):
@@ -54,9 +55,11 @@ urlpatterns = [
     path("api/puzzle/random", views.RandomPuzzleView.as_view()),
     path("api/puzzle/submit", views.submit_game_recording),
     path("api/puzzle/unsolved", views.UnsolvedPuzzleView.as_view()),
+    path("api/puzzle/variants", views.PuzzleClassSuffixList.as_view()),
     path("api/puzzle/unsolved_count", views.unsolved_puzzle_count),
     path("api/config/game-settings", views.game_settings_view),
     path("api/feedback", views.FeedbackAPIView.as_view()),
+    path("api/visitor", tracking_views.visitor_init),
     # redirect static files (*.css, *.js, *.jpg etc.) served on root ("/") to the static directory ("/static/")
     re_path(
         r"^(?!/?static/)(?P<path>.*\..*)$",

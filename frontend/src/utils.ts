@@ -3,12 +3,13 @@ import { format_game_stopwatch } from "@/services/util.ts";
 /** Simplifies resetting all of localStorage through a version variable. */
 export class StorageVersionManager {
   // Change this to current date when updating the storage version
-  private static readonly VERSION = "2025-04-29";
+  private static readonly VERSION = "2025-05-02";
   static clearOldStorage() {
     const saved = localStorage.getItem("mitlogic.storageVersion");
     if (saved !== StorageVersionManager.VERSION) {
       Object.keys(localStorage).forEach((key) => {
-        if (key.startsWith("mitlogic.puzzles:")) {
+        if (key === "mitlogic.storageVersion") return;
+        if (key.startsWith("mitlogic")) {
           localStorage.removeItem(key);
         }
       });
@@ -38,10 +39,12 @@ export class PuzzleTimer {
   public reset() {
     this.stop();
     this.elapsed_ms.value = 0;
+    this.time_completed.value = false;
   }
 
   public start() {
     if (this.timer_id != null) return;
+    if (this.time_completed.value) return;
     logger.debug("Timer started");
 
     this.timer_id = setInterval(() => {

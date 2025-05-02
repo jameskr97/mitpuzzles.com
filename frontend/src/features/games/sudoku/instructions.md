@@ -12,4 +12,4 @@
 - Click on a square to select it, then type a number from 1 to 9 to fill it in.
 - To unselect a square, click on it again, or press the Escape key.
 - To remove a number, select the square and press the Backspace key.
-- You will be able to submit your solution once all squares are filled in correctly.
+- You will be able to submit your solution once all squares are filled.

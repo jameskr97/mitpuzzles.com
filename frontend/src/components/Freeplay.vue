@@ -5,7 +5,7 @@ import { useCurrentPuzzle } from "@/composables/useCurrentPuzzle.ts";
 import GameLayout from "@/components/layout/game.layout.vue";
 import { getGameScale } from "@/store/scale.ts";
 import MarkdownIt from "markdown-it";
-import { onBeforeUnmount, onMounted, onUnmounted } from "vue";
+import { onMounted, onUnmounted } from "vue";
 
 // load game state + data
 const route = useRoute();

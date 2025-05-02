@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ModelSudokuPuzzle } from "@/features/games/sudoku/sudoku.model";
 import GameGrid from "@/components/game/game.grid.vue";
-import { reactive } from "vue";
 
 const props = defineProps<{
   scale?: number;
@@ -30,7 +29,7 @@ const model = new ModelSudokuPuzzle(props.state.value, (event: string, payload: 
         v-if="model.getCellDisplay(row, col) !== null"
         class="flex justify-center items-center h-full w-full"
         :class="{
-          'border-red-500 border-[1px]': model.isCellActive(row, col),
+          'border-red-500 border-[0.5px]': model.isCellActive(row, col),
           'bg-slate-300': model.isSquareSelected(row, col) || model.isRowSelected(row) || model.isColSelected(col),
           'text-blue-600': model.canModifyCell(row, col),
         }"

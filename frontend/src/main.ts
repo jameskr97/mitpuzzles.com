@@ -94,6 +94,8 @@ import {
 import { defaultPuzzles } from "@/services/puzzle.defaults.ts";
 import { StorageVersionManager } from "@/utils.ts";
 import type { PuzzleAdapter } from "@/store/adapters";
+import { useAuthStore } from "@/store/auth.ts";
+import { useVisitorStore } from "@/store/visitor.ts";
 
 addIcons(
   FaUndoAlt,
@@ -108,4 +110,22 @@ addIcons(
   BiLightbulbFill,
 );
 
-createApp(App).use(createPinia()).use(createRouter(routerConfig)).component("v-icon", OhVueIcon).mount("#app");
+(async () => {
+  const app = createApp(App)
+    .use(createPinia())
+    .use(createRouter(routerConfig))
+    .component("v-icon", OhVueIcon);
+
+  // attempt to get current user.
+  const auth = useAuthStore();
+  await auth.updateStore();
+
+  // attempt to get the visitor id.
+  const visitor = useVisitorStore();
+  await visitor.init();
+  // both user and visitor stores are attempted, though the backend knows that:
+  // if the user is logged in, the visitor ID is not distributed.
+  // if there is no user, the visitor ID is used to identify the user
+
+  app.mount("#app");
+})();

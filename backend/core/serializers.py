@@ -11,15 +11,17 @@ class GameRecordingCreateSerializer(serializers.Serializer):
 
     def create(self, validated_data):
         request = self.context["request"]
-        user = request.user if request.user.is_authenticated else None
-        session_id = request.session.session_key
+        kwargs = {
+            "puzzle": validated_data["puzzle_id"],
+            "data": validated_data["data"],
+        }
 
-        return models.GameRecording.objects.create(
-            user=user,
-            session_id=session_id,
-            puzzle=validated_data["puzzle_id"],
-            data=validated_data["data"],
-        )
+        if request.user and request.user.is_authenticated:
+            kwargs["user"] = request.user
+        else:
+            kwargs["visitor"] = request.visitor
+
+        return models.GameRecording.objects.create(**kwargs)
 
 
 class PuzzleQuerySerializer(serializers.Serializer):
@@ -51,12 +53,15 @@ class FeedbackSerializer(serializers.Serializer):
 
     def create(self, validated_data):
         request = self.context["request"]
-        user = request.user if request.user.is_authenticated else None
-        session_id = None if request.user.is_authenticated else request.session.session_key
 
-        return models.Feedback.objects.create(
-            user=user,
-            session_id=session_id,
-            message=validated_data["message"],
-            metadata=validated_data["metadata"],
-        )
+        kwargs = {
+            "message": validated_data.get("message"),
+            "metadata": validated_data.get("metadata")
+        }
+
+        if request.user and request.user.is_authenticated:
+            kwargs["user"] = request.user
+        else:
+            kwargs["visitor"] = request.visitor
+
+        return models.Feedback.objects.create(**kwargs)

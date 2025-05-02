@@ -46,9 +46,9 @@ class PuzzleAdmin(admin.ModelAdmin):
 class GameRecordingAdmin(admin.ModelAdmin):
     actions = None
     change_list_template = "admin/core/gamerecording/change_list.html"
-    list_display = ["id", "created_at", "user", "session_id", "puzzle__puzzle_type", "puzzle__puzzle_class"]
+    list_display = ["id", "created_at", "user", "visitor_id", "puzzle__puzzle_type", "puzzle__puzzle_class"]
     list_filter = ["created_at", "puzzle__puzzle_class"]
-    readonly_fields = ["created_at", "user", "session_id", "puzzle", "data"]
+    readonly_fields = ["created_at", "user", "visitor_id", "puzzle", "data"]
 
     formfield_overrides = {
         JSONField: {"widget": JSONEditorWidget(options={"modes": ["view", "code"], "mode": "view"})},
@@ -62,7 +62,7 @@ class GameRecordingAdmin(admin.ModelAdmin):
 
     def export_view(self, request):
         qs = self.get_queryset(request)
-        json_data = serialize("json", qs, fields=("id", "created_at", "user", "session_id", "puzzle", "data"))
+        json_data = serialize("json", qs, fields=("id", "created_at", "user", "visitor_id", "puzzle", "data"))
         response = HttpResponse(json_data, content_type="application/json")
         response["Content-Disposition"] = 'attachment; filename="game_recordings.json"'
         return response
@@ -71,4 +71,4 @@ class GameRecordingAdmin(admin.ModelAdmin):
 @admin.register(models.Feedback)
 class FeedbackAdmin(admin.ModelAdmin):
     actions = None
-    list_display = ["id", "message"]
+    list_display = ["id", "visitor", "message"]

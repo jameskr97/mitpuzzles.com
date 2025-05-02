@@ -37,15 +37,21 @@ class GameRecording(models.Model):
         on_delete=models.SET_NULL,
         related_name="recordings",
     )
-    session_id = models.CharField(max_length=40, null=True, blank=True, db_index=True)
+    visitor = models.ForeignKey(
+        "tracking.Visitor",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="recordings",
+    )
     puzzle = models.ForeignKey("Puzzles", on_delete=models.CASCADE, related_name="recordings")
     data = models.JSONField()
 
     class Meta:
         constraints = [
             models.CheckConstraint(
-                check=(models.Q(user__isnull=False) | models.Q(session_id__isnull=False)),
-                name="user_or_session_required",
+                check=(models.Q(user__isnull=False) | models.Q(visitor__isnull=False)),
+                name="user_or_visitor_required",
             )
         ]
 
@@ -64,7 +70,13 @@ class Feedback(models.Model):
         on_delete=models.SET_NULL,
         related_name="feedback",
     )
-    session_id = models.CharField(max_length=40, null=True, blank=True, db_index=True)
+    visitor = models.ForeignKey(
+        "tracking.Visitor",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="feedback",
+    )
     message = models.TextField()
     metadata = models.JSONField(null=True, blank=True)
 
@@ -72,7 +84,7 @@ class Feedback(models.Model):
         verbose_name_plural = "feedback"
         constraints = [
             models.CheckConstraint(
-                check=(models.Q(user__isnull=False) | models.Q(session_id__isnull=False)),
-                name="feedback_user_or_session_required",
+                check=(models.Q(user__isnull=False) | models.Q(visitor__isnull=False)),
+                name="feedback_user_or_visitor_required",
             )
         ]

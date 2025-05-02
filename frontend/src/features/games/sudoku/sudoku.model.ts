@@ -57,7 +57,7 @@ export class ModelSudokuPuzzle {
   isSquareSelected(row: number, col: number) {
     if (this.active_cell.value === null) return false;
     const [active_row, active_col] = this.active_cell.value;
-    return Math.floor(active_row / 3) === Math.floor(row / 3) && Math.floor(active_col / 3) === Math.floor(col / 3);
+    return Math.floor(active_row / 2) === Math.floor(row / 2) && Math.floor(active_col / 2) === Math.floor(col / 2);
   }
 
   isRowSelected(row: number) {

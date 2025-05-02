@@ -50,6 +50,7 @@ USE_I18N = True
 USE_TZ = True
 
 # Session Settings
+# SESSION_COOKIE_AGE = 86400 * 365 * 2 # 2 years
 SESSION_COOKIE_AGE = 86400 * 365  # 2 weeks
 
 # Django App + Middleware Settings
@@ -69,13 +70,14 @@ INSTALLED_APPS = [
     # Local Apps
     "core",
     "accounts",
+    "tracking",
     "puzzles",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "core.middleware.EnsureSessionMiddleware",  # must be below SessionMiddleware (gives anon + auth users a session)
+    "tracking.middleware.VisitorMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",  # must be below SecurityMiddleware
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",

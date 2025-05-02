@@ -27,11 +27,20 @@ export interface PuzzleAdapter<Raw, State = Raw> {
    * @returns True if the game is solved, false otherwise
    */
   validate(state: State, raw: Raw): Promise<boolean> | boolean;
+
+  /**
+   * Check if the game can be validated.
+   * We don't want the user to submit the game unless they have made all possible changes.
+   * @param state
+   * @param raw
+   */
+  can_validate(state: State, raw: Raw): boolean;
 }
 
 export const noopAdapter: PuzzleAdapter<{}, {}> = {
   create_state: (raw) => raw,
   validate: async (_state, _raw) => false,
+  can_validate: (_state, _raw) => true,
 };
 
 export const minesweeperAdapter: PuzzleAdapter<PuzzleMinesweeper, MinesweeperState> = {
@@ -61,6 +70,14 @@ export const minesweeperAdapter: PuzzleAdapter<PuzzleMinesweeper, MinesweeperSta
     const gamestate_hash = await sha256(converted.join(""));
     return gamestate_hash === raw.board_solution_hash;
   },
+
+  can_validate: (state, raw) => {
+    // can validate if all cells are either marked or unmarked
+    return state.gamestate.every((cell, index) => {
+      if (raw.board_initial[index] !== "_") return true; // initial cell is filled, so we can ignore it
+      return cell !== MinesweeperCellStates.Unmarked; // user cell is filled
+    });
+  },
 };
 
 export const sudokuAdapter: PuzzleAdapter<PuzzleSudoku, SudokuState> = {
@@ -85,11 +102,18 @@ export const sudokuAdapter: PuzzleAdapter<PuzzleSudoku, SudokuState> = {
     const hash = await sha256(final_string);
     return hash === raw.board_solution_hash;
   },
+  can_validate: (state, raw) => {
+    // can validate if all cells are either filled or empty
+    const x = state.user_grid.every((cell, index) => {
+      if (raw.board_initial[index] !== "0") return true; // initial cell is filled, so we can ignore it
+      return cell !== 0; // user cell is filled
+    });
+    return x;
+  },
 };
 
 export const tentsAdapter: PuzzleAdapter<PuzzleTents, TentsState> = {
   create_state: (raw) => {
-    console.log("initial", raw.board_initial)
     return {
       ...raw,
       trees: raw.board_initial.split("").map(Number),
@@ -111,6 +135,14 @@ export const tentsAdapter: PuzzleAdapter<PuzzleTents, TentsState> = {
       .join("");
     const hash_current_state = await sha256(board);
     return hash_current_state === state.board_solution_hash;
+  },
+
+  can_validate: (state, raw) => {
+    // can validate if all cells are either filled or empty
+    return state.cell_states.every((cell, index) => {
+      if (raw.board_initial[index] !== "0") return true; // initial cell is filled, so we can ignore it
+      return cell !== TentCellStates.Empty; // user cell is filled
+    });
   },
 };
 
@@ -136,6 +168,14 @@ export const kakurasuAdapter: PuzzleAdapter<PuzzleKakurasu, KakurasuState> = {
     const hash_current_state = await sha256(board);
     return hash_current_state === raw.board_solution_hash;
   },
+
+  can_validate: (state, raw) => {
+    // can validate if all cells are either filled or empty
+    return state.cell_black.every((cell, index) => {
+      if (raw.board_initial[index] !== "0") return true; // initial cell is filled, so we can ignore it
+      return cell !== KakurasuCellStates.Empty; // user cell is filled
+    });
+  },
 };
 
 export const lightupAdapter: PuzzleAdapter<PuzzleLightup, LightupState> = {
@@ -154,11 +194,15 @@ export const lightupAdapter: PuzzleAdapter<PuzzleLightup, LightupState> = {
   },
 
   async validate(state, raw): Promise<boolean> {
-    const board = raw.board_initial.split("").map((cell, index) => {
-      if (cell !== ".") return cell;
-      return state.bulbs[index] === 1 ? "L" : "0";
-    }).join("");
+    const board = raw.board_initial
+      .split("")
+      .map((cell, index) => {
+        if (cell !== ".") return cell;
+        return state.bulbs[index] === 1 ? "L" : "0";
+      })
+      .join("");
     const hash_current_state = await sha256(board);
     return hash_current_state === raw.board_solution_hash;
   },
+  can_validate: (_state, _raw) => true,
 };

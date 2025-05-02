@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ModelTentsPuzzle } from "@/features/games/tents/tents.model";
 import GameGrid from "@/components/game/game.grid.vue";
-import { reactive, type Ref } from "vue";
+import { type Ref } from "vue";
 
 const props = defineProps<{
   scale?: number;

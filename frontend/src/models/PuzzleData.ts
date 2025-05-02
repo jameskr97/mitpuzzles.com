@@ -39,6 +39,12 @@ interface RawWithGeneral {
   [key: string]: any; // allow any other properties
 }
 
+/**
+ * Adapter for converting raw board games to client-side board games,
+ * and for validating games client-side.
+ * @param Raw The raw payload from the backend
+ * @param State The client-side structure
+ */
 export interface PuzzleAdapter<Raw extends RawWithGeneral, State = Raw> {
   /**
    * Convert the payload from the backend into the client-side structure
@@ -53,6 +59,15 @@ export interface PuzzleAdapter<Raw extends RawWithGeneral, State = Raw> {
    * @returns True if the game is solved, false otherwise
    */
   validate(state: State, raw: Raw): Promise<boolean> | boolean;
+
+
+  /**
+   * Check if the game can be validated.
+   * We don't want the user to submit the game unless they have made all possible changes.
+   * @param state
+   * @param raw
+   */
+  can_validate(state: State, raw: Raw): boolean;
 }
 
 export class PuzzleData<Raw extends RawWithGeneral, State> {
@@ -163,6 +178,10 @@ export class PuzzleData<Raw extends RawWithGeneral, State> {
 
   get no_puzzles(): boolean {
     return this.ui.value === GameUIState.NoPuzzles;
+  }
+
+  get can_submit(): boolean {
+    return this.adapter.can_validate(this.state.value!, this._gamedata.value!)
   }
 
   get history(): HistoryEntry[] {

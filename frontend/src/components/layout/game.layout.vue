@@ -59,7 +59,7 @@ const puzzle = await useCurrentPuzzle();
               <button
                 class="btn btn-success"
                 @click="puzzle.submit_solution()"
-                :disabled="puzzle.correct || puzzle.no_puzzles"
+                :disabled="puzzle.correct || puzzle.no_puzzles || !puzzle.can_submit"
               >
                 Submit
               </button>

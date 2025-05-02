@@ -1,12 +1,9 @@
 <script setup lang="ts">
 // import SidebarUserAnon from "@/components/sidebar/sidebar.user.anon.vue";
 // import SidebarUserAuth from "@/components/sidebar/sidebar.user.auth.vue";
-import { useAuthStore } from "@/store/auth";
 import { ACTIVE_GAMES } from "@/main";
 import FloatingFeedback from "@/components/button.feedback.vue"
 
-const auth = useAuthStore();
-auth.updateStore();
 </script>
 
 <template>

@@ -21,14 +21,14 @@ ENV PIP_DEFAULT_TIMEOUT=100 \
 
 ## Setup python build environment
 ### copy requirements.txt
-COPY backend/requirements/base.txt requirements.txt
+COPY backend/requirements/ requirements/
 ### prepare virtual environment
 RUN python -m venv --copies /venv
 ENV PATH="/venv/bin:$PATH"
 ENV VIRTUAL_ENV="/venv"
 RUN python -m pip install --no-cache-dir --upgrade pip
 ### install packages
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements/base.txt
 
 ############################################################
 ##### Final Image Builder

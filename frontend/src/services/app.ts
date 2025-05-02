@@ -43,3 +43,6 @@ export async function getUnsolvedPuzzle(params?: { puzzle_type?: string; variant
 export async function submitFeedback(message: string, metadata: any): Promise<any> {
   return await request("post", "/api/feedback", { message, metadata });
 }
+export async function ensureVisitor(): Promise<any> {
+  return await request("post", "/api/visitor");
+}
