@@ -1,9 +1,12 @@
-import { createApp, defineAsyncComponent } from "vue";
+import { createApp, defineAsyncComponent, h } from "vue";
 import { createPinia } from "pinia";
 import { createRouter, createWebHistory, type RouterOptions } from "vue-router";
 import * as adapter from "@/store/adapters";
 import App from "./App.vue";
 import "./style.css";
+// markdown pages
+import mdAbout from "./views/aboutus.md?raw";
+
 StorageVersionManager.clearOldStorage(); // clear old storage if needed
 
 /** Puzzle Components */
@@ -55,6 +58,21 @@ const path = (path: string, name: string, comp: string) => {
   };
 };
 
+function markdown(path: string, name: string, mdContent: string, proseClass = "prose-lg") {
+  return {
+    path,
+    name,
+    component: {
+      render() {
+        return h(MarkdownPage, {
+          content: mdContent,
+          proseClass,
+        });
+      },
+    },
+  };
+}
+
 const game = (name: string) => {
   return {
     path: `/${name}`,
@@ -70,7 +88,7 @@ const routerConfig: RouterOptions = {
   history: createWebHistory(),
   routes: [
     path("", "Home", "Home"),
-    path("/about-us", "about-us", "AboutUs"),
+    markdown("/about-us", "about-us", mdAbout),
     ...Object.keys(ACTIVE_GAMES).map((gamekey) => game(gamekey)),
     { path: "/:pathMatch(.*)*", name: "404", component: () => import("./views/404.vue") },
   ],
@@ -90,12 +108,14 @@ import {
   HiInformationCircle,
   MdLeaderboard,
   BiLightbulbFill,
+  MdArrowdropdown
 } from "oh-vue-icons/icons";
 import { defaultPuzzles } from "@/services/puzzle.defaults.ts";
 import { StorageVersionManager } from "@/utils.ts";
 import type { PuzzleAdapter } from "@/store/adapters";
 import { useAuthStore } from "@/store/auth.ts";
 import { useVisitorStore } from "@/store/visitor.ts";
+import MarkdownPage from "@/views/MarkdownPage.vue";
 
 addIcons(
   FaUndoAlt,
@@ -108,6 +128,7 @@ addIcons(
   HiInformationCircle,
   MdLeaderboard,
   BiLightbulbFill,
+  MdArrowdropdown
 );
 
 (async () => {

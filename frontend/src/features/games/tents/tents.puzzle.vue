@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { ModelTentsPuzzle } from "@/features/games/tents/tents.model";
 import GameGrid from "@/components/game/game.grid.vue";
 import { type Ref } from "vue";
+import { createStateMachinePuzzleModel } from "@/features/games/composables/PuzzleModelBase.ts";
+import type { PuzzleStateTents } from "@/services/states.ts";
+import { PuzzleModelOps } from "@/features/games/composables/PuzzleModelOps.ts";
 
 const props = defineProps<{
   scale?: number;
@@ -12,41 +14,49 @@ const emits = defineEmits<{
   (e: "game-event", event_type: string, payload: object): void;
 }>();
 
-const model = new ModelTentsPuzzle(props.state.value, (event: string, payload: object) => {
-  emits("game-event", event, payload);
-});
+enum TentCellStates {
+  Empty = 0,
+  Tree,
+  Tent,
+  Green,
+  NUM_STATES,
+}
+
+const m = createStateMachinePuzzleModel<PuzzleStateTents>(
+  props.state,
+  TentCellStates.NUM_STATES,
+  (e, p) => emits("game-event", e, p),
+  {
+    allowedStates: [TentCellStates.Empty, TentCellStates.Tent, TentCellStates.Green],
+    canModifyCell(row: number, col: number, state: PuzzleStateTents) {
+      return state.board[row * state.cols + col] !== TentCellStates.Tree;
+    },
+    onClickRow(row: number, state: PuzzleStateTents) { PuzzleModelOps.changeRowState(row, state, TentCellStates.Empty, TentCellStates.Green); },
+    onClickCol(col: number, state: PuzzleStateTents) { PuzzleModelOps.changeColState(col, state, TentCellStates.Empty, TentCellStates.Green); }
+  },
+);
 </script>
 
 <template>
-  <GameGrid
-    :rows="model.ROWS"
-    :cols="model.COLS"
-    :scale="scale"
-    class="rounded"
-    @mouse-up="model.onCellClick($event.row, $event.col, $event.input_event)"
-    @cell-enter="model.onCellMouseEnter($event.row, $event.col)"
-    @cell-leave="model.onCellMouseLeave($event.row, $event.col)"
-    @click-gutter-left="model.onRowNumberClick($event.row)"
-    @click-gutter-top="model.onColNumberClick($event.col)"
-  >
+  <GameGrid :rows="m.rows.value" :cols="m.cols.value" :scale="scale" class="rounded" :model="m">
     <!-- prettier-ignore -->
     <template v-slot:cell="{ row, col }">
       <div class="w-full h-full">
-        <img v-if="model.isCellTent(row, col)" src="/assets/tents/tent.svg" alt="Tent" class="w-full h-full bg-green-300" />
-        <img v-else-if="model.isCellTree(row, col)" src="/assets/tents/tree.svg" alt="Tree" class="w-full h-full bg-green-300" />
-        <div v-else-if="model.isCellGreen(row, col)"  class="w-full h-full bg-green-300" />
+        <img v-if="m.getCellState(row, col) === TentCellStates.Tent" src="/assets/tents/tent.svg" alt="Tent" class="w-full h-full bg-green-300" />
+        <img v-else-if="m.getCellState(row, col) === TentCellStates.Tree" src="/assets/tents/tree.svg" alt="Tree" class="w-full h-full bg-green-300" />
+        <div v-else-if="m.getCellState(row, col) === TentCellStates.Green" class="w-full h-full bg-green-300" />
       </div>
     </template>
 
     <template v-slot:top="{ col }">
       <div class="font-bold flex justify-center items-center h-full w-full">
-        {{ model.getTopNumber(col) }}
+        {{ m.state.value.col_counts[col] }}
       </div>
     </template>
 
     <template v-slot:left="{ row }">
       <div class="grid h-full font-bold text-end items-center justify-center">
-        {{ model.getLeftNumber(row) }}
+        {{ m.state.value.row_counts[row] }}
       </div>
     </template>
   </GameGrid>

@@ -121,19 +121,19 @@ export class ModelTentsPuzzle {
     this.emit("cell-changed", { index, has_tent: true });
   }
 
-onRowNumberClick(row: number) {
-  const modifiedIndexes: number[] = [];
-  for (let col = 0; col < this.COLS; col++) {
-    const index = row * this.COLS + col;
-    if (this.puzzle.trees[index] === 1) continue;
-    if (this.puzzle.cell_states[index] !== TentCellStates.Empty) continue;
-    this.puzzle.cell_states[index] = TentCellStates.Green;
-    modifiedIndexes.push(index);
+  onRowNumberClick(row: number) {
+    const modifiedIndexes: number[] = [];
+    for (let col = 0; col < this.COLS; col++) {
+      const index = row * this.COLS + col;
+      if (this.puzzle.trees[index] === 1) continue;
+      if (this.puzzle.cell_states[index] !== TentCellStates.Empty) continue;
+      this.puzzle.cell_states[index] = TentCellStates.Green;
+      modifiedIndexes.push(index);
+    }
+    if (modifiedIndexes.length > 0) {
+      this.emit("cells-changed", { indexes: modifiedIndexes, has_green: true });
+    }
   }
-  if (modifiedIndexes.length > 0) {
-    this.emit("cells-changed", { indexes: modifiedIndexes, has_green: true });
-  }
-}
 
   onColNumberClick(col: number) {
     const modifiedIndexes: number[] = [];

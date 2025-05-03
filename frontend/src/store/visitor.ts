@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import * as api from "@/services/app";
+import { useLocalStorage } from "@vueuse/core";
 
 export interface InitVisitorResponse {
   visitor_id: string;
@@ -9,6 +10,7 @@ export const useVisitorStore = defineStore("visitor", {
   state: () => ({
     initialized: false as boolean,
     visitor_id: null as string | null,
+    accepted_cookies: useLocalStorage("accepted_cookies", false),
   }),
   actions: {
     /**
@@ -26,6 +28,14 @@ export const useVisitorStore = defineStore("visitor", {
         // if 204, the cookie was already present & valid
         this.initialized = true;
       } catch {}
+    },
+
+    /**
+     * Set the cookie consent flag in the backend
+     * @param accepted Whether the user accepted cookies
+     */
+    async setCookieConsent(accepted: boolean) {
+      this.accepted_cookies = accepted;
     },
   },
 });

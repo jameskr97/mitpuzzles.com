@@ -1,39 +1,44 @@
 <script setup lang="ts">
-import { KakurasuCellStates, ModelKakurasuPuzzle } from "@/features/games/kakurasu/kakurasu.model";
 import GameGrid from "@/components/game/game.grid.vue";
 import type { Ref } from "vue";
+import { createStateMachinePuzzleModel } from "@/features/games/composables/puzzleModelBase.ts";
+import type { PuzzleStateKakurasu } from "@/services/states.ts";
 
 const props = defineProps<{
   scale?: number;
-  state: Ref<any>;
+  state: Ref<PuzzleStateKakurasu>;
 }>();
 
 const emits = defineEmits<{
   (e: "game-event", event_type: string, payload: object): void;
 }>();
 
-const model = new ModelKakurasuPuzzle(props.state.value, (event: string, payload: object) => {
-  emits("game-event", event, payload);
-});
-//
+enum KakurasuCellStates {
+  Empty = 0,
+  Filled = 1,
+  Crossed = 2,
+  NUM_STATES,
+}
+const m = createStateMachinePuzzleModel<PuzzleStateKakurasu>(props.state, KakurasuCellStates.NUM_STATES, (e, p) =>
+  emits("game-event", e, p),
+);
 </script>
 <template>
   <GameGrid
-    :rows="model.ROWS"
-    :cols="model.COLS"
+    :rows="m.rows.value"
+    :cols="m.cols.value"
     :scale="scale"
     :cell-size="12"
     class-game-cell="border-black"
-    @cell-click="model.onCellClick($event.row, $event.col, $event.input_event)"
-    @cell-right-click="model.onCellClick($event.row, $event.col, $event.input_event)"
+    :model="m"
   >
     <template v-slot:cell="{ row, col }">
       <div
-        v-if="model.getCellState(row, col) === KakurasuCellStates.Filled"
+        v-if="m.getCellState(row, col) === KakurasuCellStates.Filled"
         class="border-1 bg-black border-white h-full w-full"
       ></div>
       <div
-        v-if="model.getCellState(row, col) === KakurasuCellStates.Crossed"
+        v-if="m.getCellState(row, col) === KakurasuCellStates.Crossed"
         class="bg-[url(/assets/kakurasu/cross.svg)] bg-contain w-full h-full"
       ></div>
     </template>
@@ -52,13 +57,13 @@ const model = new ModelKakurasuPuzzle(props.state.value, (event: string, payload
 
     <template v-slot:right="props">
       <div class="grid place-items-center text-blue-500">
-        {{ model.store.row_sum[props.row] }}
+        {{ m.state.value.row_sum[props.row] }}
       </div>
     </template>
 
     <template v-slot:bottom="props">
       <div class="grid place-items-center text-blue-500">
-        {{ model.store.col_sum[props.row] }}
+        {{ m.state.value.col_sum[props.col] }}
       </div>
     </template>
   </GameGrid>

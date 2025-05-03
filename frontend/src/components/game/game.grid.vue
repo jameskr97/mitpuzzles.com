@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { computed, useSlots } from "vue";
+import { computed, type PropType, useSlots } from "vue";
 import useGridLayout from "@/composables/useGridLayout";
+import { usePuzzleModelAdapter } from "@/features/games/composables/PuzzleModelAdapter.ts";
+import type { PuzzleModel } from "@/features/games/composables/puzzleModelBase.ts";
 defineEmits<{
   (e: "cellClick", cell: any): void;
   (e: "cellRightClick", cell: any): void;
@@ -23,6 +25,7 @@ const props = defineProps({
   // Grid Dimensions
   rows: { type: Number, required: true },
   cols: { type: Number, required: true },
+  model: { type: Object as PropType<PuzzleModel<any>>, required: false },
   cellSize: { type: Number, required: false, default: 10 },
 
   // Grid Layout
@@ -35,6 +38,7 @@ const props = defineProps({
   classGameCell: { type: String, required: false, default: "" },
   classGameGrid: { type: String, required: false, default: "" },
 });
+const eventAdapter = props.model ? usePuzzleModelAdapter(props.model) : null;
 
 const layout = useGridLayout(props.rows, props.cols, slots, props.cellSize, props.gap);
 
@@ -59,6 +63,15 @@ const cellStyle = computed(() => (index: number) => {
 
   return styles;
 });
+
+// Compute all possible coordinates in advance
+const coords = computed(() =>
+  Array.from({ length: props.rows * props.cols }, (_, ci) => ({
+    row: Math.floor(ci / props.cols),
+    col: ci % props.cols,
+    index: ci,
+  })),
+);
 
 const coord = (ci: number) => ({
   row: Math.floor(ci / props.cols),
@@ -85,10 +98,7 @@ defineExpose({ dims_px });
     ]"
   >
     <div v-if="$slots.top" class="grid grid-cols-subgrid" :style="layout.styleGutterTop.value">
-      <div
-        v-for="(_, ic) in cols" :style="cellStyle(ic)"
-        @click="$emit('clickGutterTop', { col: ic, input_event: $event, ts: Date.now() })"
-      >
+      <div v-for="(_, ic) in cols" :style="cellStyle(ic)" @click="eventAdapter?.onClickGutterTop(ic)">
         <div class="@container static overflow-hidden focus:outline-none w-full h-full">
           <div class="text-[70cqw] w-full h-full focus:outline-none mb-10">
             <slot name="top" :row="ic" :col="ic"></slot>
@@ -98,10 +108,7 @@ defineExpose({ dims_px });
     </div>
 
     <div v-if="$slots.bottom" class="grid grid-cols-subgrid" :style="layout.styleGutterBottom.value">
-      <div
-        v-for="(_, ic) in cols" :style="cellStyle(ic)"
-        @click="$emit('clickGutterBottom', { col: ic, input_event: $event, ts: Date.now() })"
-      >
+      <div v-for="(_, ic) in cols" :style="cellStyle(ic)" @click="eventAdapter?.onClickGutterBottom(ic)">
         <div class="@container static overflow-hidden focus:outline-none w-full h-full">
           <div class="text-[70cqw] w-full h-full focus:outline-none">
             <slot name="bottom" :row="ic" :col="ic"></slot>
@@ -111,10 +118,7 @@ defineExpose({ dims_px });
     </div>
 
     <div v-if="$slots.left" class="grid grid-rows-subgrid" :style="layout.styleGutterLeft.value">
-      <div
-        v-for="(_, ir) in rows" :style="cellStyle(ir)"
-        @click="$emit('clickGutterLeft', { row: ir, input_event: $event, ts: Date.now() })"
-      >
+      <div v-for="(_, ir) in rows" :style="cellStyle(ir)" @click="eventAdapter?.onClickGutterLeft(ir)">
         <div class="@container static overflow-hidden focus:outline-none w-full h-full">
           <div class="text-[70cqw] w-full h-full focus:outline-none">
             <slot name="left" :row="ir" :col="ir"></slot>
@@ -124,10 +128,7 @@ defineExpose({ dims_px });
     </div>
 
     <div v-if="$slots.right" class="grid grid-rows-subgrid" :style="layout.styleGutterRight.value">
-      <div
-        v-for="(_, ir) in rows" :style="cellStyle(ir)"
-        @click="$emit('clickGutterRight', { row: ir, input_event: $event, ts: Date.now() })"
-      >
+      <div v-for="(_, ir) in rows" :style="cellStyle(ir)" @click="eventAdapter?.onClickGutterRight(ir)">
         <div class="@container static overflow-hidden focus:outline-none w-full h-full">
           <div class="text-[70cqw] w-full h-full focus:outline-none">
             <slot name="right" :row="ir" :col="ir"></slot>
@@ -141,18 +142,19 @@ defineExpose({ dims_px });
       :style="layout.styleGameGrid.value"
     >
       <div
-        v-for="(_, ci) in cols * rows"
+        v-for="(cell, ci) in coords"
+        v-bind="coord(ci)"
         class="@container bg-white overflow-hidden focus:outline-none text-[70cqw]"
         :class="[classGameCell]"
         :style="[cellStyle(ci)]"
-        @click="$emit('cellClick', { ...coord(ci), input_event: $event, ts: Date.now() })"
-        @contextmenu.prevent="$emit('cellRightClick', { ...coord(ci), input_event: $event, ts: Date.now() })"
-        @mousedown="$emit('mouseDown', { ...coord(ci), input_event: $event, ts: Date.now() })"
-        @mouseup="$emit('mouseUp', { ...coord(ci), input_event: $event, ts: Date.now() })"
-        @keydown="$emit('keyDown', { ...coord(ci), input_event: $event, ts: Date.now() })"
-        @keyup="$emit('keyUp', { ...coord(ci), input_event: $event, ts: Date.now() })"
-        @mouseenter="$emit('cellEnter', { ...coord(ci), ts: Date.now() })"
-        @mouseleave="$emit('cellLeave', { ...coord(ci), ts: Date.now() })"
+        @click="eventAdapter?.onCellClick(cell.row, cell.col, $event)"
+        @contextmenu.prevent="eventAdapter?.onCellRightClick(cell.row, cell.col, $event)"
+        @mousedown="eventAdapter?.onCellMouseDown(cell.row, cell.col, $event)"
+        @mouseup="eventAdapter?.onCellMouseUp(cell.row, cell.col, $event)"
+        @mouseenter="eventAdapter?.onCellEnter(cell.row, cell.col)"
+        @mouseleave="eventAdapter?.onCellLeave(cell.row, cell.col)"
+        @keydown="eventAdapter?.onCellKeyDown(cell.row, cell.col, $event)"
+        @keyup="eventAdapter?.onCellKeyUp(cell.row, cell.col, $event)"
         tabindex="-1"
       >
         <div class="text-[70cqw] w-full h-full select-none">

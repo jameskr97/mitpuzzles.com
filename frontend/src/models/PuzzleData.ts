@@ -1,7 +1,7 @@
 import logger from "@/services/logger.ts";
 import { computed, type ComputedRef, ref, type Ref } from "vue";
 import { useLocalStorage } from "@vueuse/core";
-import { getUnsolvedPuzzle, getUnsolvedPuzzleCount, submitGameRecording } from "@/services/app.ts";
+import { getPuzzleVariants, getUnsolvedPuzzle, getUnsolvedPuzzleCount, submitGameRecording } from "@/services/app.ts";
 import { useDelayedLoader } from "@/composables/useDelayedLoader.ts";
 import { PuzzleTimer } from "@/utils.ts";
 
@@ -60,7 +60,6 @@ export interface PuzzleAdapter<Raw extends RawWithGeneral, State = Raw> {
    */
   validate(state: State, raw: Raw): Promise<boolean> | boolean;
 
-
   /**
    * Check if the game can be validated.
    * We don't want the user to submit the game unless they have made all possible changes.
@@ -77,7 +76,9 @@ export class PuzzleData<Raw extends RawWithGeneral, State> {
   private _state: Ref<State | undefined>;
   private _history: Ref<HistoryEntry[]>;
   private _submitted: Ref<boolean>;
-  /// time variables
+  private _available_variants: Ref<string[]> = ref([]);
+  private _selected_variant: Ref<string | undefined>;
+    /// time variables
   private _time_elapsed: Ref<number>;
   private _time_completed: Ref<boolean>;
   readonly timer: PuzzleTimer;
@@ -105,6 +106,9 @@ export class PuzzleData<Raw extends RawWithGeneral, State> {
     this._submitted = useLocalStorage<boolean>(`${this.key}:submitted`, false);
     this._time_elapsed = useLocalStorage<number>(`${this.key}:time_elapsed`, 0);
     this._time_completed = useLocalStorage<boolean>(`${this.key}:time_completed`, false);
+    this._available_variants = useLocalStorage<string[]>(`${this.key}:available_variants`, []);
+    this._selected_variant = useLocalStorage<string>(`${this.key}:selected_variant`, undefined as any);
+
     this.timer = new PuzzleTimer(this._time_elapsed, this._time_completed);
     this.can_render_board = computed(
       () => this.is_state_valid() && this.is_gamedata_valid() && this.ui.value !== GameUIState.NoPuzzles,
@@ -112,6 +116,16 @@ export class PuzzleData<Raw extends RawWithGeneral, State> {
   }
 
   async init() {
+    // query for difficulties to show to the user
+    try {
+      const res = await getPuzzleVariants(this.GAME_TYPE);
+      this._available_variants.value = res.data || [];
+      if (this._selected_variant.value === undefined)
+        this._selected_variant.value = this._available_variants.value[0];
+      logger.info(`Available variants for ${this.GAME_TYPE}: ${this._available_variants.value}`);
+    } catch (err: any) {
+      logger.error(`Failed to fetch variants for ${this.GAME_TYPE}`, err);
+    }
     // Query if there are any unsolved puzzles available for this game type
     try {
       const res = await getUnsolvedPuzzleCount({ puzzle_type: this.GAME_TYPE });
@@ -181,7 +195,7 @@ export class PuzzleData<Raw extends RawWithGeneral, State> {
   }
 
   get can_submit(): boolean {
-    return this.adapter.can_validate(this.state.value!, this._gamedata.value!)
+    return this.adapter.can_validate(this.state.value!, this._gamedata.value!);
   }
 
   get history(): HistoryEntry[] {
@@ -194,6 +208,22 @@ export class PuzzleData<Raw extends RawWithGeneral, State> {
       this._state.value = this.adapter.create_state(this._gamedata.value!);
     }
     return this._state;
+  }
+
+  get available_variants(): string[] {
+    return this._available_variants.value;
+  }
+
+  get variant(): string | undefined {
+    return this._selected_variant.value;
+  }
+
+  set variant(value: string | undefined) {
+    if (value !== undefined && !this._available_variants.value.includes(value)) {
+      logger.warn(`Invalid variant selected: ${value}`);
+      return;
+    }
+    this._selected_variant.value = value;
   }
 
   // Actions
@@ -210,7 +240,9 @@ export class PuzzleData<Raw extends RawWithGeneral, State> {
 
     try {
       // Request a new puzzle from the backend + Reset History
-      const res = await this.loader.run(async () => (await getUnsolvedPuzzle({ puzzle_type: this.GAME_TYPE })).data);
+      let payload: {puzzle_type: string, variant?: string} = { puzzle_type: this.GAME_TYPE };
+      if (this._selected_variant.value) payload.variant = this._selected_variant.value;
+      const res = await this.loader.run(async () => (await getUnsolvedPuzzle(payload)).data);
       this._history.value = [];
 
       // Determine the type of response

@@ -1,5 +1,9 @@
 <script setup lang="ts">
+import { useVisitorStore } from "@/store/visitor.ts";
 import Sidebar from "@/components/sidebar/sidebar.vue";
+import ConsentPopup from "@/components/modal.consent.vue";
+
+const visitor = useVisitorStore();
 </script>
 
 <template>
@@ -17,6 +21,7 @@ import Sidebar from "@/components/sidebar/sidebar.vue";
             <component :is="Component" :key="$route.path" />
           </router-view>
         </div>
+        <ConsentPopup v-if="!visitor.accepted_cookies" />
       </div>
     </div>
   </Suspense>

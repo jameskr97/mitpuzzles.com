@@ -1,44 +1,32 @@
-export interface PuzzleMinesweeper {
+/**
+ * This file should match 1-to-1 with the backend serializers.
+ * PuzzleRecord == PuzzleBaseSerializer
+ * PuzzleRecordMinesweeper == PuzzleMinesweeperSerializer
+ */
+
+/**
+ * This is the base response of data that is returned from the server.
+ */
+export interface PuzzleRecord {
   id: number;
   cols: number;
   rows: number;
   board_initial: string;
   board_solution_hash: string;
 }
+export type PuzzleRecordExtended<T extends object = {}> = PuzzleRecord & T;
 
-export interface PuzzleSudoku {
-  id: number;
-  cols: number;
-  rows: number;
-  board_initial: string;
-  board_solution_hash: string;
-}
+export type PuzzleRecordMinesweeper = PuzzleRecord;
+export type PuzzleRecordSudoku = PuzzleRecord;
+export type PuzzleRecordLightup = PuzzleRecord;
 
-export interface PuzzleTents {
-  id: number;
-  cols: number;
-  rows: number;
+export type PuzzleRecordTents = PuzzleRecordExtended<{
   trees: string;
   row_counts: number[];
   col_counts: number[];
-  board_initial: string;
-  board_solution_hash: string;
-}
+}>;
 
-export interface PuzzleKakurasu {
-  id: number;
-  cols: number;
-  rows: number;
+export type PuzzleRecordKakurasu = PuzzleRecordExtended<{
   row_sum: number[];
   col_sum: number[];
-  board_initial: string;
-  board_solution_hash: string;
-}
-
-export interface PuzzleLightup {
-  id: number;
-  cols: number;
-  rows: number;
-  board_initial: string;
-  board_solution_hash: string;
-}
+}>;

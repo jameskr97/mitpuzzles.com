@@ -46,3 +46,6 @@ export async function submitFeedback(message: string, metadata: any): Promise<an
 export async function ensureVisitor(): Promise<any> {
   return await request("post", "/api/visitor");
 }
+export async function getPuzzleVariants(puzzle_type: string): Promise<any> {
+  return await request("get", "/api/puzzle/variants", { puzzle_type });
+}

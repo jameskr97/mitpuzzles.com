@@ -9,6 +9,21 @@ const route = useRoute();
 const layout = useGameLayout();
 const { scale, scale_remapped } = getGameScale();
 const puzzle = await useCurrentPuzzle();
+
+
+// difficulty dropdown
+function get_dispaly_name(diff: string): string {
+  const parts = diff.split(".");
+  if (parts.length !== 2) return diff; // if no parts, return the original string
+  const name_capitalized = parts[1].charAt(0).toUpperCase() + parts[1].slice(1);
+  return `${parts[0]} ${name_capitalized}`;
+}
+function on_difficult_select(diff: string) {
+  if (document.activeElement instanceof HTMLElement)
+    document.activeElement.blur();
+  puzzle.variant = diff;
+  puzzle.load_new_puzzle();
+}
 </script>
 
 <template>
@@ -17,7 +32,7 @@ const puzzle = await useCurrentPuzzle();
       <div class="h-full flex flex-col">
         <!-- GAME CONTROL BAR -->
         <div class="flex flex-col">
-          <div class="flex flex-col items-center w-full md:w-3/5 2xl:w-1/3 mx-auto justify-around gap-2 px-2">
+          <div class="flex flex-col items-center w-full md:w-4/5 2xl:w-2/4 mx-auto justify-around gap-2 px-2">
             <div class="flex flex-row w-full">
               <v-icon
                 name="hi-information-circle"
@@ -41,7 +56,18 @@ const puzzle = await useCurrentPuzzle();
             </div>
 
             <!-- Buttons -->
-            <div class="grid grid-cols-3 w-full gap-1">
+            <div class="grid grid-cols-4 w-full gap-1">
+              <div  class="dropdown dropdown-center">
+                <button ref="difficulty-dropdown" tabindex="0" role="button" class="btn btn-secondary w-full">
+                  Difficulty
+                  <v-icon name="md-arrowdropdown" />
+                </button>
+                <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-1 w-full mt-2 p-2 shadow-sm">
+                  <li v-for="x in puzzle.available_variants" @click="on_difficult_select(x)">
+                    <a>{{get_dispaly_name(x)}}</a>
+                  </li>
+                </ul>
+              </div>
               <button
                 class="btn btn-error"
                 @click="puzzle.clear_state()"
@@ -64,11 +90,14 @@ const puzzle = await useCurrentPuzzle();
                 Submit
               </button>
             </div>
+
+            <!-- Game variant display -->
+            <div class="m-0 p-0">{{get_dispaly_name(puzzle.variant!)}}</div>
           </div>
         </div>
 
         <!-- Divider between control bar and game content -->
-        <div class="divider divider-vertical my-2"></div>
+        <div class="divider divider-vertical mb-2 mt-0"></div>
 
         <div class="grid gap-2 md:gap-0 md:grid-cols-[1fr_2fr_1fr] h-full items-start">
           <!-- The GameContent itself -->
@@ -94,7 +123,7 @@ const puzzle = await useCurrentPuzzle();
                   <button class="btn btn-outline ml-auto" @click="puzzle.load_new_puzzle()">New puzzle</button>
                 </div>
 
-                <Alert v-if="puzzle.wrong" class="alert-error" icon="io-close"> Not quite! </Alert>
+                <Alert v-if="puzzle.wrong" class="alert-error" icon="io-close"> Not quite!</Alert>
               </div>
             </div>
 

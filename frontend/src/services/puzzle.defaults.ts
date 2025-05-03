@@ -4,7 +4,7 @@ import type { GameKey } from "@/main";
  *
  */
 export const defaultPuzzles: Record<GameKey, any> = {
-  minesweeper: { cols: 7, rows: 7, board_initial: "U111U1112U222UUU2UUUU111121UU21UU11UU1113UU21UUUU" },
+  minesweeper: { cols: 7, rows: 7, board_initial: "_111_1112_222___2____111121__21__11__1113__21____" },
   sudoku: {
     cols: 9,
     rows: 9,
@@ -15,7 +15,7 @@ export const defaultPuzzles: Record<GameKey, any> = {
     cols: 6,
     row_counts: [2, 1, 1, 1, 1, 1],
     col_counts: [2, 0, 1, 1, 1, 2],
-    board_initial: "010000000001000100000101000100010000"
+    board_initial: "010000000001000100000101000100010000",
   },
   kakurasu: {
     cols: 4,

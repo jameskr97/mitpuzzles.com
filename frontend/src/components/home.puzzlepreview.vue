@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { useElementSize, asyncComputed } from "@vueuse/core";
+import { useElementSize } from "@vueuse/core";
 import { computed, ref } from "vue";
-import { getUnsolvedPuzzleCount } from "@/services/app.ts";
 
 const props = defineProps({
   title: { type: String, required: true },
@@ -18,14 +17,6 @@ const scale = computed(() => {
   return containerWidth.value / totalWidth / 80; // 80 is an arbitrary number to make the puzzle fit nicely on the homepage
 });
 
-const title = asyncComputed(async () => {
-  try {
-    const res = await getUnsolvedPuzzleCount({ puzzle_type: props.page });
-    return `${props.title} | ${res.data.unsolved_count} unsolved`;
-  } catch {
-    return props.title;
-  }
-});
 </script>
 
 <template>
@@ -38,7 +29,7 @@ const title = asyncComputed(async () => {
         <component :ref="puzzleRef" :is="component" :scale="scale" :state="state" class="!origin-[50%_50%]" />
       </div>
       <div class="divider my-0 py-0 h-full"></div>
-      <div class="p-1">{{title}}</div>
+      <div class="p-1 mx-auto">{{props.title}}</div>
     </div>
   </router-link>
 </template>
