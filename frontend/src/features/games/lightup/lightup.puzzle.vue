@@ -1,7 +1,11 @@
 <script setup lang="ts">
-import GameGrid from "@/components/game/game.grid.vue";
+import BoardContainer from "@/features/games/components/board.container.vue";
+import BoardBorders from "@/features/games/components/board.borders.vue";
+import BoardCells from "@/features/games/components/board.cellgrid.vue";
+import BoardInteraction from "@/features/games/components/board.interaction.vue";
+import BoardBackground from "@/features/games/components/board.background.vue";
 import { type Ref } from "vue";
-import { createStateMachinePuzzleModel } from "@/features/games/composables/puzzleModelBase.ts";
+import { createStateMachinePuzzleModel } from "@/features/games/composables/PuzzleModelBase";
 import type { PuzzleStateLightup } from "@/services/states.ts";
 import { LightupCellStates, LightWallStates } from "@/features/games/lightup/lightup.model.ts";
 
@@ -64,43 +68,63 @@ const m = createStateMachinePuzzleModel<PuzzleStateLightup>(
     },
   },
 );
+const borderConfig = {
+  outer: { thickness: 1, borderClass: "bg-black" },
+};
 </script>
 
 <template>
-  <GameGrid :rows="m.rows.value" :cols="m.cols.value" :scale="scale" :model="m">
-    <template v-slot:cell="{ row, col }">
-      <div class="w-full h-full">
-        <!-- Walls -->
-        <div
-          v-if="LightWallStates.includes(m.getCellState(row, col))"
-          class="bg-black h-full w-full flex items-center justify-center text-white"
-        >
-          {{ m.getCellState(row, col) === LightupCellStates.WallBlank ? "" : m.getCellState(row, col) }}
+  <BoardContainer
+    :rows="m.rows.value"
+    :cols="m.cols.value"
+    :scale="scale"
+    :model="m"
+    :gap="1"
+    :border-config="borderConfig"
+  >
+    <BoardBorders />
+    <BoardInteraction />
+    <BoardBackground class="bg-black" />
+    <BoardCells>
+      <template v-slot:cell="{ row, col }">
+        <div class="w-full h-full">
+          <!-- Empty cells -->
+          <div
+            v-if="m.getCellState(row, col) === LightupCellStates.Empty"
+            class="bg-white bg-cover w-full h-full"
+          ></div>
+
+          <!-- Walls -->
+          <div
+            v-else-if="LightWallStates.includes(m.getCellState(row, col))"
+            class="bg-black h-full w-full flex items-center justify-center text-white"
+          >
+            {{ m.getCellState(row, col) === LightupCellStates.WallBlank ? "" : m.getCellState(row, col) }}
+          </div>
+
+          <!-- Bulbs -->
+          <div
+            v-else-if="m.getCellState(row, col) === LightupCellStates.Bulb"
+            class="relative inset-0 h-full w-full flex items-center justify-center"
+          >
+            <div class="absolute grid bg-yellow-200 h-full w-full items-center justify-center"></div>
+
+            <img
+              src="/assets/lightup/bulb.svg"
+              alt="Light Bulb"
+              class="absolute w-full h-full rounded items-center justify-center"
+            />
+          </div>
+
+          <!-- Cross -->
+          <div
+            v-else-if="m.getCellState(row, col) === LightupCellStates.Cross"
+            :class="{ 'bg-yellow-200!': m.state.value.lit[m.index(row, col)] }"
+            class="bg-[url(/assets/kakurasu/cross.svg)] bg-contain w-full h-full bg-white"
+          ></div>
+          <div v-else-if="m.state.value.lit[m.index(row, col)]" class="grid bg-yellow-200 h-full w-full text-sm"></div>
         </div>
-
-        <!-- Bulbs -->
-        <div
-          v-if="m.getCellState(row, col) === LightupCellStates.Bulb"
-          class="relative inset-0 h-full w-full flex items-center justify-center"
-        >
-          <div class="absolute grid bg-yellow-200 h-full w-full items-center justify-center"></div>
-
-          <img
-            src="/assets/lightup/bulb.svg"
-            alt="Light Bulb"
-            class="absolute w-full h-full rounded items-center justify-center"
-          />
-        </div>
-
-        <!-- Cross -->
-        <div
-          v-if="m.getCellState(row, col) === LightupCellStates.Cross"
-          :class="{'bg-yellow-200': m.state.value.lit[m.index(row, col)]}"
-          class="bg-[url(/assets/kakurasu/cross.svg)] bg-contain w-full h-full"
-        ></div>
-
-        <div v-if="m.state.value.lit[m.index(row, col)]" class="grid bg-yellow-200 h-full w-full text-sm"></div>
-      </div>
-    </template>
-  </GameGrid>
+      </template>
+    </BoardCells>
+  </BoardContainer>
 </template>

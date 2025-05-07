@@ -13,6 +13,7 @@ const puzzle = await useCurrentPuzzle();
 
 // difficulty dropdown
 function get_dispaly_name(diff: string): string {
+  if (diff === undefined) return "undefined";
   const parts = diff.split(".");
   if (parts.length !== 2) return diff; // if no parts, return the original string
   const name_capitalized = parts[1].charAt(0).toUpperCase() + parts[1].slice(1);

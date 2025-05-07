@@ -1,9 +1,10 @@
 <script setup lang="ts">
 // import SidebarUserAnon from "@/components/sidebar/sidebar.user.anon.vue";
 // import SidebarUserAuth from "@/components/sidebar/sidebar.user.auth.vue";
-import { ACTIVE_GAMES } from "@/main";
-import FloatingFeedback from "@/components/button.feedback.vue"
+import { ACTIVE_GAMES, DEV_TOOLS } from "@/main";
+import FloatingFeedback from "@/components/button.feedback.vue";
 
+const isDev = import.meta.env.DEV;
 </script>
 
 <template>
@@ -14,7 +15,7 @@ import FloatingFeedback from "@/components/button.feedback.vue"
         <li class="text-lg mx-auto mt-2 sticky top-0 text-center underline">mitpuzzles.com</li>
       </router-link>
 
-<!--      <div class="divider m-0"></div>-->
+      <!--      <div class="divider m-0"></div>-->
       <div class="p-2">
         <router-link v-for="game in Object.values(ACTIVE_GAMES)" :key="game.key" :to="{ name: 'game-' + game.key }">
           <li class="m-0 text-xl">
@@ -24,18 +25,30 @@ import FloatingFeedback from "@/components/button.feedback.vue"
           </li>
         </router-link>
       </div>
+
+      <div v-if="isDev">
+        <p class="text-lg mx-auto mt-2 sticky top-0 text-center underline">Dev Tools</p>
+        <div class="p-2">
+          <router-link v-for="tool in DEV_TOOLS" :to="{ name: `dev-` + tool.key }">
+            <li class="m-0 text-lg">
+              <a href="#">{{ tool.name }}</a>
+            </li>
+          </router-link>
+        </div>
+      </div>
+
       <div class="w-full mt-auto p-2">
-        <router-link :to="{name: 'about-us'}">
+        <router-link :to="{ name: 'about-us' }">
           <button class="btn btn-info w-full mb-2">About Us</button>
         </router-link>
         <FloatingFeedback />
       </div>
       <!-- Hide sidebar for now. -->
       <!-- Sidebar Footer -->
-<!--      <div class="mt-auto border-t-2 h-19 border-red-60 sticky bottom-0 bg-base-200 w-full">-->
-<!--        <SidebarUserAnon v-if="!auth.isAuthenticated" class="p-4" />-->
-<!--        <SidebarUserAuth v-else class="p-2" />-->
-<!--      </div>-->
+      <!--      <div class="mt-auto border-t-2 h-19 border-red-60 sticky bottom-0 bg-base-200 w-full">-->
+      <!--        <SidebarUserAnon v-if="!auth.isAuthenticated" class="p-4" />-->
+      <!--        <SidebarUserAuth v-else class="p-2" />-->
+      <!--      </div>-->
     </div>
   </div>
 </template>

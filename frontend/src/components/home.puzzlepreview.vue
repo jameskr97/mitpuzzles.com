@@ -14,7 +14,7 @@ const puzzleRef = ref();
 const { width: containerWidth } = useElementSize(container);
 const scale = computed(() => {
   const totalWidth = puzzleRef.value?.totalWidth ?? 1;
-  return containerWidth.value / totalWidth / 80; // 80 is an arbitrary number to make the puzzle fit nicely on the homepage
+  return containerWidth.value / totalWidth / 110; // 80 is an arbitrary number to make the puzzle fit nicely on the homepage
 });
 
 </script>

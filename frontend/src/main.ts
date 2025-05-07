@@ -1,11 +1,24 @@
+// Vue core
 import { createApp, defineAsyncComponent, h } from "vue";
-import { createPinia } from "pinia";
 import { createRouter, createWebHistory, type RouterOptions } from "vue-router";
-import * as adapter from "@/store/adapters";
+// Pinia store
+import { createPinia } from "pinia";
+import { useAuthStore } from "@/store/auth.ts";
+import { useVisitorStore } from "@/store/visitor.ts";
+// Components & Views
 import App from "./App.vue";
-import "./style.css";
-// markdown pages
+import MarkdownPage from "@/views/MarkdownPage.vue";
+import { OhVueIcon } from "@/icons";
+// Game adapters and data
+import * as adapter from "@/store/adapters";
+import type { PuzzleAdapter } from "@/store/adapters";
+import { defaultPuzzles } from "@/services/puzzle.defaults.ts";
+// Markdown content
 import mdAbout from "./views/aboutus.md?raw";
+// Utility
+import { StorageVersionManager } from "@/utils.ts";
+// Style
+import "./style.css";
 
 StorageVersionManager.clearOldStorage(); // clear old storage if needed
 
@@ -15,7 +28,17 @@ function create_game_entry<Raw, State>(sidebar_title: string, key: string, adapt
     key,
     name: sidebar_title,
     component: defineAsyncComponent({ loader: () => import(`@/features/games/${key}/${key}.puzzle.vue`) }),
-    instructions: async () => await import(`@/features/games/${key}/instructions.md?raw`),
+    instructions: async () => {
+      try {
+        return await import(`@/features/games/${key}/instructions.md?raw`);
+      } catch (e) {
+        if (import.meta.env.DEV) {
+          return { default: "# No instructions yet\n_Add instructions.md to this game folder._" };
+        } else {
+          throw e;
+        }
+      }
+    },
     adapter,
     default: async () => adapter.create_state(defaultPuzzles[key]),
   };
@@ -33,120 +56,66 @@ export const ACTIVE_GAMES: Record<string, any> = {
   tents:        create_game_entry("⛺ Tents", "tents", adapter.tentsAdapter),
   kakurasu:     create_game_entry("⬛ Kakurasu", "kakurasu", adapter.kakurasuAdapter),
   lightup:      create_game_entry("💡 Light Up", "lightup", adapter.lightupAdapter),
+  // nonograms:    create_game_entry("Nonograms", "nonograms", adapter.noopAdapter),
 }
-
-/**
- * This is the type of the keys in the ACTIVE_GAMES object.
- * Used in type definitions to ensure that when a game is added or removed,
- * from the ACTIVE_GAMES object, the type system will catch it in other
- * parts of the codebase.
- */
 export type GameKey = keyof typeof ACTIVE_GAMES;
 
-/**
- * Function to help with generating path dictinary that will be used in routerConfig
- * @param path the path for this view
- * @param name the path name (for referencing in other functions)
- * @param comp the component to be displayed at this endpoint
- * @returns a routerConfig
- */
-const path = (path: string, name: string, comp: string) => {
+function create_dev_tool(key: string, display_name: string) {
   return {
-    path: path,
-    name: name,
-    component: () => import(`./views/${comp}.vue`),
+    key,
+    name: display_name,
+    component: `./views/dev/${key}.vue`,
   };
+}
+export const DEV_TOOLS: Record<string, any> = {
+  "test-board": create_dev_tool("test-board", "🎯 Test Board"),
 };
 
-function markdown(path: string, name: string, mdContent: string, proseClass = "prose-lg") {
-  return {
+const route = {
+  view: (path: string, name: string, view: string) => ({
+    path,
+    name,
+    component: () => import(`@/views/${view}.vue`),
+  }),
+  markdown: (path: string, name: string, content: string, proseClass = "prose-lg") => ({
     path,
     name,
     component: {
-      render() {
-        return h(MarkdownPage, {
-          content: mdContent,
-          proseClass,
-        });
-      },
+      render: () => h(MarkdownPage, { content, proseClass }),
     },
-  };
-}
-
-const game = (name: string) => {
-  return {
+  }),
+  game: (name: string) => ({
     path: `/${name}`,
     name: `game-${name}`,
-    // component: () => import(`./features/games/${name}/${name}.freeplay.vue`),
-    component: () => import("./components/Freeplay.vue"),
-    // freeplay: () => import(`./features/games/${name}/${name}.freeplay.vue`),
+    component: () => import("@/components/Freeplay.vue"),
     meta: { game_type: name },
-  };
+  }),
+  dev: (name: string) => ({
+    path: `/devtool/${name}`,
+    name: `dev-${name}`,
+    component: () => import(`${DEV_TOOLS[name].component}`),
+  }),
 };
 
+/** This is the global list of routes that are available in the app. */
 const routerConfig: RouterOptions = {
   history: createWebHistory(),
   routes: [
-    path("", "Home", "Home"),
-    markdown("/about-us", "about-us", mdAbout),
-    ...Object.keys(ACTIVE_GAMES).map((gamekey) => game(gamekey)),
+    route.view("", "Home", "Home"),
+    route.markdown("/about-us", "about-us", mdAbout),
+    ...Object.keys(ACTIVE_GAMES).map(route.game),
+    ...Object.keys(DEV_TOOLS).map(route.dev),
     { path: "/:pathMatch(.*)*", name: "404", component: () => import("./views/404.vue") },
   ],
 };
 
-////////////////////////////////////////////////////////////////////////////////
-// Add OhVueIcons (https://oh-vue-icons.js.org/)
-import { OhVueIcon, addIcons } from "oh-vue-icons";
-import {
-  FaUndoAlt,
-  FaRedoAlt,
-  IoCloseSharp,
-  HiCheck,
-  MdFibernew,
-  FaCheckCircle,
-  IoClose,
-  HiInformationCircle,
-  MdLeaderboard,
-  BiLightbulbFill,
-  MdArrowdropdown
-} from "oh-vue-icons/icons";
-import { defaultPuzzles } from "@/services/puzzle.defaults.ts";
-import { StorageVersionManager } from "@/utils.ts";
-import type { PuzzleAdapter } from "@/store/adapters";
-import { useAuthStore } from "@/store/auth.ts";
-import { useVisitorStore } from "@/store/visitor.ts";
-import MarkdownPage from "@/views/MarkdownPage.vue";
-
-addIcons(
-  FaUndoAlt,
-  FaRedoAlt,
-  IoCloseSharp,
-  HiCheck,
-  MdFibernew,
-  FaCheckCircle,
-  IoClose,
-  HiInformationCircle,
-  MdLeaderboard,
-  BiLightbulbFill,
-  MdArrowdropdown
-);
-
+/** app initialization */
 (async () => {
-  const app = createApp(App)
-    .use(createPinia())
-    .use(createRouter(routerConfig))
-    .component("v-icon", OhVueIcon);
-
-  // attempt to get current user.
-  const auth = useAuthStore();
-  await auth.updateStore();
-
-  // attempt to get the visitor id.
-  const visitor = useVisitorStore();
-  await visitor.init();
-  // both user and visitor stores are attempted, though the backend knows that:
+  const app = createApp(App).use(createPinia()).use(createRouter(routerConfig)).component("v-icon", OhVueIcon);
+  // attempt to get both: the backend should know.
   // if the user is logged in, the visitor ID is not distributed.
   // if there is no user, the visitor ID is used to identify the user
-
+  await useAuthStore().updateStore();
+  await useVisitorStore().init();
   app.mount("#app");
 })();

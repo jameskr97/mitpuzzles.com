@@ -73,8 +73,9 @@ export const minesweeperAdapter: PuzzleAdapter<PuzzleRecordMinesweeper, PuzzleSt
   validate: async (state, raw) => {
     const converted = state.board.map((cell, index) => {
       if (raw.board_initial[index] !== "_") return raw.board_initial[index]; // initial cell is filled, so we can ignore it
-      if (cell === MinesweeperCellStates.Flagged) return "F";
-      if (cell === MinesweeperCellStates.Safe) return "S";
+      // TODO(james): Update to use the MinesweeperCellStates enum
+      if (cell === 11) return "F";
+      if (cell === 12) return "S";
       return cell;
     });
 

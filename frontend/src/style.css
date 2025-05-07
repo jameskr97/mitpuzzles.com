@@ -28,8 +28,8 @@
 }
 
 /* css for tents instructions.md */
-.md-cell-tree {
-  background-image: url("/assets/tents/tree.svg");
+.md-cell-tent {
+  background-image: url("/assets/tents/tent.svg");
 }
 
 /* css for kakurasu instructions.md */

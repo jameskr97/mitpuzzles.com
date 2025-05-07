@@ -77,6 +77,7 @@ export function createStateMachinePuzzleModel<T extends MutablePuzzleState>(
     },
     onCellMouseLeave(row, col) {
       hover.onMouseLeave((time) => hooks?.onCellHoverThreshold?.(row, col, time, stateRef.value));
+      hooks?.onCellMouseLeave?.(row, col, stateRef.value);
     },
     onRowClick(row: number) {
       hooks?.onClickRow?.(row, stateRef.value);

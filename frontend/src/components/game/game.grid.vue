@@ -2,7 +2,7 @@
 import { computed, type PropType, useSlots } from "vue";
 import useGridLayout from "@/composables/useGridLayout";
 import { usePuzzleModelAdapter } from "@/features/games/composables/PuzzleModelAdapter.ts";
-import type { PuzzleModel } from "@/features/games/composables/puzzleModelBase.ts";
+import type { PuzzleModel } from "@/features/games/composables/PuzzleModelBase";
 defineEmits<{
   (e: "cellClick", cell: any): void;
   (e: "cellRightClick", cell: any): void;
