@@ -34,3 +34,8 @@ export type PuzzleStateBattleship = MutablePuzzleStateExtended<{
   col_counts: number[];
 }>;
 
+export type PuzzleStateNonograms = MutablePuzzleStateExtended<{
+  col_sum: number[];
+  row_sum: number[];
+}>;
+
