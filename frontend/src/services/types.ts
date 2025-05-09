@@ -30,3 +30,11 @@ export type PuzzleRecordKakurasu = PuzzleRecordExtended<{
   row_sum: number[];
   col_sum: number[];
 }>;
+
+
+export type PuzzleRecordBattleship = PuzzleRecordExtended<{
+  row_counts: number[];
+  col_counts: number[];
+}>;
+
+

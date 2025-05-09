@@ -56,6 +56,7 @@ export const ACTIVE_GAMES: Record<string, any> = {
   tents:        create_game_entry("⛺ Tents", "tents", adapter.tentsAdapter),
   kakurasu:     create_game_entry("⬛ Kakurasu", "kakurasu", adapter.kakurasuAdapter),
   lightup:      create_game_entry("💡 Light Up", "lightup", adapter.lightupAdapter),
+  battleship:   create_game_entry("🚢 Battleship", "battleship", adapter.battleshipAdapter),
   // nonograms:    create_game_entry("Nonograms", "nonograms", adapter.noopAdapter),
 }
 export type GameKey = keyof typeof ACTIVE_GAMES;

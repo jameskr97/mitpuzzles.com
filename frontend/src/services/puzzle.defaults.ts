@@ -18,15 +18,24 @@ export const defaultPuzzles: Record<GameKey, any> = {
     board_initial: "010000000001000100000101000100010000",
   },
   kakurasu: {
-    cols: 4,
-    rows: 4,
-    row_sum: [6, 9, 4, 5],
-    col_sum: [1, 7, 7, 5],
-    board_initial: "1110011100010110",
+    cols: 7,
+    rows: 7,
+    col_sum: [4, 0, 14, 0, 7, 2, 6],
+    row_sum: [0, 6, 3, 1, 3, 10, 5],
+    board_initial: "0000000000000000000000000000000000000000000000000",
   },
   lightup: {
     rows: 7,
     cols: 7,
     board_initial: "..........20...2......5...5......1...35..........",
+  },
+  battleship: {
+    rows: 6,
+    cols: 6,
+    row_counts: [2, 2, 3, 0, 3, 0],
+    col_counts: [0, 3, 1, 3, 1, 2],
+    // 0 = empty, 1 = water, 2 = ship
+    board_initial:  "000000020000000000000000002000000000",
+    board_solution_hash: "588daa36dcd2edcf163f14a094e7c136edc270ebd0299a89d243924b336adda2",
   },
 };

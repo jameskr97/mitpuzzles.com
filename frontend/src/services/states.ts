@@ -27,3 +27,10 @@ export type PuzzleStateLightup = MutablePuzzleStateExtended<{
 export type PuzzleStateMinesweeper = MutablePuzzleStateExtended<{
   board_initial: string;
 }>;
+
+export type PuzzleStateBattleship = MutablePuzzleStateExtended<{
+  board_initial: string;
+  row_counts: number[];
+  col_counts: number[];
+}>;
+

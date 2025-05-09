@@ -1,5 +1,6 @@
 import { sha256 } from "@/services/util";
 import type {
+  PuzzleStateBattleship,
   PuzzleStateKakurasu,
   PuzzleStateLightup,
   PuzzleStateMinesweeper,
@@ -7,16 +8,17 @@ import type {
   PuzzleStateTents,
 } from "@/services/states.ts";
 import type {
+  PuzzleRecordBattleship,
   PuzzleRecordKakurasu,
   PuzzleRecordLightup,
   PuzzleRecordMinesweeper,
   PuzzleRecordSudoku,
   PuzzleRecordTents,
 } from "@/services/types.ts";
-import { MinesweeperCellStates } from "@/features/games/minesweeper/minesweeper.model.ts";
 import { TentCellStates } from "@/features/games/tents/tents.model.ts";
 import { KakurasuCellStates } from "@/features/games/kakurasu/kakurasu.model.ts";
 import { LightupCellStates } from "@/features/games/lightup/lightup.model.ts";
+import { BattleshipCellStates } from "@/features/games/battleship/battleship.model.ts";
 
 /**
  * Adapter for converting raw board games to client-side board games,
@@ -198,4 +200,25 @@ export const lightupAdapter: PuzzleAdapter<PuzzleRecordLightup, PuzzleStateLight
     return hash_current_state === raw.board_solution_hash;
   },
   can_validate: (_state, _raw) => true,
+};
+
+export const battleshipAdapter: PuzzleAdapter<PuzzleRecordBattleship, PuzzleStateBattleship> = {
+  create_state: (raw) => {
+    const board = raw.board_initial.split("").map(Number);
+
+    return {
+      ...raw,
+      board,
+    };
+  },
+
+  async validate(state, raw): Promise<boolean> {
+    const board = state.board.map((c) => (c === BattleshipCellStates.Ship ? c : 0)).join("");
+    const hash_current_state = await sha256(board);
+    return hash_current_state === raw.board_solution_hash;
+  },
+
+  can_validate: (_state, _raw) => {
+    return true;
+  },
 };
