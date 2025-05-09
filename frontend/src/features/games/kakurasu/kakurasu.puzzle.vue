@@ -6,6 +6,7 @@ import BoardInteraction from "@/features/games/components/board.interaction.vue"
 import type { Ref } from "vue";
 import { createStateMachinePuzzleModel } from "@/features/games/composables/PuzzleModelBase";
 import type { PuzzleStateKakurasu } from "@/services/states.ts";
+import {PuzzleModelOps} from "@/features/games/composables/PuzzleModelOps.ts";
 
 const props = defineProps<{
   scale?: number;
@@ -22,8 +23,20 @@ enum KakurasuCellStates {
   Crossed = 2,
   NUM_STATES,
 }
+
 const m = createStateMachinePuzzleModel<PuzzleStateKakurasu>(props.state, KakurasuCellStates.NUM_STATES, (e, p) =>
   emits("game-event", e, p),
+  {
+    canModifyCell(row: number, col: number, state: PuzzleStateKakurasu) {
+      return Number(state.board_initial[row * state.cols + col]) !== 1;
+    },
+    onLeftGutterCellClick(row: number, _col: number, state: PuzzleStateKakurasu) {
+      PuzzleModelOps.changeRowState(row, state, KakurasuCellStates.Empty, KakurasuCellStates.Crossed);
+    },
+    onTopGutterCellClick(_row: number, col: number, state: PuzzleStateKakurasu) {
+      PuzzleModelOps.changeColState(col, state, KakurasuCellStates.Empty, KakurasuCellStates.Crossed);
+    },
+  },
 );
 
 const borderConfig = {

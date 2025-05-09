@@ -6,6 +6,8 @@ export class PuzzleModelOps {
       const i = row * state.cols + col;
       if (state.board[i] === fromState) {
         state.board[i] = toState;
+      } else if (state.board[i] === toState) {
+        state.board[i] = fromState;
       }
     }
   }
@@ -15,6 +17,8 @@ export class PuzzleModelOps {
       const i = row * state.cols + col;
       if (state.board[i] === fromState) {
         state.board[i] = toState;
+      } else if (state.board[i] === toState) {
+        state.board[i] = fromState;
       }
     }
   }

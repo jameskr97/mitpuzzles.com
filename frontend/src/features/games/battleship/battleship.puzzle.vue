@@ -31,11 +31,12 @@ const m = createStateMachinePuzzleModel<PuzzleStateBattleship>(
     canModifyCell(row: number, col: number, state: PuzzleStateBattleship) {
       return Number(state.board_initial[row * state.cols + col]) !== 1;
     },
-    onClickRow(row: number, state: PuzzleStateTents) {
+    onLeftGutterCellClick(row: number, _col: number, state: PuzzleStateTents) {
       PuzzleModelOps.changeRowState(row, state, BattleshipCellStates.Empty, BattleshipCellStates.Water);
     },
-    onClickCol(col: number, state: PuzzleStateTents) {
+    onTopGutterCellClick(_row: number, col: number, state: PuzzleStateTents) {
       PuzzleModelOps.changeColState(col, state, BattleshipCellStates.Empty, BattleshipCellStates.Water);
+
     },
   },
 );

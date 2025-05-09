@@ -4,6 +4,8 @@ import type { MutablePuzzleState, PuzzleStateSudoku } from "@/services/states.ts
 import { useCellStateCycler } from "@/features/games/composables/useCellStateCycler.ts";
 import { useHoverTracking } from "@/features/games/composables/useHoverTracking.ts";
 import { useSudokuHighlight } from "@/features/games/composables/useSudokuHighlight.ts";
+import type { GameZone } from "@/features/games/components/board.interaction.ts";
+import logger from "@/services/logger.ts";
 
 type EmitCallback = (event: string, payload?: any) => void;
 
@@ -11,6 +13,10 @@ export interface PuzzleModelHooks<T extends MutablePuzzleState> {
   allowedStates?: number[];
   canModifyCell?: (row: number, col: number, state: T) => boolean;
   onCellClick?: (row: number, col: number, state: T) => void;
+  onTopGutterCellClick?: (row: number, col: number, state: T) => void;
+  onBottomGutterCellClick?: (row: number, col: number, state: T) => void;
+  onLeftGutterCellClick?: (row: number, col: number, state: T) => void;
+  onRightGutterCellClick?: (row: number, col: number, state: T) => void;
   onCellHoverThreshold?: (row: number, col: number, time: number, state: T) => void;
   onCellMouseEnter?: (row: number, col: number, state: T) => void;
   onCellMouseLeave?: (row: number, col: number, state: T) => void;
@@ -25,10 +31,11 @@ export interface PuzzleModel<T extends MutablePuzzleState> {
   index(row: number, col: number): number;
 
   getCellState(row: number, col: number): number;
-  onCellClick?(row: number, col: number, event: MouseEvent): void;
+  onCellClick?(zone: GameZone, row: number, col: number, event: MouseEvent): void;
+  onCellRightClick?(zone: GameZone, row: number, col: number, event: MouseEvent): void;
   onCellMouseDown?(row: number, col: number, event: MouseEvent): void;
   onCellMouseUp?(row: number, col: number, event: MouseEvent): void;
-  onCellMouseEnter?(row: number, col: number): void
+  onCellMouseEnter?(row: number, col: number): void;
   onCellMouseLeave?(row: number, col: number): void;
   onCellKeyDown?(row: number, col: number, event: KeyboardEvent): void;
   onCellKeyUp?(row: number, col: number, event: KeyboardEvent): void;
@@ -60,16 +67,28 @@ export function createStateMachinePuzzleModel<T extends MutablePuzzleState>(
       const indexVal = index(row, col);
       return stateRef.value.board[indexVal];
     },
-    onCellClick(row: number, col: number, event: MouseEvent) {
-      const indexVal = index(row, col);
-      const state = stateRef.value.board[indexVal];
+    onCellClick(zone: GameZone, row: number, col: number, event: MouseEvent) {
+      if (zone === "game") {
+        const indexVal = index(row, col);
+        const state = stateRef.value.board[indexVal];
 
-      // Check if the cell can be modified
-      const canModify = hooks?.canModifyCell?.(row, col, stateRef.value) ?? true; // Default: modifiable
-      if (!canModify) return;
+        // Check if the cell can be modified
+        const canModify = hooks?.canModifyCell?.(row, col, stateRef.value) ?? true; // Default: modifiable
+        if (!canModify) return;
 
-      stateRef.value.board[indexVal] = cycler.cycle(state, event.button);
-      hooks?.onCellClick?.(row, col, stateRef.value);
+        stateRef.value.board[indexVal] = cycler.cycle(state, event.button);
+        hooks?.onCellClick?.(row, col, stateRef.value);
+      } else if (zone === "topGutter") {
+        hooks?.onTopGutterCellClick?.(row, col, stateRef.value);
+      } else if (zone === "bottomGutter") {
+        hooks?.onBottomGutterCellClick?.(row, col, stateRef.value);
+      } else if (zone === "leftGutter") {
+        hooks?.onLeftGutterCellClick?.(row, col, stateRef.value);
+      } else if (zone === "rightGutter") {
+        hooks?.onRightGutterCellClick?.(row, col, stateRef.value);
+      } else {
+        logger.warn("Unknown zone clicked:", zone);
+      }
     },
     onCellMouseEnter(row: number, col: number) {
       hover.onMouseEnter();
@@ -117,7 +136,7 @@ export function createSudokuPuzzleModel(
       return stateRef.value.board[row * stateRef.value.cols + col];
     },
 
-    onCellClick(row: number, col: number, _event: MouseEvent) {
+    onCellClick(_zone: GameZone, row: number, col: number, _event: MouseEvent) {
       if (!this.canModifyCell(row, col)) return;
       stateRef.value.active_cell = [row, col];
     },

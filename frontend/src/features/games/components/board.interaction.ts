@@ -4,7 +4,7 @@ import { useGutterBorders } from "@/features/games/components/useGutterBorders.t
 import type { BoardContext } from "@/features/games/components/board.ts";
 import type { usePuzzleModelAdapter } from "@/features/games/composables/PuzzleModelAdapter.ts";
 
-type GameZone = "game" | "topGutter" | "bottomGutter" | "leftGutter" | "rightGutter";
+export type GameZone = "game" | "topGutter" | "bottomGutter" | "leftGutter" | "rightGutter";
 type Orientation = "horizontal" | "vertical";
 
 type ClickedCell = { type: "cell"; row: number; col: number; zone: GameZone };
@@ -73,7 +73,7 @@ export class BoardInteraction {
     const hit = this.getHit(event);
     if (!hit) return;
     if (hit.type === "cell") {
-      this.model.onCellClick?.(hit.row, hit.col, event);
+      this.model.onCellClick?.(hit.zone, hit.row, hit.col, event);
     } else if (hit.type === "border") {
       console.log("Border clicked:", hit);
       // this.model.onBorderClick(hit.anchor.row, hit.anchor.col, hit.zone, hit.orientation, hit.direction);
