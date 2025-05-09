@@ -6,6 +6,7 @@ export interface MutablePuzzleState {
 export type MutablePuzzleStateExtended<T extends object = {}> = MutablePuzzleState & T;
 
 export type PuzzleStateKakurasu = MutablePuzzleStateExtended<{
+  board_initial: number[];
   col_sum: number[];
   row_sum: number[];
 }>;

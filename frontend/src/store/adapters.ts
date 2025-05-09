@@ -152,6 +152,7 @@ export const kakurasuAdapter: PuzzleAdapter<PuzzleRecordKakurasu, PuzzleStateKak
     row_sum: raw.row_sum,
     col_sum: raw.col_sum,
     board: raw.board_initial.split("").map(Number),
+    board_initial: raw.board_initial.split("").map(Number)
   }),
 
   async validate(state, raw): Promise<boolean> {
