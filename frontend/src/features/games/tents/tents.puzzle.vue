@@ -35,10 +35,10 @@ const m = createStateMachinePuzzleModel<PuzzleStateTents>(
       return state.board[row * state.cols + col] !== TentCellStates.Tree;
     },
     onLeftGutterCellClick(row: number, _col: number, state: PuzzleStateTents) {
-      PuzzleModelOps.changeRowState(row, state, TentCellStates.Empty, TentCellStates.Green);
+      PuzzleModelOps.changeLineState(true, row, state, TentCellStates.Empty, TentCellStates.Green);
     },
     onTopGutterCellClick(_row :number, col: number, state: PuzzleStateTents) {
-      PuzzleModelOps.changeColState(col, state, TentCellStates.Empty, TentCellStates.Green);
+      PuzzleModelOps.changeLineState(false, col, state, TentCellStates.Empty, TentCellStates.Green);
     },
   },
 );

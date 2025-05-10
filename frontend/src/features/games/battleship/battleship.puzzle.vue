@@ -29,13 +29,14 @@ const m = createStateMachinePuzzleModel<PuzzleStateBattleship>(
       BattleshipCellStates.Water,
     ],
     canModifyCell(row: number, col: number, state: PuzzleStateBattleship) {
-      return Number(state.board_initial[row * state.cols + col]) !== 1;
+      const cell =  Number(state.board_initial[row * state.cols + col])
+      return cell !== BattleshipCellStates.Ship && cell !== BattleshipCellStates.Water;
     },
     onLeftGutterCellClick(row: number, _col: number, state: PuzzleStateTents) {
-      PuzzleModelOps.changeRowState(row, state, BattleshipCellStates.Empty, BattleshipCellStates.Water);
+      PuzzleModelOps.changeLineState(true, row, state, BattleshipCellStates.Empty, BattleshipCellStates.Water);
     },
     onTopGutterCellClick(_row: number, col: number, state: PuzzleStateTents) {
-      PuzzleModelOps.changeColState(col, state, BattleshipCellStates.Empty, BattleshipCellStates.Water);
+      PuzzleModelOps.changeLineState(true, col, state, BattleshipCellStates.Empty, BattleshipCellStates.Water);
 
     },
   },
