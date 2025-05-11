@@ -63,7 +63,7 @@ const m = createStateMachinePuzzleModel<PuzzleStateLightup>(
     canModifyCell(row: number, col: number, state: any) {
       return !LightWallStates.includes(state.board[row * state.cols + col]);
     },
-    onCellClick(_row: number, _col: number, state: PuzzleStateLightup) {
+    onMouseDown(state: PuzzleStateLightup) {
       update_lit_cells(state);
     },
   },
@@ -92,6 +92,10 @@ const borderConfig = {
           <div
             v-if="m.getCellState(row, col) === LightupCellStates.Empty"
             class="bg-white bg-cover w-full h-full"
+            :class="{
+              'bg-white': !m.state.value.lit[m.index(row, col)],
+              'bg-yellow-200': m.state.value.lit[m.index(row, col)],
+            }"
           ></div>
 
           <!-- Walls -->
@@ -122,7 +126,6 @@ const borderConfig = {
             :class="{ 'bg-yellow-200!': m.state.value.lit[m.index(row, col)] }"
             class="bg-[url(/assets/kakurasu/cross.svg)] bg-contain w-full h-full bg-white"
           ></div>
-          <div v-else-if="m.state.value.lit[m.index(row, col)]" class="grid bg-yellow-200 h-full w-full text-sm"></div>
         </div>
       </template>
     </BoardCells>
