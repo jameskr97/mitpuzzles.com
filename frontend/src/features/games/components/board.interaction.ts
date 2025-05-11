@@ -44,6 +44,7 @@ export class BoardInteraction {
   constructor(
     private board: BoardContext,
     private model: ReturnType<typeof usePuzzleModelAdapter>,
+    private emit?: (event: string, payload: any) => void,
   ) {
     this.layout = useGridLayout(board);
     this.positions = useGridPositions(board);
@@ -55,6 +56,9 @@ export class BoardInteraction {
       left: useGutterBorders("left"),
       right: useGutterBorders("right"),
     };
+
+    // Global Event Listeners
+    window.addEventListener("mouseup", (e: MouseEvent) => this.model?.onMouseUp?.(e));
   }
 
   // Determine if click hit something we care abot
@@ -72,41 +76,54 @@ export class BoardInteraction {
   onMouseDown(event: MouseEvent) {
     const hit = this.getHit(event);
     if (!hit) return;
+    this.emit?.("onMouseDown", hit);
     if (hit.type === "cell") {
-      this.model.onCellClick?.(hit.zone, hit.row, hit.col, event);
+      this.model?.onCellMouseDown?.(hit.zone, hit.row, hit.col, event);
     } else if (hit.type === "border") {
-      console.log("Border clicked:", hit);
       // this.model.onBorderClick(hit.anchor.row, hit.anchor.col, hit.zone, hit.orientation, hit.direction);
     }
   }
 
   onMouseUp(event: MouseEvent) {
     const hit = this.getHit(event);
-    if (!hit || hit.type !== "cell") return;
-    this.focused = hit;
+    if (!hit) return;
+    this.emit?.("onMouseUp", hit);
+    this.model?.onMouseUp(event);
+
+    // if we are not dragging, notify the model of cell click
+    if (hit.type === "cell") {
+      this.focused = hit;
+      this.model?.onCellClick?.(hit.zone, hit.row, hit.col, event);
+    }
+
+    if (this.lastHover) this.model?.onCellMouseUp?.(hit.zone, this.lastHover.row, this.lastHover.col, event);
   }
 
   onMouseMove(event: MouseEvent) {
     const hit = this.getHit(event);
     if (!hit) return;
+    this?.emit?.("onMouseMove", hit);
+
+    // Update Focused Cell
     if (hit.type === "cell") {
+      // Update Hover Tracking
       if (!this.lastHover || this.lastHover.row !== hit.row || this.lastHover.col !== hit.col) {
         if (this.lastHover) {
-          this.model.onCellLeave?.(this.lastHover.row, this.lastHover.col);
+          this.model?.onCellLeave?.(this.lastHover.row, this.lastHover.col);
         }
-        this.model.onCellEnter?.(hit.row, hit.col);
+        this.model?.onCellEnter?.(hit.zone, hit.row, hit.col);
         this.lastHover = hit;
       }
     } else if (this.lastHover) {
-      this.model.onCellLeave?.(this.lastHover.row, this.lastHover.col);
-      this.lastHover = null;
+      this.model?.onCellLeave?.(this.lastHover.row, this.lastHover.col);
     }
   }
 
   onKeyDown(event: KeyboardEvent) {
     const hit = this.focused;
     if (!hit || hit.type !== "cell") return; // Only cells handle key events
-    this.model.onCellKeyDown?.(hit.row, hit.col, event);
+    this?.model?.onCellKeyDown?.(hit.row, hit.col, event);
+    this.emit?.("onKeyDown", hit);
   }
 
   findCellAt(x: number, y: number): ClickHit {
