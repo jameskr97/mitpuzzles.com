@@ -131,7 +131,7 @@ export function createSudokuPuzzleModel(
   _hooks?: PuzzleModelHooks<PuzzleStateSudoku>,
 ): PuzzleModelSudoku {
   // TODO(james): This highlighter assumes a square board
-  const highlight = useSudokuHighlight(stateRef, stateRef.value.rows);
+  const highlight = useSudokuHighlight(stateRef);
 
   function index(row: number, col: number): number {
     return row * stateRef.value.cols + col;

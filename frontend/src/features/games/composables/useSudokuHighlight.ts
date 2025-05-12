@@ -1,8 +1,8 @@
 import type { PuzzleStateSudoku } from "@/services/states.ts";
-import type { Ref } from "vue";
+import { computed, type Ref } from "vue";
 
-export function useSudokuHighlight(stateRef: Ref<PuzzleStateSudoku>, squareSize: number) {
-  const subgridSize = Math.sqrt(squareSize);
+export function useSudokuHighlight(stateRef: Ref<PuzzleStateSudoku>) {
+  const subgridSize = computed(() => Math.sqrt(stateRef.value.rows));
 
   function isRowSelected(row: number) {
     const active = stateRef.value.active_cell;
@@ -20,8 +20,8 @@ export function useSudokuHighlight(stateRef: Ref<PuzzleStateSudoku>, squareSize:
     const [active_row, active_col] = active;
 
     return (
-      Math.floor(active_row / subgridSize) === Math.floor(row / subgridSize) &&
-      Math.floor(active_col / subgridSize) === Math.floor(col / subgridSize)
+      Math.floor(active_row / subgridSize.value) === Math.floor(row / subgridSize.value) &&
+      Math.floor(active_col / subgridSize.value) === Math.floor(col / subgridSize.value)
     );
   }
 
