@@ -58,16 +58,18 @@ export const ACTIVE_GAMES: Record<string, any> = {
 }
 export type GameKey = keyof typeof ACTIVE_GAMES;
 
-function create_dev_tool(key: string, display_name: string) {
+function create_dev_tool(key: string, display_name: string, requires_admin: boolean = false) {
   return {
     key,
     name: display_name,
     component: `./views/dev/${key}.vue`,
+    requires_admin,
   };
 }
 export const DEV_TOOLS: Record<string, any> = {
   "test-board": create_dev_tool("test-board", "🎯 Test Board"),
   "test-websocket": create_dev_tool("test-websocket", "🧦 Test Websockets"),
+  "test-monitor": create_dev_tool("test-monitor", "🖥️ Test Monitor", true),
 };
 
 const route = {
