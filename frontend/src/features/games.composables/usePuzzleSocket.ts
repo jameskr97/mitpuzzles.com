@@ -11,6 +11,7 @@ interface WebSocketMessage<T = any> {
   type: string;
   data: T;
   session_id?: string;
+  actor_id?: string;
 }
 
 export interface ActionPosition {
@@ -33,21 +34,35 @@ interface SubmitResult {
   success: boolean;
 }
 
+interface UserCountResult {
+  user_count: number;
+}
+
 export const useActivePuzzleStore = defineStore("puzzle_session", () => {
+  // user game sessions
   const puzzle_states = ref<Record<string, MutablePuzzleState>>({});
   const session_lookup = useLocalStorage<Record<string, string>>("mitlogic.puzzles:active_session_ids", {});
   const puzzle_solved = ref<Record<string, boolean>>({});
+  // admin monitoring view
+  const monitor_user_count = ref(0);
+  const monitored_users_games = ref<Record<string, MutablePuzzleState>>({}); // actor_id -> puzzle_state
 
   function setPuzzleState(puzzle_type: string, session_id: string, state: AnyPuzzleState) {
     session_lookup.value[puzzle_type] = session_id;
     puzzle_states.value[session_id] = reactive(state);
   }
 
+  // user game sessions
   const getState = (session_id: string) => puzzle_states.value[session_id] ?? null;
   const getSessionID = (puzzle_type: string) => session_lookup.value[puzzle_type] ?? null;
   const setPuzzleSolved = (session_id: string, solved: boolean) => (puzzle_solved.value[session_id] = solved);
   const isPuzzleSolved = (session_id: string) => puzzle_solved.value[session_id];
   const clearSolvedState = (session_id: string) => delete puzzle_solved.value[session_id];
+
+  // admin monitoring view
+  const setMonitoredPuzzleState = (actor_id: string, state: AnyPuzzleState) =>
+    (monitored_users_games.value[actor_id] = reactive(state));
+  const clearMonitoredPuzzleState = (actor_id: string) => delete monitored_users_games.value[actor_id];
 
   return {
     puzzle_states,
@@ -60,6 +75,11 @@ export const useActivePuzzleStore = defineStore("puzzle_session", () => {
     setPuzzleSolved,
     isPuzzleSolved,
     clearSolvedState,
+
+    monitor_user_count,
+    monitored_users_games,
+    setMonitoredPuzzleState,
+    clearMonitoredPuzzleState,
   };
 });
 
@@ -77,24 +97,11 @@ export function usePuzzleSocket() {
   ////////////////////////////////////////////////////////////////////////
   //// WebSocket
   //// Connect to the WebSocket server
-  const was_connected = ref(false);
   const store = useActivePuzzleStore();
   const protocol = window.location.protocol === "https:" ? "wss" : "ws";
   const url = `${protocol}://${window.location.host}/ws/puzzle/`;
   const { send } = useWebSocket(url, {
     autoReconnect: true,
-    onConnected: (_ws) => {
-      if (was_connected.value) {
-        console.log("websocket reconnected. reactivating sessions...");
-        const sessionsToReload = { ...store.session_lookup };
-        for (const [puzzleType, sessionId] of Object.entries(sessionsToReload)) {
-          if (sessionId) {
-            send_command("resume", { puzzle_type: puzzleType }, sessionId);
-          }
-        }
-      }
-      was_connected.value = true;
-    },
     onMessage: (_ws, event) => handle_message(event),
   });
 
@@ -102,7 +109,6 @@ export function usePuzzleSocket() {
   //////// Socket Reactivity
   function handle_message(message: MessageEvent) {
     const msg = JSON.parse(message.data) as WebSocketMessage;
-    console.log("websocket message", msg);
 
     switch (msg.type) {
       case "event:state":
@@ -119,6 +125,25 @@ export function usePuzzleSocket() {
       case "event:error":
         console.error("server websocket error", msg.data);
         break;
+
+      case "event:monitor:state":
+        if (!msg.actor_id) {
+          console.warn("monitor:state message without actor_id");
+          return;
+        }
+        store.setMonitoredPuzzleState(msg.actor_id, msg.data);
+        break;
+      case "event:monitor:user_count":
+        const res = msg.data as UserCountResult;
+        store.monitor_user_count = res.user_count;
+        break;
+      case "event:monitor:disconnect":
+        if (!msg.actor_id) {
+          console.warn("monitor:disconnect message without actor_id");
+          return;
+        }
+        store.clearMonitoredPuzzleState(msg.actor_id);
+        break;
       default:
         console.warn(`Unknown message type: ${msg.type}`);
     }
@@ -127,7 +152,7 @@ export function usePuzzleSocket() {
   ////////////////////////////////////////////////////////////////////////
   //////// WebSocket User Actions
   function send_command<T>(command: string, data: T, session_id?: string) {
-    console.log(`send_command [${command}]`, data);
+    // console.log(`send_command [${command}]`, data);
     const message: WebSocketMessage<T> = { type: `cmd:${command}`, data };
     if (session_id) message.session_id = session_id;
     send(JSON.stringify(message));
@@ -198,5 +223,7 @@ export function usePuzzleSocket() {
 
   return {
     getPuzzleSession,
+    cmd_puzzle_monitor: () => send_command("admin:monitor", {}),
+    cmd_puzzle_unmonitor: () => send_command("admin:unmonitor", {}),
   };
 }

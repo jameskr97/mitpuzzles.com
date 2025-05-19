@@ -3,8 +3,10 @@
 // import SidebarUserAuth from "@/components/sidebar/sidebar.user.auth.vue";
 import { ACTIVE_GAMES, DEV_TOOLS } from "@/main";
 import FloatingFeedback from "@/components/button.feedback.vue";
+import { useAuthStore } from "@/store/auth.ts";
 
 const isDev = import.meta.env.DEV;
+const user = useAuthStore();
 </script>
 
 <template>
@@ -30,7 +32,7 @@ const isDev = import.meta.env.DEV;
         <p class="text-lg mx-auto mt-2 sticky top-0 text-center underline">Dev Tools</p>
         <div class="p-2">
           <router-link v-for="tool in DEV_TOOLS" :to="{ name: `dev-` + tool.key }">
-            <li class="m-0 text-lg">
+            <li v-if="user.isAdmin || !tool.requires_admin" class="m-0 text-lg">
               <a href="#">{{ tool.name }}</a>
             </li>
           </router-link>

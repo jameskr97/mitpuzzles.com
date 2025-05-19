@@ -7,7 +7,7 @@ import BoardBackground from "@/features/games.components/board.background.vue";
 import type { PuzzleStateLightup } from "@/services/states.ts";
 import { LightupCellStates, LightWallStates } from "@/features/games/lightup/lightup.model.ts";
 import { type createPuzzleInteractionBridge } from "@/features/games.composables/setupPuzzleInteractionBridge.ts";
-import { ref } from "vue";
+import { ref, watch } from "vue";
 
 const props = defineProps<{
   scale?: number;
@@ -21,44 +21,55 @@ function isCellLit(row: number, col: number): boolean {
   const i = row * props.state.cols + col;
   return lit.value[i];
 }
-props.interact?.addGameBehaviour((_) => ({
-  onBoardModified: (board: number[]) => {
-    // update lit cells when the board is modified
-    // reset lit array to bulb locations (if a bulb is present, being lit is implied)
-    for (let i = 0; i < lit.value.length; i++) lit.value[i] = false;
+function update_lit_cells(board: number[]) {
+  // update lit cells when the board is modified
+  // reset lit array to bulb locations (if a bulb is present, being lit is implied)
+  for (let i = 0; i < lit.value.length; i++) lit.value[i] = false;
 
-    // mark cardinal direction deltas
-    const directions = [
-      [-1, 0],
-      [1, 0],
-      [0, -1],
-      [0, 1],
-    ];
+  // mark cardinal direction deltas
+  const directions = [
+    [-1, 0],
+    [1, 0],
+    [0, -1],
+    [0, 1],
+  ];
 
-    for (let row = 0; row < props.state.rows; row++) {
-      for (let col = 0; col < props.state.cols; col++) {
-        const i = row * props.state.cols + col;
-        if (board[i] !== LightupCellStates.Bulb) continue; // skip if not a bulb
+  for (let row = 0; row < props.state.rows; row++) {
+    for (let col = 0; col < props.state.cols; col++) {
+      const i = row * props.state.cols + col;
+      if (board[i] !== LightupCellStates.Bulb) continue; // skip if not a bulb
 
-        for (const [dy, dx] of directions) {
-          let r = row + dy;
-          let c = col + dx;
+      for (const [dy, dx] of directions) {
+        let r = row + dy;
+        let c = col + dx;
 
-          //A while we are in bounds and not hitting a wall
-          while (r >= 0 && r < props.state.rows && c >= 0 && c < props.state.cols) {
-            let i = r * props.state.cols + c;
-            if (LightWallStates.includes(board[i])) break;
-            // if (props.state.board[i] === LightupCellStates.Bulb) break;
-            lit.value[i] = true;
+        //A while we are in bounds and not hitting a wall
+        while (r >= 0 && r < props.state.rows && c >= 0 && c < props.state.cols) {
+          let i = r * props.state.cols + c;
+          if (LightWallStates.includes(board[i])) break;
+          // if (props.state.board[i] === LightupCellStates.Bulb) break;
+          lit.value[i] = true;
 
-            r += dy;
-            c += dx;
-          }
+          r += dy;
+          c += dx;
         }
       }
     }
-  },
+  }
+}
+
+props.interact?.addGameBehaviour((_) => ({
+  onBoardModified: (board: number[]) => update_lit_cells(board),
 }));
+
+if (!props.interact) {
+  watch(
+    () => props.state.board,
+    (board) => {
+      update_lit_cells(board);
+    },
+  );
+}
 
 const bind = props.interact?.getBridge();
 const borderConfig = {

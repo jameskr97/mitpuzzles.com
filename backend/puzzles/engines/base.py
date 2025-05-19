@@ -68,7 +68,6 @@ class PuzzleEngineBase:
         if not self.can_modify_cell(self.puzzle_session.board_state, row, col):
             return False
 
-        print(row, col, button, desired_state)
         if desired_state is not None:
             if desired_state not in self.allowed_states:
                 return False
