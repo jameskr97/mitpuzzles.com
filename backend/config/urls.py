@@ -15,15 +15,16 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
-from django.http import HttpResponse, HttpResponseRedirect
-from django.core.exceptions import ImproperlyConfigured
-from django.contrib.staticfiles import finders
+from django.conf import settings
 from django.contrib import admin
+from django.contrib.staticfiles import finders
+from django.core.exceptions import ImproperlyConfigured
+from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import include, path, re_path
 from django.views.generic.base import RedirectView
-from django.views.generic import TemplateView
-from django.conf import settings
+
 from core import views
+from puzzles.consumers import PuzzleConsumer
 from tracking import views as tracking_views
 
 
@@ -67,4 +68,8 @@ urlpatterns = [
     ),
     # All other paths are served the root html file.
     re_path(r"^.*$", serve_root),
+]
+
+websocket_urlpatterns = [
+    re_path(r'ws/puzzle/$', PuzzleConsumer.as_asgi()),
 ]

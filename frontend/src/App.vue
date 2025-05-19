@@ -15,7 +15,7 @@ const visitor = useVisitorStore();
       <Sidebar class="drawer-side" />
 
       <!-- The drawer-content, is the bigger side of the page.  -->
-      <div class="drawer-content flex flex-col h-screen">
+      <div class="drawer-content flex flex-col h-full">
         <div class="p-2 h-full">
           <router-view v-slot="{ Component }">
             <component :is="Component" :key="$route.path" />

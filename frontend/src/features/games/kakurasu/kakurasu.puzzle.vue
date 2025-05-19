@@ -1,20 +1,15 @@
 <script setup lang="ts">
-import BoardContainer from "@/features/games/components/board.container.vue";
-import BoardBorders from "@/features/games/components/board.borders.vue";
-import BoardCells from "@/features/games/components/board.cellgrid.vue";
-import BoardInteraction from "@/features/games/components/board.interaction.vue";
-import type { Ref } from "vue";
-import { createStateMachinePuzzleModel } from "@/features/games/composables/PuzzleModelBase";
+import BoardContainer from "@/features/games.components/board.container.vue";
+import BoardBorders from "@/features/games.components/board.borders.vue";
+import BoardCells from "@/features/games.components/board.cellgrid.vue";
+import BoardInteraction from "@/features/games.components/board.interaction.vue";
 import type { PuzzleStateKakurasu } from "@/services/states.ts";
-import { PuzzleModelOps } from "@/features/games/composables/PuzzleModelOps.ts";
+import { type createPuzzleInteractionBridge } from "@/features/games.composables/setupPuzzleInteractionBridge.ts";
 
 const props = defineProps<{
   scale?: number;
-  state: Ref<PuzzleStateKakurasu>;
-}>();
-
-const emits = defineEmits<{
-  (e: "game-event", event_type: string, payload: object): void;
+  state: PuzzleStateKakurasu;
+  interact?: ReturnType<typeof createPuzzleInteractionBridge>;
 }>();
 
 enum KakurasuCellStates {
@@ -24,50 +19,31 @@ enum KakurasuCellStates {
   NUM_STATES,
 }
 
-const m = createStateMachinePuzzleModel<PuzzleStateKakurasu>(
-  props.state,
-  KakurasuCellStates.NUM_STATES,
-  (e, p) => emits("game-event", e, p),
-  {
-    canModifyCell(row: number, col: number, state: PuzzleStateKakurasu) {
-      return Number(state.board_initial[row * state.cols + col]) !== 1;
-    },
-    onLeftGutterCellClick(row: number, _col: number, state: PuzzleStateKakurasu) {
-      PuzzleModelOps.changeLineState(true, row, state, KakurasuCellStates.Empty, KakurasuCellStates.Crossed);
-    },
-    onTopGutterCellClick(_row: number, col: number, state: PuzzleStateKakurasu) {
-      PuzzleModelOps.changeLineState(false, col, state, KakurasuCellStates.Empty, KakurasuCellStates.Crossed);
-    },
-  },
-);
-
-const borderConfig = {
-  outer: { thickness: 1, borderClass: "bg-black" },
-};
+const bind = props.interact?.getBridge();
+const borderConfig = { outer: { thickness: 1, borderClass: "bg-black" } };
 </script>
 <template>
   <BoardContainer
-    :rows="m.rows.value"
-    :cols="m.cols.value"
+    :rows="state.rows"
+    :cols="state.cols"
     :scale="scale"
     :gutter-top="1"
     :gutter-left="1"
     :gutter-right="1"
     :gutter-bottom="1"
     class-game-cell="border-black"
-    :model="m"
     :border-config="borderConfig"
   >
     <BoardBorders />
-    <BoardInteraction />
-    <BoardCells>
+    <BoardInteraction v-if="interact" :bind="bind" />
+    <BoardCells v-if="state">
       <template v-slot:cell="{ row, col }">
         <div
-          v-if="m.getCellState(row, col) === KakurasuCellStates.Filled"
+          v-if="state.board[row * state.cols + col] === KakurasuCellStates.Filled"
           class="border-1 bg-black border-white h-full w-full"
         ></div>
         <div
-          v-if="m.getCellState(row, col) === KakurasuCellStates.Crossed"
+          v-if="state.board[row * state.cols + col] === KakurasuCellStates.Crossed"
           class="bg-[url(/assets/kakurasu/cross.svg)] bg-contain w-full h-full"
         ></div>
       </template>
@@ -83,12 +59,12 @@ const borderConfig = {
       </template>
       <template v-slot:right="props">
         <div class="grid place-items-center text-blue-500">
-          {{ m.state.value.row_sum[props.row] }}
+          {{ state.row_sum[props.row] }}
         </div>
       </template>
       <template v-slot:bottom="props">
         <div class="grid place-items-center text-blue-500">
-          {{ m.state.value.col_sum[props.col] }}
+          <span>{{ state.col_sum[props.col] }}</span>
         </div>
       </template>
     </BoardCells>

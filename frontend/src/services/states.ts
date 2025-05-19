@@ -2,11 +2,12 @@ export interface MutablePuzzleState {
   cols: number;
   rows: number;
   board: number[];
+  session_id: string;
+  puzzle_type: string;
 }
 export type MutablePuzzleStateExtended<T extends object = {}> = MutablePuzzleState & T;
 
 export type PuzzleStateKakurasu = MutablePuzzleStateExtended<{
-  board_initial: number[];
   col_sum: number[];
   row_sum: number[];
 }>;
@@ -17,7 +18,6 @@ export type PuzzleStateTents = MutablePuzzleStateExtended<{
 }>;
 
 export type PuzzleStateSudoku = MutablePuzzleStateExtended<{
-  active_cell?: [number, number];
   board_initial: string;
 }>;
 
@@ -36,7 +36,15 @@ export type PuzzleStateBattleship = MutablePuzzleStateExtended<{
 }>;
 
 export type PuzzleStateNonograms = MutablePuzzleStateExtended<{
-  col_sum: number[];
   row_sum: number[];
+  col_sum: number[];
 }>;
 
+export type AnyPuzzleState =
+  | PuzzleStateKakurasu
+  | PuzzleStateTents
+  | PuzzleStateSudoku
+  | PuzzleStateLightup
+  | PuzzleStateMinesweeper
+  | PuzzleStateBattleship
+  | PuzzleStateNonograms;

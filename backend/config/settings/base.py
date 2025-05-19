@@ -37,6 +37,7 @@ WSGI_APPLICATION = "config.wsgi.application"
 ALLOWED_HOSTS = [APP_DOMAIN]
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"  # Django default for auto incrementing primary keys
 AUTH_USER_MODEL = "accounts.User"
+ASGI_APPLICATION = "config.asgi.application"
 
 ## Static Files
 STATIC_URL = "/static/"
@@ -56,6 +57,7 @@ SESSION_COOKIE_AGE = 86400 * 365  # 2 weeks
 # Django App + Middleware Settings
 INSTALLED_APPS = [
     # Django Default Apps
+    "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",

@@ -1,57 +1,65 @@
 <script setup lang="ts">
-import { createSudokuPuzzleModel } from "@/features/games/composables/PuzzleModelBase.ts";
-import BoardBorders from "@/features/games/components/board.borders.vue";
-import BoardContainer from "@/features/games/components/board.container.vue";
-import BoardCells from "@/features/games/components/board.cellgrid.vue";
-import BoardInteraction from "@/features/games/components/board.interaction.vue";
-import { computed } from "vue";
+import BoardBorders from "@/features/games.components/board.borders.vue";
+import BoardContainer from "@/features/games.components/board.container.vue";
+import BoardCells from "@/features/games.components/board.cellgrid.vue";
+import BoardInteraction from "@/features/games.components/board.interaction.vue";
+import { type createPuzzleInteractionBridge } from "@/features/games.composables/setupPuzzleInteractionBridge.ts";
+import { computed, watch } from "vue";
+import type { PuzzleStateSudoku } from "@/services/states.ts";
+import { createSudokuBehavior } from "@/features/games.composables/useSudokuHighlight.ts";
 
-const props = defineProps<{ scale?: number; state: any }>();
-const m = createSudokuPuzzleModel(props.state);
+////////////////////////////////////////////////////////////////////////
+// Props + State
+const props = defineProps<{
+  scale?: number;
+  state: PuzzleStateSudoku;
+  interact?: ReturnType<typeof createPuzzleInteractionBridge>;
+}>();
+const board_initial = computed(() => props.state.board_initial.split("").map(Number));
+function is_prefilled(row: number, col: number): boolean {
+  const index = row * props.state.cols + col;
+  return board_initial.value[index] !== 0;
+}
+
+////////////////////////////////////////////////////////////////////////
+// Game Specific Logic
+const highlight = props.interact?.addInputBehaviour(createSudokuBehavior);
+watch(
+  () => props.state.board_initial,
+  (_) => highlight?.clearActiveCell(),
+);
+
+const bind = props.interact?.getBridge(false);
 
 const borderConfig = computed(() => ({
-  everyNthCol: { n: Math.sqrt(m.cols.value), style: { thickness: 2 } },
-  everyNthRow: { n: Math.sqrt(m.rows.value), style: { thickness: 2 } },
+  everyNthCol: { n: Math.sqrt(props.state.cols), style: { thickness: 2 } },
+  everyNthRow: { n: Math.sqrt(props.state.cols), style: { thickness: 2 } },
   outer: { thickness: 2, borderClass: "bg-black" },
 }));
-
-defineEmits<{
-  (e: "game-event", event_type: string, payload: object): void;
-}>();
 </script>
 
 <template>
-  <BoardContainer :model="m" :cols="m.cols.value" :rows="m.rows.value" :scale="scale" :border-config="borderConfig">
+  <BoardContainer :cols="state.cols" :rows="state.rows" :scale="scale" :border-config="borderConfig">
     <BoardBorders />
-    <BoardInteraction />
+    <BoardInteraction :bind="bind" />
     <BoardCells>
       <template #cell="{ row, col }">
         <div
           class="flex justify-center items-center h-full w-full"
           :class="{
-            'border-blue-500 border-[0.5px]': m.isCellActive(row, col),
-            'bg-slate-300': m.highlight.shouldHighlightCell(row, col),
-            'text-blue-600': m.canModifyCell(row, col),
+            'border-blue-500 border-[0.5px]': highlight?.isCellActive(row, col),
+            'bg-slate-300': highlight?.shouldHighlightCell(row, col),
+            'text-blue-600': !is_prefilled(row, col),
           }"
         >
-          {{ m.getCellValue(row, col) }}
+          <span v-if="is_prefilled(row, col)">
+            {{ state.board[row * state.cols + col] }}
+          </span>
+          <span v-else-if="state.board[row * state.cols + col] != 0">
+            {{ state.board[row * state.cols + col] }}
+          </span>
         </div>
       </template>
     </BoardCells>
   </BoardContainer>
-
-  <!--    <GameGrid :rows="m.rows.value" :cols="m.cols.value" :scale="scale" :cell-size="7" :model="m">-->
-  <!--      <template v-slot:cell="{ row, col }">-->
-  <!--        <div-->
-  <!--          class="flex justify-center items-center h-full w-full"-->
-  <!--          :class="{-->
-  <!--            'border-red-500 border-[0.5px]': m.isCellActive(row, col),-->
-  <!--            'bg-slate-300': m.highlight.shouldHighlightCell(row, col),-->
-  <!--            'text-blue-600': m.canModifyCell(row, col),-->
-  <!--          }"-->
-  <!--        >-->
-  <!--          {{ m.getCellValue(row, col) }}-->
-  <!--        </div>-->
-  <!--      </template>-->
-  <!--    </GameGrid>-->
 </template>

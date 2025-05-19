@@ -1,20 +1,6 @@
 <script setup lang="tsx">
 import HomePuzzlePreview from "@/components/home.puzzlepreview.vue";
 import { ACTIVE_GAMES } from "@/main";
-
-import { useAppConfig } from "@/store/config";
-import { ref, type Ref } from "vue";
-
-const settings = useAppConfig();
-settings.fetchGameSettings();
-
-const game_entries = Object.values(ACTIVE_GAMES);
-const puzzleStates: Record<string, Ref<any>> = {};
-await Promise.all(
-  game_entries.map(async (game) => {
-    puzzleStates[game.key] = ref(await game.default());
-  }),
-);
 </script>
 
 <template>
@@ -47,13 +33,13 @@ await Promise.all(
   <div class="divider my-0"></div>
   <div class="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3 mx-auto">
     <HomePuzzlePreview
-      v-for="game in game_entries"
+      v-for="game in ACTIVE_GAMES"
       class="border-2 border-black rounded"
       :title="game.name"
       :page="game.key"
       :key="game.key"
       :component="game.component"
-      :state="puzzleStates[game.key]"
+      :state="game.default"
     />
   </div>
 </template>

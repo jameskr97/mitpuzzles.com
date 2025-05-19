@@ -2,8 +2,6 @@
 import logger from "@/services/logger.ts";
 import { computed, ref } from "vue";
 import { submitFeedback } from "@/services/app.ts";
-import { getPuzzle } from "@/composables/useCurrentPuzzle.ts";
-import { useRoute } from "vue-router";
 
 // Interfaces
 interface Metadata {
@@ -20,12 +18,9 @@ const submitted = ref(false);
 const submitting = ref(false);
 const feedback = ref("");
 const is_open = ref(false);
-const route = useRoute();
 
 async function submit() {
-  const p = await getPuzzle(route.meta.game_type as string).catch(() => undefined);
   const metadata: Metadata = { url: window.location.pathname };
-  if (p) metadata.puzzle_id = p.puzzle_id;
 
   submitting.value = true;
   try {
@@ -48,10 +43,7 @@ async function submit() {
 <template>
   <details class="dropdown dropdown-top mx-auto w-full" :open="is_open">
     <summary class="btn btn-secondary w-full" @click.prevent="is_open = !is_open">{{ btnOpenFeedback }}</summary>
-    <div
-      tabindex="0"
-      class="dropdown-content card mb-1 bg-base-100 z-50 w-full h-100 shadow-md border-2 border-black"
-    >
+    <div tabindex="0" class="dropdown-content card mb-1 bg-base-100 z-50 w-full h-100 shadow-md border-2 border-black">
       <p>Thanks for trying our website. Did you like it? Did something not work right! Let us know here!</p>
       <textarea
         class="textarea textarea-md resize-none h-full w-full my-2"

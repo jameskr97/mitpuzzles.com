@@ -20,6 +20,7 @@ export class StorageVersionManager {
 
 import { computed, type ComputedRef, ref, type Ref } from "vue";
 import logger from "@/services/logger.ts";
+import { useLocalStorage } from "@vueuse/core";
 
 export class PuzzleTimer {
   private timer_id: ReturnType<typeof setInterval> | null = null;
@@ -28,12 +29,9 @@ export class PuzzleTimer {
   public time_completed: Ref<boolean> = ref(false);
   public display_time: ComputedRef<string> = computed(() => format_game_stopwatch(this.elapsed_ms.value));
 
-  constructor(elapsed_ms: Ref<number>, time_completed: Ref<boolean>) {
-    this.elapsed_ms = elapsed_ms;
-    this.time_completed = time_completed;
-    if (!this.time_completed.value) {
-      this.start();
-    }
+  constructor(private puzzle_name: string) {
+    this.elapsed_ms = useLocalStorage<number>(`mitlogic.puzzles:${puzzle_name}:time_elapsed`, 0);
+    this.time_completed = useLocalStorage<boolean>(`mitlogic.puzzles:${puzzle_name}:time_completed`, false);
   }
 
   public reset() {
@@ -45,16 +43,16 @@ export class PuzzleTimer {
   public start() {
     if (this.timer_id != null) return;
     if (this.time_completed.value) return;
-    logger.debug("Timer started");
+    logger.debug(`${this.puzzle_name} timer started`);
 
     this.timer_id = setInterval(() => {
-      this.elapsed_ms.value += 1000
+      this.elapsed_ms.value += 1000;
     }, 1000);
   }
 
   public stop() {
     if (this.timer_id == null) return;
-    logger.debug("Timer stopped");
+    logger.debug(`${this.puzzle_name} timer stopped`);
     clearInterval(this.timer_id);
     this.timer_id = null;
   }
@@ -62,6 +60,6 @@ export class PuzzleTimer {
   public complete() {
     logger.debug("Timer marked complete");
     this.stop();
-    this.time_completed.value = true
+    this.time_completed.value = true;
   }
 }

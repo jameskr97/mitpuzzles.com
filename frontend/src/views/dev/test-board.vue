@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import BoardCells from "@/features/games/components/board.cellgrid.vue";
-import BoardContainer from "@/features/games/components/board.container.vue";
-import BoardBorders from "@/features/games/components/board.borders.vue";
-import BoardInteraction from "@/features/games/components/board.interaction.vue";
+import BoardCells from "@/features/games.components/board.cellgrid.vue";
+import BoardContainer from "@/features/games.components/board.container.vue";
+import BoardBorders from "@/features/games.components/board.borders.vue";
+import BoardInteraction from "@/features/games.components/board.interaction.vue";
 import { computed, ref } from "vue";
 import { remap } from "@/services/util.ts";
 
@@ -25,7 +25,7 @@ const borderConfig = computed(() => ({
 
 // Debug Panel Variables
 const scale = ref(1);
-const scale_remapped = computed(() => remap([0, 100], [2, 6], scale.value));
+const scale_remapped = computed(() => remap([0, 100], [1, 6], scale.value));
 const input_history = ref<Record<string, any>>({});
 
 // const borderConfig = {
@@ -99,7 +99,7 @@ const input_history = ref<Record<string, any>>({});
       </table>
     </div>
 
-     <div class="border max-w-fit mx-auto border-slate-300 rounded p-2 shadow mt-10">
+    <div class="border max-w-fit max-h-fit p-2 mx-auto bg-amber-800 border-slate-500 rounded shadow">
       <BoardContainer
         :cols="c"
         :rows="r"
@@ -148,13 +148,12 @@ const input_history = ref<Record<string, any>>({});
           <tr v-for="[event, payload] in Object.entries(input_history)" :key="event">
             <td>{{ event }}</td>
             <td>
-              <pre>{{ JSON.stringify(payload, null, 2) }}</pre>
+              <pre>{{ JSON.stringify(payload, null) }}</pre>
             </td>
           </tr>
         </tbody>
       </table>
       <!--      <code class="text-xs"><pre>{{ JSON.stringify(Object.entries(input_history), null, 2) }}</pre></code>-->
     </div>
-
   </div>
 </template>

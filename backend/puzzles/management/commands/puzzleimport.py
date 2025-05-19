@@ -1,8 +1,9 @@
-from typing import Dict
-import os.path
 import json
+import os.path
+from typing import Dict
 
 from django.core.management.base import BaseCommand
+
 from core import models
 from puzzles.management.commands._common import _confirm_action, _get_puzzle_files, _ensure_path_exists
 
@@ -91,8 +92,8 @@ class Command(BaseCommand):
     def import_file(self, file: str) -> bool:
         filename_ext = os.path.basename(file)
         filename, ext = os.path.splitext(filename_ext)
-        puzzle_type = filename.split('_')[0]  # e.g., "kakurasu", "tents", etc.
-        puzzle_class = filename.split('_')[1] + '.' + filename.split('_')[2]  # e.g., "4x4.easy", "9x9.hard"
+        puzzle_type = filename.split("_")[0]  # e.g., "kakurasu", "tents", etc.
+        puzzle_class = filename.split("_")[1] + "." + filename.split("_")[2]  # e.g., "4x4.easy", "9x9.hard"
         self.stdout.write(f"importing {filename}")
         data = json.loads(open(file, "r").read())
 
@@ -110,9 +111,7 @@ class Command(BaseCommand):
         for puzzle in data:
             converted_puzzle = conversion_function[puzzle_type](puzzle)
             models.Puzzles.objects.create(
-                puzzle_type=puzzle_type,
-                puzzle_class=puzzle_class,
-                puzzle_data=converted_puzzle
+                puzzle_type=puzzle_type, puzzle_class=puzzle_class, puzzle_data=converted_puzzle
             )
 
         return True

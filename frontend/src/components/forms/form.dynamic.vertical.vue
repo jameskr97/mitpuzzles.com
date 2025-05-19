@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import Button from "@/components/elements/button.vue";
 import { z, ZodEffects, ZodObject } from "zod";
 import { type PropType, ref, watch } from "vue";
 import { useField, useForm } from "vee-validate";
@@ -117,7 +116,10 @@ watch(
           {{ errors[field.name] }}
         </p>
       </div>
-      <Button class="btn btn-neutral mt-4 mx-auto" :loading="loading"> Submit </Button>
+      <button class="btn btn-neutral mt-4 mx-auto">
+        <slot v-if="!loading"> Submit </slot>
+        <span v-if="loading" class="loading loading-dots loading-md"></span>
+      </button>
     </fieldset>
   </form>
 </template>
