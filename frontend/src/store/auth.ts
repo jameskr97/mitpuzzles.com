@@ -13,6 +13,7 @@ interface AllAuthUser {
   display: string;
   email: string;
   username: string;
+  is_admin: boolean;
 }
 
 export const useAuthStore = defineStore("auth", {
@@ -23,6 +24,7 @@ export const useAuthStore = defineStore("auth", {
   getters: {
     config: (state) => state.auth_config,
     isAuthenticated: (state) => !!state.user,
+    isAdmin: (state) => state.user?.is_admin || false,
   },
   actions: {
     async signup(data: allauth.AuthInfo): Promise<AllAuthUser> {

@@ -116,6 +116,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # allauth config
 HEADLESS_ONLY = True  # disable allauth's default views, we'll use the vue frontend
+HEADLESS_ADAPTER = "accounts.adapter.CustomHeadlessAdapter"
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
     "allauth.account.auth_backends.AuthenticationBackend",
