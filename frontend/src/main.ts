@@ -113,13 +113,13 @@ const routerConfig: RouterOptions = {
 /** app initialization */
 (async () => {
   const app = createApp(App).use(createPinia()).use(createRouter(routerConfig)).component("v-icon", OhVueIcon);
-
-  const puzzle_socket = usePuzzleSocket();
-  app.provide("puzzle_socket", puzzle_socket);
   // attempt to get both: the backend should know.
   // if the user is logged in, the visitor ID is not distributed.
   // if there is no user, the visitor ID is used to identify the user
   await useAuthStore().updateStore();
   await useVisitorStore().init();
+
+  const puzzle_socket = usePuzzleSocket();
+  app.provide("puzzle_socket", puzzle_socket);
   app.mount("#app");
 })();
