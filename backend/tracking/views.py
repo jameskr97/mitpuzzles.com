@@ -7,22 +7,28 @@ def visitor_init(request):
     """
     GET /api/visitor
     - If bot UA → 204 No Content
+    - If user is authenticated → 204 No Content
+    - If there is already a valid visitor_id cookie → 204 No Content
     - If valid visitor_id cookie → 204 No Content
     - Else → create Visitor, set cookie, return 201 + JSON { visitor_id }
     """
+    # Pull config from settings with defaults
+    cookie_name = getattr(settings, "VISITOR_COOKIE_NAME", "visitor_id")
+    cookie_age  = getattr(settings, "VISITOR_COOKIE_AGE", 365 * 24 * 60 * 60)
+    secure      = getattr(settings, "SESSION_COOKIE_SECURE", True)
+    samesite    = getattr(settings, "SESSION_COOKIE_SAMESITE", "Lax")
+
     ua = request.META.get("HTTP_USER_AGENT", "")
     if is_crawler(ua):
         return HttpResponse(status=204)
 
     # If user is authenticated, do not create a visitor
     if hasattr(request, "user") and request.user.is_authenticated:
-        return HttpResponse(status=204)
-
-    # Pull config from settings with defaults
-    cookie_name = getattr(settings, "VISITOR_COOKIE_NAME", "visitor_id")
-    cookie_age  = getattr(settings, "VISITOR_COOKIE_AGE", 365 * 24 * 60 * 60)
-    secure      = getattr(settings, "SESSION_COOKIE_SECURE", True)
-    samesite    = getattr(settings, "SESSION_COOKIE_SAMESITE", "Lax")
+        response = HttpResponse(status=204)
+        # Delete visitor cookie if it exists for logged-in users
+        if cookie_name in request.COOKIES:
+            response.delete_cookie(cookie_name)
+        return response
 
     vid = request.COOKIES.get(cookie_name)
     # If they already have a valid Visitor, do nothing
@@ -37,7 +43,7 @@ def visitor_init(request):
     visitor = Visitor.objects.create(user_agent=ua)
 
     # Build response
-    response = JsonResponse({"visitor_id": str(visitor.id)}, status=201)
+    response = HttpResponse(status=201)
     response.set_cookie(
         cookie_name,
         str(visitor.id),

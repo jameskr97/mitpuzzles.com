@@ -1,9 +1,8 @@
-from asgiref.sync import sync_to_async, async_to_sync
-from channels.generic.websocket import AsyncJsonWebsocketConsumer, JsonWebsocketConsumer
+from channels.generic.websocket import JsonWebsocketConsumer
 
 from puzzles.engines import get_puzzle_engine
 from puzzles.models import ActivePuzzleSession
-from puzzles.monitor import AdminGameMonitor, get_admin_monitor
+from puzzles.monitor import get_admin_monitor
 from utils.auth import get_current_actor
 
 
@@ -99,24 +98,20 @@ class PuzzleConsumer(JsonWebsocketConsumer):
     ################################################################################
     #### Event Handlers
     def handle_create(self, data, session_id=None):
-        """Create a new puzzle session"""
+        """Create a new puzzle session/Request a new puzzle for an existing session"""
         puzzle_type = data.get("puzzle_type")
+        size = data.get("puzzle_size", None)
         difficulty = data.get("puzzle_difficulty", None)
         if not puzzle_type:
             return self.send_error("Missing puzzle_type")
 
         try:
             # create a new puzzle session
-            # puzzle_session = await sync_to_async(ActivePuzzleSession.create_puzzle_session)(
-            puzzle_session = ActivePuzzleSession.create_puzzle_session(
-                self.actor, puzzle_type, difficulty
-            )
-            engine = get_puzzle_engine(puzzle_session)
+            engine = ActivePuzzleSession.create_puzzle_engine(self.actor, puzzle_type, size, difficulty)
 
             # store the session in the active sessions
-            session_id = str(puzzle_session.id)
-            self.active_sessions[session_id] = (puzzle_session, engine)
-            # self.puzzle_type_sessions[puzzle_type] = session_id
+            session_id = str(engine.puzzle_session.id)
+            self.active_sessions[session_id] = (engine.puzzle_session, engine)
             self.send_state(session_id)
         except Exception as e:
             self.send_error(f"Failed to create puzzle: {str(e)}")

@@ -9,7 +9,6 @@ export interface InitVisitorResponse {
 export const useVisitorStore = defineStore("visitor", {
   state: () => ({
     initialized: false as boolean,
-    visitor_id: null as string | null,
     accepted_cookies: useLocalStorage("accepted_cookies", false),
   }),
   actions: {
@@ -21,13 +20,16 @@ export const useVisitorStore = defineStore("visitor", {
       if (this.initialized) return;
       try {
         const res = await api.ensureVisitor();
-        if (res.status === 201) {
-          // If 201, we got a new visitor ID
-          this.visitor_id = (res.data as InitVisitorResponse).visitor_id;
+        if (res.status === 201 || res.status === 204) {
+          // 201 Created: Visitor ID was created
+          // 204 No Content: Visitor ID already exists
+          this.initialized = true;
+        } else {
+          console.error("Unexpected response from /api/visitor", res);
         }
-        // if 204, the cookie was already present & valid
-        this.initialized = true;
-      } catch {}
+      } catch (err) {
+        console.error("Failed to initialize visitor store", err);
+      }
     },
 
     /**

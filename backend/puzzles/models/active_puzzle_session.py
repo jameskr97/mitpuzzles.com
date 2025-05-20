@@ -2,11 +2,10 @@ import uuid
 
 from django.db import models
 
-from accounts.models import User
-from core.models import Puzzles, GameRecording
 from core.models import make_actor_mixin
-from puzzles.engines import get_puzzle_engine
-from tracking.models import Visitor
+from puzzles.engines import get_puzzle_engine, PuzzleEngineBase
+from .game_recording import GameRecording
+from .puzzle import Puzzle
 
 
 class ActivePuzzleSession(make_actor_mixin("active_puzzles")):
@@ -21,7 +20,7 @@ class ActivePuzzleSession(make_actor_mixin("active_puzzles")):
     updated_at = models.DateTimeField(auto_now=True)
 
     # puzzle data
-    puzzle = models.ForeignKey(Puzzles, on_delete=models.CASCADE, related_name="active_sessions")
+    puzzle = models.ForeignKey(Puzzle, on_delete=models.CASCADE, related_name="active_sessions")
     board_state = models.JSONField()
     move_history = models.JSONField(default=list, blank=True)
     is_submitted = models.BooleanField(default=False)
@@ -32,16 +31,18 @@ class ActivePuzzleSession(make_actor_mixin("active_puzzles")):
         ordering = ["-updated_at"]
 
     @classmethod
-    def create_puzzle_session(cls, actor, puzzle_type: str, puzzle_variant: str):
+    def create_puzzle_engine(cls, actor, puzzle_type: str, puzzle_size: str, puzzle_difficulty: str) -> PuzzleEngineBase:
         """Creates a new puzzle session for the given puzzle and user/visitor."""
         # get a random puzzle
         query = dict(puzzle_type=puzzle_type)
-        if puzzle_variant:
-            query["puzzle_class"] = puzzle_variant
-        puzzle = Puzzles.objects.filter(**query).order_by("?").first()
+        if puzzle_size:
+            query["puzzle_size"] = puzzle_size
+        if puzzle_difficulty:
+            query["puzzle_difficulty"] = puzzle_difficulty
+        puzzle = Puzzle.objects.filter(**query).order_by("?").first()
 
         if not puzzle:
-            raise ValueError(f"No puzzle found for type={puzzle_type}, variant={puzzle_variant}")
+            raise ValueError(f"No puzzle found for type={puzzle_type}, size={puzzle_size}, difficulty={puzzle_difficulty}")
 
         # check if a session already exists
         try:
@@ -61,9 +62,9 @@ class ActivePuzzleSession(make_actor_mixin("active_puzzles")):
             session.set_actor(actor)
 
         puzzle_engine = get_puzzle_engine(session)
-        session.board_state = puzzle_engine.create_game_state(puzzle.puzzle_data["board_initial"])
+        session.board_state = puzzle_engine.create_game_state()
         session.save()
-        return session
+        return puzzle_engine
 
     @classmethod
     def fetch_for_actor(cls, puzzle_session_id, actor) -> "ActivePuzzleSession | None":
