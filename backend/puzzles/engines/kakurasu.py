@@ -20,10 +20,6 @@ class KakurasuEngine(PuzzleEngineBase):
             allowed_states=KakurasuCellStates,
         )
 
-    def create_game_state(self, initial_state: str) -> list:
-        """Create a new game state based on the puzzle data."""
-        return [int(cell) for cell in list(initial_state)]
-
     def serialize_gamedata(self) -> dict:
         """
         Serialize the game data to a dictionary.
@@ -32,8 +28,8 @@ class KakurasuEngine(PuzzleEngineBase):
         return {
             "rows": self.rows,
             "cols": self.cols,
-            "row_sum": self.puzzle_data["row_sum"],
-            "col_sum": self.puzzle_data["col_sum"],
+            "row_sums": self.puzzle_data["row_sums"],
+            "col_sums": self.puzzle_data["col_sums"],
             "board": self.puzzle_session.board_state,
         }
 

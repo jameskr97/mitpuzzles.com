@@ -24,6 +24,8 @@ _REGISTRY = {
 
 def get_puzzle_engine(puzzle_session: ActivePuzzleSession) -> PuzzleEngineBase:
     try:
-        return _REGISTRY[puzzle_session.puzzle.puzzle_type](puzzle_session)
+        engine_class = _REGISTRY[puzzle_session.puzzle.puzzle_type]
+        engine_instance = engine_class(puzzle_session)
+        return engine_instance
     except KeyError:
         raise ValueError(f"No engine registered for puzzle_type={puzzle_session.puzzle.puzzle_type}")

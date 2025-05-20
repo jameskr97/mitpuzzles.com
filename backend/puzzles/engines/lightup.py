@@ -26,25 +26,15 @@ class LightupEngine(PuzzleEngineBase):
             LightupCellStates.Cross
         ])
 
-    def create_game_state(self, initial_state: str) -> list:
-        """Create a new game state based on the puzzle data."""
-        res = []
-        for c in initial_state:
-            match c:
-                case "0" | "1" | "2" | "3" | "4" | "5" : res.append(int(c))
-                case ".": res.append(LightupCellStates.Empty)
-                case _: raise ValueError(f"Invalid initial_board: {c}")
-        return res
-
     def can_modify_cell(self, _state: State, row: int, col: int) -> bool:
         # you can only modify empty cells
-        if self.puzzle_data["board_initial"][row * self.cols + col] != ".":
-            return False
-        return True
+        board = self.get_initial_board_string()
+        cell = int(board[row * self.cols + col])
+        return cell == LightupCellStates.Empty
 
     def serialize_gamedata(self) -> dict:
         return {
             "rows": self.rows,
             "cols": self.cols,
-            "board": self.puzzle_session.board_state,
+            "board": self.get_board_state()
         }

@@ -1,4 +1,3 @@
-<!-- GameControlBar.vue -->
 <script setup lang="ts">
 import { useGameLayout } from "@/composables/useGameLayout.ts";
 import { useCurrentPuzzle } from "@/composables/useCurrentPuzzle.ts";
@@ -10,12 +9,15 @@ const puzzle = await useCurrentPuzzle();
 const { scale } = getGameScale();
 ////////////////////////////////////////////////////////////////////////
 //// puzzle difficulty dropdown
-function getDisplayName(diff?: string): string {
-  if (!diff) return "undefined";
-  const parts = diff.split(".");
-  if (parts.length !== 2) return diff; // if no parts, return the original string
-  const nameCapitalized = parts[1].charAt(0).toUpperCase() + parts[1].slice(1);
-  return `${parts[0]} ${nameCapitalized}`;
+function getDisplayName(parts?: string[]): string {
+  if (!parts) return "undefined";
+  if (parts.length < 2) return parts[0];
+
+  const name = parts
+    .slice(1)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+  return `${parts[0]} ${name}`;
 }
 
 function onDifficultySelect(diff: string) {

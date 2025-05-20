@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Type
 
 from asgiref.sync import sync_to_async
 
+from puzzles.converters import get_translation_dict, game_state_to_string
 from puzzles.engines.ops import PuzzleOps
 
 if typing.TYPE_CHECKING:
@@ -23,20 +24,44 @@ class PuzzleEngineBase:
 
     def __init__(self, puzzle_session, allowed_states: Type[Enum] | List | None = None) -> None:
         self.puzzle_data = puzzle_session.puzzle.puzzle_data
-        self.rows: int = self.puzzle_data["rows"]
-        self.cols: int = self.puzzle_data["cols"]
+        self.rows: int = self.puzzle_data.get("rows", self.puzzle_data.get("length", self.puzzle_data.get("n_rows", 0)))
+        self.cols: int = self.puzzle_data.get("cols", self.puzzle_data.get("width", self.puzzle_data.get("n_cols", 0)))
         self.puzzle_session: "ActivePuzzleSession" = puzzle_session
         self.allowed_states: List[int] = [t.value for t in allowed_states] if allowed_states else []
+        self.translation_dict = get_translation_dict(puzzle_session.puzzle.puzzle_type)
 
-    def create_game_state(self, state: str) -> State:
-        raise NotImplementedError("create_game_state() must be implemented in subclasses")
+    def get_initial_board_string(self):
+        """Convert game_state to string format"""
+        return game_state_to_string(self.puzzle_data["game_state"], self.translation_dict)
 
-    async def save_active_puzzle(self):
+    def get_solution_board_string(self):
+        """Convert game_board (solution) to string format"""
+        return game_state_to_string(self.puzzle_data["game_board"], self.translation_dict)
+
+    def create_game_state(self) -> State:
+        # Convert game_state to string format and then to our internal format
+        initial_state_string = self.get_initial_board_string()
+
+        # Convert each character in the string to the appropriate type
+        # For most puzzles, this will be integers, but some might use other characters
+        result = []
+        for char in initial_state_string:
+            if char.isdigit():
+                result.append(int(char))
+            else:
+                # For non-numeric states (like "." or "L" in some puzzles)
+                result.append(char)
+        return result
+
+        # return [int(cell) if cell.isdigit() else cell for cell in list(initial_state)]
+        # raise NotImplementedError("create_game_state() must be implemented in subclasses")
+
+    def save_active_puzzle(self):
         """
         Save the current board state to the database.
         @param session: The ActivePuzzleSession instance.
         """
-        await sync_to_async(self.puzzle_session.save)()
+        self.puzzle_session.save()
 
     def _cycle(self, index: int, direction: StateCycleDirection = StateCycleDirection.FORWARD) -> int:
         """
@@ -60,7 +85,7 @@ class PuzzleEngineBase:
         """
         Clears the board by setting all cells to the default state.
         """
-        self.puzzle_session.board_state = self.create_game_state(self.puzzle_data["board_initial"])
+        self.puzzle_session.board_state = self.create_game_state()
         self.save_active_puzzle()
 
     # User Event Handlers

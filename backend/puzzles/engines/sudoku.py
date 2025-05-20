@@ -16,10 +16,6 @@ class SudokuEngine(PuzzleEngineBase):
     def __init__(self, puzzle_session: "ActivePuzzleSession") -> None:
         super().__init__(puzzle_session)
 
-    def create_game_state(self, initial_state: str) -> list:
-        """Create a new game state based on the puzzle data."""
-        return [int(cell) for cell in list(initial_state)]
-
     def on_cell_click(self, row: int, col: int, button: int = 0, state_override=None) -> bool:
         if isinstance(state_override, str):
             state_override = int(state_override)
@@ -46,6 +42,6 @@ class SudokuEngine(PuzzleEngineBase):
         return {
             "rows": self.rows,
             "cols": self.cols,
-            "board": self.puzzle_session.board_state,
-            "board_initial": self.puzzle_data["board_initial"],
+            "board": self.get_board_state(),
+            "board_initial": self.get_initial_board_string()
         }

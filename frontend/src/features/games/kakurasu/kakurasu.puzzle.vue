@@ -59,12 +59,12 @@ const borderConfig = { outer: { thickness: 1, borderClass: "bg-black" } };
       </template>
       <template v-slot:right="props">
         <div class="grid place-items-center text-blue-500">
-          {{ state.row_sum[props.row] }}
+          {{ state.row_sums[props.row] }}
         </div>
       </template>
       <template v-slot:bottom="props">
         <div class="grid place-items-center text-blue-500">
-          <span>{{ state.col_sum[props.col] }}</span>
+          <span>{{ state.col_sums[props.col] }}</span>
         </div>
       </template>
     </BoardCells>

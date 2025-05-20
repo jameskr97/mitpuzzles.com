@@ -21,12 +21,8 @@ class TentsEngine(PuzzleEngineBase):
             TentCellStates.Green
         ])
 
-    def create_game_state(self, initial_state: str) -> list:
-        """Create a new game state based on the puzzle data."""
-        return [int(cell) for cell in list(initial_state)]
-
     def can_modify_cell(self, state: State, row: int, col: int) -> bool:
-        cell = self.puzzle_data['board_initial'][row * self.cols + col]
+        cell = self.get_initial_board_string()
         return int(cell) != TentCellStates.Tree
 
     def serialize_gamedata(self) -> dict:
@@ -38,6 +34,6 @@ class TentsEngine(PuzzleEngineBase):
             "rows": self.rows,
             "cols": self.cols,
             "board": self.puzzle_session.board_state,
-            "col_counts": self.puzzle_data["col_counts"],
-            "row_counts": self.puzzle_data["row_counts"],
+            "col_counts": self.puzzle_data["col_tent_counts"],
+            "row_counts": self.puzzle_data["row_tent_counts"],
         }

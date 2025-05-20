@@ -19,8 +19,9 @@ class MinesweeperEngine(PuzzleEngineBase):
             allowed_states=CellStatesMinesweeper,
         )
 
-    def create_game_state(self, initial_state: str) -> list:
+    def create_game_state(self) -> list:
         """Create a new game state based on the puzzle data."""
+        initial_state = self.get_initial_board_string()
         as_list = list(initial_state)
         res = []
         for cell in as_list:
@@ -33,7 +34,7 @@ class MinesweeperEngine(PuzzleEngineBase):
         return res
 
     def can_modify_cell(self, _state: State, row: int, col: int) -> bool:
-        mask = self.puzzle_data.get("board_initial")
+        mask = self.get_initial_board_string()
         if mask is None:
             return True
         idx = row * self.cols + col

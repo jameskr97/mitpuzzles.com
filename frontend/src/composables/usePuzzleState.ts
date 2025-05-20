@@ -36,7 +36,8 @@ export async function usePuzzleState(puzzle_type: string) {
 
     request_new_puzzle: () => {
       timer.reset();
-      session.cmd_puzzle_create(selected_variant.value);
+      const [puzzle_size, puzzle_difficulty] = selected_variant.value;
+      session.cmd_puzzle_create(puzzle_size, puzzle_difficulty);
       timer.start();
     },
     session,

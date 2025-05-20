@@ -8,8 +8,8 @@ export interface MutablePuzzleState {
 export type MutablePuzzleStateExtended<T extends object = {}> = MutablePuzzleState & T;
 
 export type PuzzleStateKakurasu = MutablePuzzleStateExtended<{
-  col_sum: number[];
-  row_sum: number[];
+  col_sums: number[];
+  row_sums: number[];
 }>;
 
 export type PuzzleStateTents = MutablePuzzleStateExtended<{

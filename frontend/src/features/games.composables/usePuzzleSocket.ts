@@ -207,8 +207,8 @@ export function usePuzzleSocket() {
         send_command("reset", {}, session_id.value);
         store.clearSolvedState(session_id.value);
       },
-      cmd_puzzle_create(puzzle_difficulty: string) {
-        send_command("create", { puzzle_type, puzzle_difficulty });
+      cmd_puzzle_create(puzzle_size: string, puzzle_difficulty: string) {
+        send_command("create", { puzzle_type, puzzle_size, puzzle_difficulty });
       },
       cmd_puzzle_submit() {
         if (!session_id.value) return;

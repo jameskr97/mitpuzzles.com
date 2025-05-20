@@ -29,8 +29,8 @@ export const defaultPuzzles: Record<GameKey, any> = {
   kakurasu: {
     cols: 7,
     rows: 7,
-    col_sum: [4, 0, 14, 0, 7, 2, 6],
-    row_sum: [0, 6, 3, 1, 3, 10, 5],
+    col_sums: [4, 0, 14, 0, 7, 2, 6],
+    row_sums: [0, 6, 3, 1, 3, 10, 5],
     board: [],
   },
   lightup: {
