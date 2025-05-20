@@ -35,7 +35,9 @@ const scale_computed = computed(() => remap([0, 100], [1, 6], scale.value));
       <div class="border border-slate-400 flex flex-col p-2 gap-2 rounded shadow-md w-full">
         <input v-model="scale" type="range" min="0" max="100" class="range w-full user-select-none" />
         <div class="flex flex-row mb-2 gap-2 items-center">
-          <button class="btn btn-primary" @click="puzzle.session.cmd_puzzle_create('7x7.easy')">Create Puzzle</button>
+          <button class="btn btn-primary" @click="puzzle.session.cmd_puzzle_create('7x7', 'easy')">
+            Create Puzzle
+          </button>
         </div>
         <p>Puzzle Session ID: {{ puzzle.session_id.value }}</p>
         <p>Puzzle Ready: {{ puzzle.is_ready.value }}</p>

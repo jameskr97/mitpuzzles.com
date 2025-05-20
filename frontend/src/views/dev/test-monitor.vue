@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import {useActivePuzzleStore, usePuzzleSocket} from "@/features/games.composables/usePuzzleSocket.ts";
-import {computed, onMounted, onUnmounted, ref} from "vue";
+import { useActivePuzzleStore, usePuzzleSocket } from "@/features/games.composables/usePuzzleSocket.ts";
+import { computed, onMounted, onUnmounted, ref } from "vue";
 import { ACTIVE_GAMES } from "@/main.ts";
 import { remap } from "@/services/util.ts";
 
@@ -13,8 +13,8 @@ const active_msg = computed(() => {
 
 const scale = ref(50);
 const scale_remapped = computed(() => remap([0, 100], [1, 3], scale.value));
-onMounted(() => socket.cmd_puzzle_monitor())
-onUnmounted(() => socket.cmd_puzzle_unmonitor())
+onMounted(() => socket.cmd_puzzle_monitor());
+onUnmounted(() => socket.cmd_puzzle_unmonitor());
 </script>
 
 <template>
