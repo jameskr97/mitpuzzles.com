@@ -22,6 +22,8 @@ env = environ.FileAwareEnv(
     # App Specific
     APP_DOMAIN=(str, "localhost"),
     DATABASE_URL=(str, "postgres://mitlogic:mitlogic@localhost:5432/mitlogic"),
+    REDIS_HOST=(str, "localhost"),
+    REDIS_PORT=(int, 6379),
 )
 environ.Env.read_env(BACKEND_DIR / ".env")
 
@@ -30,6 +32,7 @@ APP_DOMAIN = env("APP_DOMAIN")
 DEBUG = env("DEBUG")
 SECRET_KEY = env("SECRET_KEY")
 DATABASES = {"default": env.db("DATABASE_URL")}
+REDIS_DB = (env("REDIS_HOST"), env("REDIS_PORT"))
 
 # Essential Django settings
 ROOT_URLCONF = "config.urls"
@@ -57,7 +60,6 @@ SESSION_COOKIE_AGE = 86400 * 365  # 2 weeks
 # Django App + Middleware Settings
 INSTALLED_APPS = [
     # Django Default Apps
-    "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -131,3 +133,13 @@ HEADLESS_FRONTEND_URLS = {
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = "none"
 ACCOUNT_LOGIN_METHODS = ["email"]
+
+# django channels
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [REDIS_DB],
+        },
+    },
+}

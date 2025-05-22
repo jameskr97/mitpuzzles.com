@@ -26,6 +26,14 @@ class LightupEngine(PuzzleEngineBase):
             LightupCellStates.Cross
         ])
 
+    def is_solved(self, strict=False) -> bool:
+        """
+        Lightup ignores strict mode.
+        """
+        s = "".join(str(cell) for cell in self.get_board_state())
+        s = s.replace("6", "0")
+        return s == self.get_solution_board_string()
+
     def can_modify_cell(self, _state: State, row: int, col: int) -> bool:
         # you can only modify empty cells
         board = self.get_initial_board_string()

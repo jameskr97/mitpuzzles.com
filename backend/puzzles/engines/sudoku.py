@@ -16,6 +16,16 @@ class SudokuEngine(PuzzleEngineBase):
     def __init__(self, puzzle_session: "ActivePuzzleSession") -> None:
         super().__init__(puzzle_session)
 
+    def is_solved(self, strict=False) -> bool:
+        """
+        Check if the Sudoku puzzle is solved.
+        :param strict: Ignored. Sudoku is inherently strict.
+        :return:
+        """
+        board = "".join([str(c) for c in self.get_board_state()])
+        solution = self.get_solution_board_string()
+        return board == solution
+
     def on_cell_click(self, row: int, col: int, button: int = 0, state_override=None) -> bool:
         if isinstance(state_override, str):
             state_override = int(state_override)
@@ -24,12 +34,14 @@ class SudokuEngine(PuzzleEngineBase):
         if state_override is None:
             return False
 
-        # you can only set the state if the cell is empty by default
-
+        # don't allow a cell to be set to a number greater than the width.height
+        if state_override > self.cols:
+            return False
 
         # modify the cell state
         self.puzzle_session.board_state[row * self.cols + col] = state_override
         return True
+
 
     def can_modify_cell(self, _state: State, row: int, col: int) -> bool:
         return self.puzzle_data["board_initial"][row * self.cols + col] == "0"

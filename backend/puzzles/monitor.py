@@ -20,14 +20,14 @@ class AdminGameMonitor:
     def _start_cleanup_loop(self):
         def loop():
             while True:
-                time.sleep(30)
                 self._remove_stale_users()
+                time.sleep(30)
 
         threading.Thread(target=loop, daemon=True).start()
 
     def _remove_stale_users(self):
-        now = datetime.utcnow()
-        cutoff = now - timedelta(seconds=60)
+        now = datetime.now()
+        cutoff = now - timedelta(minutes=5)
 
         stale = [aid for aid, seen in self.last_seen.items() if seen < cutoff]
         for actor_id in stale:
@@ -35,13 +35,16 @@ class AdminGameMonitor:
             self.last_seen.pop(actor_id, None)
 
     def register_user(self, actor_id):
-        self.user_sessions.add(actor_id)
+        self.user_sessions.add(str(actor_id))
+        self.last_seen[str(actor_id)] = datetime.now()
         self._broadcast_user_count()
 
     def unregister_user(self, actor_id):
-        self.user_sessions.discard(actor_id)
+        self.user_sessions.discard(str(actor_id))
         self._broadcast_user_count()
+
         self.latest_user_states.pop(str(actor_id), None)
+        self.last_seen.pop(str(actor_id), None)
         for channel in self.monitoring_admins:
             async_to_sync(self.channel_layer.send)(
                 channel,
@@ -54,7 +57,7 @@ class AdminGameMonitor:
     def register_admin(self, channel_name):
         self.monitoring_admins.add(channel_name)
         self._broadcast_user_count()
-
+        
         for actor_id, data in self.latest_user_states.items():
             async_to_sync(self.channel_layer.send)(
                 channel_name,
@@ -71,7 +74,9 @@ class AdminGameMonitor:
         self.monitoring_admins.discard(channel_name)
 
     def broadcast_state(self, actor_id, session_id, data):
-        self.latest_user_states[actor_id] = data
+        key = str(actor_id)
+        self.latest_user_states[key] = data
+        self.last_seen[key] = datetime.now()
 
         for channel in self.monitoring_admins:
             async_to_sync(self.channel_layer.send)(channel, {
@@ -91,9 +96,7 @@ class AdminGameMonitor:
                 "user_count": self.get_user_count()
             })
 
-# Create shared instance (channel layer must be passed in later!)
 _shared_monitor = None
-
 def get_admin_monitor(channel_layer):
     global _shared_monitor
     if _shared_monitor is None:

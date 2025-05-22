@@ -1,9 +1,29 @@
+from functools import wraps
+
 from channels.generic.websocket import JsonWebsocketConsumer
 
-from puzzles.engines import get_puzzle_engine
+from puzzles.engines import get_puzzle_engine, PuzzleEngineBase
 from puzzles.models import ActivePuzzleSession
 from puzzles.monitor import get_admin_monitor
 from utils.auth import get_current_actor
+
+
+def ensure_session_loaded(func):
+    """
+    Decorator to ensure the puzzle session is loaded in memory.
+    If the session is not loaded, it will attempt to load it from the database.
+    If the session is not found, it will send an error message.
+
+    This is only to load existing sessions, not to create new ones. `handle_create` should be used for that.
+    """
+    @wraps(func)
+    def wrapper(self, data=None, session_id=None):
+        if not session_id:
+            return self.send_error("Missing session_id")
+        if not self.ensure_puzzle_in_memory(session_id):
+            return self.send_error(f"Session {session_id} not found", session_id=session_id)
+        return func(self, data, session_id)
+    return wrapper
 
 
 class PuzzleConsumer(JsonWebsocketConsumer):
@@ -19,14 +39,15 @@ class PuzzleConsumer(JsonWebsocketConsumer):
         self.admin_monitor = get_admin_monitor(self.channel_layer)
         self.actor = get_current_actor(self.scope)
         self.is_admin = getattr(self.actor, "is_staff", False)
-        self.admin_monitor.register_user(self.actor.id)
+        if not self.is_admin: # Only register non-admins as users initially
+            self.admin_monitor.register_user(self.actor.id)
         self.accept()
 
     def disconnect(self, code):
         if self.is_admin:
             self.admin_monitor.unregister_admin(self.channel_name)
-        else:
-            self.admin_monitor.unregister_user(self.actor.id)
+        # Always attempt to unregister the user from game playing perspective
+        self.admin_monitor.unregister_user(self.actor.id)
 
     def receive_json(self, content, **kwargs):
         message_type = content.get("type", "")
@@ -80,10 +101,19 @@ class PuzzleConsumer(JsonWebsocketConsumer):
         state["puzzle_id"] = puzzle_session.puzzle.id
         state["session_id"] = session_id
         state["puzzle_type"] = puzzle_session.puzzle.puzzle_type
+        state["puzzle_size"] = puzzle_session.puzzle.puzzle_size
+        state["puzzle_difficulty"] = puzzle_session.puzzle.puzzle_difficulty
+        state["is_solved"] = puzzle_session.is_solved
 
         self.send_json({"type": "event:state", "data": state, "session_id": session_id})
-        if not self.is_admin:
-            self.admin_monitor.broadcast_state(str(self.actor.id), str(session_id), state)
+
+        # If the current user is an admin and is now playing (sending state),
+        # ensure they are registered in the monitor as an active user.
+        if self.is_admin:
+            self.admin_monitor.register_user(str(self.actor.id))
+
+        # Broadcast state to admin monitor (now includes admins who are playing)
+        self.admin_monitor.broadcast_state(str(self.actor.id), str(session_id), state)
         return None
 
     def send_error(self, message, details=None, session_id=None):
@@ -100,11 +130,10 @@ class PuzzleConsumer(JsonWebsocketConsumer):
     def handle_create(self, data, session_id=None):
         """Create a new puzzle session/Request a new puzzle for an existing session"""
         puzzle_type = data.get("puzzle_type")
-        size = data.get("puzzle_size", None)
-        difficulty = data.get("puzzle_difficulty", None)
         if not puzzle_type:
             return self.send_error("Missing puzzle_type")
-
+        size = data.get("puzzle_size", None)
+        difficulty = data.get("puzzle_difficulty", None)
         try:
             # create a new puzzle session
             engine = ActivePuzzleSession.create_puzzle_engine(self.actor, puzzle_type, size, difficulty)
@@ -119,67 +148,29 @@ class PuzzleConsumer(JsonWebsocketConsumer):
 
     def handle_resume(self, data, session_id=None):
         """Resume an existing puzzle session"""
-        if not session_id:
-            return self.send_error("Missing session_id")
-
-        # if this session is already loaded into this websocket connection, just send the state
-        if session_id in self.active_sessions:
+        if self.ensure_puzzle_in_memory(session_id):
             return self.send_state(session_id)
+        # invariant: session_id does not exist in-memory or in-database.
+        # this would only happen if a session the user previously accessed was deleted from the database.
+        # manual deletion? either way, just send then a new puzzle.
+        return self.handle_create(data, None)
 
-        try:
-            # fetch the puzzle session
-            # puzzle_session = await sync_to_async(ActivePuzzleSession.fetch_for_actor)(session_id, self.actor)
-            puzzle_session = ActivePuzzleSession.fetch_for_actor(session_id, self.actor)
-            if not puzzle_session:
-                # the session_id the user provided is invalid or does not belong to them.
-                # NOTE: currently not handling if user A has a session_id of user B. that shouldn't happen...
-                # return await self.send_error("Invalid or unauthorized session", session_id=session_id)
-                puzzle_type = data.get("puzzle_type")
-                if not puzzle_type:
-                    return self.send_error("Missing puzzle_type")
-
-                self.handle_create({"puzzle_type": puzzle_type})
-                return None
-            # invariant - the puzzle session does exist
-
-            # check if we already have a session for this puzzle type
-            self.store_active_sessions(puzzle_session)
-            self.send_state(session_id)
-        except Exception as e:
-            self.send_error(f"Failed to resume session: {str(e)}", session_id=session_id)
-        return None
-
+    @ensure_session_loaded
     def handle_action(self, data, session_id=None):
         """Process a puzzle action for a specific session"""
-        if not session_id:
-            return self.send_error("Missing session_id")
-
-        if session_id not in self.active_sessions:
-            # attempt to look up the session
-            puzzle_session = ActivePuzzleSession.fetch_for_actor(session_id, self.actor)
-            if not puzzle_session:
-                return self.send_error("Invalid or unauthorized session", session_id=session_id)
-            self.store_active_sessions(puzzle_session)
-
         try:
             _, engine = self.active_sessions[session_id]
             success = engine.handle_input_event(data)
-
             if success:
                 engine.save_active_puzzle()
                 self.send_state(session_id)
-
         except Exception as e:
             self.send_error(f"Failed to process action: {str(e)}", session_id=session_id)
         return None
 
+    @ensure_session_loaded
     def handle_reset(self, data, session_id=None):
         """Reset a puzzle session"""
-        if not session_id:
-            return self.send_error("Missing session_id")
-
-        if session_id not in self.active_sessions:
-            return self.send_error(f"Session {session_id} not found", session_id=session_id)
         try:
             _, engine = self.active_sessions[session_id]
             engine.board_clear()
@@ -189,40 +180,22 @@ class PuzzleConsumer(JsonWebsocketConsumer):
             self.send_error(f"Failed to reset puzzle: {str(e)}", session_id=session_id)
         return None
 
+    @ensure_session_loaded
     def handle_submit(self, data, session_id=None):
-        if not session_id:
-            return self.send_error("Missing session_id")
-
-        if session_id not in self.active_sessions:
-            return self.send_error(f"Session {session_id} not found", session_id=session_id)
-
         try:
             puzzle_session, engine = self.active_sessions[session_id]
-            if engine.is_solved():
-                # Mark as submitted in the database
-                # puzzle_sessionn.is_submitted = True
-                # await sync_to_async(puzzle_session.save)()
+            payload = {
+                "type": "event:submit_result",
+                "data": {"is_solved": True},
+                "session_id": session_id,
+            }
 
-                # Send success message
-                self.send_json(
-                    {
-                        "type": "event:submit_result",
-                        "data": {"success": True},
-                        "session_id": session_id,
-                    }
-                )
-            else:
-                # Send failure message
-                self.send_json(
-                    {
-                        "type": "event:submit_result",
-                        "data": {"success": False},
-                        "session_id": session_id,
-                    }
-                )
+            solved = engine.is_solved()
+            puzzle_session.is_solved = solved
+            payload["data"]["is_solved"] = solved
+            self.send_json(payload)
+            puzzle_session.save()
 
-            engine.save_active_puzzle()
-            # await self.send_state(session_id)
         except Exception as e:
             self.send_error(f"Failed to validate puzzle: {str(e)}", session_id=session_id)
         return None
@@ -243,11 +216,27 @@ class PuzzleConsumer(JsonWebsocketConsumer):
 
     ################################################################################
     #### Helpers
-    def store_active_sessions(self, session: ActivePuzzleSession):
+    def store_active_sessions(self, session: ActivePuzzleSession) -> (ActivePuzzleSession, PuzzleEngineBase):
         """Store the active sessions in the database"""
         engine = get_puzzle_engine(session)
         session_id = str(session.id)
         self.active_sessions[session_id] = (session, engine)
+        return session, engine
+
+    def ensure_puzzle_in_memory(self, session_id) -> bool:
+        """
+        Ensure the puzzle session is in memory.
+        :param session_id: session_id to load in memory
+        :return: true if the session is in memory, false otherwise
+        """
+        if session_id in self.active_sessions:
+            return True
+
+        puzzle_session = ActivePuzzleSession.fetch_for_actor(session_id, self.actor)
+        if puzzle_session:
+            self.store_active_sessions(puzzle_session)
+            return True
+        return False
 
     ################################################################################
     #### Channel Layer Group Handlers

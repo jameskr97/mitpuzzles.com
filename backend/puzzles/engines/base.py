@@ -3,8 +3,6 @@ import typing
 from enum import Enum
 from typing import Any, Dict, List, Type
 
-from asgiref.sync import sync_to_async
-
 from puzzles.converters import get_translation_dict, game_state_to_string
 from puzzles.engines.ops import PuzzleOps
 
@@ -52,9 +50,6 @@ class PuzzleEngineBase:
                 # For non-numeric states (like "." or "L" in some puzzles)
                 result.append(char)
         return result
-
-        # return [int(cell) if cell.isdigit() else cell for cell in list(initial_state)]
-        # raise NotImplementedError("create_game_state() must be implemented in subclasses")
 
     def save_active_puzzle(self):
         """

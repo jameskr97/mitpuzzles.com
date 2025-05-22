@@ -41,18 +41,18 @@ TR_LIGHTUP = {
 
 # EMPTY, 0-8, FLAG, SAFE
 TR_MINESWEEPER = {
-    -1: "_",  # EMPTY
-    0: "0",
-    1: "1",
-    2: "2",
-    3: "3",
-    4: "4",
-    5: "5",
-    6: "6",
-    7: "7",
-    8: "8",
-    -3: "F",  # FLAG
-    -4: "S",  # SAFE
+    0: "j", # UNMARKED
+    1: "b",
+    2: "c",
+    3: "d",
+    4: "e",
+    5: "f",
+    6: "g",
+    7: "h",
+    8: "i",
+    -1: "j",  # UNMARKED
+    -3: "k",  # FLAG
+    -4: "l",  # SAFE
 }
 
 TRANSLATION_DICTS = {

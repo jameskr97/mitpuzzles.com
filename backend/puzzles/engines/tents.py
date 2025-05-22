@@ -21,9 +21,22 @@ class TentsEngine(PuzzleEngineBase):
             TentCellStates.Green
         ])
 
+    def is_solved(self, strict=False) -> bool:
+        if not strict:
+            # In non-strict mode, we only check if the number of tents matches the solution
+            board_tents = "".join([str(c) if c == TentCellStates.Tent else "0" for c in self.get_board_state()])
+            solution_tents = "".join([str(c) if int(c) == TentCellStates.Tent else "0" for c in self.get_solution_board_string()])
+            return board_tents == solution_tents
+
+        # In strict mode, we check if the board matches the solution exactly
+        board = "".join([str(c) for c in self.get_board_state()])
+        solution = self.get_solution_board_string()
+        return board == solution
+
     def can_modify_cell(self, state: State, row: int, col: int) -> bool:
-        cell = self.get_initial_board_string()
-        return int(cell) != TentCellStates.Tree
+        board = self.get_initial_board_string()
+        index = row * self.cols + col
+        return int(board[index]) != TentCellStates.Tree
 
     def serialize_gamedata(self) -> dict:
         """

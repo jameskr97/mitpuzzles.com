@@ -48,27 +48,13 @@ class KakurasuEngine(PuzzleEngineBase):
         Returns:
             bool: True if the input is valid, False otherwise
         """
-        user_input = "".join(str(cell) for cell in self.puzzle_session.board_state)
-        solution = self.puzzle_data["board_solution"]
+        board = "".join(str(cell) for cell in self.puzzle_session.board_state)
+        solution = self.get_solution_board_string()
 
-        # ensure both strings have the same length
-        if len(user_input) != len(solution):
-            return False
+        if strict:
+            strict_solution = "".join("2" if cell == "0" else cell for cell in solution)
+            return board == strict_solution
 
-        for i in range(len(solution)):
-            # for both modes:
-            # - All '1's in the solution must match with '1's in user input
-            # - No extra '1's in user input where solution has '0'
-            if solution[i] == "1" and user_input[i] != "1":
-                return False
-
-            if solution[i] == "0" and user_input[i] == "1":
-                return False
-
-            # for strict mode only:
-            # - All '0's in the solution must be marked as '2' (Red Cross) in user input
-            if strict and solution[i] == "0" and user_input[i] != "2":
-                return False
-
-        # If we passed all checks, the input is valid
-        return True
+        # If strict mode is not enabled, ignore the Cross in the user boardA
+        black_only_board = "".join("1" if cell == "1" else "0" for cell in board)
+        return black_only_board == solution

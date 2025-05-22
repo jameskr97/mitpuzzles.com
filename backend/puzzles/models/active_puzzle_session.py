@@ -23,7 +23,7 @@ class ActivePuzzleSession(make_actor_mixin("active_puzzles")):
     puzzle = models.ForeignKey(Puzzle, on_delete=models.CASCADE, related_name="active_sessions")
     board_state = models.JSONField()
     move_history = models.JSONField(default=list, blank=True)
-    is_submitted = models.BooleanField(default=False)
+    is_solved = models.BooleanField(default=False)
 
     class Meta:
         # don't allow multiple sessions for the same puzzle type
@@ -51,13 +51,13 @@ class ActivePuzzleSession(make_actor_mixin("active_puzzles")):
             session.puzzle = puzzle
             session.board_state = []
             session.move_history = []
-            session.is_submitted = False
+            session.is_solved = False
         except cls.DoesNotExist:
             session = cls.objects.create(
                 puzzle=puzzle,
                 board_state=[],
                 move_history=[],
-                is_submitted=False,
+                is_solved=False,
             )
             session.set_actor(actor)
 

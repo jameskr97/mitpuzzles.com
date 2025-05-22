@@ -16,11 +16,5 @@ CSRF_TRUSTED_ORIGINS = [VUE_FRONTEND_URL]
 # Allauth Local Settings
 HEADLESS_SERVE_SPECIFICATION = True
 
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [("127.0.0.1", 6379)],
-        },
-    },
-}
+if DEBUG:
+    INSTALLED_APPS.insert(0, "daphne")
