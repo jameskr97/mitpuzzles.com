@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { useActivePuzzleStore, usePuzzleSocket } from "@/features/games.composables/usePuzzleSocket.ts";
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { computed, inject, onMounted, onUnmounted, ref } from "vue";
 import { ACTIVE_GAMES } from "@/main.ts";
 import { remap } from "@/services/util.ts";
 
-const socket = usePuzzleSocket();
+const socket = inject<ReturnType<typeof usePuzzleSocket>>("puzzle_socket");
+if (!socket) throw new Error("Puzzle socket not found");
 const active_store = useActivePuzzleStore();
 const active_msg = computed(() => {
   const count = active_store.monitor_user_count;
