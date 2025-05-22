@@ -28,7 +28,7 @@ const user = useAuthStore();
         </router-link>
       </div>
 
-      <div v-if="isDev">
+      <div v-if="isDev || user.isAdmin">
         <p class="text-lg mx-auto mt-2 sticky top-0 text-center underline">Dev Tools</p>
         <div class="p-2">
           <router-link v-for="tool in DEV_TOOLS" :to="{ name: `dev-` + tool.key }">

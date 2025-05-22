@@ -31,7 +31,7 @@ export interface ActionPayload {
 }
 
 interface SubmitResult {
-  success: boolean;
+  is_solved: boolean;
 }
 
 interface UserCountResult {
@@ -66,6 +66,7 @@ export const useActivePuzzleStore = defineStore("puzzle_session", () => {
 
   return {
     puzzle_states,
+    puzzle_solved,
     session_lookup,
 
     setPuzzleState,
@@ -93,6 +94,12 @@ function mapButtonToName(button: number): "left" | "right" | "middle" | "unknown
   }
 }
 
+/**
+ * This composable provides a reactive interface to the WebSocket server.
+ * This should not be used directly, but instead through the `usePuzzleState` composable,
+ * or, through a call to `inject<ReturnType<typeof usePuzzleSocket>>("puzzle_socket")`,
+ * as it's created and provided in the main.ts file.
+ */
 export function usePuzzleSocket() {
   ////////////////////////////////////////////////////////////////////////
   //// WebSocket
@@ -109,17 +116,23 @@ export function usePuzzleSocket() {
   //////// Socket Reactivity
   function handle_message(message: MessageEvent) {
     const msg = JSON.parse(message.data) as WebSocketMessage;
+    // console.log("websocket message", msg);
 
     switch (msg.type) {
       case "event:state":
         const state = msg.data as AnyPuzzleState;
         const session_id = msg.session_id;
-        if (session_id && state.puzzle_type) store.setPuzzleState(state.puzzle_type, session_id, state);
+        if (session_id && state.puzzle_type) {
+          store.setPuzzleState(state.puzzle_type, session_id, state);
+          if (state.is_solved) {
+            store.setPuzzleSolved(session_id, state.is_solved);
+          }
+        }
         break;
 
       case "event:submit_result":
         const result = msg.data as SubmitResult;
-        if (msg.session_id) store.setPuzzleSolved(msg.session_id, result.success);
+        if (msg.session_id) store.setPuzzleSolved(msg.session_id, result.is_solved);
         break;
 
       case "event:error":
@@ -185,11 +198,13 @@ export function usePuzzleSocket() {
       rows: computed(() => state.value?.rows ?? 0),
       cols: computed(() => state.value?.cols ?? 0),
       is_solved: computed(() => store.isPuzzleSolved(session_id.value)),
+      // is_solved: false,
 
       // User Input + Interaction
       // Board Actions
       handle_cell_click: (cell: Cell, button: number = 0, state_override?: number) => {
         if (!session_id.value) return;
+        store.clearSolvedState(session_id.value);
         let payload: ActionPayload = {
           target: "cell",
           action: "click",
@@ -205,10 +220,11 @@ export function usePuzzleSocket() {
       cmd_puzzle_reset: () => {
         if (!session_id.value) return;
         send_command("reset", {}, session_id.value);
-        store.clearSolvedState(session_id.value);
+        // store.clearSolvedState(session_id.value);
       },
       cmd_puzzle_create(puzzle_size: string, puzzle_difficulty: string) {
         send_command("create", { puzzle_type, puzzle_size, puzzle_difficulty });
+        store.clearSolvedState(session_id.value);
       },
       cmd_puzzle_submit() {
         if (!session_id.value) return;
@@ -216,7 +232,7 @@ export function usePuzzleSocket() {
       },
       clear_solved_state() {
         if (!session_id.value) return;
-        store.clearSolvedState(session_id.value);
+        // store.clearSolvedState(session_id.value);
       },
     };
   }

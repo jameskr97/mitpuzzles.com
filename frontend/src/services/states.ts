@@ -4,6 +4,9 @@ export interface MutablePuzzleState {
   board: number[];
   session_id: string;
   puzzle_type: string;
+  puzzle_size: string;
+  puzzle_difficulty: string;
+  is_solved: boolean;
 }
 export type MutablePuzzleStateExtended<T extends object = {}> = MutablePuzzleState & T;
 

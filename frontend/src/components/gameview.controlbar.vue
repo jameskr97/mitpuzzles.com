@@ -3,6 +3,7 @@ import { useGameLayout } from "@/composables/useGameLayout.ts";
 import { useCurrentPuzzle } from "@/composables/useCurrentPuzzle.ts";
 import { onMounted, onUnmounted } from "vue";
 import { getGameScale } from "@/store/scale.ts";
+import GameviewControlBarTimer from "@/components/gameview.controlbar.timer.vue";
 
 const layout = useGameLayout();
 const puzzle = await useCurrentPuzzle();
@@ -12,7 +13,6 @@ const { scale } = getGameScale();
 function getDisplayName(parts?: string[]): string {
   if (!parts) return "undefined";
   if (parts.length < 2) return parts[0];
-
   const name = parts
     .slice(1)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
@@ -20,7 +20,7 @@ function getDisplayName(parts?: string[]): string {
   return `${parts[0]} ${name}`;
 }
 
-function onDifficultySelect(diff: string) {
+function onDifficultySelect(diff: string[]) {
   if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
   puzzle.selected_variant.value = diff;
   puzzle.request_new_puzzle();
@@ -42,18 +42,15 @@ onUnmounted(() => puzzle.timer.stop());
           class="mr-2 cursor-pointer"
           @click="layout.toggle_instructions()"
         />
-        <!--        <v-icon name="md-leaderboard" :scale="1.5" class="mr-2 cursor-pointer" @click="layout.toggle_leaderboard()" />-->
         <div class="tooltip tooltip-bottom w-full" data-tip="Resize Game Board">
           <input v-model="scale" type="range" min="0" max="100" class="range w-full user-select-none" />
         </div>
         <div class="divider divider-horizontal mx-2"></div>
-        <div class="text-2xl text-right font-mono">
-          <span>{{ puzzle.timer.display_time }}</span>
-        </div>
+        <GameviewControlBarTimer />
       </div>
 
       <!-- Buttons -->
-      <div class="grid grid-cols-4 w-full gap-1">
+      <div class="grid grid-cols-2 lg:grid-cols-4 w-full gap-1">
         <div class="dropdown dropdown-center">
           <button ref="difficulty-dropdown" tabindex="0" role="button" class="btn btn-secondary w-full">
             Difficulty
@@ -63,14 +60,30 @@ onUnmounted(() => puzzle.timer.stop());
             <li v-if="puzzle.available_variants.value.length === 0">
               <a disabled>No variants available</a>
             </li>
-            <li v-for="x in puzzle.available_variants.value" :key="x" @click="onDifficultySelect(x)">
-              <a>{{ getDisplayName(x) }}</a>
+            <li
+              v-for="variant in puzzle.available_variants.value"
+              :key="variant[0] + '.' + variant[1]"
+              @click="onDifficultySelect(variant)"
+            >
+              <a>{{ getDisplayName(variant) }}</a>
             </li>
           </ul>
         </div>
-        <button class="btn btn-error" @click="puzzle.session.cmd_puzzle_reset">Clear</button>
         <button class="btn btn-info" @click="puzzle.request_new_puzzle">New Puzzle</button>
-        <button class="btn btn-success" @click="puzzle.session.cmd_puzzle_submit">Submit</button>
+        <button
+          class="btn btn-error"
+          :disabled="puzzle.is_solved.value == true"
+          @click="puzzle.session.cmd_puzzle_reset"
+        >
+          Clear
+        </button>
+        <button
+          class="btn btn-success"
+          :disabled="puzzle.is_solved.value == true"
+          @click="puzzle.session.cmd_puzzle_submit"
+        >
+          Submit
+        </button>
       </div>
 
       <!-- Game variant display -->

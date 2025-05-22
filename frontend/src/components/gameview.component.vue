@@ -5,7 +5,9 @@ import { getGameScale } from "@/store/scale";
 import GameViewControlBar from "@/components/gameview.controlbar.vue";
 import GameInstructions from "@/components/gameview.instructions.vue";
 import GameViewAlert from "@/components/gameview.alert.vue";
+import { useCurrentPuzzle } from "@/composables/useCurrentPuzzle.ts";
 
+const puzzle = await useCurrentPuzzle();
 const layout = useGameLayout();
 const { scale_remapped } = getGameScale();
 </script>
@@ -35,7 +37,7 @@ const { scale_remapped } = getGameScale();
           >
             <GameViewAlert />
 
-            <div class="select-none" :class="['select-none']">
+            <div class="select-none" :class="{ 'pointer-events-none': puzzle.is_solved.value }">
               <slot name="default" :scale="scale_remapped"></slot>
             </div>
           </div>

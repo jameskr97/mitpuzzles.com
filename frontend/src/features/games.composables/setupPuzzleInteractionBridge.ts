@@ -110,8 +110,16 @@ export function createPuzzleInteractionBridge(session: Awaited<ReturnType<typeof
   }
 
   watch(
-    () => session.state.value.board,
-    (new_board) => emitGameEvent("onBoardModified", new_board),
+    // Safely access .board only if session.state.value is not null
+    () => (session.state.value ? session.state.value.board : null),
+    (new_board) => {
+      // Now, new_board can be null if session.state.value was null,
+      // or if session.state.value.board was null.
+      // We still only want to emit if new_board is a valid board array.
+      if (new_board && Array.isArray(new_board)) {
+        emitGameEvent("onBoardModified", new_board);
+      }
+    },
     { immediate: false, deep: false },
   );
 

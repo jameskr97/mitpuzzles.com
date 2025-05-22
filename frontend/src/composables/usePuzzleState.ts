@@ -1,9 +1,9 @@
-import { inject, ref } from "vue";
+import { inject, ref, computed } from "vue";
 import type { usePuzzleSocket } from "@/features/games.composables/usePuzzleSocket.ts";
 import { PuzzleTimer } from "@/utils.ts";
 import { getPuzzleVariants } from "@/services/app.ts";
 
-const variantCache = new Map<string, string[]>();
+const variantCache = new Map<string, string[][]>();
 
 export async function usePuzzleState(puzzle_type: string) {
   const socket = inject<ReturnType<typeof usePuzzleSocket>>("puzzle_socket");
@@ -11,7 +11,7 @@ export async function usePuzzleState(puzzle_type: string) {
   const session = socket.getPuzzleSession(puzzle_type);
 
   // Puzzle Variants
-  let variants: string[];
+  let variants: string[][];
   if (variantCache.has(puzzle_type)) {
     variants = variantCache.get(puzzle_type)!;
   } else {
@@ -20,9 +20,25 @@ export async function usePuzzleState(puzzle_type: string) {
     variantCache.set(puzzle_type, variants);
   }
 
-  // Puzzle Variants
-  const available_variants = ref<string[]>(variants);
-  const selected_variant = ref<string>(available_variants.value[0]);
+  // check if we have a variant in the puzzle session
+  const available_variants = ref<string[][]>(variants);
+  // const selected_variant = ref<string[]>([session.state.value.puzzle_size, session.state.value.puzzle_difficulty]);
+  const selectedVariantRef = ref<string[]>([]);
+
+  const selected_variant = computed({
+    get() {
+      if (!session.state.value) return ["undefined", "undefined"];
+      const size = session.state.value.puzzle_size || "undefined";
+      const difficulty = session.state.value.puzzle_difficulty || "undefined";
+      return selectedVariantRef.value.length ? selectedVariantRef.value : [size, difficulty];
+    },
+    set(value: string[]) {
+      selectedVariantRef.value = value;
+      session.state.value.puzzle_size = value[0];
+      session.state.value.puzzle_difficulty = value[1];
+    },
+  });
+
   const timer = new PuzzleTimer(puzzle_type);
 
   return {
@@ -31,6 +47,7 @@ export async function usePuzzleState(puzzle_type: string) {
     available_variants,
     timer,
     is_ready: session.is_ready,
+    is_solved: session.is_solved,
     state: session.state,
     session_id: session.session_id,
 

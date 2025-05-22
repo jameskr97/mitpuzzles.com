@@ -14,9 +14,9 @@ const props = defineProps<{
 }>();
 
 enum MinesweeperCellStates {
-  Unmarked = 10,
-  Flagged = 11,
-  Safe = 12,
+  Unmarked = 9,
+  Flagged = 10,
+  Safe = 11,
   NUM_STATES = 3,
 }
 const bind = props.interact?.getBridge();

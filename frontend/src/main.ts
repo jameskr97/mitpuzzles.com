@@ -64,7 +64,7 @@ function create_dev_tool(key: string, display_name: string, requires_admin: bool
   return {
     key,
     name: display_name,
-    component: `./views/dev/${key}.vue`,
+    component: import(`@/views/dev/${key}.vue`),
     requires_admin,
   };
 }

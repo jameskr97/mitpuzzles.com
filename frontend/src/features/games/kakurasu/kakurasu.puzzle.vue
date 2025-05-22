@@ -24,6 +24,7 @@ const borderConfig = { outer: { thickness: 1, borderClass: "bg-black" } };
 </script>
 <template>
   <BoardContainer
+    v-if="state"
     :rows="state.rows"
     :cols="state.cols"
     :scale="scale"
