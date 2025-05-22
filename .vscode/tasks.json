@@ -5,7 +5,7 @@
             "type": "shell",
             "label": "(local dev) backend (django): run dev server",
             "isBackground": true,
-            "command": "${command:python.interpreterPath} -m uvicorn mitlogic.asgi:application --reload --host 0.0.0.0",
+            "command": "${command:python.interpreterPath} -m uvicorn config.asgi:application --reload --host 0.0.0.0",
             "problemMatcher": [],
             "presentation": {
                 "group": "dev"
