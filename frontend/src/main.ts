@@ -17,6 +17,8 @@ import mdAbout from "./views/aboutus.md?raw";
 import { StorageVersionManager } from "@/utils.ts";
 // Style
 import "./style.css";
+// PostHog
+import posthog from "posthog-js";
 
 StorageVersionManager.clearOldStorage(); // clear old storage if needed
 
@@ -91,10 +93,10 @@ const route = {
     component: () => import("@/components/Freeplay.vue"),
     meta: { game_type: name },
   }),
-  dev: (name: string) => ({
-    path: `/devtool/${name}`,
-    name: `dev-${name}`,
-    component: () => import(`${DEV_TOOLS[name].component}`),
+  dev: (key: string) => ({
+    path: `/devtool/${key}`,
+    name: `dev-${key}`,
+    component: () => import(`@/views/dev/${key}.vue`),
   }),
 };
 
@@ -119,7 +121,25 @@ const routerConfig: RouterOptions = {
   await useAuthStore().updateStore();
   await useVisitorStore().init();
 
+  // provide global puzzle socket
   const puzzle_socket = usePuzzleSocket();
   app.provide("puzzle_socket", puzzle_socket);
+
+  // posthog
+  const posthogApiKey = import.meta.env.VITE_POSTHOG_API_KEY;
+  const posthogApiHost = import.meta.env.VITE_POSTHOG_API_HOST || "https://app.posthog.com";
+  if (posthogApiKey) {
+    posthog.init(posthogApiKey, {
+      api_host: posthogApiHost,
+      loaded: (posthog) => {
+        if (import.meta.env.DEV) posthog.debug();
+      },
+    });
+    app.provide("posthog", posthog);
+  } else {
+    if (import.meta.env.DEV) {
+      console.warn("PostHog API key (VITE_POSTHOG_API_KEY) is not set. PostHog will not be initialized.");
+    }
+  }
   app.mount("#app");
 })();
