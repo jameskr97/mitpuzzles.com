@@ -136,10 +136,15 @@ class PuzzleEngineBase:
         col = event_data["position"].get("col")
         button = event_data["position"].get("button", "left")
         state = event_data["position"].get("state", None)
+        zone = event_data["position"].get("zone", None)
 
-        match (target, action):
-            case ("cell", "click"):
+        match (target, action, zone):
+            case ("cell", "click", "game"):
                 return self.on_cell_click(row, col, button, state)
+            case ("cell", "click", "leftGutter"):
+                return self.on_row_click(row)
+            case ("cell", "click", "topGutter"):
+                return self.on_col_click(col)
 
         return False
 

@@ -60,6 +60,7 @@ export function createSudokuBehavior(state: Awaited<ReturnType<typeof usePuzzleS
     }
     if (key === "Backspace" || key === "Delete") {
       state.state.value.board[index] = 0;
+      state.session.handle_cell_click(cell, 0, 0);
       return true;
     }
     if (key === "Escape") {

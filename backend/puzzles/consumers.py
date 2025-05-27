@@ -1,6 +1,10 @@
+import logging
+import time
+import typing
 from functools import wraps
 
 from channels.generic.websocket import JsonWebsocketConsumer
+from django.utils import timezone
 
 from puzzles.engines import get_puzzle_engine, PuzzleEngineBase
 from puzzles.models import ActivePuzzleSession
@@ -27,10 +31,12 @@ def ensure_session_loaded(func):
 
 
 class PuzzleConsumer(JsonWebsocketConsumer):
+    logger = logging.getLogger(__name__)
+
     def __init__(self, *args, **kwargs):
         super().__init__(args, kwargs)
         self.actor = None
-        self.active_sessions = {}
+        self.active_sessions: typing.Dict[str, typing.Tuple[ActivePuzzleSession, PuzzleEngineBase]] = {}
         self.puzzle_type_sessions = {}
         self.group_name = None
         self.admin_monitor = None
@@ -42,12 +48,14 @@ class PuzzleConsumer(JsonWebsocketConsumer):
         if not self.is_admin: # Only register non-admins as users initially
             self.admin_monitor.register_user(self.actor.id)
         self.accept()
+        self.logger.info(f"User {getattr(self.actor, 'id', 'Unknown')} connected.")
 
     def disconnect(self, code):
         if self.is_admin:
             self.admin_monitor.unregister_admin(self.channel_name)
         # Always attempt to unregister the user from game playing perspective
         self.admin_monitor.unregister_user(self.actor.id)
+        self.logger.info(f"User {getattr(self.actor, 'id', 'Unknown')} disconnected.")
 
     def receive_json(self, content, **kwargs):
         message_type = content.get("type", "")
@@ -81,6 +89,9 @@ class PuzzleConsumer(JsonWebsocketConsumer):
             handler = handler_map.get(command)
             if handler:
                 handler(data, session_id)
+                if session_id in self.active_sessions:
+                    session, engine = self.active_sessions[session_id]
+                    print(session.move_history)
             else:
                 self.send_error(f"Unknown command: {command}")
         else:
@@ -129,6 +140,7 @@ class PuzzleConsumer(JsonWebsocketConsumer):
     #### Event Handlers
     def handle_create(self, data, session_id=None):
         """Create a new puzzle session/Request a new puzzle for an existing session"""
+        self.logger.info(f"User {getattr(self.actor, 'id', 'Unknown')} executed handle_create with data: {data}")
         puzzle_type = data.get("puzzle_type")
         if not puzzle_type:
             return self.send_error("Missing puzzle_type")
@@ -141,6 +153,10 @@ class PuzzleConsumer(JsonWebsocketConsumer):
             # store the session in the active sessions
             session_id = str(engine.puzzle_session.id)
             self.active_sessions[session_id] = (engine.puzzle_session, engine)
+
+            solution = engine.get_solution_board_string()
+            self.logger.info(f"Solution for puzzle {session_id}: {solution}")
+
             self.send_state(session_id)
         except Exception as e:
             self.send_error(f"Failed to create puzzle: {str(e)}")
@@ -148,6 +164,9 @@ class PuzzleConsumer(JsonWebsocketConsumer):
 
     def handle_resume(self, data, session_id=None):
         """Resume an existing puzzle session"""
+        self.logger.info(
+            f"User {getattr(self.actor, 'id', 'Unknown')} executed handle_resume with session_id: {session_id}"
+        )
         if self.ensure_puzzle_in_memory(session_id):
             return self.send_state(session_id)
         # invariant: session_id does not exist in-memory or in-database.
@@ -158,10 +177,21 @@ class PuzzleConsumer(JsonWebsocketConsumer):
     @ensure_session_loaded
     def handle_action(self, data, session_id=None):
         """Process a puzzle action for a specific session"""
+        self.logger.info(
+            f"User {getattr(self.actor, 'id', 'Unknown')} executed handle_action with session_id: {session_id} and data: {data}"
+        )
+
         try:
-            _, engine = self.active_sessions[session_id]
+            session, engine = self.active_sessions[session_id]
             success = engine.handle_input_event(data)
             if success:
+                board = list(engine.get_board_state())
+                session.move_history.append(
+                    {
+                        "timestamp": time.time(),
+                        "board": board
+                    }
+                )
                 engine.save_active_puzzle()
                 self.send_state(session_id)
         except Exception as e:
@@ -170,6 +200,9 @@ class PuzzleConsumer(JsonWebsocketConsumer):
 
     @ensure_session_loaded
     def handle_reset(self, data, session_id=None):
+        self.logger.info(
+            f"User {getattr(self.actor, 'id', 'Unknown')} executed handle_reset with session_id: {session_id}"
+        )
         """Reset a puzzle session"""
         try:
             _, engine = self.active_sessions[session_id]
@@ -182,6 +215,9 @@ class PuzzleConsumer(JsonWebsocketConsumer):
 
     @ensure_session_loaded
     def handle_submit(self, data, session_id=None):
+        self.logger.info(
+            f"User {getattr(self.actor, 'id', 'Unknown')} executed handle_submit with session_id: {session_id}"
+        )
         try:
             puzzle_session, engine = self.active_sessions[session_id]
             payload = {
@@ -196,6 +232,9 @@ class PuzzleConsumer(JsonWebsocketConsumer):
             self.send_json(payload)
             puzzle_session.save()
 
+            if solved:
+                puzzle_session.convert_to_game_recording()
+
         except Exception as e:
             self.send_error(f"Failed to validate puzzle: {str(e)}", session_id=session_id)
         return None
@@ -204,12 +243,14 @@ class PuzzleConsumer(JsonWebsocketConsumer):
     #### Admin Monitoring Commands
     def handle_admin_monitor(self):
         """Handle admin monitoring commands"""
+        self.logger.info(f"Admin {getattr(self.actor, 'id', 'Unknown')} executed handle_admin_monitor.")
         if self.is_admin:
             self.admin_monitor.register_admin(self.channel_name)
         return None
 
     def handle_admin_unmonitor(self):
         """Handle admin unmonitoring commands"""
+        self.logger.info(f"Admin {getattr(self.actor, 'id', 'Unknown')} executed handle_admin_unmonitor.")
         if self.is_admin:
             self.admin_monitor.unregister_admin(self.channel_name)
         return None

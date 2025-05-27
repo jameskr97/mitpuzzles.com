@@ -91,17 +91,10 @@ class ActivePuzzleSession(make_actor_mixin("active_puzzles")):
             return False
 
     def convert_to_game_recording(self):
-        """
-        Convert the active puzzle session to a game recording.
-        This is called when the user submits the correctly solved puzzle.
-        """
-        """Record a completed puzzle in the GameRecording table"""
         recording_data = {
-            "board_state": self.board_state,
             "move_history": self.move_history,
         }
-
-        # Create the game recording
-        record = GameRecording.objects.create(puzzle=self.puzzle, data=recording_data)
+        record = GameRecording(puzzle=self.puzzle, data=recording_data)
         record.set_actor(self.get_actor())
         record.save()
+        return record

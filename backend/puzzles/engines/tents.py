@@ -2,6 +2,7 @@ from enum import IntEnum
 from typing import TYPE_CHECKING
 
 from puzzles.engines.base import PuzzleEngineBase, State
+from puzzles.engines.ops import PuzzleOps
 
 if TYPE_CHECKING:
     from puzzles.models import ActivePuzzleSession
@@ -37,6 +38,32 @@ class TentsEngine(PuzzleEngineBase):
         board = self.get_initial_board_string()
         index = row * self.cols + col
         return int(board[index]) != TentCellStates.Tree
+
+    def on_row_click(self, row: int) -> bool:
+        PuzzleOps.change_line_state(
+            is_row=True,
+            index=row,
+            board=self.puzzle_session.board_state,
+            rows=self.rows,
+            cols=self.cols,
+            from_state=TentCellStates.Empty,
+            to_state=TentCellStates.Green,
+        )
+        self.save_active_puzzle()
+        return True
+
+    def on_col_click(self, col: int) -> bool:
+        PuzzleOps.change_line_state(
+            is_row=False,
+            index=col,
+            board=self.puzzle_session.board_state,
+            rows=self.rows,
+            cols=self.cols,
+            from_state=TentCellStates.Empty,
+            to_state=TentCellStates.Green,
+        )
+        self.save_active_puzzle()
+        return True
 
     def serialize_gamedata(self) -> dict:
         """

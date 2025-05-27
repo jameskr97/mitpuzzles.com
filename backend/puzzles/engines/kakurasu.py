@@ -2,6 +2,7 @@ from enum import IntEnum
 from typing import TYPE_CHECKING
 
 from puzzles.engines.base import PuzzleEngineBase, State
+from puzzles.engines.ops import PuzzleOps
 
 if TYPE_CHECKING:
     from puzzles.models import ActivePuzzleSession
@@ -34,6 +35,32 @@ class KakurasuEngine(PuzzleEngineBase):
         }
 
     def can_modify_cell(self, _state: State, row: int, col: int) -> bool:
+        return True
+
+    def on_row_click(self, row: int) -> bool:
+        PuzzleOps.change_line_state(
+            is_row=True,
+            index=row,
+            board=self.puzzle_session.board_state,
+            rows=self.rows,
+            cols=self.cols,
+            from_state=KakurasuCellStates.Empty,
+            to_state=KakurasuCellStates.Crossed,
+        )
+        self.save_active_puzzle()
+        return True
+
+    def on_col_click(self, col: int) -> bool:
+        PuzzleOps.change_line_state(
+            is_row=False,
+            index=col,
+            board=self.puzzle_session.board_state,
+            rows=self.rows,
+            cols=self.cols,
+            from_state=KakurasuCellStates.Empty,
+            to_state=KakurasuCellStates.Crossed,
+        )
+        self.save_active_puzzle()
         return True
 
 

@@ -29,10 +29,13 @@ class LightupEngine(PuzzleEngineBase):
     def is_solved(self, strict=False) -> bool:
         """
         Lightup ignores strict mode.
+        Only check if the light bulbs are placed correctly.
         """
-        s = "".join(str(cell) for cell in self.get_board_state())
-        s = s.replace("6", "0")
-        return s == self.get_solution_board_string()
+        def get_bulb_only_string(board_state: State) -> str:
+            return "".join(["1" if int(cell) == LightupCellStates.Bulb else "0" for cell in board_state])
+        user_bulbs = get_bulb_only_string(self.get_board_state())
+        solution_bulbs = get_bulb_only_string(self.get_solution_board_string())
+        return user_bulbs == solution_bulbs
 
     def can_modify_cell(self, _state: State, row: int, col: int) -> bool:
         # you can only modify empty cells

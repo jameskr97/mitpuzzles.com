@@ -3,7 +3,7 @@ import { format_game_stopwatch } from "@/services/util.ts";
 /** Simplifies resetting all of localStorage through a version variable. */
 export class StorageVersionManager {
   // Change this to current date when updating the storage version
-  private static readonly VERSION = "2025-05-02";
+  private static readonly VERSION = "2025-05-27";
   static clearOldStorage() {
     const saved = localStorage.getItem("mitlogic.storageVersion");
     if (saved !== StorageVersionManager.VERSION) {

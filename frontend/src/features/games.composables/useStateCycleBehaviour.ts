@@ -10,7 +10,6 @@ export function useStateCycleBehaviour(session: Awaited<ReturnType<typeof usePuz
      * @param event
      */
     onCellMouseDown(cell: Cell, event: MouseEvent): boolean {
-      if (cell.zone !== "game") return false;
       session.session.handle_cell_click(cell, event.button);
       return false;
     },

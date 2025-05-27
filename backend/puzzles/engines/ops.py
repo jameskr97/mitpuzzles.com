@@ -42,14 +42,17 @@ class PuzzleOps:
             row = index if is_row else i
             col = i if is_row else index
             idx = row * cols + col
-            val = board[idx]
-            if val in (from_state, to_state):
-                relevant.append(idx)
+            relevant.append(idx)
 
-        if any(board[i] == from_state for i in relevant):
+        # Check if any cell is empty
+        if any(board[i] == 0 for i in relevant):
+            for i in relevant:
+                if board[i] == 0:
+                    board[i] = to_state
+        else:
+            # Toggle between from_state and to_state
             for i in relevant:
                 if board[i] == from_state:
                     board[i] = to_state
-        else:
-            for i in relevant:
-                board[i] = from_state if board[i] == to_state else to_state
+                elif board[i] == to_state:
+                    board[i] = from_state
