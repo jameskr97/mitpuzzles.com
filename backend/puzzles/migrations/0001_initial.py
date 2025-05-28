@@ -105,7 +105,7 @@ class Migration(migrations.Migration):
                 ("updated_at", models.DateTimeField(auto_now=True)),
                 ("board_state", models.JSONField()),
                 ("move_history", models.JSONField(blank=True, default=list)),
-                ("is_submitted", models.BooleanField(default=False)),
+                ("is_solved", models.BooleanField(default=False)),
                 (
                     "user",
                     models.ForeignKey(
