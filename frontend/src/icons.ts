@@ -13,6 +13,8 @@ import {
   MdLeaderboard,
   BiLightbulbFill,
   MdArrowdropdown,
+  IoSettingsOutline,
+  BiArrowRightCircle
 } from "oh-vue-icons/icons";
 
 addIcons(
@@ -27,4 +29,6 @@ addIcons(
   MdLeaderboard,
   BiLightbulbFill,
   MdArrowdropdown,
+  IoSettingsOutline,
+  BiArrowRightCircle
 );

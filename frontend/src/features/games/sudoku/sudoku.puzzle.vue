@@ -4,9 +4,10 @@ import BoardContainer from "@/features/games.components/board.container.vue";
 import BoardCells from "@/features/games.components/board.cellgrid.vue";
 import BoardInteraction from "@/features/games.components/board.interaction.vue";
 import { type createPuzzleInteractionBridge } from "@/features/games.composables/setupPuzzleInteractionBridge.ts";
-import { computed, watch } from "vue";
+import { computed } from "vue";
 import type { PuzzleStateSudoku } from "@/services/states.ts";
 import { createSudokuBehavior } from "@/features/games.composables/useSudokuHighlight.ts";
+import { check_violation_rule } from "@/utils.ts";
 
 ////////////////////////////////////////////////////////////////////////
 // Props + State
@@ -15,19 +16,15 @@ const props = defineProps<{
   state: PuzzleStateSudoku;
   interact?: ReturnType<typeof createPuzzleInteractionBridge>;
 }>();
-const board_initial = computed(() => props.state.board_initial.split("").map(Number));
+
 function is_prefilled(row: number, col: number): boolean {
   const index = row * props.state.cols + col;
-  return board_initial.value[index] !== 0;
+  return props.state.board_initial[index] !== 0;
 }
 
 ////////////////////////////////////////////////////////////////////////
 // Game Specific Logic
 const highlight = props.interact?.addInputBehaviour(createSudokuBehavior);
-watch(
-  () => props.state.board_initial,
-  (_) => highlight?.clearActiveCell(),
-);
 
 const bind = props.interact?.getBridge(false);
 
@@ -48,6 +45,11 @@ const borderConfig = computed(() => ({
           class="flex justify-center items-center h-full w-full"
           :class="{
             'border-blue-500 border-[0.5px]': highlight?.isCellActive(row, col),
+            'border-red-500! border-[0.5px]': check_violation_rule(state.violations!, row, col, [
+              'row_duplicate_violation',
+              'col_duplicate_violation',
+              'box_duplicate_violation',
+            ]),
             'bg-slate-300': highlight?.shouldHighlightCell(row, col),
             'text-blue-600': !is_prefilled(row, col),
           }"

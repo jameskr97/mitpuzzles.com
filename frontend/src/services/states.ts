@@ -6,8 +6,15 @@ export interface MutablePuzzleState {
   puzzle_type: string;
   puzzle_size: string;
   puzzle_difficulty: string;
+  violations?: GameViolation[];
   is_solved: boolean;
 }
+
+export interface GameViolation {
+  rule_type: string;
+  locations: { row: number; col: number }[]; // Array of [row, col] pairs where the violation occurred
+}
+
 export type MutablePuzzleStateExtended<T extends object = {}> = MutablePuzzleState & T;
 
 export type PuzzleStateKakurasu = MutablePuzzleStateExtended<{
@@ -21,7 +28,7 @@ export type PuzzleStateTents = MutablePuzzleStateExtended<{
 }>;
 
 export type PuzzleStateSudoku = MutablePuzzleStateExtended<{
-  board_initial: string;
+  board_initial: number[];
 }>;
 
 export type PuzzleStateLightup = MutablePuzzleStateExtended<{

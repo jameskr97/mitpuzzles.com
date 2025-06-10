@@ -1,14 +1,12 @@
 <!-- GameLayout.vue -->
 <script setup lang="ts">
-import { useGameLayout } from "@/composables/useGameLayout";
 import { getGameScale } from "@/store/scale";
 import GameViewControlBar from "@/components/gameview.controlbar.vue";
-import GameInstructions from "@/components/gameview.instructions.vue";
 import GameViewAlert from "@/components/gameview.alert.vue";
+import GameViewViolations from "@/components/gameview.violations.vue";
 import { useCurrentPuzzle } from "@/composables/useCurrentPuzzle.ts";
 
 const puzzle = await useCurrentPuzzle();
-const layout = useGameLayout();
 const { scale_remapped } = getGameScale();
 </script>
 
@@ -22,18 +20,17 @@ const { scale_remapped } = getGameScale();
         <!-- Divider between control bar and game content -->
         <div class="divider divider-vertical mb-2 mt-0"></div>
 
-        <div class="grid gap-2 md:gap-0 md:grid-cols-[1fr_2fr_1fr] h-full items-start">
-          <!-- Game Instructions -->
-          <GameInstructions v-show="layout.instructions_visible.value">
-            <template #instructions>
-              <slot name="instructions"></slot>
-            </template>
-          </GameInstructions>
+        <div class="grid grid-cols-[1fr_2fr_1fr] items-start">
+          <!-- Game Violations -->
+          <GameViewViolations
+            v-if="puzzle.tutorial_mode.value"
+            :violations="puzzle.state.value?.violations ?? []"
+            class="row-start-2 col-span-3 md:col-start-1 md:row-start-1 md:col-span-1"
+          />
 
           <!-- The GameContent itself -->
           <div
-            class="z-100 order-first md:order-1 grid grid-cols-1 place-items-center mb-2 mx-2"
-            :class="{ 'md:col-start-2': !layout.instructions_visible.value }"
+            class="z-100 order-first md:order-1 col-start-2 grid grid-cols-1 place-items-center mb-2 mx-2 items-center max-h-fit"
           >
             <GameViewAlert />
 

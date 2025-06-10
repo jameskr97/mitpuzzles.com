@@ -39,35 +39,40 @@ export function createSudokuBehavior(state: Awaited<ReturnType<typeof usePuzzleS
   function onCellClick(cell: Cell, _event: MouseEvent): boolean {
     if (!state.state.value) return false;
     // @ts-expect-error state.state is not typed correctly yet
-    const isFixed = state.state.value.board_initial[cell.row * state.state.value.cols + cell.col] !== "0";
+    const isFixed = state.state.value.board_initial[cell.row * state.state.value.cols + cell.col] !== 0;
     if (isFixed) return false; // Can't modify initial clues.
     active_cell.value = [cell.row, cell.col];
     return false;
   }
 
   function onCellKeyDown(cell: Cell, event: KeyboardEvent): boolean {
-    if (!state.state.value) return false;
-    const index = cell.row * state.state.value.cols + cell.col;
+    // If the key is Escape, clear the active cell
     const key = event.key;
-
-    // @ts-expect-error state.state is not typed correctly yet
-    const isFixed = state.state.value.board_initial[index] !== "0";
-    if (isFixed) return false; // Can't modify initial clues.
-
-    if (key >= "1" && key <= String(state.state.value.rows)) {
-      state.session.handle_cell_click(cell, 0, Number(key));
-      return true;
-    }
-    if (key === "Backspace" || key === "Delete") {
-      state.state.value.board[index] = 0;
-      state.session.handle_cell_click(cell, 0, 0);
-      return true;
-    }
     if (key === "Escape") {
       clearActiveCell();
       return true;
     }
-    return false;
+
+    if (!state.state.value) return false;
+    const index = cell.row * state.state.value.cols + cell.col;
+
+    // @ts-expect-error state.state is not typed correctly yet
+    const isFixed = state.state.value.board_initial[index] !== 0;
+    if (isFixed) return false; // Can't modify initial clues.
+    const keyAsNumber = Number(key);
+    // If key is not a number or is out of range, handle special keys
+    if (isNaN(keyAsNumber) || keyAsNumber < 1 || keyAsNumber > state.state.value.rows) {
+      // Handle special keys
+      if (key === "Backspace" || key === "Delete") {
+        state.state.value.board[index] = 0;
+        state.session.handle_cell_click(cell, 0, 0);
+        return true;
+      }
+      return false;
+    }
+
+    state.session.handle_cell_click(cell, 0, keyAsNumber);
+    return true;
   }
 
   function shouldHighlightCell(row: number, col: number) {

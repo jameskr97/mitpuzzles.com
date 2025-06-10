@@ -7,7 +7,8 @@ import BoardBackground from "@/features/games.components/board.background.vue";
 import type { PuzzleStateLightup } from "@/services/states.ts";
 import { LightupCellStates, LightWallStates } from "@/features/games/lightup/lightup.model.ts";
 import { type createPuzzleInteractionBridge } from "@/features/games.composables/setupPuzzleInteractionBridge.ts";
-import { ref, watch } from "vue";
+import { onMounted, ref, watch } from "vue";
+import { check_violation_rule } from "@/utils.ts";
 
 const props = defineProps<{
   scale?: number;
@@ -47,7 +48,6 @@ function update_lit_cells(board: number[]) {
         while (r >= 0 && r < props.state.rows && c >= 0 && c < props.state.cols) {
           let i = r * props.state.cols + c;
           if (LightWallStates.includes(board[i])) break;
-          // if (props.state.board[i] === LightupCellStates.Bulb) break;
           lit.value[i] = true;
 
           r += dy;
@@ -72,9 +72,8 @@ if (!props.interact) {
 }
 
 const bind = props.interact?.getBridge();
-const borderConfig = {
-  outer: { thickness: 1, borderClass: "bg-black" },
-};
+const borderConfig = { outer: { thickness: 1, borderClass: "bg-black" } };
+onMounted(() => update_lit_cells(props.state.board));
 </script>
 
 <template>
@@ -98,7 +97,8 @@ const borderConfig = {
           <!-- Walls -->
           <div
             v-else-if="LightWallStates.includes(state.board[row * state.cols + col])"
-            class="bg-black h-full w-full flex items-center justify-center text-white"
+            class="bg-black h-full w-full flex items-center justify-center"
+            :class="check_violation_rule(state.violations!, row, col, 'numbered_wall_constraint_violated') ? 'text-red-500' : 'text-white'"
           >
             {{
               state.board[row * state.cols + col] === LightupCellStates.WallBlank
@@ -115,7 +115,11 @@ const borderConfig = {
             <div class="absolute grid bg-yellow-200 h-full w-full items-center justify-center"></div>
 
             <img
-              src="/assets/lightup/bulb.svg"
+              :src="
+                check_violation_rule(state.violations!, row, col, 'bulb_intersection_violation')
+                  ? '/assets/lightup/bulb-violation.svg'
+                  : '/assets/lightup/bulb.svg'
+              "
               alt="Light Bulb"
               class="absolute w-full h-full rounded items-center justify-center"
             />

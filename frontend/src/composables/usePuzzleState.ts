@@ -2,6 +2,7 @@ import { inject, ref, computed } from "vue";
 import type { usePuzzleSocket } from "@/features/games.composables/usePuzzleSocket.ts";
 import { PuzzleTimer } from "@/utils.ts";
 import { getPuzzleVariants } from "@/services/app.ts";
+import { useLocalStorage } from "@vueuse/core";
 
 const variantCache = new Map<string, string[][]>();
 
@@ -41,6 +42,10 @@ export async function usePuzzleState(puzzle_type: string) {
 
   const timer = new PuzzleTimer(puzzle_type);
 
+  // Tutorial Mode
+  const tutorial_mode = useLocalStorage<boolean>(`mitlogic.puzzles:tutorial_mode:${puzzle_type}`, false);
+  watch(tutorial_mode, (newValue) => session.cmd_toggle_tutorial(newValue));
+
   return {
     puzzle_type,
     selected_variant,
@@ -50,6 +55,7 @@ export async function usePuzzleState(puzzle_type: string) {
     is_solved: session.is_solved,
     state: session.state,
     session_id: session.session_id,
+    tutorial_mode,
 
     request_new_puzzle: () => {
       timer.reset();

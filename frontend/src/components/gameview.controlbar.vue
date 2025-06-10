@@ -30,6 +30,15 @@ function onDifficultySelect(diff: string[]) {
 //// puzzle timer view
 onMounted(() => puzzle.timer.start());
 onUnmounted(() => puzzle.timer.stop());
+
+////////////////////////////////////////////////////////////////////////
+//// props
+defineProps({
+  showInstructionButton: { type: Boolean, default: true },
+  showButtons: { type: Boolean, default: true },
+  showVariant: { type: Boolean, default: true },
+  showTimer: { type: Boolean, default: true },
+})
 </script>
 
 <template>
@@ -37,11 +46,26 @@ onUnmounted(() => puzzle.timer.stop());
     <div class="flex flex-col items-center w-full md:w-4/5 2xl:w-2/4 mx-auto justify-around gap-2 px-2">
       <div class="flex flex-row w-full">
         <v-icon
+          v-if="showInstructionButton"
           name="hi-information-circle"
           :scale="1.5"
           class="mr-2 cursor-pointer"
           @click="layout.toggle_instructions()"
         />
+
+        <div class="dropdown dropdown-bottom px-0">
+          <div tabindex="0">
+            <v-icon name="io-settings-outline" :scale="1.5" class="mr-2 cursor-pointer" />
+          </div>
+          <div tabindex="0" class="dropdown-content card card-sm bg-base-100 z-1 w-64 shadow-md">
+            <div class="card-body">
+              <div class="grid grid-cols-[2fr_1fr]">
+                <div class="text-2xl">Tutorial Mode</div>
+                <input type="checkbox" v-model="puzzle.tutorial_mode.value" class="toggle toggle-xl justify-self-end" />
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="tooltip tooltip-bottom w-full" data-tip="Resize Game Board">
           <input v-model="scale" type="range" min="0" max="100" class="range w-full user-select-none" />
         </div>
@@ -50,7 +74,7 @@ onUnmounted(() => puzzle.timer.stop());
       </div>
 
       <!-- Buttons -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 w-full gap-1">
+      <div v-if="showButtons" class="grid grid-cols-2 lg:grid-cols-4 w-full gap-1">
         <div class="dropdown dropdown-center">
           <button ref="difficulty-dropdown" tabindex="0" role="button" class="btn btn-secondary w-full">
             Difficulty
@@ -87,7 +111,16 @@ onUnmounted(() => puzzle.timer.stop());
       </div>
 
       <!-- Game variant display -->
-      <div class="m-0 p-0">{{ getDisplayName(puzzle.selected_variant.value) }}</div>
+      <div
+        class="m-0 p-0 grid grid-cols-3 w-full justify-items-center"
+      >
+        <div v-if="puzzle.tutorial_mode.value" class="justify-self-start badge badge-warning text-nowrap">
+          Tutorial Mode
+        </div>
+        <span class="col-start-2">
+          {{ getDisplayName(puzzle.selected_variant.value) }}
+        </span>
+      </div>
     </div>
   </div>
 </template>

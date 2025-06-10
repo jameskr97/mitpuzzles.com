@@ -5,6 +5,7 @@ import BoardCells from "@/features/games.components/board.cellgrid.vue";
 import BoardInteraction from "@/features/games.components/board.interaction.vue";
 import type { PuzzleStateKakurasu } from "@/services/states.ts";
 import { type createPuzzleInteractionBridge } from "@/features/games.composables/setupPuzzleInteractionBridge.ts";
+import { check_violation_rule } from "@/utils.ts";
 
 const props = defineProps<{
   scale?: number;
@@ -59,12 +60,26 @@ const borderConfig = { outer: { thickness: 1, borderClass: "bg-black" } };
         </div>
       </template>
       <template v-slot:right="props">
-        <div class="grid place-items-center text-blue-500">
+        <div
+          class="grid place-items-center"
+          :class="
+            check_violation_rule(state.violations!, props.row, -1, 'line_sum_row_exceeded')
+              ? 'text-red-500'
+              : 'text-blue-500'
+          "
+        >
           {{ state.row_sums[props.row] }}
         </div>
       </template>
       <template v-slot:bottom="props">
-        <div class="grid place-items-center text-blue-500">
+        <div
+          class="grid place-items-center"
+          :class="
+            check_violation_rule(state.violations!, -1, props.col, 'line_sum_col_exceeded')
+              ? 'text-red-500'
+              : 'text-blue-500'
+          "
+        >
           <span>{{ state.col_sums[props.col] }}</span>
         </div>
       </template>

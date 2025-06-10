@@ -10,8 +10,8 @@ const user = useAuthStore();
 </script>
 
 <template>
-  <div class="flex flex-row min-w-60 p-0">
-    <div class="menu text-base-content min-h-full w-full p-0 bg-platinum">
+  <div class="flex flex-row p-0">
+    <div class="menu text-base-content min-h-full max-w-46 p-0 bg-platinum">
       <!-- Sidebar Header -->
       <router-link to="/">
         <li class="text-lg mx-auto mt-2 sticky top-0 text-center underline">mitpuzzles.com</li>
@@ -20,7 +20,7 @@ const user = useAuthStore();
       <!--      <div class="divider m-0"></div>-->
       <div class="p-2">
         <router-link v-for="game in Object.values(ACTIVE_GAMES)" :key="game.key" :to="{ name: 'game-' + game.key }">
-          <li class="m-0 text-xl">
+          <li class="m-0 text-lg">
             <a href="#">
               {{ game.name }}
             </a>
@@ -32,7 +32,7 @@ const user = useAuthStore();
         <p class="text-lg mx-auto mt-2 sticky top-0 text-center underline">Dev Tools</p>
         <div class="p-2">
           <router-link v-for="tool in DEV_TOOLS" :to="{ name: `dev-` + tool.key }">
-            <li v-if="user.isAdmin || !tool.requires_admin" class="m-0 text-lg">
+            <li v-if="user.isAdmin || !tool.requires_admin" class="m-0 text-md">
               <a href="#">{{ tool.name }}</a>
             </li>
           </router-link>

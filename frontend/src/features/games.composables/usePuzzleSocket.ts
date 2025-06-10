@@ -38,6 +38,12 @@ interface UserCountResult {
   user_count: number;
 }
 
+interface CreatePayload {
+  puzzle_type: string;
+  puzzle_size: string | undefined; // e.g., "4x4", "6x6"
+  puzzle_difficulty: string | undefined; // e.g., "easy", "medium", "hard"
+}
+
 export const useActivePuzzleStore = defineStore("puzzle_session", () => {
   // user game sessions
   const puzzle_states = ref<Record<string, MutablePuzzleState>>({});
@@ -116,7 +122,6 @@ export function usePuzzleSocket() {
   //////// Socket Reactivity
   function handle_message(message: MessageEvent) {
     const msg = JSON.parse(message.data) as WebSocketMessage;
-    // console.log("websocket message", msg);
 
     switch (msg.type) {
       case "event:state":
@@ -220,15 +225,23 @@ export function usePuzzleSocket() {
       cmd_puzzle_reset: () => {
         if (!session_id.value) return;
         send_command("reset", {}, session_id.value);
-        // store.clearSolvedState(session_id.value);
       },
-      cmd_puzzle_create(puzzle_size: string, puzzle_difficulty: string) {
-        send_command("create", { puzzle_type, puzzle_size, puzzle_difficulty });
+      cmd_puzzle_create(puzzle_size: string | undefined, puzzle_difficulty: string | undefined) {
+        let payload: CreatePayload = {
+          puzzle_type,
+          puzzle_size: puzzle_size,
+          puzzle_difficulty: puzzle_difficulty,
+        };
+        send_command("create", payload);
         store.clearSolvedState(session_id.value);
       },
       cmd_puzzle_submit() {
         if (!session_id.value) return;
         send_command("submit", {}, session_id.value);
+      },
+      cmd_toggle_tutorial(enabled: boolean) {
+        if (!session_id.value) return;
+        send_command("toggle_tutorial", { enabled }, session_id.value);
       },
       clear_solved_state() {
         if (!session_id.value) return;

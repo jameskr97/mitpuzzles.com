@@ -6,6 +6,7 @@ import BoardInteraction from "@/features/games.components/board.interaction.vue"
 import BoardBackground from "@/features/games.components/board.background.vue";
 import { type createPuzzleInteractionBridge } from "@/features/games.composables/setupPuzzleInteractionBridge.ts";
 import type { PuzzleStateMinesweeper } from "@/services/states.ts";
+import { check_violation_rule } from "@/utils.ts";
 
 const props = defineProps<{
   scale?: number;
@@ -31,7 +32,12 @@ const borderConfig = { outer: { thickness: 1, borderClass: "bg-[#757575]" } };
     <BoardCells>
       <!-- prettier-ignore -->
       <template v-slot:cell="{ row, col }">
-        <div class="w-full h-full select-none bg-[url(/assets/minesweeper/cell-empty.svg)]">
+        <div
+          class="w-full h-full select-none"
+          :class="{
+            'bg-[url(/assets/minesweeper/cell-empty.svg)]': !check_violation_rule(state.violations!, row, col, 'minesweeper_surrounding_flag_violation'),
+            'bg-[url(/assets/minesweeper/cell-violation.svg)]': check_violation_rule(state.violations!, row, col, 'minesweeper_surrounding_flag_violation'),
+          }">
           <img v-if="state.board[row * state.cols + col] === 0" src="/assets/minesweeper/cell-empty.svg" alt="1" class="bg-auto w-full h-full" draggable="false" />
           <img v-if="state.board[row * state.cols + col] === 1" src="/assets/minesweeper/number-1.svg" alt="1" class="bg-auto w-full h-full" draggable="false" />
           <img v-if="state.board[row * state.cols + col] === 2" src="/assets/minesweeper/number-2.svg" alt="2" class="bg-auto w-full h-full" draggable="false" />

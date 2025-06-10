@@ -21,6 +21,7 @@ export class StorageVersionManager {
 import { computed, type ComputedRef, ref, type Ref } from "vue";
 import logger from "@/services/logger.ts";
 import { useLocalStorage } from "@vueuse/core";
+import type { GameViolation } from "@/services/states.ts";
 
 export class PuzzleTimer {
   private timer_id: ReturnType<typeof setInterval> | null = null;
@@ -62,4 +63,23 @@ export class PuzzleTimer {
     this.stop();
     this.time_completed.value = true;
   }
+}
+
+/**
+ * Checks if a specific violation rule applies to a given cell in the puzzle.
+ * @param violations
+ * @param row
+ * @param col
+ * @param rule
+ */
+export function check_violation_rule(violations: GameViolation[], row: number, col: number, rule: string | string[]) {
+  if (!violations || !Array.isArray(violations)) return false;
+  if (violations.length === 0) return false;
+  if (typeof rule === "string") rule = [rule];
+
+  return violations.some(
+    (violation) =>
+      rule.includes(violation.rule_type) &&
+      violation.locations.some((loc) => loc.row === row && loc.col === col)
+  );
 }
