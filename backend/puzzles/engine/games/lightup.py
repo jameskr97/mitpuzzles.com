@@ -1,7 +1,9 @@
 from enum import IntEnum
 from typing import TYPE_CHECKING
 
-from puzzles.engines.base import PuzzleEngineBase, State
+from puzzles.engine.games.base import PuzzleEngineBase, State
+from puzzles.engine.handlers.generic.state_cycling import StateCyclingInputHandler
+from puzzles.engine.rules.lightup import validate_numbered_wall_constraints
 
 if TYPE_CHECKING:
     from puzzles.models import ActivePuzzleSession
@@ -17,14 +19,18 @@ class LightupCellStates(IntEnum):
     Bulb = 7
     Cross = 8
 
-# 1.111...11.111..111...1.2.2.1..53.....1.....151.5
 class LightupEngine(PuzzleEngineBase):
     def __init__(self, puzzle_session: "ActivePuzzleSession") -> None:
-        super().__init__(puzzle_session, allowed_states=[
-            LightupCellStates.Empty,
-            LightupCellStates.Bulb,
-            LightupCellStates.Cross
-        ])
+        from puzzles.engine.rules.lightup import no_bulbs_lighting_each_other
+        super().__init__(
+            puzzle_session,
+            input_handler=StateCyclingInputHandler([
+                LightupCellStates.Empty,
+                LightupCellStates.Bulb,
+                LightupCellStates.Cross
+            ]),
+            validation_constraints=[no_bulbs_lighting_each_other(), validate_numbered_wall_constraints()],
+        )
 
     def is_solved(self, strict=False) -> bool:
         """
@@ -42,10 +48,3 @@ class LightupEngine(PuzzleEngineBase):
         board = self.get_initial_board_string()
         cell = int(board[row * self.cols + col])
         return cell == LightupCellStates.Empty
-
-    def serialize_gamedata(self) -> dict:
-        return {
-            "rows": self.rows,
-            "cols": self.cols,
-            "board": self.get_board_state()
-        }

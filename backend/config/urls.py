@@ -24,7 +24,7 @@ from django.urls import include, path, re_path
 from django.views.generic.base import RedirectView
 
 from core import views
-from puzzles.consumers import PuzzleConsumer
+from puzzles.engine.consumer import PuzzleConsumer
 from tracking import views as tracking_views
 
 

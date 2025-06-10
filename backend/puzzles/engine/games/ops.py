@@ -24,7 +24,7 @@ class PuzzleOps:
             return
 
         step = 1 if direction == 0 else -1
-        board[index] = allowed_states[(i + step) % len(allowed_states)]
+        board[index] = int(allowed_states[(i + step) % len(allowed_states)])
 
     @staticmethod
     def change_line_state(
@@ -48,11 +48,11 @@ class PuzzleOps:
         if any(board[i] == 0 for i in relevant):
             for i in relevant:
                 if board[i] == 0:
-                    board[i] = to_state
+                    board[i] = int(to_state)
         else:
             # Toggle between from_state and to_state
             for i in relevant:
                 if board[i] == from_state:
-                    board[i] = to_state
+                    board[i] = int(to_state)
                 elif board[i] == to_state:
-                    board[i] = from_state
+                    board[i] = int(from_state)

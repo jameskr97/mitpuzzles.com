@@ -3,9 +3,9 @@ import uuid
 from django.db import models
 
 from core.models import make_actor_mixin
-from puzzles.engines import get_puzzle_engine, PuzzleEngineBase
 from .game_recording import GameRecording
 from .puzzle import Puzzle
+from puzzles.engine.games import get_puzzle_engine, PuzzleEngineBase
 
 
 class ActivePuzzleSession(make_actor_mixin("active_puzzles")):
@@ -24,6 +24,8 @@ class ActivePuzzleSession(make_actor_mixin("active_puzzles")):
     board_state = models.JSONField()
     move_history = models.JSONField(default=list, blank=True)
     is_solved = models.BooleanField(default=False)
+    is_tutorial = models.BooleanField(default=False)
+    used_tutorial = models.BooleanField(default=False)
 
     class Meta:
         # don't allow multiple sessions for the same puzzle type

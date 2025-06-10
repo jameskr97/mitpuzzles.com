@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from puzzles.engines.base import PuzzleEngineBase
+from puzzles.engine.games.base import PuzzleEngineBase
 from .kakurasu import KakurasuEngine
 from .lightup import LightupEngine
 from .minesweeper import MinesweeperEngine
@@ -11,7 +11,6 @@ from .tents import TentsEngine
 
 if TYPE_CHECKING:
     from puzzles.models import ActivePuzzleSession
-    from puzzles.engines.base import PuzzleEngineBase
 
 _REGISTRY = {
     "minesweeper": MinesweeperEngine,
