@@ -1,4 +1,4 @@
-import { inject, ref, computed } from "vue";
+import { inject, ref, computed, watch } from "vue";
 import type { usePuzzleSocket } from "@/features/games.composables/usePuzzleSocket.ts";
 import { PuzzleTimer } from "@/utils.ts";
 import { getPuzzleVariants } from "@/services/app.ts";
@@ -23,15 +23,20 @@ export async function usePuzzleState(puzzle_type: string) {
 
   // check if we have a variant in the puzzle session
   const available_variants = ref<string[][]>(variants);
-  // const selected_variant = ref<string[]>([session.state.value.puzzle_size, session.state.value.puzzle_difficulty]);
   const selectedVariantRef = ref<string[]>([]);
-
   const selected_variant = computed({
     get() {
-      if (!session.state.value) return ["undefined", "undefined"];
-      const size = session.state.value.puzzle_size || "undefined";
-      const difficulty = session.state.value.puzzle_difficulty || "undefined";
-      return selectedVariantRef.value.length ? selectedVariantRef.value : [size, difficulty];
+      // If user has explicitly selected a variant, use that
+      if (selectedVariantRef.value.length) return selectedVariantRef.value;
+
+      // Try using session state values if available and defined
+      const size = session.state.value?.puzzle_size;
+      const difficulty = session.state.value?.puzzle_difficulty;
+      if (size && difficulty) return [size, difficulty];
+
+      // Fall back to first available variant, if any
+      if (available_variants.value.length > 0) return available_variants.value[0];
+      return ["", ""];
     },
     set(value: string[]) {
       selectedVariantRef.value = value;
@@ -40,6 +45,7 @@ export async function usePuzzleState(puzzle_type: string) {
     },
   });
 
+  // Timer
   const timer = new PuzzleTimer(puzzle_type);
 
   // Tutorial Mode
