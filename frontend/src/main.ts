@@ -19,11 +19,12 @@ import { StorageVersionManager } from "@/utils.ts";
 import "./style.css";
 // PostHog
 import posthog from "posthog-js";
+import { withSudokuBehaviors } from "@/features/games/sudoku/useSudokuCellHighlighter.ts";
 
 StorageVersionManager.clearOldStorage(); // clear old storage if needed
 
 /** Puzzle Components */
-function create_game_entry(sidebar_title: string, key: string) {
+function create_game_entry(sidebar_title: string, key: string, defaultBehaviors: Array<any> = []) {
   return {
     key,
     name: sidebar_title,
@@ -40,6 +41,7 @@ function create_game_entry(sidebar_title: string, key: string) {
       }
     },
     default: defaultPuzzles[key],
+    defaultBehaviors
   };
 }
 
@@ -51,7 +53,7 @@ function create_game_entry(sidebar_title: string, key: string) {
 /* prettier-ignore */
 export const ACTIVE_GAMES: Record<string, any> = {
   minesweeper:  create_game_entry("💣 Minesweeper", "minesweeper"),
-  sudoku:       create_game_entry("🧩 Sudoku", "sudoku"),
+  sudoku:       create_game_entry("🧩 Sudoku", "sudoku", [withSudokuBehaviors]),
   tents:        create_game_entry("⛺ Tents", "tents"),
   kakurasu:     create_game_entry("⬛ Kakurasu", "kakurasu"),
   lightup:      create_game_entry("💡 Light Up", "lightup"),

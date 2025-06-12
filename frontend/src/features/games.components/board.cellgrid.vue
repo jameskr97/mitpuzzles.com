@@ -15,7 +15,7 @@ const layout = useGridLayout(board);
       <div
         v-for="(_, ic) in board.cols"
         :style="[layout.cellPositionGame(ir, ic)]"
-        class="@container w-full h-full text-center focus:outline-none absolute"
+        class="@container w-full h-full text-center focus:outline-none absolute overflow-hidden"
         tabindex="-1"
       >
         <div class="text-[70cqw] w-full h-full">

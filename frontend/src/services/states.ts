@@ -6,7 +6,7 @@ export interface MutablePuzzleState {
   puzzle_type: string;
   puzzle_size: string;
   puzzle_difficulty: string;
-  violations?: GameViolation[];
+  violations: GameViolation[];
   is_solved: boolean;
 }
 

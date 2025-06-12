@@ -3,129 +3,148 @@ import { usePuzzleState } from "@/composables/usePuzzleState.ts";
 import { useDragStateChanger } from "@/features/games.composables/useDragStateChanger.ts";
 import { useClearStateBehaviour } from "@/features/games.composables/useClearStateBehaviour.ts";
 import { useStateCycleBehaviour } from "@/features/games.composables/useStateCycleBehaviour.ts";
-import { watch } from "vue";
+import { EventHandlerManager } from "@/features/games.composables/EventHandlerManager.ts";
 
-type GameEvents = {
+/**
+ * GameEvents - Interface for game-level events
+ *
+ * These are events that happen at the game level, not individual board interactions.
+ * They're typically used for notifications or side effects when game state changes.
+ *
+ * For example: tracking moves, updating scores, auto-saving progress
+ */
+export interface GameEvents {
   onBoardModified: (board: number[]) => void;
-};
+  onBoardCleared: () => void;
+  onBoardChanged: (board: number[]) => void;
+}
+
+/**
+ * RenderEvents - Interface for render-related events
+ *
+ * These events are used to customize how cells and borders are rendered.
+ * They return styling information that can be applied to elements.
+ */
+export interface RenderEvents {
+  // Cell rendering
+  isCellVisible?: (row: number, col: number) => boolean;
+  getCellStyles?: (row: number, col: number) => Record<string, string>;
+  getCellClasses?: (row: number, col: number) => string[];
+  getCellContent?: (row: number, col: number) => string | number | null;
+  isCellActive?: (row: number, col: number) => boolean;
+
+  // Gutter content rendering (for labels, sums, etc.)
+  getTopGutterClasses?: (row: number, col: number) => string[];
+  getTopGutterStyles?: (row: number, col: number) => Record<string, string>;
+  getBottomGutterClasses?: (row: number, col: number) => string[];
+  getBottomGutterStyles?: (row: number, col: number) => Record<string, string>;
+  getLeftGutterClasses?: (row: number, col: number) => string[];
+  getLeftGutterStyles?: (row: number, col: number) => Record<string, string>;
+  getRightGutterClasses?: (row: number, col: number) => string[];
+  getRightGutterStyles?: (row: number, col: number) => Record<string, string>;
+}
 
 /**
  * Create a bridge between the puzzle interaction and the puzzle state.
  * - This allows users to add custom behaviours to the puzzle interaction.
  * - Default global behaviours are added by default.
  * - Note, the order of the behaviours is important, as they are called in the order they are added.
- * @param session
+ * @param session The puzzle state session
  */
 export function createPuzzleInteractionBridge(session: Awaited<ReturnType<typeof usePuzzleState>>) {
-  // any key in BoardEvents is a key the user can use to watch for the events the care about
-  type EventHandlerListKey = keyof BoardEvents;
-  // a list of functions that take any number of arguments and return a boolean (because all the events in BoardEvents return a boolean)
-  type EventHandlerList = ((...args: any[]) => boolean)[];
-  const handlerMap: Partial<Record<EventHandlerListKey, EventHandlerList>> = {};
+  // Create event handler managers for each type of event
+  const boardEventManager = new EventHandlerManager<BoardEvents>();
+  const gameEventManager = new EventHandlerManager<GameEvents>();
+  const renderEventManager = new EventHandlerManager<RenderEvents>();
 
   /**
-   * Add a behaviour to the bridge. This is a function that takes the session, to allow
-   * each of the functions to access the session + state.
-   * @param behaviour
+   * Add a behavior for board interaction events
+   *
+   * @param behaviour A function that takes the session and returns board event handlers
+   * @returns The compiled behavior object that was added
    */
   function addInputBehaviour<T extends Partial<BoardEvents>>(behaviour: (puzzle: typeof session) => T): T {
-    const additions = behaviour(session);
-
-    // For each of the `BoardEvent` keys in the behaviour
-    for (const key in additions) {
-      // typecast the key to the correct type, and get a
-      // reference the function for that key
-      const typedKey = key as keyof BoardEvents;
-      const fn = additions[typedKey];
-
-      // if it's a function then add it to the list of handlers
-      if (typeof fn === "function") {
-        // create an empty list if it doesn't exist
-        if (!handlerMap[typedKey]) handlerMap[typedKey] = [];
-
-        // add that handler to the list
-        handlerMap[typedKey]!.push(fn);
-      }
-    }
-
-    return additions;
+    return boardEventManager.addBehaviour(behaviour, session);
   }
 
   /**
-   * Compile all the handlers together into a single object that can be used.
-   * If any of the handlers returns true, then the event is considered handled,
-   * and propagation will not continue.
+   * Add a behavior for game-level events
+   *
+   * @param behaviour A function that takes the session and returns game event handlers
+   * @returns The compiled behavior object that was added
    */
-  function getBridge(include_default_behaviours: boolean = true): Partial<BoardEvents> {
-    // Add the default behaviors
-    if (include_default_behaviours) {
+  function addGameBehaviour<T extends Partial<GameEvents>>(behaviour: (puzzle: typeof session) => T): T {
+    return gameEventManager.addBehaviour(behaviour, session);
+  }
+
+  /**
+   * Add a behavior for rendering customization
+   *
+   * @param behaviour A function that takes the session and returns render event handlers
+   * @returns The compiled behavior object that was added
+   */
+  function addRenderBehaviour<T extends Partial<RenderEvents>>(behaviour: (puzzle: typeof session) => T): T {
+    return renderEventManager.addBehaviour(behaviour, session);
+  }
+
+  /**
+   * Compile all the input behaviors into a single object
+   *
+   * @param includeDefaultBehaviours Whether to include default input behaviors
+   * @returns Compiled board event handlers
+   */
+  function getBridge(includeDefaultBehaviours: boolean = true): Partial<BoardEvents> {
+    // Add default behaviors if specified
+    if (includeDefaultBehaviours) {
       addInputBehaviour(useClearStateBehaviour);
       addInputBehaviour(useStateCycleBehaviour);
       addInputBehaviour(useDragStateChanger);
     }
 
-    const combined: Partial<BoardEvents> = {};
+    return boardEventManager.getCompiledHandlers('first-true');
+  }
 
-    // for each key in the compiled handlerMap
-    for (const key in handlerMap) {
-      // typecast the key to the correct type, and get a reference
-      // to the list of functions for that key
-      const typedKey = key as keyof BoardEvents;
-      const fns = handlerMap[typedKey]!;
+  /**
+   * Get the compiled rendering behaviors
+   *
+   * @returns Compiled render event handlers
+   */
+  function getRenderBehaviors(): Partial<RenderEvents> {
+    return renderEventManager.getCompiledHandlers('merge-results');
+  }
 
-      // create an anonymous function that calls all the functions in the list
-      combined[typedKey] = (...args: any[]): boolean => {
-        // call every function compiled together (the above EventHandlerList) in the list and passthrough any arguments
-        for (const fn of fns) {
-          const res = fn(...args); // Note EventHandlerList above all return a boolean
-          if (res) return true; // if a function returns true, it means the event is handled, stop calling
+  /**
+   * Set up a watcher that emits the onBoardModified event when the board changes
+   */
+  if (session.state.value && Array.isArray(session.state.value.board)) {
+    // Initial board state tracking
+    const initialBoard = [...session.state.value.board];
+
+    // Watch for changes to the board
+    setInterval(() => {
+      if (session.state.value && Array.isArray(session.state.value.board)) {
+        const currentBoard = session.state.value.board;
+        // Only emit if the board actually changed
+        if (JSON.stringify(initialBoard) !== JSON.stringify(currentBoard)) {
+          gameEventManager.emit('onBoardModified', currentBoard);
+          // Update tracked board
+          initialBoard.splice(0, initialBoard.length, ...currentBoard);
         }
-        return false; // if no function returns true, return false
-      };
-    }
-
-    return combined;
-  }
-
-  type GameEventHandlerListKey = keyof GameEvents;
-  type GameEventHandlerList = ((...args: any[]) => void)[];
-  const gameEventHandlers: Partial<Record<GameEventHandlerListKey, GameEventHandlerList>> = {};
-  function emitGameEvent<K extends keyof GameEvents>(event: K, ...args: Parameters<GameEvents[K]>) {
-    for (const fn of gameEventHandlers[event] || []) {
-      fn(...args);
-    }
-  }
-
-  /** Identical to addInputBehaviour, but for game events, and adds to different list */
-  function addGameBehaviour(behaviour: (puzzle: typeof session) => Partial<GameEvents>) {
-    const additions = behaviour(session);
-    for (const key in additions) {
-      const typedKey = key as keyof GameEvents;
-      const fn = additions[typedKey];
-      if (typeof fn === "function") {
-        if (!gameEventHandlers[typedKey]) gameEventHandlers[typedKey] = [];
-        gameEventHandlers[typedKey]!.push(fn);
       }
-    }
+    }, 100); // Check every 100ms
   }
 
-  watch(
-    // Safely access .board only if session.state.value is not null
-    () => (session.state.value ? session.state.value.board : null),
-    (new_board) => {
-      // Now, new_board can be null if session.state.value was null,
-      // or if session.state.value.board was null.
-      // We still only want to emit if new_board is a valid board array.
-      if (new_board && Array.isArray(new_board)) {
-        emitGameEvent("onBoardModified", new_board);
-      }
-    },
-    { immediate: false, deep: false },
-  );
-
+  /**
+   * Return the public API of the interaction bridge
+   */
   return {
-    addInputBehaviour,
-    getBridge,
-    addGameBehaviour,
+    addInputBehaviour,    // Add behaviors for board interaction events (clicks, hovers)
+    addGameBehaviour,     // Add behaviors for game-level events (notifications)
+    addRenderBehaviour,   // Add behaviors for rendering customization
+    getBridge,            // Get compiled board event handlers
+    getRenderBehaviors,   // Get compiled rendering handlers
+    boardEvents: boardEventManager,
+    gameEvents: gameEventManager,
+    renderEvents: renderEventManager
   };
 }
