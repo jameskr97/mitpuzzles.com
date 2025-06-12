@@ -13,6 +13,14 @@ export const VIOLATION_MAP: Record<string, ViolationMetadata> = {
     title: "Line Sum Exceeded",
     description: "The sum of the numbers in this column exceeds the allowed limit."
   },
+  "line_all_row_negative": {
+    title: "Line Sum Impossible",
+    description: "The sum of the numbers in this row cannot be achieved with the current board."
+  },
+  "line_all_col_negative": {
+    title: "Line Sum Impossible",
+    description: "The sum of the numbers in this column cannot be achieved with the current board."
+  },
 
   // Minesweeper
   "minesweeper_surrounding_flag_violation": {
@@ -56,5 +64,9 @@ export const VIOLATION_MAP: Record<string, ViolationMetadata> = {
   "tent_count_row_mismatch": {
     title: "Tent Count Mismatch",
     description: "The number of tents in this row does not match the expected count."
+  },
+  "tree_inaccessible": {
+    title: "Tree Inaccessible",
+    description: "This tree cannot be reached by any tent."
   }
 }
