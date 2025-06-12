@@ -26,6 +26,8 @@ const interaction = new BoardInteraction(board, props.bind, (e: string, p: any) 
     @mousedown="interaction.onMouseDown"
     @mousemove="interaction.onMouseMove"
     @mouseup="interaction.onMouseUp"
+    @mouseenter="interaction.onBoardEnter"
+    @mouseleave="interaction.onBoardLeave"
     @keydown="interaction.onKeyDown"
     @dragstart.prevent
   ></div>

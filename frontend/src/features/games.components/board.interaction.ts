@@ -33,6 +33,7 @@ export interface BoardEvents {
   onCellLeave?(cell: Cell, event: MouseEvent): boolean;
   onCellKeyDown?(cell: Cell, event: KeyboardEvent): boolean;
   onCellInteracted?(cell: Cell, event: MouseEvent): boolean;
+  onCellHoveredKeyDown?(cell: Cell, event: KeyboardEvent): boolean;
 
   // Border Events
   onBorderMouseDown?(border: Border, event: MouseEvent): boolean;
@@ -40,6 +41,10 @@ export interface BoardEvents {
   onBorderClick?(border: Border, event: MouseEvent): boolean;
   onBorderEnter?(border: Border, event: MouseEvent): boolean;
   onBorderLeave?(border: Border, event: MouseEvent): boolean;
+
+  // Board Events
+  onBoardEnter?(event: MouseEvent): boolean;
+  onBoardLeave?(event: MouseEvent): boolean;
 }
 
 /**
@@ -66,6 +71,7 @@ export class BoardInteraction {
   private lastMouseDown: Cell | Border | null = null;
   private lastHover: Cell | null = null;
   private focused: Cell | null = null;
+  private isMouseOnBoard: boolean = false; // Track if mouse is on the board
 
   constructor(
     private board: BoardContext,
@@ -85,6 +91,10 @@ export class BoardInteraction {
 
     // Global Event Listeners
     window.addEventListener("mouseup", (e: MouseEvent) => this.model?.onMouseUp?.(e));
+    window.addEventListener("keydown", (e: KeyboardEvent) => {
+      if (this.lastHover?.type !== "cell") return; // Only handle keydown if hovering over a cell
+      this.model?.onCellHoveredKeyDown?.(this.lastHover, e);
+    });
   }
 
   dispatchModelEvent<K extends keyof BoardEvents>(key: K, hit?: Cell | Border, event?: MouseEvent | KeyboardEvent) {
@@ -207,8 +217,35 @@ export class BoardInteraction {
   onKeyDown(event: KeyboardEvent) {
     const hit = this.focused;
     if (!hit || hit.type !== "cell") return;
-    this.dispatchModelEvent("onKeyDown", undefined, event);
+    this.dispatchModelEvent("onKeyDown", hit, event);
     this.dispatchModelEvent("onCellKeyDown", hit, event);
+  }
+
+  /**
+   * Board Enter Event Handler.
+   * Called when the mouse enters the board area.
+   * @param event The mouse event.
+   */
+  onBoardEnter(event: MouseEvent) {
+    if (this.isMouseOnBoard) return; // Already on board, skip
+    this.isMouseOnBoard = true;
+    this.dispatchModelEvent("onBoardEnter", undefined, event);
+  }
+
+  /**
+   * Board Leave Event Handler.
+   * Called when the mouse leaves the board area.
+   * @param event The mouse event.
+   */
+  onBoardLeave(event: MouseEvent) {
+    if (!this.isMouseOnBoard) return; // Not on board, skip
+    this.isMouseOnBoard = false;
+    // Clear last hover cell state when mouse leaves the board
+    if (this.lastHover) {
+      this.dispatchModelEvent("onCellLeave", this.lastHover, event);
+      this.lastHover = null;
+    }
+    this.dispatchModelEvent("onBoardLeave", undefined, event);
   }
 
   findCellAt(x: number, y: number): ClickHit {
