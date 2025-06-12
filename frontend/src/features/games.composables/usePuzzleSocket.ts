@@ -114,7 +114,7 @@ export function usePuzzleSocket() {
   const protocol = window.location.protocol === "https:" ? "wss" : "ws";
   const url = `${protocol}://${window.location.host}/ws/puzzle/`;
   const { send } = useWebSocket(url, {
-    autoReconnect: true,
+    autoReconnect: { retries: 3, delay: 2000 },
     onMessage: (_ws, event) => handle_message(event),
   });
 
