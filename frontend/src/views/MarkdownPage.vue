@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * This component is used to render markdown files.
- * Not intended to be used directly, but rather through the "markdown"
+ * Not intended to be used directly, but rather through the "route.markdown"
  * function inside main.ts.
  */
 import MarkdownIt from "markdown-it";
@@ -16,5 +16,5 @@ const html = md.render(props.content);
 </script>
 
 <template>
-  <div class="mx-auto prose m-5" :class="proseClass" v-html="html"></div>
+  <div class="mx-auto prose" :class="proseClass" v-html="html"></div>
 </template>
