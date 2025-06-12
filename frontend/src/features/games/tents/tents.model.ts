@@ -2,8 +2,9 @@ type EmitCallback = (event: string, payload?: any) => void;
 
 export enum TentCellStates {
   Empty = 0,
-  Tent = 1,
-  Green = 2,
+  Tree = 1,
+  Tent = 2,
+  Green = 3,
   NUM_STATES,
 }
 

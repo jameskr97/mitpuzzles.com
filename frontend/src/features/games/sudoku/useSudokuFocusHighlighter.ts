@@ -3,11 +3,9 @@ import type { RenderEvents } from "@/features/games.composables/setupPuzzleInter
 import { computed, ref } from "vue";
 import type { BoardEvents, Cell } from "@/features/games.components/board.interaction.ts";
 import { type SudokuSession } from "@/features/games/sudoku/useSudokuCellHighlighter.ts";
-import type { PuzzleStateSudoku } from "@/services/states.ts";
 
 export function useSudokuFocusHighlighter(session: Awaited<ReturnType<typeof usePuzzleState>>) {
   // State
-  const state = session.state.value as PuzzleStateSudoku;
   const lastHoveredCell = ref<Cell | null>(null);
   const lastSelectedHoveredCell = ref<Cell | null>(null);
   const subgridSize = computed(() => Math.sqrt(session.state.value.rows ?? 0));
