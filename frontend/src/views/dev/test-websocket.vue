@@ -1,14 +1,19 @@
 <script setup lang="ts">
-import { useActivePuzzleStore } from "@/features/games.composables/usePuzzleSocket.ts";
-import { usePuzzleState } from "@/composables/usePuzzleState.ts";
+import { usePuzzleState } from "../../../../.private/usePuzzleState.ts";
 import { createPuzzleInteractionBridge } from "@/features/games.composables/setupPuzzleInteractionBridge.ts";
 import KakurasuPuzzle from "@/features/games/kakurasu/kakurasu.puzzle.vue";
-import { ref, computed } from "vue";
+import { ref, computed, inject } from "vue";
 import { remap } from "@/services/util.ts";
 import type { PuzzleStateKakurasu } from "@/services/states.ts";
+import { ModuleManager } from "@/services/eventbus.ts";
+import type { GameModuleInterface } from "@/services/eventbus.modules/game.ts";
+import { createPuzzleSession } from "@/composables/useCurrentPuzzle.ts";
+import { useActivePuzzleStore } from "@/store/useActivePuzzleStore.ts";
 ////////////////////////////////////////////////////////////////////////
 //// puzzle api data
-const puzzle = await usePuzzleState("kakurasu");
+const event_modules = inject<ModuleManager>("event_modules");
+const game_module = event_modules?.getComposable?.<GameModuleInterface>("game");
+const puzzle = await createPuzzleSession(game_module!, "kakurasu");
 const builder = createPuzzleInteractionBridge(puzzle);
 const active_puzzle_store = useActivePuzzleStore();
 

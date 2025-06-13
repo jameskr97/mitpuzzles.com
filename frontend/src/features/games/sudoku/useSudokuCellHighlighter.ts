@@ -1,7 +1,7 @@
 import { computed, ref, readonly } from "vue";
 import type { RenderEvents } from "@/features/games.composables/setupPuzzleInteractionBridge.ts";
 import type { BoardEvents, Cell } from "@/features/games.components/board.interaction.ts";
-import type { usePuzzleState } from "@/composables/usePuzzleState.ts";
+import type { usePuzzleState } from "../../../../../.private/usePuzzleState.ts";
 import type { PuzzleStateSudoku } from "@/services/states.ts";
 import { check_violation_rule } from "@/utils.ts";
 
@@ -21,8 +21,10 @@ export function useSudokuCellHighlighter(session: SudokuSession) {
   const isRowSelected = (row: number) => activeCell.value?.row === row;
   const isColSelected = (col: number) => activeCell.value?.col === col;
   const isCellActive = (row: number, col: number) => activeCell.value?.row === row && activeCell.value?.col === col;
-  const shouldHighlightCell = (row: number, col: number) => isRowSelected(row) || isColSelected(col) || isSquareSelected(row, col);
-  const isPrefilled = (row: number, col: number) => session.state.value.board_initial[row * session.state.value.cols + col] !== 0;
+  const shouldHighlightCell = (row: number, col: number) =>
+    isRowSelected(row) || isColSelected(col) || isSquareSelected(row, col);
+  const isPrefilled = (row: number, col: number) =>
+    session.state.value.board_initial[row * session.state.value.cols + col] !== 0;
   const isSquareSelected = (row: number, col: number) => {
     if (!activeCell.value) return false;
     const { row: activeRow, col: activeCol } = activeCell.value;
@@ -31,7 +33,6 @@ export function useSudokuCellHighlighter(session: SudokuSession) {
       Math.floor(activeCol / subgridSize.value) === Math.floor(col / subgridSize.value)
     );
   };
-
 
   // Input behavior
   const inputBehavior: Partial<BoardEvents> = {
@@ -55,9 +56,7 @@ export function useSudokuCellHighlighter(session: SudokuSession) {
       }
 
       if (!session.state.value) return false;
-
-      // Don't modify prefilled cells
-      if (isPrefilled(cell.row, cell.col)) return false;
+      if (isPrefilled(cell.row, cell.col)) return false; // Don't modify prefilled cells
 
       const keyAsNumber = Number(key);
 
@@ -88,7 +87,13 @@ export function useSudokuCellHighlighter(session: SudokuSession) {
       if (isCellActive(row, col)) classes.push("border-blue-500", "border-[0.5px]");
 
       // Violation styling
-      if (check_violation_rule(session.state.value.violations, row, col, ["row_duplicate_violation", "col_duplicate_violation", "box_duplicate_violation"])) {
+      if (
+        check_violation_rule(session.state.value.violations, row, col, [
+          "row_duplicate_violation",
+          "col_duplicate_violation",
+          "box_duplicate_violation",
+        ])
+      ) {
         classes.push("border-red-500!", "border-[1px]");
       }
 
@@ -117,7 +122,7 @@ export function useSudokuCellHighlighter(session: SudokuSession) {
       activeCell: readonly(activeCell),
     },
     // Expose helper methods for external use
-    clearActiveCell: () => activeCell.value = null,
+    clearActiveCell: () => (activeCell.value = null),
     isCellActive,
     shouldHighlightCell,
     isPrefilled,

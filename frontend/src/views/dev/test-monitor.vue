@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { useActivePuzzleStore, usePuzzleSocket } from "@/features/games.composables/usePuzzleSocket.ts";
 import { computed, inject, onMounted, onUnmounted, ref } from "vue";
 import { ACTIVE_GAMES } from "@/main.ts";
 import { remap } from "@/services/util.ts";
 
-const socket = inject<ReturnType<typeof usePuzzleSocket>>("puzzle_socket");
-if (!socket) throw new Error("Puzzle socket not found");
-const active_store = useActivePuzzleStore();
-const active_msg = computed(() => {
-  const count = active_store.monitor_user_count;
-  return `${count} Active User${count === 1 ? "" : "s"}`;
-});
+
+// const socket = inject<ReturnType<typeof usePuzzleSocket>>("puzzle_socket");
+// if (!socket) throw new Error("Puzzle socket not found");
+// const active_store = useActivePuzzleStore();
+// const active_msg = computed(() => {
+//   const count = active_store.monitor_user_count;
+//   return `${count} Active User${count === 1 ? "" : "s"}`;
+// });
 
 const scale = ref(50);
 const scale_remapped = computed(() => remap([0, 100], [1, 3], scale.value));

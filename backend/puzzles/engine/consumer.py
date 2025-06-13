@@ -95,7 +95,7 @@ class PuzzleConsumer(JsonWebsocketConsumer):
         state["violations"] = [v.to_dict() for v in engine.validate()] if puzzle_session.is_tutorial else []
 
         self.send_json({
-            "type": "event:state", 
+            "type": "game:state",
             "data": state, 
             "session_id": session_id
         })
@@ -270,8 +270,8 @@ def handle_submit(event):
 
         # Send result
         event.consumer.send_json( {
-            "type": "event:submit_result",
-            "data": {"is_solved": solved},
+            "type": "game:submit_result",
+            "data": solved,
             "session_id": event.session_id,
         })
 

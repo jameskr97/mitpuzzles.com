@@ -9,7 +9,6 @@ import { useVisitorStore } from "@/store/visitor.ts";
 import App from "./App.vue";
 import MarkdownPage from "@/views/MarkdownPage.vue";
 import { OhVueIcon } from "@/icons";
-import { usePuzzleSocket } from "@/features/games.composables/usePuzzleSocket.ts";
 import { defaultPuzzles } from "@/services/puzzle.defaults.ts";
 // Markdown content
 import mdAbout from "./views/aboutus.md?raw";
@@ -20,6 +19,11 @@ import "./style.css";
 // PostHog
 import posthog from "posthog-js";
 import { withSudokuBehaviors } from "@/features/games/sudoku/useSudokuCellHighlighter.ts";
+import { withSudokuFocusBehavior } from "@/features/games/sudoku/useSudokuFocusHighlighter.ts";
+import { ModuleManager } from "@/services/eventbus.ts";
+import { websocketModule } from "@/services/eventbus.modules/websocket.ts";
+import { debugModule } from "@/services/eventbus.modules/debug.ts";
+import { gameModule } from "@/services/eventbus.modules/game.ts";
 
 StorageVersionManager.clearOldStorage(); // clear old storage if needed
 
@@ -41,7 +45,7 @@ function create_game_entry(sidebar_title: string, key: string, defaultBehaviors:
       }
     },
     default: defaultPuzzles[key],
-    defaultBehaviors
+    defaultBehaviors,
   };
 }
 
@@ -53,7 +57,7 @@ function create_game_entry(sidebar_title: string, key: string, defaultBehaviors:
 /* prettier-ignore */
 export const ACTIVE_GAMES: Record<string, any> = {
   minesweeper:  create_game_entry("💣 Minesweeper", "minesweeper"),
-  sudoku:       create_game_entry("🧩 Sudoku", "sudoku", [withSudokuBehaviors]),
+  sudoku:       create_game_entry("🧩 Sudoku", "sudoku", [withSudokuBehaviors, withSudokuFocusBehavior]),
   tents:        create_game_entry("⛺ Tents", "tents"),
   kakurasu:     create_game_entry("⬛ Kakurasu", "kakurasu"),
   lightup:      create_game_entry("💡 Light Up", "lightup"),
@@ -73,7 +77,8 @@ function create_dev_tool(key: string, display_name: string, requires_admin: bool
 export const DEV_TOOLS: Record<string, any> = {
   "test-board": create_dev_tool("test-board", "🎯 Test Board"),
   "test-websocket": create_dev_tool("test-websocket", "🧦 Test Websockets"),
-  "test-monitor": create_dev_tool("test-monitor", "🖥️ Test Monitor", true),
+  // "test-monitor": create_dev_tool("test-monitor", "🖥️ Test Monitor", true),
+  // "test-experiment": create_dev_tool("test-experiment", "📝 Text Experiment"),
 };
 
 const route = {
@@ -123,9 +128,17 @@ const routerConfig: RouterOptions = {
   await useAuthStore().updateStore();
   await useVisitorStore().init();
 
-  // provide global puzzle socket
-  const puzzle_socket = usePuzzleSocket();
-  app.provide("puzzle_socket", puzzle_socket);
+  // init event bus modules
+  const event_modules = new ModuleManager();
+  // event_modules.register(debugModule);
+  event_modules.register(websocketModule);
+  event_modules.register(gameModule);
+  app.provide("event_modules", event_modules);
+
+  // const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+  // const url = `${protocol}://${window.location.host}/ws/puzzle/`;
+  // const socket = new AppSocket(url, import.meta.env.DEV)
+  // app.provide("socket", socket);
 
   // posthog
   const posthogApiKey = import.meta.env.VITE_POSTHOG_API_KEY;

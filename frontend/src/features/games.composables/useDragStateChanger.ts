@@ -1,11 +1,16 @@
-import { ref } from "vue";
+import { inject, ref } from "vue";
 import type { GameZone, Cell, BoardEvents } from "@/features/games.components/board.interaction.ts";
-import { usePuzzleState } from "@/composables/usePuzzleState.ts";
+import { createPuzzleSession } from "@/composables/useCurrentPuzzle.ts";
+import { type GameModuleInterface } from "@/services/eventbus.modules/game.ts";
+import { ModuleManager } from "@/services/eventbus.ts";
 
 /**
  * Composable handles mouse drag events to change the state of the puzzle board.
  */
-export function useDragStateChanger(state: Awaited<ReturnType<typeof usePuzzleState>>): Partial<BoardEvents> {
+export function useDragStateChanger(session: Awaited<ReturnType<typeof createPuzzleSession>>): Partial<BoardEvents> {
+  const event_modules = inject<ModuleManager>("event_modules");
+  const game_module = event_modules?.getComposable?.<GameModuleInterface>("game");
+
   const isMouseDown = ref(false);
   let activeZone: GameZone | null = null;
   let firstClickedCell: Cell | null = null;
@@ -25,12 +30,13 @@ export function useDragStateChanger(state: Awaited<ReturnType<typeof usePuzzleSt
 
   function onCellEnter(cell: Cell, event: MouseEvent): boolean {
     if (isMouseDown.value == false || cell.zone !== activeZone || firstClickedCell == null) return false;
-    const desiredState = state.state.value?.board[firstClickedCell.row * state.state.value.cols + firstClickedCell.col];
-    const currentState = state.state.value?.board[cell.row * state.state.value.cols + cell.col];
+    const desiredState =
+      session.state.value?.board[firstClickedCell.row * session.state.value.cols + firstClickedCell.col];
+    const currentState = session.state.value?.board[cell.row * session.state.value.cols + cell.col];
 
     // do nothing if the state is the same
     if (currentState === desiredState) return false;
-    state.session.handle_cell_click(cell, event.button, desiredState);
+    game_module?.handle_cell_click(cell, event.button, desiredState);
     return true; // return true to indicate that the event was handled
   }
 

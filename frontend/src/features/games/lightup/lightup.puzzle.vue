@@ -98,7 +98,11 @@ onMounted(() => update_lit_cells(props.state.board));
           <div
             v-else-if="LightWallStates.includes(state.board[row * state.cols + col])"
             class="bg-black h-full w-full flex items-center justify-center"
-            :class="check_violation_rule(state.violations!, row, col, 'numbered_wall_constraint_violated') ? 'text-red-500' : 'text-white'"
+            :class="
+              check_violation_rule(state.violations!, row, col, 'numbered_wall_constraint_violated')
+                ? 'text-red-500'
+                : 'text-white'
+            "
           >
             {{
               state.board[row * state.cols + col] === LightupCellStates.WallBlank

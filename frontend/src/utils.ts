@@ -79,7 +79,6 @@ export function check_violation_rule(violations: GameViolation[], row: number, c
 
   return violations.some(
     (violation) =>
-      rule.includes(violation.rule_type) &&
-      violation.locations.some((loc) => loc.row === row && loc.col === col)
+      rule.includes(violation.rule_type) && violation.locations.some((loc) => loc.row === row && loc.col === col),
   );
 }

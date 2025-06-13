@@ -38,7 +38,7 @@ defineProps({
   showButtons: { type: Boolean, default: true },
   showVariant: { type: Boolean, default: true },
   showTimer: { type: Boolean, default: true },
-})
+});
 </script>
 
 <template>
@@ -94,26 +94,16 @@ defineProps({
           </ul>
         </div>
         <button class="btn btn-info" @click="puzzle.request_new_puzzle">New Puzzle</button>
-        <button
-          class="btn btn-error"
-          :disabled="puzzle.is_solved.value == true"
-          @click="puzzle.session.cmd_puzzle_reset"
-        >
+        <button class="btn btn-error" :disabled="puzzle.is_solved.value == true" @click="puzzle.cmd_puzzle_reset">
           Clear
         </button>
-        <button
-          class="btn btn-success"
-          :disabled="puzzle.is_solved.value == true"
-          @click="puzzle.session.cmd_puzzle_submit"
-        >
+        <button class="btn btn-success" :disabled="puzzle.is_solved.value == true" @click="puzzle.cmd_puzzle_submit">
           Submit
         </button>
       </div>
 
       <!-- Game variant display -->
-      <div
-        class="m-0 p-0 grid grid-cols-3 w-full justify-items-center"
-      >
+      <div class="m-0 p-0 grid grid-cols-3 w-full justify-items-center">
         <div v-if="puzzle.tutorial_mode.value" class="justify-self-start badge badge-warning text-nowrap">
           Tutorial Mode
         </div>

@@ -5,18 +5,14 @@ const puzzle = await useCurrentPuzzle();
 
 <template>
   <div class="w-full mb-2">
-    <div
-      v-if="puzzle.session.is_solved.value === true"
-      role="alert"
-      class="alert alert-success flex flex-row justify-start"
-    >
+    <div v-if="puzzle.is_solved.value === true" role="alert" class="alert alert-success flex flex-row justify-start">
       <v-icon name="fa-check-circle" scale="1.5" />
       <span>Your solution is correct</span>
       <button class="btn btn-outline ml-auto" @click="puzzle.request_new_puzzle">New puzzle</button>
     </div>
 
     <div
-      v-else-if="puzzle.session.is_solved.value === false"
+      v-else-if="puzzle.is_solved.value === false"
       role="alert"
       class="alert alert-error flex flex-row justify-start mb-2"
     >

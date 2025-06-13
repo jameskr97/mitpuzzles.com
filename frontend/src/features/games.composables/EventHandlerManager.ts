@@ -1,3 +1,5 @@
+import { createPuzzleSession } from "@/composables/useCurrentPuzzle.ts";
+
 /**
  * EventHandlerListKey<TEvents> - Type alias for event names
  *
@@ -41,8 +43,7 @@ type EventHandlerList = ((...args: any[]) => any)[];
  * 2. Compile them together with different strategies
  * 3. Emit events to all registered handlers
  */
-export class EventHandlerManager<TEvents extends { [TEventKey in keyof TEvents]: (...args: any[]) => any }
-> {
+export class EventHandlerManager<TEvents extends { [TEventKey in keyof TEvents]: (...args: any[]) => any }> {
   /**
    * handlerMap - Internal storage for all registered event handlers
    *
@@ -80,7 +81,10 @@ export class EventHandlerManager<TEvents extends { [TEventKey in keyof TEvents]:
    * @param session - The puzzle session data passed to the behavior function
    * @returns The same object that the behavior function returned
    */
-  addBehaviour<T extends Partial<TEvents>>(behaviour: (session: any) => T, session: any): T {
+  addBehaviour<T extends Partial<TEvents>, State = Awaited<ReturnType<typeof createPuzzleSession>>>(
+    behaviour: (session: State) => T,
+    session: State,
+  ): T {
     const additions = behaviour(session);
 
     for (const key in additions) {
@@ -126,18 +130,14 @@ export class EventHandlerManager<TEvents extends { [TEventKey in keyof TEvents]:
           }
           return false;
         }) as TEvents[typeof typedKey];
-      }
-      
-      else if (strategy === "emit-all") {
+      } else if (strategy === "emit-all") {
         // For GameEvents - call all handlers, return void
         combined[typedKey] = ((...args: any[]): void => {
           for (const fn of fns) {
             fn(...args);
           }
         }) as TEvents[typeof typedKey];
-      }
-      
-      else if (strategy === "merge-results") {
+      } else if (strategy === "merge-results") {
         // For RenderingEvents - merge results based on return type
         combined[typedKey] = ((...args: any[]) => {
           if (key.includes("Classes")) {

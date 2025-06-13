@@ -1,8 +1,9 @@
-import type { usePuzzleState } from "@/composables/usePuzzleState.ts";
+import type { usePuzzleState } from "../../../../../.private/usePuzzleState.ts";
 import type { RenderEvents } from "@/features/games.composables/setupPuzzleInteractionBridge.ts";
 import { computed, ref } from "vue";
 import type { BoardEvents, Cell } from "@/features/games.components/board.interaction.ts";
 import { type SudokuSession } from "@/features/games/sudoku/useSudokuCellHighlighter.ts";
+import { isCellMatch } from "@/features/games/sudoku/sudoku.utility.ts";
 
 export function useSudokuFocusHighlighter(session: Awaited<ReturnType<typeof usePuzzleState>>) {
   // State
@@ -12,33 +13,19 @@ export function useSudokuFocusHighlighter(session: Awaited<ReturnType<typeof use
 
   // Helper functions
   //// Hover Highlighting
-  const isRowHovered = (row: number) => (lastHoveredCell.value ? lastHoveredCell.value.row === row : false);
-  const isColHovered = (col: number) => (lastHoveredCell.value ? lastHoveredCell.value.col === col : false);
-  const shouldHoverHighlight = (row: number, col: number) =>
-    isRowHovered(row) || isColHovered(col) || isBoxHovered(row, col);
-  const isBoxHovered = (row: number, col: number) => {
-    if (!lastHoveredCell.value) return false;
-    const { row: hovered_row, col: hovered_col } = lastHoveredCell.value;
-    return (
-      Math.floor(hovered_row / subgridSize.value) === Math.floor(row / subgridSize.value) &&
-      Math.floor(hovered_col / subgridSize.value) === Math.floor(col / subgridSize.value)
-    );
+  const hoverMatch = (row: number, col: number) => isCellMatch(lastHoveredCell.value, row, col, subgridSize.value);
+  const shouldHoverHighlight = (row: number, col: number) => {
+    const match = hoverMatch(row, col);
+    return match.row || match.col || match.box;
   };
+
   //// Selection Visibility
-  const isRowSelected = (row: number) =>
-    lastSelectedHoveredCell.value ? lastSelectedHoveredCell.value.row === row : false;
-  const isColSelected = (col: number) =>
-    lastSelectedHoveredCell.value ? lastSelectedHoveredCell.value.col === col : false;
-  const isBoxSelected = (row: number, col: number) => {
-    if (!lastSelectedHoveredCell.value) return false;
-    const { row: selectedRow, col: selectedCol } = lastSelectedHoveredCell.value;
-    return (
-      Math.floor(selectedRow / subgridSize.value) === Math.floor(row / subgridSize.value) &&
-      Math.floor(selectedCol / subgridSize.value) === Math.floor(col / subgridSize.value)
-    );
+  const selectedMatch = (row: number, col: number) =>
+    isCellMatch(lastSelectedHoveredCell.value, row, col, subgridSize.value);
+  const shouldShowCell = (row: number, col: number) => {
+    const match = selectedMatch(row, col);
+    return match.row || match.col || match.box;
   };
-  const shouldShowCell = (row: number, col: number) =>
-    isRowSelected(row) || isColSelected(col) || isBoxSelected(row, col);
 
   const renderBehavior: Partial<RenderEvents> = {
     getCellContent(row: number, col: number): string | number | null {
@@ -50,10 +37,11 @@ export function useSudokuFocusHighlighter(session: Awaited<ReturnType<typeof use
       return value !== 0 ? value : "";
     },
     getCellClasses(row: number, col: number): string[] {
-      const classes: string[] = ["blur-[1.5px]", "overflow-hidden"];
-      if (shouldHoverHighlight(row, col)) classes.push("bg-yellow-200");
+      const BLUR_CLASS = "blur-[1.5px]";
+      const classes: string[] = [BLUR_CLASS, "overflow-hidden"];
+      if (shouldHoverHighlight(row, col)) classes.push("bg-yellow-50");
       if (shouldShowCell(row, col)) {
-        const blurIdx = classes.indexOf("blur-[1.5px]");
+        const blurIdx = classes.indexOf(BLUR_CLASS);
         if (blurIdx !== -1) classes.splice(blurIdx, 1);
       }
       return classes;

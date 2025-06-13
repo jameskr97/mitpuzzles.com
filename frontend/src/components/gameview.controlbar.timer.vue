@@ -9,4 +9,3 @@ const puzzle = await useCurrentPuzzle();
     <span>{{ puzzle.timer.display_time }}</span>
   </div>
 </template>
-

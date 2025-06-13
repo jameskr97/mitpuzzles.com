@@ -13,7 +13,7 @@ const game_entry = ACTIVE_GAMES[route.meta.game_type as string];
 // load game state + data
 const puzzle = await useCurrentPuzzle();
 const bridge = createPuzzleInteractionBridge(puzzle);
-for(const withBehavior of game_entry["defaultBehaviors"]) {
+for (const withBehavior of game_entry["defaultBehaviors"]) {
   withBehavior(puzzle, bridge);
 }
 

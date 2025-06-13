@@ -33,8 +33,9 @@ const { scale_remapped } = getGameScale();
             class="z-100 order-first md:order-1 col-start-2 grid grid-cols-1 place-items-center mb-2 mx-2 items-center max-h-fit"
           >
             <GameViewAlert />
-
             <div class="select-none" :class="{ 'pointer-events-none': puzzle.is_solved.value }">
+              <!--              {{store}}-->
+              <!--              {{puzzle}}-->
               <slot name="default" :scale="scale_remapped"></slot>
             </div>
           </div>

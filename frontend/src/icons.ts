@@ -14,7 +14,11 @@ import {
   BiLightbulbFill,
   MdArrowdropdown,
   IoSettingsOutline,
-  BiArrowRightCircle
+  BiArrowRightCircle,
+  BiCheckCircleFill,
+  BiCircle,
+  BiCircleFill,
+  BiRecordCircleFill,
 } from "oh-vue-icons/icons";
 
 addIcons(
@@ -30,5 +34,9 @@ addIcons(
   BiLightbulbFill,
   MdArrowdropdown,
   IoSettingsOutline,
-  BiArrowRightCircle
+  BiArrowRightCircle,
+  BiCheckCircleFill,
+  BiCircle,
+  BiCircleFill,
+  BiRecordCircleFill,
 );
