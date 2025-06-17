@@ -10,6 +10,7 @@ export type BoardBordersConfig = {
   everyNthRow?: { n: number; style: BorderStyle };
   everyNthCol?: { n: number; style: BorderStyle };
   outer?: BorderStyle;
+  inner?: BorderStyle;
 };
 
 export interface BoardContext {

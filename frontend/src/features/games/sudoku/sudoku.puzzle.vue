@@ -5,7 +5,8 @@ import BoardCells from "@/features/games.components/board.cellgrid.vue";
 import BoardInteraction from "@/features/games.components/board.interaction.vue";
 import { type createPuzzleInteractionBridge } from "@/features/games.composables/setupPuzzleInteractionBridge.ts";
 import { computed } from "vue";
-import type { PuzzleStateSudoku } from "@/services/states.ts"; ////////////////////////////////////////////////////////////////////////
+import type { PuzzleStateSudoku } from "@/services/states.ts";
+import BoardBackground from "@/features/games.components/board.background.vue";
 
 ////////////////////////////////////////////////////////////////////////
 // Props + State
@@ -23,22 +24,25 @@ function is_prefilled(row: number, col: number): boolean {
 const bind = props.interact?.getBridge(false);
 const render = props.interact?.getRenderBehaviors();
 
+const T = 1.5;
+const MAJOR = "bg-gray-500";
 const borderConfig = computed(() => ({
-  everyNthCol: { n: Math.sqrt(props.state.cols), style: { thickness: 2 } },
-  everyNthRow: { n: Math.sqrt(props.state.cols), style: { thickness: 2 } },
-  outer: { thickness: 2, borderClass: "bg-black" },
+  everyNthCol: { n: Math.sqrt(props.state.cols), style: { thickness: T, borderClass: MAJOR } },
+  everyNthRow: { n: Math.sqrt(props.state.cols), style: { thickness: T, borderClass: MAJOR } },
+  outer: { thickness: T, borderClass: MAJOR },
+  inner: { borderClass: "bg-gray-300" },
 }));
 </script>
 
 <template>
-  <BoardContainer v-if="state" :cols="state.cols" :rows="state.rows" :scale="scale" :border-config="borderConfig">
+  <BoardContainer v-if="state" :cols="state.cols" :rows="state.rows" :scale="scale" :border-config="borderConfig" :cell-size="20">
     <BoardBorders />
     <BoardInteraction :bind="bind" />
     <BoardCells>
       <template #cell="{ row, col }">
         <div
           v-if="render?.isCellVisible?.(row, col) ?? true"
-          class="flex justify-center items-center h-full w-full overflow-hidden"
+          class="flex justify-center items-center h-full w-full overflow-hidden text-[60cqw] text-neutral-700"
           :class="render?.getCellClasses?.(row, col)"
         >
           <span v-if="render?.getCellContent">

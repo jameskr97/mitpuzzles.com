@@ -98,13 +98,13 @@ const gutterBorders = [
     <div v-for="(border, index) in borderCalc.game_grid_borders_row.value" :key="`h-${index}-${board.cols}`">
       <div
         v-for="(_, ic) in board.cols"
-        class="absolute"
+        class="absolute z-100"
+        :class="(index + 1) % board.borderConfig.everyNthRow?.n === 0 ? border.style.borderClass : board.borderConfig.inner?.borderClass"
         :style="{
           left: positions.gameGridStartX.value + offset.gameInnerBorderOffsetsX.value[ic] + 'px',
           top: positions.gameGridStartY.value + border.top - (border.style.thickness ?? board.gap) + 'px',
           width: board.cellSize + 'px',
           height: (border.style.thickness ?? board.gap) + 'px',
-          backgroundColor: 'black',
         }"
       ></div>
     </div>
@@ -114,13 +114,13 @@ const gutterBorders = [
     <div v-for="(border, index) in borderCalc.game_grid_borders_column.value" :key="`h-${index}-${board.rows}`">
       <div
         v-for="(_, ir) in board.rows"
-        class="absolute"
+        class="absolute z-100"
+        :class="(index + 1) % board.borderConfig.everyNthCol?.n === 0 ? border.style.borderClass : board.borderConfig.inner?.borderClass"
         :style="{
           left: positions.gameGridStartX.value + border.left - (border.style.thickness ?? board.gap) + 'px',
           top: positions.gameGridStartY.value + offset.gameInnerBorderOffsetsY.value[ir] + 'px',
           width: (border.style.thickness ?? board.gap) + 'px',
           height: board.cellSize + 'px',
-          backgroundColor: 'black',
         }"
       />
     </div>
@@ -130,14 +130,27 @@ const gutterBorders = [
     <!-- CUSTOMIZABLE OR SELECTABLE, THIS IS THE PLACE TO START LOOKING INTO THAT. THIS IS WHERE WE COVER THEM -->
     <!-- WITH A FULLY BLACK ROW BEHIND THE SEGMENTED ROWS. Easier than calculating each square position... -->
     <div
-      v-for="border in borderCalc.game_grid_borders_row.value"
-      class="absolute -z-9000"
+      v-for="(border, index) in borderCalc.game_grid_borders_row.value"
+      class="absolute -z-9999"
+      :class="(index + 1) % board.borderConfig.everyNthRow?.n === 0 ? border.style.borderClass : board.borderConfig.inner?.borderClass"
       :style="{
         left: positions.gameGridStartX.value + 'px',
         top: positions.gameGridStartY.value + border.top - (border.style.thickness ?? board.gap) + 'px',
         height: (border.style.thickness ?? board.gap) + 'px',
         width: layout.gameGridWidth.value + 'px',
-        backgroundColor: 'black',
+      }"
+    />
+    <!-- vertical lines to cover the square gaps between borders -->
+    <div
+      v-for="(border, index) in borderCalc.game_grid_borders_column.value"
+      v-show="(index + 1) % board.borderConfig?.everyNthCol?.n === 0"
+      class="absolute -z-9999"
+      :class="(index + 1) % board.borderConfig?.everyNthCol?.n === 0 ? border.style.borderClass : board.borderConfig.inner?.borderClass"
+      :style="{
+        left: positions.gameGridStartX.value + border.left - (border.style.thickness ?? board.gap) + 'px',
+        top: positions.gameGridStartY.value + 'px',
+        width: (border.style.thickness ?? board.gap) + 'px',
+        height: layout.gameGridHeight.value + 'px',
       }"
     />
 

@@ -1,4 +1,3 @@
-import type { usePuzzleState } from "../../../../../.private/usePuzzleState.ts";
 import type { RenderEvents } from "@/features/games.composables/setupPuzzleInteractionBridge.ts";
 import { check_violation_rule } from "@/utils.ts";
 

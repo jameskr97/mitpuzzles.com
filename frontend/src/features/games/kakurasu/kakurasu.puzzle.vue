@@ -21,7 +21,10 @@ enum KakurasuCellStates {
 }
 
 const bind = props.interact?.getBridge();
-const borderConfig = { outer: { thickness: 1, borderClass: "bg-black" } };
+const borderConfig = {
+  outer: { thickness: 1, borderClass: "bg-black" },
+  inner: { thickness: 1, borderClass: "bg-black" }
+};
 </script>
 <template>
   <BoardContainer

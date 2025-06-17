@@ -1,15 +1,18 @@
-import type { usePuzzleState } from "../../../../../.private/usePuzzleState.ts";
 import type { RenderEvents } from "@/features/games.composables/setupPuzzleInteractionBridge.ts";
 import { computed, ref } from "vue";
 import type { BoardEvents, Cell } from "@/features/games.components/board.interaction.ts";
 import { type SudokuSession } from "@/features/games/sudoku/useSudokuCellHighlighter.ts";
 import { isCellMatch } from "@/features/games/sudoku/sudoku.utility.ts";
+import type { createPuzzleSession } from "@/composables/useCurrentPuzzle.ts";
 
-export function useSudokuFocusHighlighter(session: Awaited<ReturnType<typeof usePuzzleState>>) {
+export function useSudokuFocusHighlighter(session: Awaited<ReturnType<typeof createPuzzleSession>>) {
   // State
   const lastHoveredCell = ref<Cell | null>(null);
   const lastSelectedHoveredCell = ref<Cell | null>(null);
-  const subgridSize = computed(() => Math.sqrt(session.state.value.rows ?? 0));
+  const subgridSize = computed(() => {
+    const rows = session.state.value?.rows;
+    return rows ? Math.sqrt(rows) : 3;
+  });
 
   // Helper functions
   //// Hover Highlighting
@@ -18,6 +21,11 @@ export function useSudokuFocusHighlighter(session: Awaited<ReturnType<typeof use
     const match = hoverMatch(row, col);
     return match.row || match.col || match.box;
   };
+
+  const is_default_cell = (row: number, col: number) => {
+    const idx = row * session.state.value?.cols + col;
+    return session.state.value?.board_initial[idx] === 0;
+  }
 
   //// Selection Visibility
   const selectedMatch = (row: number, col: number) =>
@@ -29,15 +37,16 @@ export function useSudokuFocusHighlighter(session: Awaited<ReturnType<typeof use
 
   const renderBehavior: Partial<RenderEvents> = {
     getCellContent(row: number, col: number): string | number | null {
-      const idx = row * session.state.value.cols + col;
-      const value = session.state.value.board[idx];
+      const idx = row * session.state.value?.cols + col;
+      const value = session.state.value?.board[idx];
       if (!shouldShowCell(row, col)) return value === 0 ? "" : "X";
 
       // If you have is_prefilled, use it here. Otherwise, just show value if not zero.
       return value !== 0 ? value : "";
     },
     getCellClasses(row: number, col: number): string[] {
-      const BLUR_CLASS = "blur-[1.5px]";
+      const s = session as SudokuSession;
+      const BLUR_CLASS = "blur-[2.5px]";
       const classes: string[] = [BLUR_CLASS, "overflow-hidden"];
       if (shouldHoverHighlight(row, col)) classes.push("bg-yellow-50");
       if (shouldShowCell(row, col)) {
@@ -68,9 +77,8 @@ export function useSudokuFocusHighlighter(session: Awaited<ReturnType<typeof use
       lastHoveredCell.value = null;
       return false;
     },
-    onCellHoveredKeyDown(cell: Cell, event: KeyboardEvent): boolean {
-      const key = event.key;
-      if (key === " ") lastSelectedHoveredCell.value = cell;
+    onCellClick(cell: Cell, event: MouseEvent): boolean {
+      lastSelectedHoveredCell.value = cell;
       return false;
     },
   };
