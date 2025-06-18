@@ -1,6 +1,24 @@
 <script setup lang="tsx">
 import HomePuzzlePreview from "@/components/home.puzzlepreview.vue";
 import { ACTIVE_GAMES } from "@/main";
+import { useVisitorStore } from "@/store/visitor.ts";
+import { ref } from "vue";
+
+const visitor = useVisitorStore();
+
+const username_change_dialog = ref<HTMLDialogElement | null>(null)
+const username_entry = ref("")
+const error = ref("")
+const change_username = async () => {
+  const res = await visitor.changeUsername(username_entry.value);
+  if (res && res.changed) {
+    username_entry.value = "";
+    username_change_dialog.value?.close();
+  } else {
+    if(res && 'error' in res)
+      error.value = res.error.toString();
+  }
+}
 </script>
 
 <template>
@@ -30,11 +48,16 @@ import { ACTIVE_GAMES } from "@/main";
     play, your actions will be recorded once the game has been submitted and completed correctly. Please try out any of
     the games below - we'd love your help!
   </p>
+  <p class="max-w-xl mx-auto text-base mt-2">
+    Your username will be <span class="font-bold">{{ visitor.generated_username }}</span> on any leaderboards. You can
+    <span class="text-blue-500 cursor-pointer" onclick="username_modal.showModal()">click here</span>
+    to change your username.
+  </p>
   <div class="divider my-0"></div>
-  <div class="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3 mx-auto">
+  <div class="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-2 mx-auto">
     <HomePuzzlePreview
       v-for="game in ACTIVE_GAMES"
-      class="border-2 border-black rounded"
+      class="border rounded shadow border-gray-300"
       :title="game.name"
       :page="game.key"
       :key="game.key"
@@ -42,4 +65,18 @@ import { ACTIVE_GAMES } from "@/main";
       :state="game.default"
     />
   </div>
+
+  <dialog ref="username_change_dialog" id="username_modal" class="modal">
+    <div class="modal-box">
+      <h3 class="text-lg font-bold">Enter new username</h3>
+      <form class="flex flex-row gap-2 mt-2" @submit.prevent="change_username">
+        <input v-model="username_entry" type="text" placeholder="Type here" class="input" autocomplete="off" />
+        <button type="submit" class="btn" @click="change_username">Change Username</button>
+      </form>
+      <div v-if="error" class="text-red-500 mt-2">{{ error }}</div>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+      <button>close</button>
+    </form>
+  </dialog>
 </template>

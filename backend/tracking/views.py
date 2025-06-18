@@ -1,7 +1,16 @@
+import json
+
 from django.http import HttpResponse, JsonResponse
 from django.conf import settings
 from crawleruseragents import is_crawler
+from rest_framework.decorators import api_view
+from better_profanity import profanity
+from profanity_check import predict as predict_profanity
+
 from .models import Visitor
+
+# Initialize profanity filter
+profanity.load_censor_words()
 
 def visitor_init(request):
     """
@@ -36,14 +45,16 @@ def visitor_init(request):
         try:
             visitor = Visitor.objects.get(pk=vid)
             visitor.save(update_fields=['last_seen'])  # bumps last_seen via auto_now=True
-            return HttpResponse(status=204)
+            return JsonResponse({"generated_username": visitor.generated_username})
         except Visitor.DoesNotExist:
             pass
     # invariant - user does not have a valid Visitor id
     visitor = Visitor.objects.create(user_agent=ua)
+    visitor.set_readable_username()
+    visitor.save()
 
     # Build response
-    response = HttpResponse(status=201)
+    response = JsonResponse({"generated_username": visitor.generated_username}, status=201)
     response.set_cookie(
         cookie_name,
         str(visitor.id),
@@ -53,3 +64,47 @@ def visitor_init(request):
         samesite=samesite
     )
     return response
+
+@api_view(['POST'])
+def change_visitor_username(request):
+    """
+    Endpoint to change the username of a visitor.
+    Expects JSON with new_username field.
+    Uses the visitor_id cookie to identify the visitor.
+    """
+    try:
+        data = json.loads(request.body)
+        new_username = data.get("new_username")
+
+        # Get visitor ID from cookie
+        visitor_id = request.COOKIES.get("visitor_id")
+        if not visitor_id:
+            return JsonResponse({"error": "Visitor not identified"}, status=401)
+
+        if not new_username:
+            return JsonResponse({"error": "New username is required"}, status=400)
+
+        # Validate username
+        if len(new_username) > 50:
+            return JsonResponse({"error": "Username too long (max 50 characters)"}, status=400)
+
+        # Check for profanity in the username
+        if  profanity.contains_profanity(new_username) or predict_profanity([new_username]) > 0:
+            return JsonResponse({"error": "Username contains inappropriate language"}, status=400)
+
+        # Check for uniqueness
+        if Visitor.objects.filter(generated_username=new_username).exists():
+            return JsonResponse({"error": "Username already taken"}, status=400)
+
+        try:
+            visitor = Visitor.objects.get(id=visitor_id)
+            visitor.generated_username = new_username
+            visitor.save()
+            return JsonResponse({"success": True, "username": new_username})
+        except Visitor.DoesNotExist:
+            return JsonResponse({"error": "Visitor not found"}, status=404)
+
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
