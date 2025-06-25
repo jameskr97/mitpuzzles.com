@@ -41,3 +41,18 @@ class PuzzleKakurasuSerializer(PuzzleBaseSerializer):
     row_sum = serializers.ListField(source="puzzle_data.row_sum", help_text="List of row counts")
     col_sum = serializers.ListField(source="puzzle_data.col_sum", help_text="List of column counts")
 
+
+class LeaderboardEntrySerializer(serializers.Serializer):
+    username = serializers.CharField(source="visitor.generated_username")
+    duration_display = serializers.SerializerMethodField()
+    rank = serializers.IntegerField()
+
+    def get_duration_display(self, obj):
+        if not obj.puzzle_duration:
+            return None
+
+        total_seconds = int(obj.puzzle_duration.total_seconds())
+        minutes = total_seconds // 60
+        seconds = total_seconds % 60
+
+        return f"{minutes}:{seconds:02d}" if minutes > 0 else f"{seconds}s"

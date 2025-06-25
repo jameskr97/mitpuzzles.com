@@ -6,4 +6,5 @@ urlpatterns = [
     path("random", views.RandomPuzzleView.as_view()),
     path("unsolved", views.UnsolvedPuzzleView.as_view()),
     path("variants", views.PuzzleClassSuffixList.as_view()),
+    path('leaderboard', views.leaderboard_view)
 ]

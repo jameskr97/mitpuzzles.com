@@ -22,9 +22,9 @@ from puzzles.middleware import CookieMiddleware
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),
     "websocket":
-        AllowedHostsOriginValidator(
+        # AllowedHostsOriginValidator(
             CookieMiddleware(
                 AuthMiddlewareStack(URLRouter(websocket_urlpatterns))
             )
-        )
+        # )
 })

@@ -1,4 +1,4 @@
 -r base.txt
 
-# For allauth openapi page
-PyYAML==6.0.2
+PyYAML==6.0.2                       # allauth api page
+datamodel-code-generator==0.31.1    # allows to generate pydantic models from json files

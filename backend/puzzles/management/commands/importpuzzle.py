@@ -1,7 +1,6 @@
 import hashlib
 import json
 import os.path
-from typing import Dict
 
 from django.core.management.base import BaseCommand
 
@@ -55,10 +54,6 @@ class Command(BaseCommand):
         # hash all the puzzles
         puzzles = {}
         for puzzle in data:
-            # remove unnecessary keys
-            puzzle.pop("idx", None)
-            puzzle.pop("difficulty", None)
-
             # hash puzzle
             serialized = json.dumps(puzzle, sort_keys=True, separators=(",", ":"))
             puzzle_hash = hashlib.sha256(serialized.encode("utf-8")).hexdigest()

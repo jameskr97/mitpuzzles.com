@@ -3,7 +3,7 @@ from .models import Visitor
 
 @admin.register(Visitor)
 class VisitorAdmin(admin.ModelAdmin):
-    list_display = ["id", "created_at", "last_seen", "user_agent"]
+    list_display = ["id", "generated_username", "created_at", "last_seen", "user_agent"]
     readonly_fields = ["created_at", "last_seen", "user_agent"]
     search_fields = ["user_agent"]
 

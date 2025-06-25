@@ -1,9 +1,9 @@
-from .active_puzzle_session import ActivePuzzleSession
 from .game_recording import GameRecording
 from .puzzle import Puzzle
+from .puzzle_attempt import FreeplayPuzzleAttempt
 
 __all__ = [
-    "ActivePuzzleSession",
     "GameRecording",
     "Puzzle",
+    "FreeplayPuzzleAttempt",
 ]

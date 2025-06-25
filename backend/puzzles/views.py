@@ -1,9 +1,12 @@
-from django.db.models import Q
+from django.db.models import Q, Min
 from rest_framework import status
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from puzzles import models, serializers
+from puzzles.models.leaderboard import PuzzleAttempt
+from puzzles.serializers import LeaderboardEntrySerializer
 
 
 def get_puzzle_serializer(puzzle_type):
@@ -96,3 +99,55 @@ class PuzzleClassSuffixList(APIView):
         )
         unique = sorted(set(qs))
         return Response(unique)
+
+
+@api_view(["GET"])
+def leaderboard_view(request):
+    puzzle_type = request.GET.get("puzzle_type")
+    puzzle_size = request.GET.get("puzzle_size")
+    puzzle_difficulty = request.GET.get("puzzle_difficulty")
+    limit = min(int(request.GET.get("limit", 10)), 100)
+
+    if not all([puzzle_type, puzzle_size, puzzle_difficulty]):
+        return Response({"error": "Missing required parameters"}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Get the best attempt per visitor (minimum duration)
+    # First, get all visitors' best attempts by using a subquery
+    visitor_best_attempts = (
+        PuzzleAttempt.objects.filter(
+            puzzle__puzzle_type=puzzle_type,
+            puzzle__puzzle_size=puzzle_size,
+            puzzle__puzzle_difficulty=puzzle_difficulty,
+            completed_at__isnull=False,
+            puzzle_duration__isnull=False,
+        )
+        .values('visitor')
+        .annotate(min_duration=Min('puzzle_duration'))
+    )
+
+    # Then get the actual attempt records that match these best times
+    leaderboard_data = []
+    for best in visitor_best_attempts:
+        best_attempt = PuzzleAttempt.objects.filter(
+            visitor_id=best['visitor'],
+            puzzle__puzzle_type=puzzle_type,
+            puzzle__puzzle_size=puzzle_size,
+            puzzle__puzzle_difficulty=puzzle_difficulty,
+            puzzle_duration=best['min_duration'],
+            completed_at__isnull=False,
+        ).select_related("visitor").order_by("completed_at").first()
+
+        if best_attempt:
+            leaderboard_data.append(best_attempt)
+
+    # Sort the results by duration and apply limit
+    leaderboard_data.sort(key=lambda x: x.puzzle_duration)
+    leaderboard_data = leaderboard_data[:limit]
+
+    # Add rankings
+    for rank, attempt in enumerate(leaderboard_data, 1):
+        attempt.rank = rank
+
+    serializer = LeaderboardEntrySerializer(leaderboard_data, many=True)
+
+    return Response({"leaderboard": serializer.data, "count": len(serializer.data)})

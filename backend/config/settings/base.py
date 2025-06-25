@@ -76,6 +76,8 @@ INSTALLED_APPS = [
     "accounts",
     "tracking",
     "puzzles",
+    "experiments",
+    # "protocol"
 ]
 
 MIDDLEWARE = [
@@ -140,6 +142,37 @@ CHANNEL_LAYERS = {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
             "hosts": [REDIS_DB],
+        },
+    },
+}
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "[{levelname}] {asctime} {name} - {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
+        "channels": {
+            "handlers": ["console"],
+            "level": "DEBUG",  # most important line
+        },
+        "daphne": {
+            "handlers": ["console"],
+            "level": "WARNING",  # helps if you're using Daphne directly
         },
     },
 }

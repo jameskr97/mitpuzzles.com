@@ -24,7 +24,7 @@ from django.urls import include, path, re_path
 from django.views.generic.base import RedirectView
 
 from core import views
-from puzzles.engine.consumer import PuzzleConsumer
+from puzzles.socket.transport.consumer import TransportConsumer
 from tracking import views as tracking_views
 
 
@@ -57,15 +57,17 @@ urlpatterns = [
     path("api/puzzle/", include("puzzles.urls")),
     path("api/feedback", views.FeedbackAPIView.as_view()),
     path("api/visitor", tracking_views.visitor_init),
-    # redirect static files (*.css, *.js, *.jpg etc.) served on root ("/") to the static directory ("/static/")
-    re_path(
-        r"^(?!/?static/)(?P<path>.*\..*)$",
-        RedirectView.as_view(url="/static/%(path)s", permanent=False),
-    ),
+    path('api/visitor/username', tracking_views.change_visitor_username),
+    path("api/experiment/", include("experiments.urls")),
+    # re_path(
+    #     r"^(?!/?static/)(?P<path>.*\..*)$",
+    #     RedirectView.as_view(url="/static/%(path)s", permanent=False),
+    # ),
     # All other paths are served the root html file (frontend redirect)
     re_path(r"^.*$", serve_root),
 ]
 
 websocket_urlpatterns = [
-    re_path(r'ws/puzzle/$', PuzzleConsumer.as_asgi()),
+    re_path(f'ws/puzzlet/$', TransportConsumer.as_asgi()),
 ]
+
