@@ -19,6 +19,15 @@ import {
   BiCircle,
   BiCircleFill,
   BiRecordCircleFill,
+  BiArrowRightSquareFill,
+  BiLayoutSidebarInset,
+  BiMoonStarsFill,
+  BiSunFill,
+  BiChevronDoubleUp,
+  BiCheck,
+  HiPencilAlt,
+  BiInfoCircleFill,
+  MdFeedbackOutlined,
 } from "oh-vue-icons/icons";
 
 addIcons(
@@ -39,4 +48,13 @@ addIcons(
   BiCircle,
   BiCircleFill,
   BiRecordCircleFill,
+  BiArrowRightSquareFill,
+  BiLayoutSidebarInset,
+  BiMoonStarsFill,
+  BiSunFill,
+  BiChevronDoubleUp,
+  BiCheck,
+  HiPencilAlt,
+  BiInfoCircleFill,
+  MdFeedbackOutlined,
 );

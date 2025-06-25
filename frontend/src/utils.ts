@@ -1,9 +1,39 @@
 import { format_game_stopwatch } from "@/services/util.ts";
 
+export function create_game_entry(
+  icon: string,
+  sidebar_title: string,
+  key: string,
+  scale_max: number = 10,
+  defaultBehaviors: Array<any> = [],
+): any {
+  return {
+    key,
+    icon,
+    name: sidebar_title,
+    component: defineAsyncComponent({ loader: () => import(`@/features/games/${key}/${key}.puzzle.vue`) }),
+    instructions: defineAsyncComponent({ loader: () => import(`@/features/games/${key}/instructions.vue`) }),
+    default: defaultPuzzles[key],
+    defaultBehaviors,
+    scale_max,
+  };
+}
+
+export function create_dev_tool(key: string, icon: string, display_name: string, requires_admin: boolean = false) {
+  return {
+    key,
+    icon,
+    name: display_name,
+    component: import(`@/views/dev/${key}.vue`),
+    requires_admin,
+  };
+}
+
+
 /** Simplifies resetting all of localStorage through a version variable. */
 export class StorageVersionManager {
   // Change this to current date when updating the storage version
-  private static readonly VERSION = "2025-05-27";
+  private static readonly VERSION = "2025-06-17";
   static clearOldStorage() {
     const saved = localStorage.getItem("mitlogic.storageVersion");
     if (saved !== StorageVersionManager.VERSION) {
@@ -18,13 +48,15 @@ export class StorageVersionManager {
   }
 }
 
-import { computed, type ComputedRef, ref, type Ref } from "vue";
+import { computed, type ComputedRef, defineAsyncComponent, ref, type Ref } from "vue";
 import logger from "@/services/logger.ts";
 import { useLocalStorage } from "@vueuse/core";
 import type { GameViolation } from "@/services/states.ts";
+import { defaultPuzzles } from "@/services/puzzle.defaults.ts";
 
 export class PuzzleTimer {
-  private timer_id: ReturnType<typeof setInterval> | null = null;
+  private timer_id: number | null = null;
+  private start_time: number | null = null;
 
   public elapsed_ms: Ref<number> = ref(0);
   public time_completed: Ref<boolean> = ref(false);
@@ -42,20 +74,26 @@ export class PuzzleTimer {
   }
 
   public start() {
-    if (this.timer_id != null) return;
-    if (this.time_completed.value) return;
+    if (this.timer_id != null || this.time_completed.value) return;
     logger.debug(`${this.puzzle_name} timer started`);
 
-    this.timer_id = setInterval(() => {
-      this.elapsed_ms.value += 1000;
-    }, 1000);
+    this.start_time = performance.now() - this.elapsed_ms.value;
+    const tick = () => {
+      this.elapsed_ms.value = performance.now() - this.start_time!;
+      this.timer_id = requestAnimationFrame(tick);
+    };
+    this.timer_id = requestAnimationFrame(tick);
   }
 
   public stop() {
     if (this.timer_id == null) return;
     logger.debug(`${this.puzzle_name} timer stopped`);
-    clearInterval(this.timer_id);
+    cancelAnimationFrame(this.timer_id);
     this.timer_id = null;
+  }
+
+  public get_duration_ms() {
+    return this.elapsed_ms.value;
   }
 
   public complete() {
@@ -81,4 +119,41 @@ export function check_violation_rule(violations: GameViolation[], row: number, c
     (violation) =>
       rule.includes(violation.rule_type) && violation.locations.some((loc) => loc.row === row && loc.col === col),
   );
+}
+
+
+export function shuffle(array: any[]) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
+export function detectModeFromPath(): "freeplay" | "prolific" {
+  return /^\/(experiment|devtools\/test-experiment)/.test(
+           window.location.pathname)
+    ? "prolific"
+    : "freeplay";
+}
+
+export function getPuzzleDisplayName(parts?: string[]): string {
+  if (!parts) return "undefined";
+  if (parts.length < 2) return parts[0];
+  const name = parts
+    .slice(1)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+  return `${parts[0]} ${name}`;
+}
+
+
+export type MaybeOptions<T> = boolean | Partial<T>;
+export function normalizeOptions<T extends object>(
+  value: boolean | Partial<T> | undefined,
+  defaults: T
+): T | null {
+  if (value === true) return defaults;
+  if (typeof value === "object") return { ...defaults, ...value };
+  return null;
 }

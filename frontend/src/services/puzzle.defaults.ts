@@ -1,4 +1,4 @@
-import type { GameKey } from "@/main";
+import type { GameKey } from "@/constants";
 
 export const defaultPuzzles: Record<GameKey, any> = {
   minesweeper: {

@@ -3,9 +3,10 @@ import { defineStore } from "pinia";
 import { computed } from "vue";
 import { useRoute } from "vue-router";
 import { useLocalStorage } from "@vueuse/core";
+import { ACTIVE_GAMES } from "@/constants.ts";
 
 /**
- * Each game will have it's own scale value, and we store that in local storage,
+ * Each game will have its own scale value, and we store that in local storage,
  * and in a dictionary.
  */
 const useScaleStore = defineStore("mitlogic.scale", () => {
@@ -16,9 +17,9 @@ const useScaleStore = defineStore("mitlogic.scale", () => {
 
   /** returns a computed<number> that you can read *and* write */
   function scaleFor(type: string, variant = "default") {
-    return computed<number>({
-      get: () => scales.value[key(type, variant)] ?? 40,
-      set: (v) => (scales.value[key(type, variant)] = v),
+    return computed<number[]>({
+      get: () => [scales.value[key(type, variant)] ?? [40]],
+      set: (v:number[]) => (scales.value[key(type, variant)] = v[0]),
     });
   }
   return { scaleFor };
@@ -31,9 +32,10 @@ export function getGameScale(): any {
 
   // Get the game type from the route meta
   const game_type = route.meta.game_type as string;
+  const game_entry = ACTIVE_GAMES[game_type];
 
   // Create user-accessible scale properties
   const scale = store.scaleFor(game_type);
-  const scale_remapped = computed(() => remap([0, 100], [1, 10], scale.value));
+  const scale_remapped = computed(() => remap([0, 100], [1, game_entry.scale_max], scale.value[0]));
   return { scale, scale_remapped };
 }

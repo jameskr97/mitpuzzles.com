@@ -3,6 +3,10 @@ import type { AnyPuzzleState, MutablePuzzleState } from "@/services/states.ts";
 import { emit, on } from "@/services/eventbus.ts";
 import type { WebSocketMessage } from "@/services/eventbus.modules/websocket.ts";
 import type { Cell } from "@/features/games.components/board.interaction.ts";
+import { useActivePuzzleStore } from "@/store/useActivePuzzleStore.ts";
+import { useCurrentExperiment } from "@/store/useCurrentExperiment.ts";
+import { computed } from "vue";
+import { getPuzzleSession, useCurrentPuzzle } from "@/composables/useCurrentPuzzle.ts";
 
 function mapButtonToName(button: number): "left" | "right" | "middle" | "unknown" {
   // prettier-ignore
@@ -27,10 +31,13 @@ export interface GameModuleInterface {
   clear_puzzle_state(): void;
 
   clear_solved_state(): void;
+
   get_solved_state(): boolean;
 
   toggle_tutorial(enabled: boolean): void;
+
   request_new_puzzle(puzzle_size: string | undefined, puzzle_difficulty: string | undefined): void;
+
   request_submit(): void;
 
   // Local reactive state queries
@@ -47,6 +54,8 @@ export const gameModule = {
     ////////////////////////////////////////////////////////////////////////
     // State Management
     const store = useActivePuzzleStore();
+    const experimentStore = useCurrentExperiment();
+    const isProlific = computed(() => experimentStore.prolific_session_id !== null);
     const session_lookup = useLocalStorage<Record<string, string>>("mitlogic.puzzles:active_session_ids", {});
     let activePuzzleType: string | null = null;
 
@@ -58,7 +67,7 @@ export const gameModule = {
     };
 
     function send_command<T>(command: string, data: T, session_id?: string) {
-      const message: WebSocketMessage<T> = { type: `cmd:${command}`, data };
+      const message: WebSocketMessage<T> = { type: command, data };
       if (session_id) message.session_id = session_id;
       emit("socket:send", message);
     }
@@ -92,11 +101,16 @@ export const gameModule = {
 
     return {
       resumePuzzle(puzzle_type: string) {
+        if (isProlific.value) {
+          send_command("prolific:resume", {});
+          return;
+        }
+
         const session_id = store.getSessionID(puzzle_type);
         if (session_id) {
-          send_command("resume", { puzzle_type }, session_id); // Try to resume existing session
+          send_command("cmd:resume", { puzzle_type }, session_id); // Try to resume existing session
         } else {
-          send_command("create", { puzzle_type }); // Create new session if none exists
+          send_command("cmd:create", { puzzle_type }); // Create new session if none exists
         }
       },
       getPuzzleState(session_id: string): MutablePuzzleState | undefined {
@@ -114,7 +128,7 @@ export const gameModule = {
       clear_puzzle_state() {
         const sid = getActiveSessionID();
         if (!sid) return;
-        send_command("reset", {}, sid);
+        send_command("cmd:reset", {}, sid);
       },
       get_solved_state(): boolean {
         const sid = getActiveSessionID();
@@ -134,13 +148,13 @@ export const gameModule = {
           payload.position.state = state_override;
         }
 
-        send_command("action", payload, sid);
+        send_command("cmd:action", payload, sid);
       },
 
       toggle_tutorial(enabled: boolean) {
         const sid = getActiveSessionID();
         if (!sid) return;
-        send_command("toggle_tutorial", { enabled }, sid);
+        send_command("cmd:toggle_tutorial", { enabled }, sid);
       },
 
       request_new_puzzle(puzzle_size: string | undefined, puzzle_difficulty: string | undefined) {
@@ -152,12 +166,14 @@ export const gameModule = {
           puzzle_difficulty: puzzle_difficulty,
         };
         store.clearSolvedState(sid);
-        send_command("create", payload);
+        send_command("cmd:create", payload);
       },
       request_submit() {
         const sid = getActiveSessionID();
         if (!sid) return;
-        send_command("submit", {}, sid);
+        if (!activePuzzleType) return;
+        const currentPuzzle = getPuzzleSession(activePuzzleType);
+        send_command("cmd:submit", {duration: currentPuzzle?.timer.get_duration_ms()}, sid);
       },
 
       _cleanup() {

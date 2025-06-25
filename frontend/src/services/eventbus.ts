@@ -12,6 +12,16 @@ export interface ActionPosition {
   key?: string;
 }
 
+export interface ProlificAuthSuccess {
+  type: "auth:prolific:success";
+  mode: "prolific";
+  experiment_id: string;
+  prolific_session_id: string;
+  current_step: string;
+  completed: boolean;
+  authenticated: boolean;
+}
+
 export const eventBus = mitt<AppEvents>();
 export type AppEvents = {
   // === SOCKET EVENTS ===
@@ -26,12 +36,17 @@ export type AppEvents = {
   "socket:send": any;
 
   // === GAME EVENTS ===
+  "auth:prolific:success": ProlificAuthSuccess;
+  "game:auth:freeplay": void;
+
+  // === GAME EVENTS ===
+  "game:auth": string;
   "game:set_active_puzzle": string;
   "game:state": WebSocketMessage<AnyPuzzleState>;
   "game:solved": { sessionId: string; solved: boolean };
   "game:created": { sessionId: string; puzzleType: string };
   "game:reset": { sessionId: string };
-  "game:submit_result": boolean;
+  "game:submit_result": WebSocketMessage<boolean>;
 
   // === COMMANDS ===
   "cmd:create": { puzzle_type: string; puzzle_size?: string; puzzle_difficulty?: string };

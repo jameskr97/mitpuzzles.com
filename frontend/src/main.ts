@@ -1,5 +1,5 @@
 // Vue core
-import { createApp, defineAsyncComponent, h } from "vue";
+import { createApp, h } from "vue";
 import { createRouter, createWebHistory, type RouterOptions } from "vue-router";
 // Pinia store
 import { createPinia } from "pinia";
@@ -9,77 +9,30 @@ import { useVisitorStore } from "@/store/visitor.ts";
 import App from "./App.vue";
 import MarkdownPage from "@/views/MarkdownPage.vue";
 import { OhVueIcon } from "@/icons";
-import { defaultPuzzles } from "@/services/puzzle.defaults.ts";
 // Markdown content
 import mdAbout from "./views/aboutus.md?raw";
 // Utility
-import { StorageVersionManager } from "@/utils.ts";
+import { detectModeFromPath, StorageVersionManager } from "@/utils.ts";
 // Style
 import "./style.css";
 // PostHog
 import posthog from "posthog-js";
-import { withSudokuBehaviors } from "@/features/games/sudoku/useSudokuCellHighlighter.ts";
-import { withSudokuFocusBehavior } from "@/features/games/sudoku/useSudokuFocusHighlighter.ts";
-import { ModuleManager } from "@/services/eventbus.ts";
-import { websocketModule } from "@/services/eventbus.modules/websocket.ts";
-import { debugModule } from "@/services/eventbus.modules/debug.ts";
-import { gameModule } from "@/services/eventbus.modules/game.ts";
+// Socket
+import { ACTIVE_GAMES, DEV_TOOLS } from "@/constants.ts";
+import { useAppConfig } from "@/store/app.ts";
+import logger from "@/services/logger.ts";
+import { NetDriver } from "@/services/transport/netdriver.ts";
+import { WebsocketGameService } from "@/services/game/WebsocketGameService.ts";
+import { provideGameService } from "@/services/game/useGameService.ts";
+import { usePuzzleMetadataStore } from "@/store/puzzle.ts";
+
+if (import.meta.hot) {
+  import.meta.hot.accept(["./constants.ts"], () => {
+    import.meta.hot!.invalidate();
+  });
+}
 
 StorageVersionManager.clearOldStorage(); // clear old storage if needed
-
-/** Puzzle Components */
-function create_game_entry(sidebar_title: string, key: string, defaultBehaviors: Array<any> = []) {
-  return {
-    key,
-    name: sidebar_title,
-    component: defineAsyncComponent({ loader: () => import(`@/features/games/${key}/${key}.puzzle.vue`) }),
-    instructions: async () => {
-      try {
-        return await import(`@/features/games/${key}/instructions.md?raw`);
-      } catch (e) {
-        if (import.meta.env.DEV) {
-          return { default: "# No instructions yet\n_Add instructions.md to this game folder._" };
-        } else {
-          throw e;
-        }
-      }
-    },
-    default: defaultPuzzles[key],
-    defaultBehaviors,
-  };
-}
-
-/**
- * This is the global list of games that are available in the app.
- * The "key" is used to identify the game in the URL, in the local storage, and anywhere else
- * that we need to reference the game's data. Make sure there are no duplicates!
- */
-/* prettier-ignore */
-export const ACTIVE_GAMES: Record<string, any> = {
-  minesweeper:  create_game_entry("💣 Minesweeper", "minesweeper"),
-  sudoku:       create_game_entry("🧩 Sudoku", "sudoku", [withSudokuBehaviors, withSudokuFocusBehavior]),
-  tents:        create_game_entry("⛺ Tents", "tents"),
-  kakurasu:     create_game_entry("⬛ Kakurasu", "kakurasu"),
-  lightup:      create_game_entry("💡 Light Up", "lightup"),
-  // battleship:   create_game_entry("🚢 Battleship", "battleship"),
-  // nonograms:    create_game_entry("🖼️ Nonograms", "nonograms"),
-}
-export type GameKey = keyof typeof ACTIVE_GAMES;
-
-function create_dev_tool(key: string, display_name: string, requires_admin: boolean = false) {
-  return {
-    key,
-    name: display_name,
-    component: import(`@/views/dev/${key}.vue`),
-    requires_admin,
-  };
-}
-export const DEV_TOOLS: Record<string, any> = {
-  "test-board": create_dev_tool("test-board", "🎯 Test Board"),
-  "test-websocket": create_dev_tool("test-websocket", "🧦 Test Websockets"),
-  // "test-monitor": create_dev_tool("test-monitor", "🖥️ Test Monitor", true),
-  // "test-experiment": create_dev_tool("test-experiment", "📝 Text Experiment"),
-};
 
 const route = {
   view: (path: string, name: string, view: string) => ({
@@ -105,6 +58,11 @@ const route = {
     name: `dev-${key}`,
     component: () => import(`@/views/dev/${key}.vue`),
   }),
+  experiment: (key: string) => ({
+    path: `/experiment/${key}`,
+    name: `experiment-${key}`,
+    component: () => import(`@/features/prolific.experiments/${key}/ExperimentMain.vue`),
+  }),
 };
 
 /** This is the global list of routes that are available in the app. */
@@ -113,6 +71,7 @@ const routerConfig: RouterOptions = {
   routes: [
     route.view("", "Home", "Home"),
     route.markdown("/about-us", "about-us", mdAbout),
+    route.experiment("2025.05.29.sudoku"),
     ...Object.keys(ACTIVE_GAMES).map(route.game),
     ...Object.keys(DEV_TOOLS).map(route.dev),
     { path: "/:pathMatch(.*)*", name: "404", component: () => import("./views/404.vue") },
@@ -121,24 +80,22 @@ const routerConfig: RouterOptions = {
 
 /** app initialization */
 (async () => {
+  logger.debug("Bootstrapping app...");
   const app = createApp(App).use(createPinia()).use(createRouter(routerConfig)).component("v-icon", OhVueIcon);
   // attempt to get both: the backend should know.
   // if the user is logged in, the visitor ID is not distributed.
   // if there is no user, the visitor ID is used to identify the user
   await useAuthStore().updateStore();
   await useVisitorStore().init();
+  await usePuzzleMetadataStore().refreshAllVariantsOnce();
 
-  // init event bus modules
-  const event_modules = new ModuleManager();
-  // event_modules.register(debugModule);
-  event_modules.register(websocketModule);
-  event_modules.register(gameModule);
-  app.provide("event_modules", event_modules);
+  // set app mode (freeplay, prolific)
+  const cfg = useAppConfig();
+  cfg.setMode(detectModeFromPath());
 
-  // const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-  // const url = `${protocol}://${window.location.host}/ws/puzzle/`;
-  // const socket = new AppSocket(url, import.meta.env.DEV)
-  // app.provide("socket", socket);
+  // app socket
+  const gs = provideGameService();
+  app.provide("GameService", gs);
 
   // posthog
   const posthogApiKey = import.meta.env.VITE_POSTHOG_API_KEY;
