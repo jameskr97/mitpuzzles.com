@@ -13,6 +13,7 @@ export default defineConfig({
     },
   },
   server: {
+    allowedHosts: ["dev.jameskr.dev"],
     port: 3000,
     proxy: {
       "/ws": { target: "http://localhost:8000", ws: true },
