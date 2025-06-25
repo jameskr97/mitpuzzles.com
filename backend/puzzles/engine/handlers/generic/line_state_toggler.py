@@ -11,7 +11,7 @@ class LineStateToggler(InputHandler):
         PuzzleOps.change_line_state(
             is_row=True,
             index=row,
-            board=engine.get_board_state(),
+            board=engine.board_state,
             rows=engine.rows,
             cols=engine.cols,
             from_state=self.from_state,
@@ -23,7 +23,7 @@ class LineStateToggler(InputHandler):
         PuzzleOps.change_line_state(
             is_row=False,
             index=col,
-            board=engine.get_board_state(),
+            board=engine.board_state,
             rows=engine.rows,
             cols=engine.cols,
             from_state=self.from_state,

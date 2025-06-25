@@ -11,19 +11,19 @@ def validate_line_sums(axis: str, target_value: int, targets_key: str, weighted:
 
     :param axis: Either "row" or "col" to specify which axis to validate
     :param target_value: The cell value to count/sum (e.g., TentCellStates.Tent)
-    :param targets_key: Key in puzzle_data containing the target values (e.g., "row_tent_counts")
+    :param targets_key: Key in puzzle_definition.meta containing the target values (e.g., "row_tent_counts")
     :param weighted: If True, multiply each target_value by its 1-based position in the line
     :return: A rule function that validates line sum/count constraints
     """
 
     def rule(engine: PuzzleEngineBase) -> Optional[ValidationResult]:
-        state = engine.get_board_state()
+        state = engine.board_state
         rows, cols = engine.rows, engine.cols
 
         violating_lines = []
 
         if axis == "row":
-            targets = engine.puzzle_data[targets_key]
+            targets = engine.puzzle_definition.meta[targets_key]
             for r in range(rows):
                 if weighted:
                     total = sum((c + 1) for c in range(cols) if state[r * cols + c] == target_value)
@@ -34,7 +34,7 @@ def validate_line_sums(axis: str, target_value: int, targets_key: str, weighted:
                     violating_lines.append({"row": r, "col": -1})
 
         elif axis == "col":
-            targets = engine.puzzle_data[targets_key]
+            targets = engine.puzzle_definition.meta[targets_key]
             for c in range(cols):
                 if weighted:
                     total = sum((r + 1) for r in range(rows) if state[r * cols + c] == target_value)
@@ -60,13 +60,13 @@ def validate_line_sums_exceeded(
 
     :param axis: Either "row" or "col" to specify which axis to validate
     :param positive_value: The cell value that contributes to the sum (e.g., TentCellStates.Tent)
-    :param targets_key: Key in puzzle_data containing the target values
+    :param targets_key: Key in puzzle_definition.meta containing the target values
     :param weighted: If True, multiply each positive_value by its 1-based position in the line
     :return: A rule function that validates line sum exceeded constraints
     """
 
     def rule(engine: PuzzleEngineBase) -> Optional[ValidationResult]:
-        state = engine.get_board_state()
+        state = engine.board_state
         rows, cols = engine.rows, engine.cols
 
         # Helper function to calculate sum for a line
@@ -76,7 +76,7 @@ def validate_line_sums_exceeded(
         violating_lines = []
 
         if axis == "row":
-            targets = engine.puzzle_data[targets_key]
+            targets = engine.puzzle_definition.meta[targets_key]
             for r in range(rows):
                 row_cells = [state[r * cols + c] for c in range(cols)]
                 positive_total = calculate_line_sum(row_cells, lambda cell: cell == positive_value)
@@ -85,7 +85,7 @@ def validate_line_sums_exceeded(
                     violating_lines.append({"row": r, "col": -1})
 
         elif axis == "col":
-            targets = engine.puzzle_data[targets_key]
+            targets = engine.puzzle_definition.meta[targets_key]
             for c in range(cols):
                 col_cells = [state[r * cols + c] for r in range(rows)]
                 positive_total = calculate_line_sum(col_cells, lambda cell: cell == positive_value)
@@ -110,7 +110,7 @@ def validate_line_all_negative(
 
     :param axis: Either "row" or "col" to specify which axis to validate
     :param negative_value: The cell value that marks "not positive" (e.g., TentCellStates.Green)
-    :param targets_key: Key in puzzle_data containing the target values
+    :param targets_key: Key in puzzle_definition.meta containing the target values
     :param ignored_values: Optional list of cell values to ignore in the calculation (e.g., [TentCellStates.Tree])
     :return: A rule function that validates all-negative line constraints
     """
@@ -118,12 +118,12 @@ def validate_line_all_negative(
         ignored_values = []
 
     def rule(engine: PuzzleEngineBase) -> Optional[ValidationResult]:
-        state = engine.get_board_state()
+        state = engine.board_state
         rows, cols = engine.rows, engine.cols
         violating_lines = []
 
         if axis == "row":
-            targets = engine.puzzle_data[targets_key]
+            targets = engine.puzzle_definition.meta[targets_key]
             for r in range(rows):
                 row_cells = [state[r * cols + c] for c in range(cols)]
 
@@ -137,7 +137,7 @@ def validate_line_all_negative(
                         violating_lines.append({"row": r, "col": -1})
 
         elif axis == "col":
-            targets = engine.puzzle_data[targets_key]
+            targets = engine.puzzle_definition.meta[targets_key]
             for c in range(cols):
                 col_cells = [state[r * cols + c] for r in range(rows)]
 

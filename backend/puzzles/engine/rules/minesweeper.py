@@ -18,7 +18,7 @@ def numbered_cell_flag_validator() -> RuleDefinition:
     from puzzles.engine.games.minesweeper import CellStatesMinesweeper
 
     def rule(engine: PuzzleEngineBase) -> Optional[ValidationResult]:
-        state = engine.get_board_state()
+        state = engine.board_state
         rows, cols = engine.rows, engine.cols
 
         # All 8 directions (including diagonals) for minesweeper

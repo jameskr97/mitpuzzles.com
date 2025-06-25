@@ -1,6 +1,7 @@
 from enum import IntEnum
 from typing import TYPE_CHECKING
 
+from puzzles.abstract import PuzzleDefinition
 from puzzles.engine.games.base import PuzzleEngineBase, State
 from puzzles.engine.handlers.generic.state_cycling import StateCyclingInputHandler
 from puzzles.engine.handlers.generic.line_state_toggler import LineStateToggler
@@ -18,9 +19,10 @@ class KakurasuCellStates(IntEnum):
 
 
 class KakurasuEngine(PuzzleEngineBase):
-    def __init__(self, puzzle_session: "ActivePuzzleSession") -> None:
+    def __init__(self, definition: PuzzleDefinition, board_state: State) -> None:
         super().__init__(
-            puzzle_session,
+            definition,
+            board_state,
             input_handler=[
                 StateCyclingInputHandler(KakurasuCellStates),
                 LineStateToggler(KakurasuCellStates.Empty, KakurasuCellStates.Crossed),
@@ -28,25 +30,14 @@ class KakurasuEngine(PuzzleEngineBase):
             validation_constraints=[
                 validate_line_sums("row", KakurasuCellStates.Filled, "row_sums", True),
                 validate_line_sums("col", KakurasuCellStates.Filled, "col_sums", True),
-                validate_line_sums_exceeded("row", KakurasuCellStates.Filled, "row_sums"),
-                validate_line_sums_exceeded("col", KakurasuCellStates.Filled, "col_sums"),
                 validate_line_all_negative("row", KakurasuCellStates.Crossed, "row_sums"),
                 validate_line_all_negative("col", KakurasuCellStates.Crossed, "col_sums"),
             ],
+            extra_gamedata_fields={
+                "row_sums": "row_sums",
+                "col_sums": "col_sums",
+            }
         )
-
-    def serialize_gamedata(self) -> dict:
-        """
-        Serialize the game data to a dictionary.
-        This is used to send the game data to the client.
-        """
-        return {
-            "rows": self.rows,
-            "cols": self.cols,
-            "row_sums": self.puzzle_data["row_sums"],
-            "col_sums": self.puzzle_data["col_sums"],
-            "board": self.puzzle_session.board_state,
-        }
 
     def can_modify_cell(self, _state: State, row: int, col: int) -> bool:
         return True
@@ -62,7 +53,7 @@ class KakurasuEngine(PuzzleEngineBase):
         Returns:
             bool: True if the input is valid, False otherwise
         """
-        board = "".join(str(cell) for cell in self.puzzle_session.board_state)
+        board = "".join(str(cell) for cell in self.board_state)
         solution = "".join(str(cell) for cell in self.get_solution_board_string())
 
         if strict:

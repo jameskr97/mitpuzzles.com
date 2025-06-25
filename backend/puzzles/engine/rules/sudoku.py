@@ -12,7 +12,7 @@ def no_duplicate_numbers_in_rows() -> RuleDefinition:
     """
 
     def rule(engine: PuzzleEngineBase) -> Optional[ValidationResult]:
-        state = engine.get_board_state()
+        state = engine.board_state
         rows, cols = engine.rows, engine.cols
 
         violating_cells = []
@@ -49,7 +49,7 @@ def no_duplicate_numbers_in_cols() -> RuleDefinition:
     """
 
     def rule(engine: PuzzleEngineBase) -> Optional[ValidationResult]:
-        state = engine.get_board_state()
+        state = engine.board_state
         rows, cols = engine.rows, engine.cols
 
         violating_cells = []
@@ -88,7 +88,7 @@ def no_duplicate_numbers_in_boxes() -> RuleDefinition:
     """
 
     def rule(engine: PuzzleEngineBase) -> Optional[ValidationResult]:
-        state = engine.get_board_state()
+        state = engine.board_state
         rows, cols = engine.rows, engine.cols
 
         # Calculate box size as square root of board side length

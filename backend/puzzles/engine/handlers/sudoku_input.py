@@ -14,5 +14,5 @@ class SudokuInputHandler(InputHandler):
         if state_override > engine.cols:
             return False
 
-        engine.puzzle_session.board_state[row * engine.cols + col] = state_override
+        engine.board_state[row * engine.cols + col] = state_override
         return True

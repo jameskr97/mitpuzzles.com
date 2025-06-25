@@ -16,7 +16,7 @@ def no_adjacent_tents() -> RuleDefinition:
     def rule(engine: PuzzleEngineBase) -> Optional[ValidationResult]:
         from puzzles.engine.games.tents import TentCellStates
 
-        state = engine.get_board_state()
+        state = engine.board_state
         rows, cols = engine.rows, engine.cols
         directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
 
@@ -55,20 +55,20 @@ def validate_tent_counts(axis: str) -> RuleDefinition:
     def rule(engine: PuzzleEngineBase) -> Optional[ValidationResult]:
         from puzzles.engine.games.tents import TentCellStates
 
-        state = engine.get_board_state()
+        state = engine.board_state
         rows, cols = engine.rows, engine.cols
 
         violating_lines = []
 
         if axis == "row":
-            targets = engine.puzzle_data["row_tent_counts"]
+            targets = engine.puzzle_definition.meta["row_tent_counts"]
             for r in range(rows):
                 tent_count = sum(1 for c in range(cols) if state[r * cols + c] == TentCellStates.Tent)
                 if tent_count > targets[r]:
                     violating_lines.append({"row": r, "col": -1})
 
         elif axis == "col":
-            targets = engine.puzzle_data["col_tent_counts"]
+            targets = engine.puzzle_definition.meta["col_tent_counts"]
             for c in range(cols):
                 tent_count = sum(1 for r in range(rows) if state[r * cols + c] == TentCellStates.Tent)
                 if tent_count > targets[c]:
@@ -95,7 +95,7 @@ def validate_trees_have_tent_access() -> RuleDefinition:
     def rule(engine: PuzzleEngineBase) -> Optional[ValidationResult]:
         from puzzles.engine.games.tents import TentCellStates
 
-        state = engine.get_board_state()
+        state = engine.board_state
         rows, cols = engine.rows, engine.cols
 
         # Only 4 cardinal directions for tent-tree adjacency

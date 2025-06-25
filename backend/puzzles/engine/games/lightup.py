@@ -1,6 +1,7 @@
 from enum import IntEnum
 from typing import TYPE_CHECKING
 
+from puzzles.abstract import PuzzleDefinition
 from puzzles.engine.games.base import PuzzleEngineBase, State
 from puzzles.engine.handlers.generic.state_cycling import StateCyclingInputHandler
 from puzzles.engine.rules.lightup import validate_numbered_wall_constraints
@@ -20,10 +21,11 @@ class LightupCellStates(IntEnum):
     Cross = 8
 
 class LightupEngine(PuzzleEngineBase):
-    def __init__(self, puzzle_session: "ActivePuzzleSession") -> None:
+    def __init__(self, definition: PuzzleDefinition, board_state: State) -> None:
         from puzzles.engine.rules.lightup import no_bulbs_lighting_each_other
         super().__init__(
-            puzzle_session,
+            definition,
+            board_state,
             input_handler=StateCyclingInputHandler([
                 LightupCellStates.Empty,
                 LightupCellStates.Bulb,
@@ -39,7 +41,7 @@ class LightupEngine(PuzzleEngineBase):
         """
         def get_bulb_only_string(board_state: State) -> str:
             return "".join(["1" if int(cell) == LightupCellStates.Bulb else "0" for cell in board_state])
-        user_bulbs = get_bulb_only_string(self.get_board_state())
+        user_bulbs = get_bulb_only_string(self.board_state)
         solution_bulbs = get_bulb_only_string(self.get_solution_board_string())
         return user_bulbs == solution_bulbs
 

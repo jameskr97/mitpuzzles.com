@@ -17,7 +17,7 @@ def no_bulbs_lighting_each_other() -> RuleDefinition:
     def rule(engine: PuzzleEngineBase) -> Optional[ValidationResult]:
         from puzzles.engine.games.lightup import LightupCellStates
 
-        state = engine.get_board_state()
+        state = engine.board_state
         rows, cols = engine.rows, engine.cols
 
         # Wall values from LightupCellStates enum
@@ -95,7 +95,7 @@ def validate_numbered_wall_constraints() -> RuleDefinition:
     def rule(engine: PuzzleEngineBase) -> Optional[ValidationResult]:
         from puzzles.engine.games.lightup import LightupCellStates
 
-        state = engine.get_board_state()
+        state = engine.board_state
         rows, cols = engine.rows, engine.cols
 
         # Only 4 cardinal directions for Light Up wall constraints
