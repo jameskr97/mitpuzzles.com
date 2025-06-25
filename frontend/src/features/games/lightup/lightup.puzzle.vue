@@ -18,10 +18,12 @@ const props = defineProps<{
 
 // Game Specific Logic
 const lit = ref<boolean[]>([]);
+
 function isCellLit(row: number, col: number): boolean {
   const i = row * props.state.cols + col;
   return lit.value[i];
 }
+
 function update_lit_cells(board: number[]) {
   // update lit cells when the board is modified
   // reset lit array to bulb locations (if a bulb is present, being lit is implied)
@@ -62,22 +64,29 @@ props.interact?.addGameBehaviour((_) => ({
   onBoardModified: (board: number[]) => update_lit_cells(board),
 }));
 
-if (!props.interact) {
-  watch(
-    () => props.state.board,
-    (board) => {
-      update_lit_cells(board);
-    },
-  );
-}
+// if (!props.interact) {
+//   watch(
+//     () => props.state.board,
+//     (board) => {
+//       update_lit_cells(board);
+//     },
+//   );
+// }
 
 const bind = props.interact?.getBridge();
 const borderConfig = { outer: { thickness: 1, borderClass: "bg-black" } };
-onMounted(() => update_lit_cells(props.state.board));
+// onMounted(() => update_lit_cells(props.state.board));
 </script>
 
 <template>
-  <BoardContainer :rows="state.rows" :cols="state.cols" :scale="scale" :gap="1" :border-config="borderConfig">
+  <BoardContainer
+    v-if="state"
+    :rows="state.rows"
+    :cols="state.cols"
+    :scale="scale"
+    :gap="1"
+    :border-config="borderConfig"
+  >
     <BoardBorders />
     <BoardInteraction :bind="bind" />
     <BoardBackground class="bg-black" />

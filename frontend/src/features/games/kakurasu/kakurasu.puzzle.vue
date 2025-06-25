@@ -6,6 +6,7 @@ import BoardInteraction from "@/features/games.components/board.interaction.vue"
 import type { PuzzleStateKakurasu } from "@/services/states.ts";
 import { type createPuzzleInteractionBridge } from "@/features/games.composables/setupPuzzleInteractionBridge.ts";
 import { check_violation_rule } from "@/utils.ts";
+import type { usePuzzleController } from "@/composables/usePuzzleController.ts";
 
 const props = defineProps<{
   scale?: number;

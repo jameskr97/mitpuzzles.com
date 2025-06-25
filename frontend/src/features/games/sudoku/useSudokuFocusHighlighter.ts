@@ -46,7 +46,7 @@ export function useSudokuFocusHighlighter(session: Awaited<ReturnType<typeof cre
     },
     getCellClasses(row: number, col: number): string[] {
       const s = session as SudokuSession;
-      const BLUR_CLASS = "blur-[2.5px]";
+      const BLUR_CLASS = "blur-[5px]";
       const classes: string[] = [BLUR_CLASS, "overflow-hidden"];
       if (shouldHoverHighlight(row, col)) classes.push("bg-yellow-50");
       if (shouldShowCell(row, col)) {

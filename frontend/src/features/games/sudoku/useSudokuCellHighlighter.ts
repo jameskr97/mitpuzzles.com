@@ -3,10 +3,10 @@ import type { RenderEvents } from "@/features/games.composables/setupPuzzleInter
 import type { BoardEvents, Cell } from "@/features/games.components/board.interaction.ts";
 import type { PuzzleStateSudoku } from "@/services/states.ts";
 import { check_violation_rule } from "@/utils.ts";
-import type { createPuzzleSession } from "@/composables/useCurrentPuzzle.ts";
 import { isCellMatch } from "@/features/games/sudoku/sudoku.utility.ts";
+import type { usePuzzleController } from "@/composables/usePuzzleController.ts";
 
-export type SudokuSession = Awaited<ReturnType<typeof createPuzzleSession>> & {
+export type SudokuSession = ReturnType<typeof usePuzzleController> & {
   state: { value: PuzzleStateSudoku };
 };
 
@@ -58,7 +58,7 @@ export function useSudokuCellHighlighter(session: SudokuSession) {
 
       // Handle number input
       if (!isNaN(keyAsNumber) && keyAsNumber >= 1 && keyAsNumber <= session.state.value.rows) {
-        session.interact.handle_cell_click(cell, 0, keyAsNumber);
+        session.handleCellClick(cell, 0, keyAsNumber);
         return true;
       }
 
@@ -66,7 +66,7 @@ export function useSudokuCellHighlighter(session: SudokuSession) {
       if (key === "Backspace" || key === "Delete") {
         const index = cell.row * session.state.value.cols + cell.col;
         session.state.value.board[index] = 0;
-        session.interact.handle_cell_click(cell, 0, 0);
+        session.handleCellClick(cell, 0, 0);
         return true;
       }
 
