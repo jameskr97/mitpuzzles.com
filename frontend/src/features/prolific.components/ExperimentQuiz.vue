@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, type PropType } from "vue";
 import type { useExperimentFlow } from "@/features/prolific.composables/useExperimentFlow.ts";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
 
 interface QuizQuestion {
   question: string;
@@ -34,11 +36,11 @@ const check_user_answers = () => {
     <div class="flex flex-col space-y-3">
       <div v-for="(item, index) in questions" :key="`question-${index}`" class="flex items-start">
         <label class="flex items-center gap-2 cursor-pointer">
-          <input type="checkbox" v-model="userAnswers[index]" class="checkbox mt-0.5" />
+          <Checkbox v-model="userAnswers[index]" class=""></Checkbox>
           <span class="leading-relaxed select-none">{{ item.question }}</span>
         </label>
       </div>
-      <button type="button" class="btn btn-lg btn-primary mt-3 mx-auto" @click="check_user_answers">Submit Quiz</button>
+      <Button class=" mt-3 mx-auto" @click="check_user_answers">Submit Quiz</Button>
     </div>
   </div>
 </template>

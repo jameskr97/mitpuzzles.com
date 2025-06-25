@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import SudokuExperiment from "@/features/prolific.experiments/2025.05.29.sudoku/ExperimentMain.vue";
 
-
 </script>
 
 <template>

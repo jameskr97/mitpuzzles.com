@@ -1,4 +1,5 @@
-# Welcome to MITPuzzles.com
+<img src="/assets/logo.png" alt="mitpuzzles.com logo" class="p-3 mx-auto" width="500">
+
 
 This website hosts a number of classic logic puzzles, such as Minesweeper and Sudoku, as well as some lesser-known ones, like Light-Up and Tents — we hope you will enjoy them. The creators of this website are part of a multi-institutional collaboration between researchers at MIT, Harvard, NYU, and the University of Edinburgh interested in understanding how people solve complex problems.
 

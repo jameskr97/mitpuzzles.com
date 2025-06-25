@@ -4,6 +4,8 @@ import MarkdownIt from "markdown-it";
 import type { ExperimentContext } from "@/features/prolific.composables/useExperimentFlow.ts";
 import { markExperimentConsented } from "@/services/app.ts";
 import { useCurrentExperiment } from "@/store/useCurrentExperiment.ts";
+import Container from "@/components/ui/Container.vue";
+import { Button } from "@/components/ui/button";
 
 const experiment = useCurrentExperiment();
 
@@ -26,10 +28,12 @@ const html = computed(() => md.render(props.markdown));
 </script>
 
 <template>
-  <div class="w-full flex-1 flex flex-col">
-    <div class="mx-auto prose flex-1" v-html="html"></div>
-    <button type="button" class="btn btn-lg btn-primary mt-3 mb-6 mx-auto" @click="give_consent">
+  <div class="w-full flex-1 flex flex-col mt-2 mb-10 gap-5">
+    <Container class="max-w-fit mx-auto">
+      <div class="mx-auto prose flex-1" v-html="html"></div>
+    </Container>
+    <Button class="max-w-fit mx-auto text-xl" @click="give_consent">
       I Consent
-    </button>
+    </Button>
   </div>
 </template>

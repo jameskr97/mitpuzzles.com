@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { usePuzzleState } from "../../../../.private/usePuzzleState.ts";
 import { createPuzzleInteractionBridge } from "@/features/games.composables/setupPuzzleInteractionBridge.ts";
 import KakurasuPuzzle from "@/features/games/kakurasu/kakurasu.puzzle.vue";
 import { ref, computed, inject } from "vue";

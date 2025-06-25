@@ -20,12 +20,22 @@ const currentBoardIndex = ref(0);
 const currentBoard = computed(() => props.stimlui[currentBoardIndex.value]);
 
 // Experiment Interaction
-const event_modules = inject<ModuleManager>("event_modules");
-const game_module = event_modules?.getComposable?.<GameModuleInterface>("prolific");
-const session = (await createPuzzleSession(game_module!, "sudoku")) as SudokuSession;
-const bridge = createPuzzleInteractionBridge(session);
-withSudokuBehaviors(session, bridge);
-withSudokuFocusBehavior(session, bridge);
+// const event_modules = inject<ModuleManager>("event_modules");
+// const game_module = event_modules?.getComposable?.<GameModuleInterface>("prolific");
+// const session = (await createPuzzleSession(game_module!, "sudoku")) as SudokuSession;
+// const bridge = createPuzzleInteractionBridge(session);
+// withSudokuBehaviors(session, bridge);
+// withSudokuFocusBehavior(session, bridge);
+
+// load game state + data
+// const puzzle = await useCurrentPuzzle();
+// const puzzle = await usePuzzleController(gt);
+// const bridge = await createPuzzleInteractionBridge(gt);
+// for (const withBehavior of game_entry["defaultBehaviors"]) {
+//   withBehavior(puzzle, bridge);
+// }
+// withSudokuBehaviors(puzzle, bridge);
+// withSudokuFocusBehavior(puzzle, bridge);
 
 const props = defineProps({
   stimlui: { type: Array, required: true },

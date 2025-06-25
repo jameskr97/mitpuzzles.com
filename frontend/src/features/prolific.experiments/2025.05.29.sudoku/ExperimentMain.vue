@@ -85,9 +85,9 @@ on("auth:prolific:success", (payload: ProlificAuthSuccess) => {
       </div>
     </div>
   </div>
-  <ExperimentView v-else v-show="visible" :context="context">
+  <ExperimentView :context="context">
     <template #timeline>
-      <ProgressTimeline :context="context" />
+<!--      <ProgressTimeline :context="context" />-->
     </template>
   </ExperimentView>
 </template>

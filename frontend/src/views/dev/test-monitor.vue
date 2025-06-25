@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, inject, onMounted, onUnmounted, ref } from "vue";
-import { ACTIVE_GAMES } from "@/main.ts";
+import { ACTIVE_GAMES } from "@/constants.ts";
 import { remap } from "@/services/util.ts";
 
 

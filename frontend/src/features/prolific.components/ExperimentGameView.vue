@@ -16,7 +16,6 @@ watch(
 <template>
   <div class="mx-auto p-2 flex-col">
     <div class="flex flex-col items-center w-full md:w-3/5 2xl:w-2/4 mx-auto justify-around gap-2 px-2">
-
       <div class="flex flex-row w-full gap-4">
         <div class="text-nowrap">Resize Bar</div>
         <div class="tooltip tooltip-bottom w-full" data-tip="Resize Game Board">
@@ -29,7 +28,6 @@ watch(
       <div class="grow">
         <slot></slot>
       </div>
-
     </div>
   </div>
 </template>
