@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // import SidebarUserAnon from "@/components/sidebar/sidebar.user.anon.vue";
 // import SidebarUserAuth from "@/components/sidebar/sidebar.user.auth.vue";
-import { ACTIVE_GAMES, DEV_TOOLS } from "@/main";
+import { ACTIVE_GAMES, DEV_TOOLS } from "@/constants";
 import FloatingFeedback from "@/components/button.feedback.vue";
 import { useAuthStore } from "@/store/auth.ts";
 
@@ -14,15 +14,14 @@ const user = useAuthStore();
     <div class="menu text-base-content min-h-full max-w-46 p-0 bg-platinum">
       <!-- Sidebar Header -->
       <router-link to="/">
-        <li class="text-lg mx-auto mt-2 sticky top-0 text-center underline">mitpuzzles.com</li>
+        <img src="/assets/logo.dark.png" alt="mitpuzzles.com logo" class="p-3">
       </router-link>
 
-      <!--      <div class="divider m-0"></div>-->
-      <div class="p-2">
+      <div class="p-2 pt-0 mt-0">
         <router-link v-for="game in Object.values(ACTIVE_GAMES)" :key="game.key" :to="{ name: 'game-' + game.key }">
           <li class="m-0 text-lg">
             <a href="#">
-              {{ game.name }}
+              {{ game.icon }}{{ game.name }}
             </a>
           </li>
         </router-link>

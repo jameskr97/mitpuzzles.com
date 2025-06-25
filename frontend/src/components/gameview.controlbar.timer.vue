@@ -1,11 +1,13 @@
 <script setup lang="ts">
-// This is isolated into it's own component
-import { useCurrentPuzzle } from "@/composables/useCurrentPuzzle.ts";
-const puzzle = await useCurrentPuzzle();
+import { usePuzzleController } from "@/composables/usePuzzleController.ts";
+import { useRoute } from "vue-router";
+import type { PayloadPuzzleType } from "@/codegen/websocket/game.schema";
+const route = useRoute();
+const puzzle = usePuzzleController(route.meta.game_type as PayloadPuzzleType);
 </script>
 
 <template>
   <div class="text-2xl text-right font-mono">
-    <span>{{ puzzle.timer.display_time }}</span>
+    <span>{{puzzle.timer.display_time}}</span>
   </div>
 </template>

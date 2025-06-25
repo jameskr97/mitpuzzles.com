@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { GameViolation } from "@/services/states.ts";
 import { VIOLATION_MAP } from "@/features/games/violations.ts";
+import Container from "@/components/ui/Container.vue";
 
 defineProps({
   violations: { type: Array<GameViolation>, required: false, default: [] },
@@ -13,7 +14,7 @@ function getMetadata(violation: GameViolation) {
 </script>
 
 <template>
-  <div class="border border-red shadow p-2 rounded">
+  <Container>
     <div class="text-xl">Rule Violations</div>
     <div class="divider m-0"></div>
     <div class="flex flex-col gap-2">
@@ -33,5 +34,5 @@ function getMetadata(violation: GameViolation) {
       </div>
     </div>
     <div v-if="violations.length === 0">No Violations.</div>
-  </div>
+  </Container>
 </template>

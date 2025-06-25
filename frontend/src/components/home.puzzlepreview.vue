@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import Container from "@/components/ui/Container.vue";
+import { TooltipTrigger, Tooltip, TooltipContent } from "@/components/ui/tooltip";
 
 const props = defineProps({
   title: { type: String, required: true },
@@ -13,13 +15,26 @@ const puzzleRef = ref();
 </script>
 
 <template>
-  <router-link :to="{ name: 'game-' + page }">
-    <div class="flex flex-col">
-      <div ref="container" class="@container aspect-square place-items-center grid select-none pointer-events-none">
-        <component :ref="puzzleRef" :is="component" :state="state" />
-      </div>
-      <div class="divider my-0 py-0 h-full"></div>
-      <div class="p-1 mx-auto">{{ props.title }}</div>
-    </div>
-  </router-link>
+  <Tooltip>
+    <TooltipTrigger>
+      <Container class="overflow-hidden">
+        <router-link :to="{ name: 'game-' + page }">
+          <div class="flex flex-col gap-1">
+            <div class="overflow-hidden min-w-0">
+              <div
+                ref="container"
+                class="@container aspect-square box-border place-items-center grid select-none pointer-events-none rounded-xs overflow-hidden"
+              >
+                <component :ref="puzzleRef" :is="component" :state="state" :parentEl="container" />
+              </div>
+            </div>
+          </div>
+        </router-link>
+      </Container>
+    </TooltipTrigger>
+    <!-- suppress RequiredAttributes -->
+    <TooltipContent side="bottom">
+      <div class="text-center text-2xl">{{ props.title }}</div>
+    </TooltipContent>
+  </Tooltip>
 </template>
