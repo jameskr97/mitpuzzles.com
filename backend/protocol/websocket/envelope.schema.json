@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id":     "https://example.com/envelope.schema.json",
+  "title":   "Websocket Envelope",
+  "type":    "object",
+
+  "properties": {
+    "kind": { "type": "string" },
+    "room": { "type": "string" },
+    "ts":   { "type": "integer", "minimum": 0 },
+    "seq":  { "type": "integer", "minimum": 0 },
+    "ack":  { "type": "integer", "minimum": 0 },
+    "payload": { "$ref": "#/$defs/Payload" }
+  },
+  "required": ["kind", "ts", "payload"],
+  "additionalProperties": false,
+  "discriminator": {
+    "propertyName": "kind",
+    "mapping": {
+      "join":   "room.schema.json#/$defs/CommandJoin",
+      "leave":  "room.schema.json#/$defs/CommandLeave",
+      "joined": "room.schema.json#/$defs/EventJoined",
+      "ping":   "ping.schema.json#/$defs/CommandPing",
+      "pong":   "ping.schema.json#/$defs/EventPong",
+      "identify": "identify.schema.json#/$defs/CommandIdentify",
+      "error":  "#/$defs/EventError",
+      "game": "game.schema.json"
+    }
+  },
+
+  "$defs": {
+    "Payload": {
+      "oneOf": [
+        { "$ref": "room.schema.json#/$defs/CommandJoin"   },
+        { "$ref": "room.schema.json#/$defs/CommandLeave"  },
+        { "$ref": "room.schema.json#/$defs/EventJoined"   },
+        { "$ref": "ping.schema.json#/$defs/CommandPing"   },
+        { "$ref": "ping.schema.json#/$defs/EventPong"     },
+        { "$ref": "identify.schema.json#/$defs/CommandIdentify" },
+        { "$ref": "game.schema.json" }
+      ],
+      "additionalProperties": false
+    },
+
+    "EventError": {
+      "type": "object",
+      "allOf": [
+        {
+          "properties": {
+            "kind": { "const": "error" },
+            "code": { "type": "string" },
+            "message": { "type": "string" }
+          },
+          "required": ["kind", "code", "message"],
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}

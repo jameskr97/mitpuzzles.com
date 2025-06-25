@@ -1,0 +1,187 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/game.schema.json",
+
+  "title": "GamePayload",
+  "oneOf": [
+    { "$ref": "#/$defs/CommandLoad" },
+    { "$ref": "#/$defs/CommandRefresh" },
+    { "$ref": "#/$defs/CommandAction" },
+    { "$ref": "#/$defs/CommandClear" },
+    { "$ref": "#/$defs/CommandResume" },
+    { "$ref": "#/$defs/CommandSubmit" },
+    { "$ref": "#/$defs/CommandToggleTutorial" },
+
+    { "$ref": "#/$defs/EventState"   },
+    { "$ref": "#/$defs/EventSubmitResult"   }
+  ],
+  "discriminator": {
+    "propertyName": "kind",
+    "mapping": {
+      "new"  : "#/$defs/CommandNew",
+      "resume"  : "#/$defs/CommandResume",
+      "action"  : "#/$defs/CommandAction",
+      "submit"  : "#/$defs/CommandSubmit",
+      "clear"   : "#/$defs/CommandClear",
+      "toggle_tutorial" : "#/$defs/CommandToggleTutorial",
+
+      "state"   : "#/$defs/EventState",
+      "delta"   : "#/$defs/EventDelta",
+      "submit_result"  : "#/$defs/EventSubmitResult",
+      "error"   : "#/$defs/EventError"
+    }
+  },
+
+  "$defs": {
+    "PayloadPuzzleType": {
+      "type": "string",
+      "enum": ["sudoku","minesweeper","lightup","tents","kakurasu"]
+    },
+    "BaseCommandSessionIDOnly": {
+        "type": "object",
+        "properties": {
+            "kind":       { "type": "string" },
+            "session_id": { "type": "string" }
+        },
+        "required": ["kind","session_id"],
+      "additionalProperties": false
+    },
+
+    "CommandLoad": {
+      "type": "object",
+      "description": "Load a puzzle session",
+      "allOf": [
+        {
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "load"
+            },
+            "puzzle_type":  { "$ref": "#/$defs/PayloadPuzzleType" }
+          },
+          "required": ["kind", "puzzle_type"]
+        }
+      ],
+
+      "additionalProperties": false
+    },
+    "CommandRefresh": {
+      "type": "object",
+      "description": "Get a new puzzle of the same type",
+      "allOf": [
+        { "$ref": "#/$defs/BaseCommandSessionIDOnly" },
+        {
+          "properties": {
+            "kind":         { "const": "refresh" },
+            "size":         { "type": "string" },
+            "difficulty":   { "type": "string" }
+          },
+          "additionalProperties": false,
+          "required": ["kind"]
+        }
+      ],
+      "additionalProperties": false
+    },
+    "CommandResume":{
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/BaseCommandSessionIDOnly" },
+        {
+          "properties": {
+            "kind": { "const": "resume" }
+          },
+          "required": ["kind"]
+        }
+      ]
+    },
+    "CommandAction": {
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/BaseCommandSessionIDOnly" },
+        {
+          "properties": {
+            "kind":       { "const": "action" },
+            "payload": { "additionalProperties": true }
+          },
+          "required": ["kind", "payload"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "CommandClear":{
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/BaseCommandSessionIDOnly" },
+        {
+          "properties": {
+            "kind": { "const": "clear" }
+          },
+          "required": ["kind"]
+        }
+      ]
+    },
+    "CommandSubmit":{
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/BaseCommandSessionIDOnly" },
+        {
+          "properties": {
+            "kind": { "const": "submit" },
+            "client_duration": { "type": "number" }
+          },
+          "required": ["kind", "client_duration"]
+        }
+      ]
+    },
+    "CommandToggleTutorial":{
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/BaseCommandSessionIDOnly" },
+        {
+          "properties": {
+            "kind": { "const": "toggle_tutorial" },
+            "enabled": { "type": "boolean" }
+          },
+          "required": ["kind", "enabled"]
+        }
+      ]
+    },
+
+    "EventState": {
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/BaseCommandSessionIDOnly" },
+        {
+          "properties": {
+            "kind":           { "const": "state" },
+            "puzzle_type":    { "$ref": "#/$defs/PayloadPuzzleType" },
+            "rows":           { "type": "integer" },
+            "cols":           { "type": "integer" },
+            "board":          { "type": "array", "items": { "type": "integer" } },
+            "board_initial":  { "type": "array", "items": { "type": "integer" } },
+            "immutable":      { "type": "array", "items": { "type": "integer" } },
+            "violations":     { "type": "array", "items": { "type": "object" } },
+            "solved":         { "type": "boolean" }
+          },
+          "required": ["kind", "puzzle_type", "rows", "cols", "board", "immutable"]
+        }
+       ],
+      "additionalProperties": true
+
+    },
+    "EventSubmitResult": {
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/BaseCommandSessionIDOnly" },
+        {
+          "properties": {
+            "kind": { "const": "submit_result" },
+            "solved": { "type": "boolean" }
+          },
+          "required": ["kind", "solved"],
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}
