@@ -5,6 +5,8 @@ import { useStateCycleBehaviour } from "@/features/games.composables/useStateCyc
 import { EventHandlerManager } from "@/features/games.composables/EventHandlerManager.ts";
 import { emit } from "@/services/eventbus.ts";
 import { createPuzzleSession } from "@/composables/useCurrentPuzzle.ts";
+import { usePuzzleController } from "@/composables/usePuzzleController.ts";
+import type { PayloadPuzzleType } from "@/codegen/websocket/game.schema";
 
 /**
  * GameEvents - Interface for game-level events
@@ -52,12 +54,14 @@ export interface RenderEvents {
  * - Note, the order of the behaviours is important, as they are called in the order they are added.
  * @param session The puzzle state session
  */
-export function createPuzzleInteractionBridge(session: Awaited<ReturnType<typeof createPuzzleSession>>) {
+export function createPuzzleInteractionBridge(puzzle_type: PayloadPuzzleType) {
+  const ctrl = usePuzzleController(puzzle_type)
+
   // Create event handler managers for each type of event
   const boardEventManager = new EventHandlerManager<BoardEvents>();
   const gameEventManager = new EventHandlerManager<GameEvents>();
   const renderEventManager = new EventHandlerManager<RenderEvents>();
-  emit("game:set_active_puzzle", session.puzzle_type);
+  emit("game:set_active_puzzle", puzzle_type);
 
   /**
    * Add a behavior for board interaction events
@@ -66,9 +70,9 @@ export function createPuzzleInteractionBridge(session: Awaited<ReturnType<typeof
    * @returns The compiled behavior object that was added
    */
   function addInputBehaviour<T extends Partial<BoardEvents>>(
-    behaviour: (session: Awaited<ReturnType<typeof createPuzzleSession>>) => T,
+    behaviour: (ctrl: ReturnType<typeof usePuzzleController>) => T,
   ): T {
-    return boardEventManager.addBehaviour(behaviour, session);
+    return boardEventManager.addBehaviour(behaviour, ctrl);
   }
 
   /**
@@ -77,8 +81,8 @@ export function createPuzzleInteractionBridge(session: Awaited<ReturnType<typeof
    * @param behaviour A function that takes the session and returns game event handlers
    * @returns The compiled behavior object that was added
    */
-  function addGameBehaviour<T extends Partial<GameEvents>>(behaviour: (puzzle: typeof session) => T): T {
-    return gameEventManager.addBehaviour(behaviour, session);
+  function addGameBehaviour<T extends Partial<GameEvents>>(behaviour: (puzzle: typeof ctrl) => T): T {
+    return gameEventManager.addBehaviour(behaviour, ctrl);
   }
 
   /**
@@ -87,8 +91,8 @@ export function createPuzzleInteractionBridge(session: Awaited<ReturnType<typeof
    * @param behaviour A function that takes the session and returns render event handlers
    * @returns The compiled behavior object that was added
    */
-  function addRenderBehaviour<T extends Partial<RenderEvents>>(behaviour: (puzzle: typeof session) => T): T {
-    return renderEventManager.addBehaviour(behaviour, session);
+  function addRenderBehaviour<T extends Partial<RenderEvents>>(behaviour: (puzzle: typeof ctrl) => T): T {
+    return renderEventManager.addBehaviour(behaviour, ctrl);
   }
 
   /**
@@ -120,24 +124,24 @@ export function createPuzzleInteractionBridge(session: Awaited<ReturnType<typeof
   /**
    * Set up a watcher that emits the onBoardModified event when the board changes
    */
-  if (session.state.value && Array.isArray(session.state.value.board)) {
-    // Initial board state tracking
-    const initialBoard = [...session.state.value.board];
-
-    // Watch for changes to the board
-    setInterval(() => {
-      if (session.state.value && Array.isArray(session.state.value.board)) {
-        const currentBoard = session.state.value.board;
-        // Only emit if the board actually changed
-        if (JSON.stringify(initialBoard) !== JSON.stringify(currentBoard)) {
-          gameEventManager.emit("onBoardModified", currentBoard);
-          // Update tracked board
-          initialBoard.splice(0, initialBoard.length, ...currentBoard);
-        }
-      }
-    }, 100); // Check every 100ms
-  }
-
+  // if (ctrl.state && Array.isArray(ctrl.state)) {
+  //   // Initial board state tracking
+  //   const initialBoard = [...ctrl.state];
+  //
+  //   // Watch for changes to the board
+  //   setInterval(() => {
+  //     if (session.state.value && Array.isArray(session.state.value.board)) {
+  //       const currentBoard = session.state.value.board;
+  //       // Only emit if the board actually changed
+  //       if (JSON.stringify(initialBoard) !== JSON.stringify(currentBoard)) {
+  //         gameEventManager.emit("onBoardModified", currentBoard);
+  //         // Update tracked board
+  //         initialBoard.splice(0, initialBoard.length, ...currentBoard);
+  //       }
+  //     }
+  //   }, 100); // Check every 100ms
+  // }
+  //
   /**
    * Return the public API of the interaction bridge
    */

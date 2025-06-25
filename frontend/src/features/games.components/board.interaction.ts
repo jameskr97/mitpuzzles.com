@@ -69,6 +69,7 @@ export class BoardInteraction {
 
   // input state tracking
   private lastMouseDown: Cell | Border | null = null;
+  private isKeyPressed: boolean = false;
   private lastHover: Cell | null = null;
   private focused: Cell | null = null;
   private isMouseOnBoard: boolean = false; // Track if mouse is on the board
@@ -92,8 +93,15 @@ export class BoardInteraction {
     // Global Event Listeners
     window.addEventListener("mouseup", (e: MouseEvent) => this.model?.onMouseUp?.(e));
     window.addEventListener("keydown", (e: KeyboardEvent) => {
+      // e.preventDefault();
       if (this.lastHover?.type !== "cell") return; // Only handle keydown if hovering over a cell
-      this.model?.onCellHoveredKeyDown?.(this.lastHover, e);
+      if (!this.isKeyPressed) {
+        this.isKeyPressed = true;
+        this.dispatchModelEvent("onCellHoveredKeyDown", this.lastHover, e);
+      }
+    });
+    window.addEventListener("keyup", () => {
+      this.isKeyPressed = false;
     });
   }
 

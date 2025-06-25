@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import { provide, reactive, toRefs } from "vue";
+import { computed, nextTick, type PropType, provide, reactive, toRefs } from "vue";
 import { useGridPositions, useGridLayout } from "@/features/games.components/useGridLayout.ts";
 import type { BoardContext } from "@/features/games.components/board.ts";
+import { useElementSize, useEventListener } from "@vueuse/core";
 
 const props = defineProps({
   // Board Dimensions
   rows: { type: Number, required: true },
   cols: { type: Number, required: true },
   cellSize: { type: Number, required: false, default: 10 },
-  scale: { type: Number, required: false, default: 1 },
+  scale: { type: Number, required: false },
   // Board Styling
   borderConfig: { type: Object, required: false, default: () => ({}) },
   gap: { type: Number, required: false, default: 1 },
@@ -17,6 +18,7 @@ const props = defineProps({
   gutterLeft: { type: Number, required: false, default: 0 },
   gutterRight: { type: Number, required: false, default: 0 },
   gutterBottom: { type: Number, required: false, default: 0 },
+  parentEl: { type: Object as PropType<HTMLElement>, required: false },
 });
 const rprops = toRefs(props);
 
@@ -34,6 +36,16 @@ const boardContext = reactive({
 provide("boardContext", boardContext);
 const p = useGridPositions(boardContext as BoardContext);
 const l = useGridLayout(boardContext as BoardContext);
+const parent = useElementSize(rprops?.parentEl!);
+const calculatedScale = computed(() => {
+  if (props.scale) return props.scale;
+  if (!rprops.parentEl) return 1; // no scale and no parent element? return default of 1;
+  if (!parent.width.value || !parent.height.value || !p.fullWidth.value || !p.fullHeight.value) return 1;
+  return Math.min(
+    parent.width.value / p.fullWidth.value,
+    parent.height.value / p.fullHeight.value
+  );
+});
 
 defineExpose({
   width: p.fullWidth,
@@ -43,23 +55,24 @@ defineExpose({
 
 <template>
   <div
-    class="relative mx-auto flex"
+    class="relative flex"
     :style="{
-      width: p.fullWidth.value * scale + 'px',
-      height: p.fullHeight.value * scale + 'px',
+      width: p.fullWidth.value * calculatedScale + 'px',
+      height: p.fullHeight.value * calculatedScale + 'px',
     }"
   >
     <div
       :style="{
-        transform: `scale(${scale})`,
-        left: (l.has_left_gutter.value || l.has_right_gutter.value ? p.gameGridOuterGap.value * scale : 0) + 'px',
-        top: (l.has_top_gutter.value || l.has_bottom_gutter.value ? p.gameGridOuterGap.value * scale : 0) + 'px',
+        transform: `scale(${calculatedScale})`,
+        left: (l.has_left_gutter.value || l.has_right_gutter.value ? p.gameGridOuterGap.value * calculatedScale : 0) + 'px',
+        top: (l.has_top_gutter.value || l.has_bottom_gutter.value ? p.gameGridOuterGap.value * calculatedScale : 0) + 'px',
         // left: p.gameGridOuterGap.value * scale + 'px',
         // top:  p.gameGridOuterGap.value * scale + 'px',
         width: p.fullWidth.value + 'px',
         height: p.fullHeight.value + 'px',
       }"
       class="absolute origin-top-left"
+      :key="calculatedScale"
     >
       <slot />
     </div>
