@@ -10,6 +10,7 @@ from protocol.generated.websocket.envelope_schema import WebsocketEnvelope
 
 class Room:
     """Async-safe membership set (no external deps)."""
+
     def __init__(self) -> None:
         self._members: Set[str] = set()
         self._lock = asyncio.Lock()
@@ -18,6 +19,10 @@ class Room:
         async with self._lock:
             self._members.add(channel)
 
+    async def remove_user(self, channel: str) -> None:
+        async with self._lock:
+            self._members.remove(channel)
+
     async def discard(self, channel: str) -> None:
         async with self._lock:
             self._members.discard(channel)
@@ -25,7 +30,6 @@ class Room:
     async def members(self) -> Set[str]:
         async with self._lock:
             return set(self._members)
-
 
     async def broadcast(self, envelope: WebsocketEnvelope, *, origin: str | None = None) -> None:
         """
@@ -40,11 +44,13 @@ class Room:
                 "bytes": payload
             })
 
-# global registry – later replace with Redis pub/sub keeping same API
+
 _rooms: DefaultDict[str, Room] = defaultdict(Room)
+
 
 def get_room(name: str) -> Room:
     return _rooms[name]
+
 
 def room_name(mode: str, attempt_id: str) -> str:
     return f"game:{mode}:{attempt_id}"

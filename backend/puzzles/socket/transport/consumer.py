@@ -1,15 +1,18 @@
-import asyncio, json, msgpack, time
+import logging
+
+import msgpack
 from channels.generic.websocket import AsyncWebsocketConsumer
 from pydantic_core import ValidationError
 
 from protocol.generated.websocket.envelope_schema import WebsocketEnvelope
-from protocol.generated.websocket.room_schema     import CommandJoin, CommandLeave
-from protocol.generated.websocket.ping_schema     import CommandPing
-from puzzles.socket.transport.rooms   import get_room
-from puzzles.socket.transport.router  import route             # ← tiny dispatcher
+from protocol.generated.websocket.room_schema import CommandJoin, CommandLeave
+from puzzles.socket.transport.rooms import get_room
+from puzzles.socket.transport.router import route  # ← tiny dispatcher
 
 PING_INTERVAL = 2
-TIMEOUT_CODE  = 4008
+TIMEOUT_CODE = 4008
+
+logger = logging.getLogger(__name__)
 
 class TransportConsumer(AsyncWebsocketConsumer):
     """
@@ -19,33 +22,40 @@ class TransportConsumer(AsyncWebsocketConsumer):
     4. heartbeat (ping→pong watchdog)
     """
 
-    # ---------- lifecycle ----------
+    # region lifecycle
     async def connect(self):
+        logger.info("Websocket connection established: %s", self.channel_name)
         await self.accept()
 
     async def disconnect(self, code):
+        logger.info("Websocket connection closed: %s (code: %d)", self.channel_name, code)
         await self._leave_room()
 
-    # ---------- websocket pump ----------
+    # endregion
+
+    # region message pump
     async def receive(self, text_data=None, bytes_data=None):
         raw = text_data or bytes_data
         try:
             if text_data:
+                logger.log(5, "Received text data: %s", raw)
                 env = WebsocketEnvelope.model_validate_json(raw)  # JSON
             else:
+                logger.log(5, "Received bytes data: %s", raw)
                 env = WebsocketEnvelope.model_validate(msgpack.unpackb(raw, raw=False))  # msgpack
+            logger.debug(f"Message received: {env}")
         except ValidationError as exc:
-            print("Validaion error:", exc)
-            return await self.close(4000)
+            logger.error("Validation error in envelope: %s", exc)
+            return self.close(4000)
         except Exception as exc:
-            print("Error parsing envelope:", exc)
-            return await self.close(4001)
+            logger.error("Failed to decode envelope: %s", exc)
+            return self.close(4001)
 
         # fast transport-level commands
         if isinstance(env.payload, CommandJoin):
-            return await self._join(env)
+            return self._join(env)
         if isinstance(env.payload, CommandLeave):
-            return await self._leave_room()
+            return self._leave_room()
 
         # everything else → router
         responses = await route(env, self)
@@ -54,12 +64,14 @@ class TransportConsumer(AsyncWebsocketConsumer):
                 await self._send(ev)
         return None
 
-    # ---------- room helpers ----------
+    # endregion
+
+    # region room helpers
     async def _join(self, env: WebsocketEnvelope):
         cmd: CommandJoin = env.payload
-        await self._leave_room()                           # leave old
+        await self._leave_room()
         self._room = cmd.room
-        await get_room(cmd.room).add(self.channel_name)
+        await get_room(cmd.room).add_user(self.channel_name)
 
         # fabricates EventJoined via handler; but keep local state
         for ev in await route(env, self):
@@ -70,13 +82,15 @@ class TransportConsumer(AsyncWebsocketConsumer):
             await get_room(self._room).discard(self.channel_name)
             del self._room
 
-    # ---------- send ----------
+    # endregion
+
+    # region sender + channel handlers
     async def _send(self, env: WebsocketEnvelope):
         # always msgpack on the wire; switch to .model_dump_json() if you prefer JSON
-        await self.send(
+       await self.send(
             bytes_data=msgpack.packb(env.model_dump(mode="json"), use_bin_type=True)
         )
 
-    # - channel handlers -
     async def room_send(self, event):
         await self.send(bytes_data=event["bytes"])
+    # endregion

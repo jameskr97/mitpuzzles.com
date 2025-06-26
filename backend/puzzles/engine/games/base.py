@@ -15,6 +15,7 @@ RawState = str  # "0 1 2 3 4 5 6 7 8"
 State = List[int]  # flat row-major board
 PuzzleData = Dict[str, Any]  # generator output
 
+
 class PuzzleEngineBase:
     """
     Pure-Python game engine.  **No Django imports allowed.**
@@ -75,9 +76,9 @@ class PuzzleEngineBase:
             case ("cell", "click", "game"):
                 return self._dispatch_to_handlers("on_cell_click", self, row, col, button, state)
             case ("cell", "click", "leftGutter"):
-                return self._dispatch_to_handlers("on_row_click", self,row, button)
+                return self._dispatch_to_handlers("on_row_click", self, row, button)
             case ("cell", "click", "topGutter"):
-                return self._dispatch_to_handlers("on_col_click",self, col, button)
+                return self._dispatch_to_handlers("on_col_click", self, col, button)
         return False
 
     #############################################################################
@@ -103,7 +104,7 @@ class PuzzleEngineBase:
     # Board Actions
     def board_clear(self):
         if self.board_state == self.__initial_state:
-            return False # do nothing, board is in initial state
+            return False  # do nothing, board is in initial state
         self.board_state = self.__initial_state.copy()
         return True
 
@@ -121,6 +122,10 @@ class PuzzleEngineBase:
 
     def serialize_gamedata(self) -> dict:
         res = {
+            "rows": self.rows,
+            "cols": self.cols,
+            "board": self.board_state,
+            "violations": [v.to_dict() for v in self.validate()],
             "immutable": self.get_immutable_cells(),
             "tutorial_mode": self.tutorial_mode,
             "board_initial": self.get_initial_board_string(),
@@ -144,7 +149,6 @@ class PuzzleEngineBase:
                         raise ValueError(f"Field '{field}' not found in puzzle data.")
         return res
 
-
     def validate(self) -> list[ValidationResult]:
         """
         Run all validation rules and return a list of error messages.
@@ -158,3 +162,6 @@ class PuzzleEngineBase:
             if result:
                 results.append(result)
         return results
+
+    def calculate_number_of_mistakes(self) -> int:
+        ...

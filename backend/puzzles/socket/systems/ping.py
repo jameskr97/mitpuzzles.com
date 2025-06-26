@@ -1,13 +1,15 @@
 import time
+
 from protocol.generated.websocket.envelope_schema import WebsocketEnvelope
-from protocol.generated.websocket.ping_schema     import (
+from protocol.generated.websocket.ping_schema import (
     CommandPing, EventPong, EventPongPayload
 )
 from puzzles.socket.transport.router import command
 
+
 @command("ping")
-async def handle_ping(env: WebsocketEnvelope, _ctx):
-    cmd: CommandPing = CommandPing.model_validate(env.payload) # typed by discriminator
+def handle_ping(env: WebsocketEnvelope, _ctx):
+    cmd: CommandPing = CommandPing.model_validate(env.payload)  # typed by discriminator
     pong = EventPong(
         kind="pong",
         payload=EventPongPayload(

@@ -38,3 +38,18 @@ class SudokuEngine(PuzzleEngineBase):
         initial_board = self.get_initial_board_string()
 
         return initial_board[row * self.cols + col] == 0
+
+    def calculate_number_of_mistakes(self) -> int:
+        """
+        Calculate the number of mistakes in the current board state.
+        :return: Number of mistakes.
+        """
+        solution = self.get_solution_board_string()
+        mistakes = 0
+        for row in range(self.rows):
+            for col in range(self.cols):
+                if not self.can_modify_cell(self.board_state, row, col):
+                    continue
+                if self.board_state[row * self.cols + col] != solution[row * self.cols + col]:
+                        mistakes += 1
+        return mistakes

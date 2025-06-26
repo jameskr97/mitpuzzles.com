@@ -17,7 +17,7 @@ class AbstractPuzzleAttempt(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     completed_at = models.DateTimeField(null=True, blank=True)
-    completion_time_client = models.FloatField(null=True, blank=True)
+    completion_time_client_ms = models.FloatField(null=True, blank=True)
 
     # puzzle data
     puzzle = models.ForeignKey(Puzzle, on_delete=models.CASCADE, related_name="%(class)ss")
@@ -29,7 +29,7 @@ class AbstractPuzzleAttempt(models.Model):
     def get_or_create_for_actor(cls, visitor_id, puzzle_type: str) -> Self:
         """Creates a new puzzle session for the given actor and puzzle type."""
         # check if a session already exists for this visitor and puzzle type
-        session =  cls.objects.select_related("puzzle").filter(puzzle__puzzle_type=puzzle_type, visitor_id=visitor_id).first()
+        session = cls.objects.select_related("puzzle").filter(puzzle__puzzle_type=puzzle_type, visitor_id=visitor_id, is_solved=False).first()
         if session:
             return session
 

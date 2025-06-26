@@ -1,4 +1,6 @@
-from channels.db import database_sync_to_async
+import logging
+
+from django.utils import timezone
 
 from protocol.generated.websocket.envelope_schema import WebsocketEnvelope
 from protocol.generated.websocket.game_schema import (
@@ -8,14 +10,13 @@ from protocol.generated.websocket.game_schema import (
     CommandLoad,
     CommandRefresh,
     EventSubmitResult,
-    CommandToggleTutorial,
+    CommandToggleTutorial, CommandResume, CommandSubmit
 )
-
-from puzzles.models import Puzzle
-from puzzles.socket.systems.identify import require_freeplay, require_prolific
-from puzzles.socket.systems.session_manager import SESSIONS, EngineWrapper
+from puzzles.socket.systems.session_manager import SESSIONS, EngineWrapper, AttemptMissingException
 from puzzles.socket.transport.rooms import room_name, get_room
 from puzzles.socket.transport.router import command
+
+logger = logging.getLogger(__name__)
 
 
 def _make_state(env: WebsocketEnvelope, wrapper: EngineWrapper, sid: str):
@@ -23,18 +24,17 @@ def _make_state(env: WebsocketEnvelope, wrapper: EngineWrapper, sid: str):
     puzzle = attempt.puzzle  # real Puzzle row
     engine = wrapper.engine
 
+    mutable_cells = sum(1 for cell in engine.get_immutable_cells() if cell == 0)
+    mistake_count = engine.calculate_number_of_mistakes()
     return env.model_copy(
         update={
             "kind": "state",
             "payload": EventState(
                 kind="state",
-                session_id=str(sid),
-                puzzle_type=puzzle.puzzle_type,
-                rows=engine.rows,
-                cols=engine.cols,
-                board=engine.board_state,
-                violations=[v.to_dict() for v in engine.validate()],
+                attempt_id=str(sid),
+                puzzle_type=puzzle.puzzle_type,  # always correct
                 solved=attempt.is_solved,
+                # points_earned=(mutable_cells - mistake_count) * 3,
                 **engine.serialize_gamedata(),
             ),
         }
@@ -62,40 +62,51 @@ async def _broadcast_submit_result(ctx, env: WebsocketEnvelope, wrapper: EngineW
             "kind": "submit_result",
             "payload": EventSubmitResult(
                 kind="submit_result",
-                session_id=sid,
+                attempt_id=sid,
+                puzzle_type=wrapper.storage.puzzle.puzzle_type,
                 solved=wrapper.storage.is_solved,
             ),
         }
     )
     room_id = room_name(mode, sid)
     await get_room(room_id).broadcast(result_env)
+    return _make_state(env, wrapper, sid)
 
 
 @command("load")
 async def handle_load(env: WebsocketEnvelope, ctx):
     cmd: CommandLoad = env.payload
-    visitor = ctx.scope["visitor_id"]
+    visitor = ctx.scope["visitor"]
     mode = ctx.scope["mode"]
 
     # get EngineWrapper
-    sid = await SESSIONS.load(visitor, cmd.puzzle_type, mode)
+    sid = await SESSIONS.load(str(visitor.id), cmd.puzzle_type, mode)
     wrapper = SESSIONS.get_wrapper(sid)
 
-    # join room
     room_id = room_name(mode, sid)
     await get_room(room_id).add_user(ctx.channel_name)
     await _broadcast_state(ctx, env, wrapper, sid)
+    return [_make_state(env, wrapper, sid)]
 
-    return []
 
 @command("resume")
 async def handle_resume(env: WebsocketEnvelope, ctx):
     cmd: CommandResume = env.payload
     mode = ctx.scope["mode"]
-    wrap = await SESSIONS.get_or_load_wrapper(cmd.session_id, mode)
-    room_id = room_name(mode, cmd.session_id)
+    visitor = ctx.scope["visitor"]
+
+    try:
+        # Try to load the requested wrapper from cache or DB
+        wrap = await SESSIONS.get_or_load_wrapper(cmd.attempt_id, mode)
+    except AttemptMissingException:
+        # Session vanished → transparently start a new one
+        sid = await SESSIONS.load(str(visitor.id), cmd.puzzle_type, mode, forced_id=cmd.attempt_id)
+        wrap = SESSIONS.get_wrapper(sid)
+
+    room_id = room_name(mode, cmd.attempt_id)
     await get_room(room_id).add_user(ctx.channel_name)
-    await _broadcast_state(ctx, env, wrap, cmd.session_id)
+    await _broadcast_state(ctx, env, wrap, cmd.attempt_id)
+
 
 @command("refresh")
 async def handle_refresh(env: WebsocketEnvelope, ctx):
@@ -106,12 +117,22 @@ async def handle_refresh(env: WebsocketEnvelope, ctx):
     """
     cmd: CommandRefresh = env.payload
     mode = ctx.scope["mode"]
-    await SESSIONS.get_or_load_wrapper(cmd.session_id, mode)
-    wrap: EngineWrapper = await SESSIONS.refresh(cmd)
+    visitor = ctx.scope["visitor"]
 
-    state_env = _make_state(env, wrap, cmd.session_id)
-    room_id = room_name(mode, cmd.session_id)
-    await get_room(room_id).broadcast(state_env)
+    await SESSIONS.get_or_load_wrapper(cmd.attempt_id, mode)
+    wrap: EngineWrapper = await SESSIONS.refresh(cmd, str(visitor.id), mode)
+    sid = str(wrap.storage.id)
+
+    # leave original room if the attempt_id changed
+    state_env = _make_state(env, wrap, sid)
+    if sid != cmd.attempt_id:
+        old_room_id = room_name(mode, cmd.attempt_id)
+        await get_room(old_room_id).remove_user(ctx.channel_name)
+        new_room_id = room_name(mode, sid)
+        await get_room(new_room_id).add_user(ctx.channel_name)
+        await get_room(new_room_id).broadcast(state_env)
+    else:
+        await _broadcast_state(ctx, env, wrap, sid)
 
 
 @command("action")
@@ -121,12 +142,17 @@ async def handle_action(env: WebsocketEnvelope, ctx):
     """
     cmd: CommandAction = env.payload
     mode = ctx.scope["mode"]
+    visitor = ctx.scope["visitor"]
 
-    wrap = await SESSIONS.get_or_load_wrapper(cmd.session_id, mode)
-    # 2 - do action
+    # disallow actions on solved puzzles
+    wrap = await SESSIONS.get_or_load_wrapper(cmd.attempt_id, mode)
+    if wrap.storage.is_solved:
+        return
+
+    wrap = await SESSIONS.get_or_load_wrapper(cmd.attempt_id, mode)
     if wrap.engine.handle_input_event(cmd.payload):
-        await database_sync_to_async(wrap.sync_and_flush)()
-        await _broadcast_state(ctx, env, wrap, cmd.session_id)
+        await wrap.sync_and_flush()
+        await _broadcast_state(ctx, env, wrap, cmd.attempt_id)
 
 
 @command("clear")
@@ -134,30 +160,38 @@ async def handle_clear(env: WebsocketEnvelope, ctx):
     cmd: CommandClear = env.payload
     mode = ctx.scope["mode"]
 
-    wrap = await SESSIONS.get_or_load_wrapper(cmd.session_id, mode)
+    wrap = await SESSIONS.get_or_load_wrapper(cmd.attempt_id, mode)
     if wrap.engine.board_clear():
-        await _broadcast_state(ctx, env, wrap, cmd.session_id)
+        await _broadcast_state(ctx, env, wrap, cmd.attempt_id)
+        return [_make_state(env, wrap, cmd.attempt_id)]
 
 
 @command("submit")
 async def handle_submit(env: WebsocketEnvelope, ctx):
     """Handle a submission of the current board state."""
-    cmd: CommandAction = env.payload
-    wrap = SESSIONS.get_wrapper(cmd.session_id)
+    cmd: CommandSubmit = env.payload
+    wrap = SESSIONS.get_wrapper(cmd.attempt_id)
     if wrap is None:
-        return
-
+        raise ValueError("No wrapper found")
     solved = wrap.engine.is_solved()
     wrap.storage.is_solved = solved
-    await database_sync_to_async(wrap.storage.save)()
+    if solved:
+        wrap.storage.completed_at = timezone.now()
+        wrap.storage.completion_time_client_ms = int(cmd.client_duration)
 
-    await _broadcast_submit_result(ctx, env, wrap, cmd.session_id)
+    await wrap.sync_and_flush()
+    await _broadcast_submit_result(ctx, env, wrap, cmd.attempt_id)
 
 
 @command("toggle_tutorial")
 async def handle_toggle_tutorial(env: WebsocketEnvelope, ctx):
     cmd: CommandToggleTutorial = env.payload
     mode = ctx.scope["mode"]
-    wrap = await SESSIONS.get_or_load_wrapper(cmd.session_id, mode)
+    wrap = await SESSIONS.get_or_load_wrapper(cmd.attempt_id, mode)
     wrap.engine.tutorial_mode = cmd.enabled
-    await _broadcast_state(ctx, env, wrap, cmd.session_id)
+
+    if hasattr(wrap.storage, "used_tutorial") and cmd.enabled and not wrap.storage.is_solved:
+        wrap.storage.used_tutorial = True
+
+    await wrap.sync_and_flush()
+    await _broadcast_state(ctx, env, wrap, cmd.attempt_id)
