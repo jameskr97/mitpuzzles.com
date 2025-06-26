@@ -1,8 +1,8 @@
-import hashlib
 import json
 import os.path
 
 from django.core.management.base import BaseCommand
+from django.db import IntegrityError
 
 from puzzles import models
 from puzzles.management.commands._common import _confirm_action, _ensure_path_exists
@@ -42,43 +42,45 @@ class Command(BaseCommand):
             puzzle_size = filename.split("_")[1]  # e.g., "4x4", "9x9", etc.
             puzzle_difficulty = filename.split("_")[2]  # e.g., "easy", "hard", etc.
         except IndexError:
-            self.stdout.write(self.style.ERROR(f"{filename}: Invalid filename format: {filename_ext}. Expected format: <puzzle_type>_<puzzle_size>_<puzzle_difficulty>.json. Skipping file..."))
+            self.stdout.write(self.style.ERROR(
+                f"{filename}: Invalid filename format: {filename_ext}. Expected format: <puzzle_type>_<puzzle_size>_<puzzle_difficulty>.json. Skipping file..."))
             return False
 
         # load file
         data = json.loads(open(file, "r").read())
         if not isinstance(data, list):
-            self.stdout.write(self.style.ERROR(f"{filename}: The file {file} does not contain a list at the top level."))
+            self.stdout.write(
+                self.style.ERROR(f"{filename}: The file {file} does not contain a list at the top level."))
             return False
 
-        # hash all the puzzles
-        puzzles = {}
-        for puzzle in data:
-            # hash puzzle
-            serialized = json.dumps(puzzle, sort_keys=True, separators=(",", ":"))
-            puzzle_hash = hashlib.sha256(serialized.encode("utf-8")).hexdigest()
-
-            if puzzle_hash in puzzles:
-                self.stdout.write(self.style.ERROR(f"{filename}: Duplicate puzzle found with hash {puzzle_hash}. Skipping..."))
-                continue
-            puzzles[puzzle_hash] = puzzle
-
         # check if any of those hashes are in the database
-        existing_hashes = models.Puzzle.objects.filter(puzzle_hash__in=puzzles.keys()).values_list('puzzle_hash', flat=True)
-        if existing_hashes:
-            self.stdout.write(self.style.ERROR(f"{filename}: Skipping {len(existing_hashes)} puzzles that already exist in the database."))
+        all_current_hashes = models.Puzzle.objects.values_list('puzzle_hash', flat=True)
 
-        # import the puzzles
-        for puzzle_hash in puzzles:
+        # import the puzzles - use each puzzle's "id" as the hash
+        imported_count = 0
+        for puzzle in data:
+            if "id" not in puzzle:
+                self.stdout.write(self.style.WARNING(f"Skipping puzzle without id"))
+                continue
+
+            puzzle_hash = puzzle["id"]
+
             # skip puzzles that already exist in the database
-            if puzzle_hash in existing_hashes: continue
+            if puzzle_hash in all_current_hashes:
+                continue
 
-            models.Puzzle.objects.create(
-                puzzle_hash=puzzle_hash,
-                puzzle_type=puzzle_type,
-                puzzle_size=puzzle_size,
-                puzzle_difficulty=puzzle_difficulty,
-                puzzle_data=puzzles[puzzle_hash],
-            )
+            try:
+                models.Puzzle.objects.create(
+                    puzzle_hash=puzzle_hash,
+                    puzzle_type=puzzle_type,
+                    puzzle_size=puzzle_size,
+                    puzzle_difficulty=puzzle_difficulty,
+                    puzzle_data=puzzle,
+                )
+            except IntegrityError:
+                self.stdout.write(self.style.ERROR(f"Failed to import puzzle with id {puzzle_hash}. It may already exist."))
+                continue
+            imported_count += 1
 
+        self.stdout.write(self.style.SUCCESS(f"Imported {imported_count} puzzles from {filename_ext}"))
         return True
