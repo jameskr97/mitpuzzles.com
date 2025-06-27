@@ -56,11 +56,11 @@ export class WebsocketGameService implements IGameService<Events> {
   readonly connected = ref(false);
   private pending: Payload[] = [];
   private identified = false;
-  private identity_mode: "freeplay" | "prolific" | null = null;
+  public identity_mode: "freeplay" | "prolific" | null = null;
 
   constructor(private net: NetDriver) {
     this.net.bus.on("message", (m) => this.#route(m));
-    this.net.bus.on("open", () => this.#autoIdentify());
+    this.net.bus.on("open", () => this.autoIdentify());
   }
 
   connect = () => this.net.open();
@@ -131,7 +131,7 @@ export class WebsocketGameService implements IGameService<Events> {
     }
   }
 
-  #autoIdentify() {
+  autoIdentify() {
     const url = new URL(window.location.href);
     const IS_TEST_EXPERIMENT = /^\/devtool\/test-experiment/.test(location.pathname);
     const IS_REAL_EXPERIMENT = /^\/experiment\//.test(location.pathname);
