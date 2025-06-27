@@ -8,9 +8,10 @@
 # - https://docs.djangoproject.com/en/5.1/ref/settings/
 # - https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 # - https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-from pathlib import Path
-import environ
 import os
+from pathlib import Path
+
+import environ
 
 # Directory Paths
 BACKEND_DIR = Path(os.path.abspath(__file__)).parent.parent.parent
@@ -147,32 +148,76 @@ CHANNEL_LAYERS = {
 }
 
 LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "formatters": {
-        "verbose": {
-            "format": "[{levelname}] {asctime} {name} - {message}",
-            "style": "{",
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'colored': {
+            '()': 'colorlog.ColoredFormatter',
+            'format': '%(log_color)s[%(levelname)s]%(reset)s %(asctime)s %(name)s - %(message)s',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+            'log_colors': {
+                'DEBUG': 'cyan',
+                'INFO': 'green',
+                'WARNING': 'yellow',
+                'ERROR': 'red',
+                'CRITICAL': 'red,bg_white',
+            },
+        },
+        'detailed_colored': {
+            '()': 'colorlog.ColoredFormatter',
+            'format': '%(log_color)s[%(levelname)s]%(reset)s %(asctime)s %(purple)s%(name)s%(reset)s:%(blue)s%(lineno)d%(reset)s - %(message)s',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+            'log_colors': {
+                'DEBUG': 'cyan',
+                'INFO': 'green',
+                'WARNING': 'yellow',
+                'ERROR': 'red',
+                'CRITICAL': 'red,bg_white',
+            },
         },
     },
-    "handlers": {
-        "console": {
-            "class": "logging.StreamHandler",
-            "formatter": "verbose",
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'colored',
+        },
+        'detailed_console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'detailed_colored',
         },
     },
-    "loggers": {
-        "django": {
-            "handlers": ["console"],
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django.server': {
+            "handlers": ['console'],
             "level": "INFO",
+            "propagate": False,
         },
-        "channels": {
-            "handlers": ["console"],
-            "level": "DEBUG",  # most important line
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
         },
-        "daphne": {
-            "handlers": ["console"],
-            "level": "WARNING",  # helps if you're using Daphne directly
+        'django.channels': {
+            'handlers': ['console'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+        'daphne': {
+            'handlers': ['console'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+        # Your app loggers
+        'puzzles': {
+            'handlers': ['detailed_console'],
+            'level': 'DEBUG',
+            'propagate': False,
         },
     },
 }
