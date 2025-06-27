@@ -96,7 +96,7 @@ watch(
   { immediate: true },
 );
 watch(
-  () => ec.curBoard.value,        // ← was ec.curId.value
+  () => ec.curBoard.value, // ← was ec.curId.value
   (board) => {
     if (!board) return;
     ws.resume("sudoku", board.session_id);
@@ -194,6 +194,11 @@ function onNext() {
           </div>
         </div>
       </div>
+
+      <Container class="max-w-prose mx-auto mt-4">
+        <p>Click on any square to <span class="font-bold">reveal</span> it, and it's corresponding part of the board.</p>
+        <p>Press keys 1 to 9 to <span class="font-bold">enter a number</span> into the selected cell <span class="inline-block h-5 w-5 bg-blue-500 rounded "></span>.</p>
+      </Container>
     </div>
   </div>
 </template>
