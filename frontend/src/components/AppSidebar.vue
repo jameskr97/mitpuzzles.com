@@ -11,6 +11,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  SidebarSeparator,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { ACTIVE_GAMES, DEV_TOOLS } from "@/constants";
@@ -26,8 +27,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useVisitorStore } from "@/store/visitor.ts";
 import AppLogo from "@/components/AppLogo.vue";
 import DialogAnonChangeUsername from "@/components/ui/DialogAnonChangeUsername.vue";
-import { Button } from "@/components/ui/button";
 import AppThemeButton from "@/components/AppThemeButton.vue";
+import AppFeedbackModal from "@/components/AppFeedbackModal.vue";
+import AppThemeIcon from "@/AppThemeIcon.vue";
 
 const isDev = import.meta.env.DEV;
 const user = useAuthStore();
@@ -48,15 +50,6 @@ const close_sidebar_on_mobile = () => {
       <AppLogo img-class="p-3" @click="close_sidebar_on_mobile" />
     </SidebarHeader>
     <SidebarContent>
-      <SidebarGroupLabel class="flex flex-row gap-1 mt-1 mx-auto">
-        <Button variant="outline" size="icon">
-          <v-icon name="bi-info-circle-fill" />
-        </Button>
-        <Button variant="outline" size="icon">
-          <v-icon name="md-feedback-outlined" />
-        </Button>
-        <AppThemeButton align="center" />
-      </SidebarGroupLabel>
       <SidebarGroup>
         <SidebarGroupContent>
           <SidebarMenu>
@@ -88,6 +81,33 @@ const close_sidebar_on_mobile = () => {
     </SidebarContent>
 
     <SidebarFooter>
+      <SidebarGroup>
+        <SidebarMenu>
+          <!-- About Us Button -->
+          <SidebarMenuButton>
+            <router-link :to="{ name: 'about-us' }">
+              <v-icon name="bi-info-circle-fill" />
+              About Us
+            </router-link>
+          </SidebarMenuButton>
+
+          <!-- Feedback Button -->
+          <AppFeedbackModal>
+            <SidebarMenuButton>
+              <v-icon name="md-feedback-outlined" />
+              Feedback
+            </SidebarMenuButton>
+          </AppFeedbackModal>
+
+          <AppThemeButton>
+            <SidebarMenuButton>
+              <AppThemeIcon />
+              Dark Mode
+            </SidebarMenuButton>
+          </AppThemeButton>
+        </SidebarMenu>
+      </SidebarGroup>
+      <SidebarSeparator />
       <SidebarMenu>
         <SidebarMenuItem>
           <DropdownMenu>
@@ -133,5 +153,3 @@ const close_sidebar_on_mobile = () => {
     </SidebarFooter>
   </Sidebar>
 </template>
-
-
