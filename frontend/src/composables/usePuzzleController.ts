@@ -148,6 +148,7 @@ function makeRemoteController(puzzle_type: gtypes.SupportedPuzzleTypes, autoResu
 
   return {
     puzzleType: puzzle_type,
+    bus: game.bus,
     state,
     rows,
     cols,

@@ -55,19 +55,11 @@ const { scale_remapped } = getGameScale();
           </Container>
         </div>
       </div>
-      <GameViewViolations
-        v-if="puzzle.tutorial_mode.value"
-        :violations="puzzle.state.value?.violations ?? []"
-        :class="{
-          'col-span-full': !layout.leaderboard_visible.value,
-        }"
-      />
-      <GameViewLeaderboard
-        v-if="layout.leaderboard_visible.value"
-        :class="{
-          'col-span-full': puzzle.tutorial_mode.value === false,
-        }"
-      />
+
+      <div class="flex flex-col mx-auto gap-2 col-span-2">
+        <GameViewViolations v-if="puzzle.tutorial_mode.value" :violations="puzzle.state.value?.violations ?? []" />
+        <GameViewLeaderboard v-if="layout.leaderboard_visible.value" />
+      </div>
     </div>
   </div>
 </template>

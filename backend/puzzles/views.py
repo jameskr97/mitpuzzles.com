@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from puzzles import models, serializers
+from puzzles.models import FreeplayPuzzleAttempt
 from puzzles.models.leaderboard import PuzzleAttempt
 from puzzles.serializers import LeaderboardEntrySerializer
 
@@ -103,6 +104,16 @@ class PuzzleClassSuffixList(APIView):
 
 @api_view(["GET"])
 def leaderboard_view(request):
+    """
+    Return a leaderboard of the fastest completion times (in milliseconds) for a
+    given puzzle type/size/difficulty, limited to one entry per visitor.
+
+    Query parameters:
+        puzzle_type        — required
+        puzzle_size        — required
+        puzzle_difficulty  — required
+        limit              — optional (default 10, max 100)
+    """
     puzzle_type = request.GET.get("puzzle_type")
     puzzle_size = request.GET.get("puzzle_size")
     puzzle_difficulty = request.GET.get("puzzle_difficulty")
@@ -111,43 +122,30 @@ def leaderboard_view(request):
     if not all([puzzle_type, puzzle_size, puzzle_difficulty]):
         return Response({"error": "Missing required parameters"}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Get the best attempt per visitor (minimum duration)
-    # First, get all visitors' best attempts by using a subquery
-    visitor_best_attempts = (
-        PuzzleAttempt.objects.filter(
+    # Select the best (lowest) completion_time_client_ms per visitor, outputting the visitor's generated_username
+    best_times_qs = (
+        FreeplayPuzzleAttempt.objects
+        .filter(
             puzzle__puzzle_type=puzzle_type,
             puzzle__puzzle_size=puzzle_size,
             puzzle__puzzle_difficulty=puzzle_difficulty,
             completed_at__isnull=False,
-            puzzle_duration__isnull=False,
+            completion_time_client_ms__isnull=False,
         )
-        .values('visitor')
-        .annotate(min_duration=Min('puzzle_duration'))
+        .values("visitor__generated_username")
+        .annotate(best_ms=Min("completion_time_client_ms"))
+        .filter(best_ms__isnull=False)          # safety
+        .order_by("best_ms")[:limit]
     )
 
-    # Then get the actual attempt records that match these best times
-    leaderboard_data = []
-    for best in visitor_best_attempts:
-        best_attempt = PuzzleAttempt.objects.filter(
-            visitor_id=best['visitor'],
-            puzzle__puzzle_type=puzzle_type,
-            puzzle__puzzle_size=puzzle_size,
-            puzzle__puzzle_difficulty=puzzle_difficulty,
-            puzzle_duration=best['min_duration'],
-            completed_at__isnull=False,
-        ).select_related("visitor").order_by("completed_at").first()
+    # Build simple leaderboard entries with seconds formatted to two decimals
+    leaderboard = []
+    for rank, entry in enumerate(best_times_qs, start=1):
+        seconds = entry["best_ms"] / 1000.0
+        leaderboard.append({
+            "rank": rank,
+            "username": entry["visitor__generated_username"],
+            "duration_display": f"{seconds:.2f} sec",
+        })
 
-        if best_attempt:
-            leaderboard_data.append(best_attempt)
-
-    # Sort the results by duration and apply limit
-    leaderboard_data.sort(key=lambda x: x.puzzle_duration)
-    leaderboard_data = leaderboard_data[:limit]
-
-    # Add rankings
-    for rank, attempt in enumerate(leaderboard_data, 1):
-        attempt.rank = rank
-
-    serializer = LeaderboardEntrySerializer(leaderboard_data, many=True)
-
-    return Response({"leaderboard": serializer.data, "count": len(serializer.data)})
+    return Response({"leaderboard": leaderboard, "count": len(leaderboard)})

@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import { useRoute } from "vue-router";
-import { useCurrentPuzzle } from "@/composables/useCurrentPuzzle.ts";
 import { getLeaderboard } from "@/services/app.ts";
 import { onMounted, ref, watch } from "vue";
-import { on } from "@/services/eventbus.ts";
 import {
   Table,
   TableBody,
@@ -15,10 +13,10 @@ import {
 } from '@/components/ui/table'
 import Container from "@/components/ui/Container.vue";
 import { usePuzzleController } from "@/composables/usePuzzleController.ts";
-import type { PayloadPuzzleType } from "@/codegen/websocket/game.schema";
+import type { SupportedPuzzleTypes } from "@/codegen/websocket/game.schema"
 
 const route = useRoute();
-const puzzle = usePuzzleController(route.meta.game_type as PayloadPuzzleType);
+const puzzle = usePuzzleController(route.meta.game_type as SupportedPuzzleTypes);
 
 const leaderboard = ref<Awaited<ReturnType<typeof getLeaderboard>> | null>(null);
 const update_leaderboard = async () => {
@@ -26,8 +24,8 @@ const update_leaderboard = async () => {
   const data = await getLeaderboard(puzzle.puzzleType, size, diff);
   leaderboard.value = data.data
 };
+puzzle.bus.on("submit_result", update_leaderboard);
 watch(() => puzzle.selected_variant.value, update_leaderboard);
-on("game:submit_result", update_leaderboard);
 onMounted(update_leaderboard);
 </script>
 

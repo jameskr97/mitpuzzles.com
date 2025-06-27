@@ -37,22 +37,22 @@ const done = () => {
             </li>
             <li class="mt-4">
               Click the
-              <Button class="btn btn-xs btn-error">clear</Button>
+              <Button variant="destructive" class="h-6">clear</Button>
               button reset your puzzle.
             </li>
             <li>
               Click the
-              <Button class="btn btn-xs btn-success">submit</Button>
+              <Button variant="success" class="h-6">submit</Button>
               button to check your answer.
             </li>
             <li>
               Click the
-              <Button class="btn btn-xs btn-primary">new puzzle</Button>
+              <Button class="h-6">new puzzle</Button>
               button for a new puzzle.
             </li>
             <li class="mb-4">
               Click the
-              <Button class="btn btn-xs btn-secondary">difficulty</Button>
+              <Button variant="outline" class="h-6">difficulty</Button>
               dropdown to select a different size puzzle.
             </li>
           </ul>
