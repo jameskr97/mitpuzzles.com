@@ -3,10 +3,6 @@ import type { PuzzleStateSudoku } from "@/services/states.ts";
 import type { createPuzzleSession } from "@/composables/useCurrentPuzzle.ts";
 import { computed } from "vue";
 
-export type SudokuSession = Awaited<ReturnType<typeof createPuzzleSession>> & {
-  state: { value: PuzzleStateSudoku };
-};
-
 export interface PersistentHighlightOptions {
   row?: number;
   col?: number;
@@ -18,15 +14,15 @@ export interface PersistentHighlightOptions {
 /**
  * Sudoku highlighting behavior - handles persistent row/col/box highlighting
  */
-export function useSudokuPersistentHighlighter(session: SudokuSession, options?: PersistentHighlightOptions) {
+export function useSudokuPersistentHighlighter(board: PuzzleStateSudoku, options?: PersistentHighlightOptions) {
   const highlightOptions = {
     row: options?.row ?? -1,
     col: options?.col ?? -1,
     box: options?.box ?? -1,
     cells: options?.cells ?? [],
-    cell_class: options?.cell_class ?? "bg-blue-400!",
+    cell_class: options?.cell_class ?? "bg-blue-200!",
   };
-  const subgridSize = computed(() => Math.sqrt(session.state.value?.board_initial.length || 9));
+  const subgridSize = computed(() => Math.sqrt(board.board_initial.length || 9));
 
   // Render behavior
   const renderBehavior: Partial<RenderEvents> = {
@@ -43,7 +39,7 @@ export function useSudokuPersistentHighlighter(session: SudokuSession, options?:
         if (boxIndex === highlightOptions.box) shouldHighlightPosition = true;
       }
 
-      if (shouldHighlightPosition) classes.push("bg-red-400");
+      if (shouldHighlightPosition) classes.push("bg-yellow-200");
       // Check for specific cell highlights (border)
       if (highlightOptions.cells && highlightOptions.cells.length > 0)
         if (highlightOptions.cells.some((cell) => cell.row === row && cell.col === col))
@@ -61,11 +57,11 @@ export function useSudokuPersistentHighlighter(session: SudokuSession, options?:
  * Convenience function to register Sudoku highlight behavior
  */
 export function withSudokuPersistentHighlighter(
-  session: SudokuSession,
+  board: PuzzleStateSudoku,
   bridge: any,
   persistentOptions?: PersistentHighlightOptions,
 ) {
-  const behavior = useSudokuPersistentHighlighter(session, persistentOptions);
+  const behavior = useSudokuPersistentHighlighter(board, persistentOptions);
   bridge.addRenderBehaviour(() => behavior.renderBehavior);
   return behavior;
 }

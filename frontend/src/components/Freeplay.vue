@@ -3,13 +3,13 @@ import { ACTIVE_GAMES } from "@/constants.ts";
 import { useRoute } from "vue-router";
 import { getGameScale } from "@/store/scale.ts";
 import GameViewComponent from "@/components/gameview.component.vue";
-import type { PayloadPuzzleType } from "@/codegen/websocket/game.schema";
 import { createPuzzleInteractionBridge } from "@/features/games.composables/setupPuzzleInteractionBridge.ts";
 import { usePuzzleController } from "@/composables/usePuzzleController.ts";
+import type { SupportedPuzzleTypes } from "@/codegen/websocket/game.schema";
 
 // load game rules as markdown
 const route = useRoute();
-const gt = route.meta.game_type as PayloadPuzzleType;
+const gt = route.meta.game_type as SupportedPuzzleTypes;
 const game_entry = ACTIVE_GAMES[gt];
 
 // load game state + data

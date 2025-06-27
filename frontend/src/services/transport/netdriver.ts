@@ -58,12 +58,10 @@ export class NetDriver {
   send<T extends Payload>(kind: string, payload: T) {
     if (this.state !== "OPEN") throw new Error("socket not open");
     const env: WebsocketEnvelope = {
-      kind,
       ts: Date.now(),
-      seq: ++this.seq,
       payload,
     };
-    logger.debug({ "netdriver.send": env.kind, seq: env.seq, ts: env.ts, payload: env.payload });
+    logger.debug({ "netdriver.send": env.payload.kind, ts: env.ts, payload: env.payload });
     // this.ws!.send(JSON.stringify(env))
     this.ws!.send(encode(env) as ArrayBuffer); // use msgpack for binary messages
   }
@@ -75,7 +73,7 @@ export class NetDriver {
     this.bus.emit("open", this.ws!);
     console.log(`[NetDriver] WebSocket connected to ${this.ws!.url}`);
     // start heartbeat if server hasn’t dictated one yet
-    this.#startHeartbeat(15000); // default heartbeat interval
+    // this.#startHeartbeat(1000); // default heartbeat interval
   }
 
   #handleClose(ev: CloseEvent) {
@@ -91,9 +89,9 @@ export class NetDriver {
 
   #handleRawMessage(raw: ArrayBuffer) {
     const env: WebsocketEnvelope = decode(raw) as WebsocketEnvelope;
-    logger.debug({ "netdriver.receive": env.kind, seq: env.seq, ts: env.ts, payload: env.payload });
+    logger.debug({ "netdriver.receive": env.payload.kind, ts: env.ts, payload: env.payload });
 
-    if (env.kind === "pong") {
+    if (env.payload.kind === "pong") {
       const pong = env.payload as EventPong;
       const rtt = Date.now() - pong.payload.client_ts;
       useAppConfig().setRTT(rtt);

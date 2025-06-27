@@ -28,6 +28,7 @@ import {
   HiPencilAlt,
   BiInfoCircleFill,
   MdFeedbackOutlined,
+  CoMagnifyingGlass,
 } from "oh-vue-icons/icons";
 
 addIcons(
@@ -57,4 +58,5 @@ addIcons(
   HiPencilAlt,
   BiInfoCircleFill,
   MdFeedbackOutlined,
+  CoMagnifyingGlass,
 );

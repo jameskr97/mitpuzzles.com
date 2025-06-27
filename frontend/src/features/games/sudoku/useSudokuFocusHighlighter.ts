@@ -3,9 +3,12 @@ import { computed, ref } from "vue";
 import type { BoardEvents, Cell } from "@/features/games.components/board.interaction.ts";
 import { type SudokuSession } from "@/features/games/sudoku/useSudokuCellHighlighter.ts";
 import { isCellMatch } from "@/features/games/sudoku/sudoku.utility.ts";
-import type { createPuzzleSession } from "@/composables/useCurrentPuzzle.ts";
+import type { usePuzzleController } from "@/composables/usePuzzleController.ts";
 
-export function useSudokuFocusHighlighter(session: Awaited<ReturnType<typeof createPuzzleSession>>) {
+export function useSudokuFocusHighlighter(session: ReturnType<typeof usePuzzleController>) {
+  const enabled = ref(true); // Enable/disable highlighting behavior
+  const setEnabled = (value: boolean) => (enabled.value = value);
+
   // State
   const lastHoveredCell = ref<Cell | null>(null);
   const lastSelectedHoveredCell = ref<Cell | null>(null);
@@ -22,11 +25,6 @@ export function useSudokuFocusHighlighter(session: Awaited<ReturnType<typeof cre
     return match.row || match.col || match.box;
   };
 
-  const is_default_cell = (row: number, col: number) => {
-    const idx = row * session.state.value?.cols + col;
-    return session.state.value?.board_initial[idx] === 0;
-  }
-
   //// Selection Visibility
   const selectedMatch = (row: number, col: number) =>
     isCellMatch(lastSelectedHoveredCell.value, row, col, subgridSize.value);
@@ -39,13 +37,15 @@ export function useSudokuFocusHighlighter(session: Awaited<ReturnType<typeof cre
     getCellContent(row: number, col: number): string | number | null {
       const idx = row * session.state.value?.cols + col;
       const value = session.state.value?.board[idx];
+      if (!enabled.value) return value === 0 ? "" : value;
       if (!shouldShowCell(row, col)) return value === 0 ? "" : "X";
 
       // If you have is_prefilled, use it here. Otherwise, just show value if not zero.
       return value !== 0 ? value : "";
     },
+
     getCellClasses(row: number, col: number): string[] {
-      const s = session as SudokuSession;
+      if (!enabled.value) return [];
       const BLUR_CLASS = "blur-[5px]";
       const classes: string[] = [BLUR_CLASS, "overflow-hidden"];
       if (shouldHoverHighlight(row, col)) classes.push("bg-yellow-50");
@@ -59,10 +59,13 @@ export function useSudokuFocusHighlighter(session: Awaited<ReturnType<typeof cre
 
   const inputBehavior: Partial<BoardEvents> = {
     onCellEnter(cell: Cell, _event: MouseEvent): boolean {
+      if (!enabled.value) return true;
+
       lastHoveredCell.value = cell;
       return false;
     },
     onKeyDown(event: KeyboardEvent): boolean {
+      if (!enabled.value) return true;
       event.preventDefault(); // Prevent default browser behavior
       const key = event.key;
       if (key === "Escape") {
@@ -74,10 +77,12 @@ export function useSudokuFocusHighlighter(session: Awaited<ReturnType<typeof cre
     },
 
     onBoardLeave(_event: MouseEvent): boolean {
+      if (!enabled.value) return true;
       lastHoveredCell.value = null;
       return false;
     },
     onCellClick(cell: Cell, event: MouseEvent): boolean {
+      if (!enabled.value) return true;
       lastSelectedHoveredCell.value = cell;
       return false;
     },
@@ -86,6 +91,7 @@ export function useSudokuFocusHighlighter(session: Awaited<ReturnType<typeof cre
   return {
     inputBehavior,
     renderBehavior,
+    setEnabled,
   };
 }
 

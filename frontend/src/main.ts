@@ -18,7 +18,7 @@ import "./style.css";
 // PostHog
 import posthog from "posthog-js";
 // Socket
-import { ACTIVE_GAMES, DEV_TOOLS } from "@/constants.ts";
+import { ACTIVE_EXPERIMENTS, ACTIVE_GAMES, DEV_TOOLS } from "@/constants.ts";
 import { useAppConfig } from "@/store/app.ts";
 import logger from "@/services/logger.ts";
 import { NetDriver } from "@/services/transport/netdriver.ts";
@@ -53,14 +53,16 @@ const route = {
     component: () => import("@/components/Freeplay.vue"),
     meta: { game_type: name },
   }),
-  dev: (key: string) => ({
+  dev: (key: string, meta: Object) => ({
     path: `/devtool/${key}`,
     name: `dev-${key}`,
     component: () => import(`@/views/dev/${key}.vue`),
+    meta,
   }),
   experiment: (key: string) => ({
     path: `/experiment/${key}`,
     name: `experiment-${key}`,
+    meta: { experiment_key: key },
     component: () => import(`@/features/prolific.experiments/${key}/ExperimentMain.vue`),
   }),
 };
@@ -71,9 +73,10 @@ const routerConfig: RouterOptions = {
   routes: [
     route.view("", "Home", "Home"),
     route.markdown("/about-us", "about-us", mdAbout),
-    route.experiment("2025.05.29.sudoku"),
+    ...Object.values(DEV_TOOLS).map(({ key, meta }) => route.dev(key, meta)),
+    ...Object.keys(ACTIVE_EXPERIMENTS).map(route.experiment),
     ...Object.keys(ACTIVE_GAMES).map(route.game),
-    ...Object.keys(DEV_TOOLS).map(route.dev),
+    // ...Object.keys(DEV_TOOLS).map(route.dev),
     { path: "/:pathMatch(.*)*", name: "404", component: () => import("./views/404.vue") },
   ],
 };

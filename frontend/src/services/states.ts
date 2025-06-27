@@ -2,12 +2,14 @@ export interface MutablePuzzleState {
   cols: number;
   rows: number;
   board: number[];
+  immutable: number[]; // Immutable cells (1 for immutable, 0 for mutable)
+  tutorial_mode: boolean; // Whether the puzzle is in tutorial mode
   session_id: string;
   puzzle_type: string;
   puzzle_size: string;
   puzzle_difficulty: string;
   violations: GameViolation[];
-  is_solved: boolean;
+  solved: boolean;
 }
 
 export interface GameViolation {

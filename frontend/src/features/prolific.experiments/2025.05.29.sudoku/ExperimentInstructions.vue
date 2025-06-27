@@ -2,19 +2,26 @@
 import { type PropType, ref } from "vue";
 import type { PuzzleStateSudoku } from "@/services/states.ts";
 import PuzzleSudoku from "@/features/games/sudoku/sudoku.puzzle.vue";
-import ExperimentQuiz from "@/features/prolific.components/ExperimentQuiz.vue";
-import type { ExperimentContext } from "@/features/prolific.composables/useExperimentFlow.ts";
+import Quiz from "@/features/prolific.components/Quiz.vue";
 import { getPersistentHighlightSudokuBoard } from "@/features/games/sudoku/getPersistentHighlightSudokuBoard.ts";
 import { Alert, AlertTitle } from "@/components/ui/alert";
-import { usePuzzleController } from "@/composables/usePuzzleController.ts";
+import { useExperimentController } from "@/features/prolific.composables/useExperimentController.ts";
 import { createPuzzleInteractionBridge } from "@/features/games.composables/setupPuzzleInteractionBridge.ts";
+import { withSudokuBehaviors } from "@/features/games/sudoku/useSudokuCellHighlighter.ts";
+import { withSudokuFocusBehavior } from "@/features/games/sudoku/useSudokuFocusHighlighter.ts";
+import { usePuzzleController } from "@/composables/usePuzzleController.ts";
+import { useRoute } from "vue-router";
+
+
 
 const props = defineProps({
   context: {
-    type: Object as PropType<ExperimentContext>,
+    type: Object as PropType<ReturnType<typeof useExperimentController>>,
     required: true,
   },
 });
+const route = useRoute();
+const ec = useExperimentController(route.meta.experiment_key as string);
 
 // prettier-ignore
 const gameState0 = ref<PuzzleStateSudoku>(
@@ -46,15 +53,13 @@ const gameState0Solution = ref<PuzzleStateSudoku>(
   }
 );
 
-// const session = await createStaticPuzzleSession(gameState0, "sudoku");
-// const puzzle = await usePuzzleController("sudoku");
-// const bridge = await createPuzzleInteractionBridge(puzzle);
-// withSudokuBehaviors(puzzle, bridge);
-// withSudokuFocusBehavior(puzzle, bridge);
+const puzzle = await usePuzzleController("sudoku", { mode: "local", initialState: gameState0 });
+const bridge = await createPuzzleInteractionBridge("sudoku", { mode: "local", state: puzzle.state });
+withSudokuBehaviors(puzzle, bridge);
+withSudokuFocusBehavior(puzzle, bridge);
 
 const RowHighlighted = getPersistentHighlightSudokuBoard({
   row: 2,
-  cell_class: "bg-red-400!",
   cells: [
     { row: 2, col: 4 },
     { row: 2, col: 6 },
@@ -63,7 +68,6 @@ const RowHighlighted = getPersistentHighlightSudokuBoard({
 });
 const ColHighlighted = getPersistentHighlightSudokuBoard({
   col: 2,
-  cell_class: "bg-red-400!",
   cells: [
     { row: 1, col: 2 },
     { row: 4, col: 2 },
@@ -72,7 +76,6 @@ const ColHighlighted = getPersistentHighlightSudokuBoard({
 });
 const BoxHighlighted = getPersistentHighlightSudokuBoard({
   box: 6,
-  cell_class: "bg-red-400!",
   cells: [
     { row: 6, col: 0 },
     { row: 6, col: 1 },
@@ -95,7 +98,7 @@ let quiz: { answer: boolean; question: string }[] =
 
 function onQuizSubmitted(allCorrect: boolean) {
   if (allCorrect) {
-    props.context.goNextStep();
+    ec.nextStep()
   } else {
     showQuizWarning.value = true;
   }
@@ -204,7 +207,7 @@ function onQuizSubmitted(allCorrect: boolean) {
       <Alert v-if="showQuizWarning" variant="warning">
         <AlertTitle>Please double check your answers</AlertTitle>
       </Alert>
-      <ExperimentQuiz :questions="quiz" @eval-result="(args) => onQuizSubmitted(args)" />
+      <Quiz :questions="quiz" @eval-result="(args) => onQuizSubmitted(args)" />
     </div>
   </div>
 </template>

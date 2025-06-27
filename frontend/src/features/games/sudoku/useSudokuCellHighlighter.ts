@@ -6,21 +6,22 @@ import { check_violation_rule } from "@/utils.ts";
 import { isCellMatch } from "@/features/games/sudoku/sudoku.utility.ts";
 import type { usePuzzleController } from "@/composables/usePuzzleController.ts";
 
-export type SudokuSession = ReturnType<typeof usePuzzleController> & {
-  state: { value: PuzzleStateSudoku };
+export type SudokuSession = { state: { value: PuzzleStateSudoku };
 };
 
 /**
  * Sudoku highlighting behavior - handles row/col/box selection highlighting
  * This replaces the old createSudokuBehavior but fits the new behavior pair pattern
  */
-export function useSudokuCellHighlighter(session: SudokuSession) {
+export function useSudokuCellHighlighter(ctrl: ReturnType<typeof usePuzzleController>) {
+  const enabled = ref(true); // Enable/disable highlighting behavior
+  const setEnabled = (value: boolean) => enabled.value = value;
+
   const subgridSize = computed(() => {
-    const rows = session.state.value?.rows;
+    const rows = ctrl.state.value?.rows;
     return rows ? Math.sqrt(rows) : 3;
   });
   const activeCell = ref<Cell | null>(null);
-
   // Helper functions
   const activeMatch = (row: number, col: number) => isCellMatch(activeCell.value, row, col, subgridSize.value);
   const shouldHighlightCell = (row: number, col: number) => {
@@ -28,13 +29,14 @@ export function useSudokuCellHighlighter(session: SudokuSession) {
     return match.row || match.col || match.box;
   };
   const isCellActive = (row: number, col: number) => activeCell.value?.row === row && activeCell.value?.col === col;
-  const isPrefilled = (row: number, col: number) => session.state.value?.board_initial[row * session.state.value?.cols + col] !== 0;
+  const isPrefilled = (row: number, col: number) => ctrl.state.value?.board_initial[row * ctrl.state.value?.cols + col] !== 0;
 
 
   // Input behavior
   const inputBehavior: Partial<BoardEvents> = {
     onCellClick(cell: Cell, _event: MouseEvent): boolean {
-      if (!session.state.value) return false;
+      if(!enabled.value) return false;
+      if (!ctrl.state.value) return false;
       activeCell.value = cell
       return false; // Let other behaviors handle the actual cell interaction
     },
@@ -46,27 +48,27 @@ export function useSudokuCellHighlighter(session: SudokuSession) {
       // NOTE(james): the space works here, but it is technically an inter-behavior interaction
       // which should be better modeled by a composite behavior, instead of just this behavior also
       // handling it. But for now, this is simpler.
-      if (key === "Escape" || key === " ") {
+      if (key === "Escape") {
         activeCell.value = null;
         return true;
       }
 
-      if (!session.state.value) return false;
+      if (!ctrl.state.value) return false;
       // if (isPrefilled(cell.row, cell.col)) return false; // Don't modify prefilled cells
 
       const keyAsNumber = Number(key);
 
       // Handle number input
-      if (!isNaN(keyAsNumber) && keyAsNumber >= 1 && keyAsNumber <= session.state.value.rows) {
-        session.handleCellClick(cell, 0, keyAsNumber);
+      if (!isNaN(keyAsNumber) && keyAsNumber >= 1 && keyAsNumber <= ctrl.state.value.rows) {
+        ctrl.handleCellClick(cell, 0, keyAsNumber);
         return true;
       }
 
       // Handle deletion
       if (key === "Backspace" || key === "Delete") {
-        const index = cell.row * session.state.value.cols + cell.col;
-        session.state.value.board[index] = 0;
-        session.handleCellClick(cell, 0, 0);
+        const index = cell.row * ctrl.state.value.cols + cell.col;
+        ctrl.state.value.board[index] = 0;
+        ctrl.handleCellClick(cell, 0, 0);
         return true;
       }
 
@@ -85,8 +87,8 @@ export function useSudokuCellHighlighter(session: SudokuSession) {
       if (!isPrefilled(row, col))         classes.push("text-sky-600!"); // Text color based on whether it's prefilled
 
       // Violation styling
-      if (session.state.value?.violations && check_violation_rule(session.state.value.violations, row, col, ["row_duplicate_violation", "col_duplicate_violation", "box_duplicate_violation"]))
-        classes.push("border-red-500!", "border-[1px]");
+      if (ctrl.state.value?.violations && check_violation_rule(ctrl.state.value.violations, row, col, ["row_duplicate_violation", "col_duplicate_violation", "box_duplicate_violation"]))
+        classes.push("border-red-500!", "border-2");
       return classes;
     },
   };
@@ -100,13 +102,14 @@ export function useSudokuCellHighlighter(session: SudokuSession) {
     isCellActive,
     shouldHighlightCell,
     isPrefilled,
+    setEnabled
   };
 }
 
 /**
  * Convenience function to register Sudoku highlight behavior
  */
-export function withSudokuBehaviors(session: SudokuSession, bridge: any) {
+export function withSudokuBehaviors(session: ReturnType<typeof usePuzzleController>, bridge: any) {
   const behavior = useSudokuCellHighlighter(session);
   bridge.addInputBehaviour(() => behavior.inputBehavior);
   bridge.addRenderBehaviour(() => behavior.renderBehavior);

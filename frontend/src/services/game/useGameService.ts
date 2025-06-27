@@ -6,7 +6,7 @@ export function provideGameService() {
   const gs = new WebsocketGameService(new NetDriver({
     url: () => `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws/puzzlet/`,
     heartbeatMs: 2000,
-    autoReconnect: true
+    autoReconnect: false
   }))
   gs.connect()
   return gs

@@ -8,21 +8,18 @@ import {
   StepperTrigger,
 } from "@/components/ui/stepper";
 import type { PropType } from "vue";
-import type { useExperimentFlow } from "@/features/prolific.composables/useExperimentFlow.ts";
 import Container from "@/components/ui/Container.vue";
+import { useExperimentController } from "@/features/prolific.composables/useExperimentController.ts";
+import { useRoute } from "vue-router";
 
-defineProps({
-  context: {
-    type: Object as PropType<ReturnType<typeof useExperimentFlow>>,
-    required: true,
-  },
-});
+const route = useRoute();
+const ec = useExperimentController(route.meta.experiment_key as string);
 </script>
 
 <template>
   <Container class="max-w-prose">
-    <Stepper v-model="context.currentStepIndex" :steps="context.steps">
-      <StepperItem v-for="(step, index) in context.steps.value" :key="step.id" :step="index">
+    <Stepper v-model="ec.currentStepIndex.value" :steps="ec.steps.length">
+      <StepperItem v-for="(step, index) in ec.steps" :key="step.id" :step="index">
         <StepperTrigger>
           <StepperIndicator>{{ index + 1 }}</StepperIndicator>
           <StepperTitle>{{ step.label }}</StepperTitle>

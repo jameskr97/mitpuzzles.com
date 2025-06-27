@@ -46,6 +46,7 @@ defineProps({
   showButtons: { type: Boolean, default: true },
   showVariant: { type: Boolean, default: true },
   showTimer: { type: Boolean, default: true },
+  showSettings: { type: Boolean, default: true }
 });
 </script>
 

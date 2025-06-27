@@ -7,6 +7,7 @@ import { emit } from "@/services/eventbus.ts";
 import { createPuzzleSession } from "@/composables/useCurrentPuzzle.ts";
 import { usePuzzleController } from "@/composables/usePuzzleController.ts";
 import type { PayloadPuzzleType } from "@/codegen/websocket/game.schema";
+import { GameServiceLocal } from "@/services/game/GameServiceLocal.ts";
 
 /**
  * GameEvents - Interface for game-level events
@@ -47,6 +48,7 @@ export interface RenderEvents {
   getRightGutterStyles?: (row: number, col: number) => Record<string, string>;
 }
 
+
 /**
  * Create a bridge between the puzzle interaction and the puzzle state.
  * - This allows users to add custom behaviours to the puzzle interaction.
@@ -54,8 +56,12 @@ export interface RenderEvents {
  * - Note, the order of the behaviours is important, as they are called in the order they are added.
  * @param session The puzzle state session
  */
-export function createPuzzleInteractionBridge(puzzle_type: PayloadPuzzleType) {
-  const ctrl = usePuzzleController(puzzle_type)
+export function createPuzzleInteractionBridge(
+  puzzle_type: PayloadPuzzleType,
+  opts: { mode?: "remote" | "local"; state?: any } = {},
+) {
+  const ctrl = usePuzzleController(puzzle_type, opts)
+
 
   // Create event handler managers for each type of event
   const boardEventManager = new EventHandlerManager<BoardEvents>();

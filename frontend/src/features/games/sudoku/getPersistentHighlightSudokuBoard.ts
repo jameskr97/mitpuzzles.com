@@ -26,12 +26,14 @@ export function getPersistentHighlightSudokuBoard(highlightOptions?: PersistentH
       },
     },
     async setup(props, { attrs, slots }) {
-      const session = await createStaticPuzzleSession(props.state, "sudoku")
-      const bridge = createPuzzleInteractionBridge(session);
-      withSudokuPersistentHighlighter(session, bridge, highlightOptions);
+      const bridge = createPuzzleInteractionBridge("sudoku", {
+        mode: "local",
+        state: props.state
+      });
+      withSudokuPersistentHighlighter(props.state, bridge, highlightOptions);
 
       return () => h(PuzzleSudoku, {
-        state: session.state,
+        state: props.state,
         interact: bridge,
         scale: props.scale,
         ...attrs

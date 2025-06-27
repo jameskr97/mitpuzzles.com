@@ -19,16 +19,26 @@ export function create_game_entry(
   };
 }
 
-export function create_dev_tool(key: string, icon: string, display_name: string, requires_admin: boolean = false) {
+export function create_dev_tool(key: string, icon: string, display_name: string, meta: object = {}, requires_admin: boolean = false) {
   return {
     key,
     icon,
     name: display_name,
     component: import(`@/views/dev/${key}.vue`),
     requires_admin,
+    meta,
   };
 }
 
+export function create_experiment(key: string, flow: any) {
+  return {
+    key,
+    component: defineAsyncComponent({
+      loader: () => import(`@/features/prolific.experiments/${key}/ExperimentMain.vue`),
+    }),
+    flow,
+  };
+}
 
 /** Simplifies resetting all of localStorage through a version variable. */
 export class StorageVersionManager {
@@ -131,10 +141,9 @@ export function shuffle(array: any[]) {
 }
 
 export function detectModeFromPath(): "freeplay" | "prolific" {
-  return /^\/(experiment|devtools\/test-experiment)/.test(
-           window.location.pathname)
-    ? "prolific"
-    : "freeplay";
+  const IS_TEST_EXPERIMENT = /^\/devtool\/test-experiment/.test(location.pathname);
+  const IS_REAL_EXPERIMENT = /^\/experiment\//.test(location.pathname);
+  return IS_TEST_EXPERIMENT || IS_REAL_EXPERIMENT ? "prolific" : "freeplay";
 }
 
 export function getPuzzleDisplayName(parts?: string[]): string {
