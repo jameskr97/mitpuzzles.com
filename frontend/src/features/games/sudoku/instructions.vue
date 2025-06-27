@@ -55,7 +55,7 @@ const Board0Highlighted = getPersistentHighlightSudokuBoard({
           Sudoku is a logic puzzle played on a 9x9 grid. The grid is divided into 3x3 boxes, and some cells already
           contain numbers.
         </div>
-        <PuzzleSudoku :scale="3" :state="board0" class="mx-auto" />
+        <PuzzleSudoku :scale="1" :state="board0" class="mx-auto" />
       </div>
     </template>
 
@@ -65,7 +65,7 @@ const Board0Highlighted = getPersistentHighlightSudokuBoard({
           Your goal is to <span class="text-red-500">fill in the empty cells</span> with numbers from 1 to 9. Each row, column, and 3x3 box must contain
           <span class="text-red-500"></span> without repetition.
         </div>
-        <Board0Highlighted :scale="3" :state="board0" class="mx-auto" />
+        <Board0Highlighted :scale="1" :state="board0" class="mx-auto" />
       </div>
     </template>
 
@@ -75,7 +75,7 @@ const Board0Highlighted = getPersistentHighlightSudokuBoard({
           The puzzle is solved when all cells are filled and every row, column, and 3×3 box contains the digits 1-9
           exactly once.
         </div>
-        <Board0Highlighted :scale="3" :state="board0Solved" class="mx-auto" />
+        <Board0Highlighted :scale="1" :state="board0Solved" class="mx-auto" />
       </div>
     </template>
   </GameViewInstructionsSlider>
