@@ -1,7 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://example.com/game.schema.json",
-
   "title": "GamePayload",
   "oneOf": [
     { "$ref": "#/$defs/CommandLoad" },
@@ -10,170 +9,168 @@
     { "$ref": "#/$defs/CommandClear" },
     { "$ref": "#/$defs/CommandResume" },
     { "$ref": "#/$defs/CommandSubmit" },
-    { "$ref": "#/$defs/CommandToggleTutorial" },
 
-    { "$ref": "#/$defs/EventState"   },
-    { "$ref": "#/$defs/EventSubmitResult"   }
+    { "$ref": "#/$defs/CommandToggleTutorial" },
+    { "$ref": "#/$defs/EventState" },
+    { "$ref": "#/$defs/EventSubmitResult" }
   ],
   "discriminator": {
-    "propertyName": "kind",
-    "mapping": {
-      "new"  : "#/$defs/CommandNew",
-      "resume"  : "#/$defs/CommandResume",
-      "action"  : "#/$defs/CommandAction",
-      "submit"  : "#/$defs/CommandSubmit",
-      "clear"   : "#/$defs/CommandClear",
-      "toggle_tutorial" : "#/$defs/CommandToggleTutorial",
-
-      "state"   : "#/$defs/EventState",
-      "delta"   : "#/$defs/EventDelta",
-      "submit_result"  : "#/$defs/EventSubmitResult",
-      "error"   : "#/$defs/EventError"
-    }
+    "propertyName": "kind"
   },
-
   "$defs": {
-    "PayloadPuzzleType": {
+    "SupportedPuzzleTypes": {
       "type": "string",
-      "enum": ["sudoku","minesweeper","lightup","tents","kakurasu"]
+      "title": "SupportedPuzzleTypes",
+      "enum": [
+        "sudoku",
+        "minesweeper",
+        "lightup",
+        "tents",
+        "kakurasu"
+      ]
     },
-    "BaseCommandSessionIDOnly": {
-        "type": "object",
-        "properties": {
-            "kind":       { "type": "string" },
-            "session_id": { "type": "string" }
+    "PuzzleAttemptBase": {
+      "properties": {
+        "attempt_id": {
+          "type": "string"
         },
-        "required": ["kind","session_id"],
+        "puzzle_type": {
+          "$ref": "#/$defs/SupportedPuzzleTypes"
+        }
+      },
+      "required": [
+        "attempt_id",
+        "puzzle_type"
+      ],
       "additionalProperties": false
     },
 
     "CommandLoad": {
       "type": "object",
       "description": "Load a puzzle session",
-      "allOf": [
-        {
-          "properties": {
-            "kind": {
-              "type": "string",
-              "const": "load"
-            },
-            "puzzle_type":  { "$ref": "#/$defs/PayloadPuzzleType" }
-          },
-          "required": ["kind", "puzzle_type"]
-        }
-      ],
-
+      "properties": {
+        "kind": { "const": "load" },
+        "puzzle_type": { "$ref": "#/$defs/SupportedPuzzleTypes" }
+      },
+      "required": ["kind", "puzzle_type"],
       "additionalProperties": false
     },
-    "CommandRefresh": {
-      "type": "object",
-      "description": "Get a new puzzle of the same type",
+    "CommandResume": {
+      "title": "CommandResume",
       "allOf": [
-        { "$ref": "#/$defs/BaseCommandSessionIDOnly" },
+        { "$ref": "#/$defs/PuzzleAttemptBase" },
         {
-          "properties": {
-            "kind":         { "const": "refresh" },
-            "size":         { "type": "string" },
-            "difficulty":   { "type": "string" }
-          },
-          "additionalProperties": false,
+          "type": "object",
+          "properties": { "kind": { "const": "resume" } },
           "required": ["kind"]
         }
-      ],
-      "additionalProperties": false
+      ]
     },
-    "CommandResume":{
-      "type": "object",
+
+    "CommandRefresh": {
+      "title": "CommandRefresh",
+      "description": "Get a new puzzle",
       "allOf": [
-        { "$ref": "#/$defs/BaseCommandSessionIDOnly" },
+        { "$ref": "#/$defs/PuzzleAttemptBase" },
         {
+          "type": "object",
           "properties": {
-            "kind": { "const": "resume" }
+            "kind": { "const": "refresh" },
+            "size": { "type": ["string", "null"] },
+            "difficulty": { "type": ["string", "null"] }
           },
           "required": ["kind"]
         }
       ]
     },
+
     "CommandAction": {
-      "type": "object",
+      "title": "CommandAction",
       "allOf": [
-        { "$ref": "#/$defs/BaseCommandSessionIDOnly" },
+        { "$ref": "#/$defs/PuzzleAttemptBase" },
         {
+          "type": "object",
           "properties": {
-            "kind":       { "const": "action" },
-            "payload": { "additionalProperties": true }
+            "kind": { "const": "action" },
+            "payload": { "type": "object", "additionalProperties": true }
           },
           "required": ["kind", "payload"],
           "additionalProperties": false
+
         }
       ]
     },
-    "CommandClear":{
-      "type": "object",
+
+    "CommandClear": {
+      "title": "CommandClear",
       "allOf": [
-        { "$ref": "#/$defs/BaseCommandSessionIDOnly" },
+        { "$ref": "#/$defs/PuzzleAttemptBase" },
         {
-          "properties": {
-            "kind": { "const": "clear" }
-          },
+          "type": "object",
+          "properties": { "kind": { "const": "clear" } },
           "required": ["kind"]
         }
-      ]
+      ],
+      "additionalProperties": false
     },
-    "CommandSubmit":{
-      "type": "object",
+
+    "CommandSubmit": {
+      "title": "CommandSubmit",
       "allOf": [
-        { "$ref": "#/$defs/BaseCommandSessionIDOnly" },
+        { "$ref": "#/$defs/PuzzleAttemptBase" },
         {
+          "type": "object",
           "properties": {
             "kind": { "const": "submit" },
             "client_duration": { "type": "number" }
           },
           "required": ["kind", "client_duration"]
         }
-      ]
+      ],
+      "additionalProperties": false
     },
-    "CommandToggleTutorial":{
-      "type": "object",
+    "CommandToggleTutorial": {
+      "title": "CommandToggleTutorial",
       "allOf": [
-        { "$ref": "#/$defs/BaseCommandSessionIDOnly" },
+        { "$ref": "#/$defs/PuzzleAttemptBase" },
         {
+          "type": "object",
           "properties": {
             "kind": { "const": "toggle_tutorial" },
             "enabled": { "type": "boolean" }
           },
           "required": ["kind", "enabled"]
         }
-      ]
+      ],
+      "additionalProperties": false
     },
 
     "EventState": {
-      "type": "object",
+      "title": "EventState",
       "allOf": [
-        { "$ref": "#/$defs/BaseCommandSessionIDOnly" },
+        { "$ref": "#/$defs/PuzzleAttemptBase" },
         {
+          "type": "object",
           "properties": {
-            "kind":           { "const": "state" },
-            "puzzle_type":    { "$ref": "#/$defs/PayloadPuzzleType" },
-            "rows":           { "type": "integer" },
-            "cols":           { "type": "integer" },
-            "board":          { "type": "array", "items": { "type": "integer" } },
-            "board_initial":  { "type": "array", "items": { "type": "integer" } },
-            "immutable":      { "type": "array", "items": { "type": "integer" } },
-            "violations":     { "type": "array", "items": { "type": "object" } },
-            "solved":         { "type": "boolean" }
+            "kind": { "const": "state" },
+            "rows": { "type": "integer" },
+            "cols": { "type": "integer" },
+            "board": { "type": "array", "items": { "type": "integer" }},
+            "immutable": { "type": "array", "items": { "type": "integer" }},
+            "violations": { "type": "array", "items": { "type": "object" }},
+            "solved": { "type": "boolean" }
           },
-          "required": ["kind", "puzzle_type", "rows", "cols", "board", "immutable"]
+          "required": ["kind", "rows", "cols", "board", "immutable"]
         }
-       ],
+      ],
       "additionalProperties": true
-
     },
     "EventSubmitResult": {
-      "type": "object",
+      "title": "EventSubmitResult",
       "allOf": [
-        { "$ref": "#/$defs/BaseCommandSessionIDOnly" },
+        { "$ref": "#/$defs/PuzzleAttemptBase" },
         {
+          "type": "object",
           "properties": {
             "kind": { "const": "submit_result" },
             "solved": { "type": "boolean" }
