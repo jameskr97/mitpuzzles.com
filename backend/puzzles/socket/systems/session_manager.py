@@ -33,16 +33,21 @@ logger = logging.getLogger(__name__)
 
 
 class EngineWrapper:
-    __slots__ = ("engine", "storage", "last_touched")
+    __slots__ = ("engine", "storage", "last_touched", "mode")
 
-    def __init__(self, engine, storage):
+    def __init__(self, engine, storage, mode):
         self.engine: PuzzleEngineBase = engine
         self.storage: Type[AbstractPuzzleAttempt] = storage
         self.last_touched = time.time()
+        self.mode = mode
 
     async def sync_and_flush(self):
         """Sync current board state to the backing DB model."""
         logger.info(f"[SessionManager] Flushing session {self.storage.id}. State: {self.engine.board_state}")
+        p = GAMEMODE_TO_ATTEMPT_TABLE_MAP[self.mode].objects.select_related("puzzle")
+        self.storage = await database_sync_to_async(p.get)(id=self.storage.id)
+
+        # self.storage = GAMEMODE_TO_ATTEMPT_TABLE_MAP[self.mode].objects.select_related("puzzle").get(id=self.storage.id)
         self.storage.board_state = self.engine.board_state
         await database_sync_to_async(self.storage.save)()
         return self.storage
@@ -103,7 +108,7 @@ class SessionManager:
         # create engine
         puzzle_definition = PuzzleDefinition.from_model(attempt.puzzle)
         engine: PuzzleEngineBase = PUZZLE_TYPE_TO_ENGINE_MAP[puzzle_type](puzzle_definition, attempt.board_state)
-        wrapper = EngineWrapper(engine, attempt)
+        wrapper = EngineWrapper(engine, attempt, mode)
         await wrapper.sync_and_flush()
 
         attempt_id = forced_id or str(attempt.id)
@@ -130,7 +135,7 @@ class SessionManager:
 
         definition = PuzzleDefinition.from_model(attempt.puzzle)
         engine = PUZZLE_TYPE_TO_ENGINE_MAP[attempt.puzzle.puzzle_type](definition, attempt.board_state)
-        wrapper = EngineWrapper(engine, attempt)
+        wrapper = EngineWrapper(engine, attempt, mode)
         self._sessions[attempt_id] = wrapper
         self._sessions.move_to_end(attempt_id)
         return wrapper

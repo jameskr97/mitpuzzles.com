@@ -30,9 +30,9 @@ class ProlificParticipation(models.Model):
     """Minimal tracking for Prolific participants"""
     # Prolific identifiers from URL (composite primary key)
     id = models.UUIDField(default=uuid.uuid4, primary_key=True)
-    prolific_id = models.CharField(max_length=100, db_index=True)
-    study_id = models.CharField(max_length=100)
-    session_id = models.CharField(max_length=100)
+    prolific_subject_id = models.CharField(max_length=100, db_index=True)
+    prolific_study_id = models.CharField(max_length=100)
+    prolific_session_id = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -47,16 +47,34 @@ class ProlificParticipation(models.Model):
     current_trial = models.IntegerField(default=0)  # 0 = not started
     completed = models.BooleanField(default=False)
 
+    # experiment metadata
+    metadata = models.JSONField(default=dict, blank=True)
+
+    def get_current_attempt(self) -> "ExperimentPuzzleAttempt":
+        return ExperimentPuzzleAttempt.objects.filter(
+            prolific_session=self,
+            attempt_order=self.current_trial
+        ).first()
+
+
+class ExperimentPuzzlePool(models.Model):
+    """One row per puzzle in THIS experiment."""
+    experiment = models.ForeignKey(Experiment, on_delete=models.PROTECT)
+    puzzle = models.ForeignKey(Puzzle, on_delete=models.PROTECT)
+    served = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        unique_together = ("experiment_id", "puzzle")
+
+
 class ExperimentPuzzleAttempt(AbstractPuzzleAttempt):
     """
     Records each attempt a user makes at solving a puzzle in freeplay mode.
     This is used for puzzles that do not have a specific completion condition.
     """
+
     class Meta:
         verbose_name = "Prolific Puzzle Attempt"
         verbose_name_plural = "Prolific Puzzle Attempts"
-
-    # Additional fields specific to experiment mode can be added here if needed
+    attempt_order = models.IntegerField(default=0)
     prolific_session = models.ForeignKey(ProlificParticipation, on_delete=models.CASCADE)
-
-

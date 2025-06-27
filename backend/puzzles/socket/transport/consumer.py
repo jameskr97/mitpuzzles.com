@@ -59,10 +59,30 @@ class TransportConsumer(AsyncWebsocketConsumer):
 
         # everything else → router
         responses = await route(env, self)
-        if responses:
-            for ev in responses:
-                await self._send(ev)
+        await self._dispatch(responses)
         return None
+
+    async def _dispatch(self, item):
+        """
+        Recursively fan‑out whatever the handler returned.
+
+        Handlers may legally return:
+          * None
+          * a single WebsocketEnvelope
+          * an iterable (list/tuple) of WebsocketEnvelopes — possibly nested
+
+        This helper flattens the structure and forwards every envelope to _send().
+        """
+        if item is None:
+            return
+        if isinstance(item, (list, tuple)):
+            for sub in item:
+                await self._dispatch(sub)
+            return
+        # single envelope
+        await self._send(item)
+
+
 
     # endregion
 

@@ -26,17 +26,25 @@ def _make_state(env: WebsocketEnvelope, wrapper: EngineWrapper, sid: str):
 
     mutable_cells = sum(1 for cell in engine.get_immutable_cells() if cell == 0)
     mistake_count = engine.calculate_number_of_mistakes()
+
+    payload = EventState(
+        kind="state",
+        attempt_id=str(sid),
+        puzzle_type=puzzle.puzzle_type,  # always correct
+        solved=attempt.is_solved,
+        # points_earned=(mutable_cells - mistake_count) * 3,
+        **engine.serialize_gamedata(),
+    )
+
+    try:
+        payload.points_earned = max(0, (mutable_cells - mistake_count) * 3)
+    except Exception as e:
+        pass
+
     return env.model_copy(
         update={
             "kind": "state",
-            "payload": EventState(
-                kind="state",
-                attempt_id=str(sid),
-                puzzle_type=puzzle.puzzle_type,  # always correct
-                solved=attempt.is_solved,
-                # points_earned=(mutable_cells - mistake_count) * 3,
-                **engine.serialize_gamedata(),
-            ),
+            "payload": payload
         }
     )
 
@@ -48,6 +56,7 @@ async def _broadcast_state(ctx, env: WebsocketEnvelope, wrapper: EngineWrapper, 
     mode = ctx.scope["mode"]
     state_env = _make_state(env, wrapper, sid)
     room_id = room_name(mode, sid)
+    logger.debug("Broadcasting state to room %s", room_id)
     await get_room(room_id).broadcast(state_env)
 
 
@@ -84,6 +93,7 @@ async def handle_load(env: WebsocketEnvelope, ctx):
     wrapper = SESSIONS.get_wrapper(sid)
 
     room_id = room_name(mode, sid)
+    logger.debug(f"Joining room {room_id}")
     await get_room(room_id).add_user(ctx.channel_name)
     await _broadcast_state(ctx, env, wrapper, sid)
     return [_make_state(env, wrapper, sid)]
@@ -133,6 +143,7 @@ async def handle_refresh(env: WebsocketEnvelope, ctx):
         await get_room(new_room_id).broadcast(state_env)
     else:
         await _broadcast_state(ctx, env, wrap, sid)
+    return [state_env]
 
 
 @command("action")
@@ -190,8 +201,11 @@ async def handle_toggle_tutorial(env: WebsocketEnvelope, ctx):
     wrap = await SESSIONS.get_or_load_wrapper(cmd.attempt_id, mode)
     wrap.engine.tutorial_mode = cmd.enabled
 
-    if hasattr(wrap.storage, "used_tutorial") and cmd.enabled and not wrap.storage.is_solved:
+    # Always persist the flag if enabled and not solved, for all modes
+    if cmd.enabled and not wrap.storage.is_solved:
         wrap.storage.used_tutorial = True
-
     await wrap.sync_and_flush()
-    await _broadcast_state(ctx, env, wrap, cmd.attempt_id)
+    logger.info("Sending back state!")
+    # await _broadcast_state(ctx, env, wrap, cmd.attempt_id)
+    return [_make_state(env, wrap, cmd.attempt_id)]
+
