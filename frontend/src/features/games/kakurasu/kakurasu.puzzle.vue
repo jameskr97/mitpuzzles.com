@@ -39,6 +39,7 @@ const borderConfig = {
     :gutter-bottom="1"
     class-game-cell="border-black"
     :border-config="borderConfig"
+    :cell-size="40"
   >
     <BoardBorders />
     <BoardInteraction v-if="interact" :bind="bind" />

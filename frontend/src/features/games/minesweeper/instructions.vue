@@ -4,7 +4,7 @@ import GameViewInstructionsSlider from "@/components/gameview.instructions.slide
 import PuzzleMinesweeper from "@/features/games/minesweeper/minesweeper.puzzle.vue";
 import type { PuzzleStateMinesweeper } from "@/services/states.ts";
 
-const PUZZLE_SCALE = 3;
+const PUZZLE_SCALE = 1;
 
 // @ts-expect-error ignore any missing fields
 const board0: PuzzleStateMinesweeper = {

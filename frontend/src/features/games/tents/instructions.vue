@@ -49,7 +49,7 @@ const board2: PuzzleStateTents = {
           Tents is a logic puzzle where you need to place tents on a grid that contains trees. Numbers on each row and
           column show how many tents must be placed in that line.
         </div>
-        <PuzzleTents :scale="2" :state="board0" class="mx-auto" />
+        <PuzzleTents :scale="1" :state="board0" class="mx-auto" />
       </div>
     </template>
 
@@ -59,7 +59,7 @@ const board2: PuzzleStateTents = {
           Each tent must be placed adjacent (horizontally or vertically) to a tree. Tents cannot touch each other, not
           even diagonally. Every tree must have exactly one tent connected to it.
         </div>
-        <PuzzleTents :scale="2" :state="board1" class="mx-auto" />
+        <PuzzleTents :scale="1" :state="board1" class="mx-auto" />
       </div>
     </template>
 
@@ -69,7 +69,7 @@ const board2: PuzzleStateTents = {
           The puzzle is solved when all tents are placed according to the rules, with the correct number in each row and
           column. Submit your answer when complete.
         </div>
-        <PuzzleTents :scale="2" :state="board2" class="mx-auto" />
+        <PuzzleTents :scale="1" :state="board2" class="mx-auto" />
       </div>
     </template>
   </GameViewInstructionsSlider>

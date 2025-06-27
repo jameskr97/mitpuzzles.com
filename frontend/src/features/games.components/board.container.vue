@@ -8,7 +8,7 @@ const props = defineProps({
   // Board Dimensions
   rows: { type: Number, required: true },
   cols: { type: Number, required: true },
-  cellSize: { type: Number, required: false, default: 10 },
+  cellSize: { type: Number, required: false, default: 40 },
   scale: { type: Number, required: false },
   // Board Styling
   borderConfig: { type: Object, required: false, default: () => ({}) },

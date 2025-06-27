@@ -36,6 +36,7 @@ const borderConfig = {
     :gutter-left="1"
     :scale="scale"
     :border-config="borderConfig"
+    :cell-size="40"
   >
     <BoardBorders />
     <BoardInteraction :bind="bind" />

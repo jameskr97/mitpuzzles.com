@@ -52,7 +52,7 @@ const board2: PuzzleStateLightup = {
           Light Up is a logic puzzle played on a grid with black and white cells. The goal is to place light bulbs to
           illuminate the entire grid.
         </div>
-        <PuzzleLightup :scale="2" :state="board0" class="mx-auto" />
+        <PuzzleLightup :scale="1" :state="board0" class="mx-auto" />
       </div>
     </template>
 
@@ -63,7 +63,7 @@ const board2: PuzzleStateLightup = {
           path until it hits a black cell. Black cells with numbers indicate exactly how many light bulbs must be placed
           adjacent to them.
         </div>
-        <PuzzleLightup :scale="2" :state="board1" class="mx-auto" />
+        <PuzzleLightup :scale="1" :state="board1" class="mx-auto" />
       </div>
     </template>
 
@@ -73,7 +73,7 @@ const board2: PuzzleStateLightup = {
           The puzzle is solved when all white cells are illuminated, no light bulbs shine on other light bulbs, and all
           numbered black cells have the correct number of adjacent light bulbs. Submit your answer when complete.
         </div>
-        <PuzzleLightup :scale="2" :state="board2" class="mx-auto" />
+        <PuzzleLightup :scale="1" :state="board2" class="mx-auto" />
       </div>
     </template>
   </GameViewInstructionsSlider>
