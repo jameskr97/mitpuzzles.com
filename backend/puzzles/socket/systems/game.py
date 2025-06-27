@@ -1,4 +1,5 @@
 import logging
+import time
 
 from django.utils import timezone
 
@@ -17,6 +18,7 @@ from puzzles.socket.transport.rooms import room_name, get_room
 from puzzles.socket.transport.router import command
 
 logger = logging.getLogger(__name__)
+logging.getLogger('django.db.backends').setLevel(logging.DEBUG)
 
 
 def _make_state(env: WebsocketEnvelope, wrapper: EngineWrapper, sid: str):
@@ -160,8 +162,21 @@ async def handle_action(env: WebsocketEnvelope, ctx):
     if wrap.storage.is_solved:
         return
 
+    old_state = wrap.engine.board_state.copy()
     wrap = await SESSIONS.get_or_load_wrapper(cmd.attempt_id, mode)
     if wrap.engine.handle_input_event(cmd.payload):
+        # record action with timestamp and board deltas
+        action_record = {
+            "ts_ms": time.time_ns() // 1_000_000,
+            "action": cmd.payload,
+            "old_state": old_state,
+            "new_state": wrap.engine.board_state,
+        }
+        print("Recording action:", action_record)
+        if wrap.storage.action_history is None:
+            wrap.storage.action_history = []
+        wrap.storage.action_history.append(action_record)
+
         await wrap.sync_and_flush()
         await _broadcast_state(ctx, env, wrap, cmd.attempt_id)
 
