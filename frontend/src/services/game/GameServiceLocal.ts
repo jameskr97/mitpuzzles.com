@@ -1,6 +1,6 @@
 // services/GameServiceLocal.ts
 import mitt from "mitt";
-import { type Ref, ref } from "vue";
+import { ref } from "vue";
 import type { IGameService } from "@/services/game/WebsocketGameService.ts";
 
 export class GameServiceLocal implements IGameService<{}> {

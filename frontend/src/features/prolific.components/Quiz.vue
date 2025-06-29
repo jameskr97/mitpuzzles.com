@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, type PropType } from "vue";
-import type { useExperimentFlow } from "@/features/prolific.composables/useExperimentFlow.ts";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 

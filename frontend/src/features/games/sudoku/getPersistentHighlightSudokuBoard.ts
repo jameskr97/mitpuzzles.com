@@ -6,7 +6,6 @@ import {
   withSudokuPersistentHighlighter
 } from "./useSudokuPersistentHighlight";
 import { createPuzzleInteractionBridge } from '@/features/games.composables/setupPuzzleInteractionBridge';
-import { createStaticPuzzleSession } from "@/composables/useCurrentPuzzle.ts";
 import type { PuzzleStateSudoku } from "@/services/states.ts";
 
 /**

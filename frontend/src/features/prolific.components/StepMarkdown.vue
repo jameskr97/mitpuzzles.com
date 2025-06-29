@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, defineProps, type PropType } from "vue";
 import MarkdownIt from "markdown-it";
-import type { ExperimentContext, useExperimentFlow } from "@/features/prolific.composables/useExperimentFlow.ts";
+import type { ExperimentContext } from "@/features/prolific.composables/useExperimentFlow.ts";
 
 const props = defineProps({
   context: {

@@ -3,14 +3,11 @@ import { useDragStateChanger } from "@/features/games.composables/useDragStateCh
 import { useClearStateBehaviour } from "@/features/games.composables/useClearStateBehaviour.ts";
 import { useStateCycleBehaviour } from "@/features/games.composables/useStateCycleBehaviour.ts";
 import { EventHandlerManager } from "@/features/games.composables/EventHandlerManager.ts";
-import { emit } from "@/services/eventbus.ts";
-import { createPuzzleSession } from "@/composables/useCurrentPuzzle.ts";
 import { usePuzzleController } from "@/composables/usePuzzleController.ts";
-import type { PayloadPuzzleType } from "@/codegen/websocket/game.schema";
-import { GameServiceLocal } from "@/services/game/GameServiceLocal.ts";
+import type { SupportedPuzzleTypes } from "@/codegen/websocket/game.schema";
 
 /**
- * GameEvents - Interface for game-level events
+ * Game Events - Interface for game-level events
  *
  * These are events that happen at the game level, not individual board interactions.
  * They're typically used for notifications or side effects when game state changes.
@@ -57,17 +54,15 @@ export interface RenderEvents {
  * @param session The puzzle state session
  */
 export function createPuzzleInteractionBridge(
-  puzzle_type: PayloadPuzzleType,
+  puzzle_type: SupportedPuzzleTypes,
   opts: { mode?: "remote" | "local"; state?: any } = {},
 ) {
   const ctrl = usePuzzleController(puzzle_type, opts)
-
 
   // Create event handler managers for each type of event
   const boardEventManager = new EventHandlerManager<BoardEvents>();
   const gameEventManager = new EventHandlerManager<GameEvents>();
   const renderEventManager = new EventHandlerManager<RenderEvents>();
-  emit("game:set_active_puzzle", puzzle_type);
 
   /**
    * Add a behavior for board interaction events

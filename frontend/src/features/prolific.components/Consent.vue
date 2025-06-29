@@ -3,8 +3,6 @@ import { computed, defineProps } from "vue";
 import MarkdownIt from "markdown-it";
 import Container from "@/components/ui/Container.vue";
 import { Button } from "@/components/ui/button";
-import { useGameService } from "@/services/game/useGameService.ts";
-import type { WebsocketGameService } from "@/services/game/WebsocketGameService.ts";
 import { useExperimentController } from "@/features/prolific.composables/useExperimentController.ts";
 import { useRoute } from "vue-router";
 

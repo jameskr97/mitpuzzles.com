@@ -7,13 +7,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "reka-ui";
-import { useCurrentPuzzle } from "@/composables/useCurrentPuzzle.ts";
 import { useGameLayout } from "@/composables/useGameLayout.ts";
 import { usePuzzleController } from "@/composables/usePuzzleController.ts";
 import { useRoute } from "vue-router";
 import type { PayloadPuzzleType } from "@/codegen/websocket/game.schema";
 
-// const puzzle = await useCurrentPuzzle()
 const route = useRoute();
 const puzzle = usePuzzleController(route.meta.game_type as PayloadPuzzleType);
 const layout = useGameLayout();

@@ -1,5 +1,4 @@
 import { useRoute } from "vue-router";
-import { ModuleManager, on } from "@/services/eventbus.ts";
 import { computed, inject, ref, watch, type Ref } from "vue";
 import type { GameModuleInterface } from "@/services/eventbus.modules/game.ts";
 import { PuzzleTimer } from "@/utils.ts";

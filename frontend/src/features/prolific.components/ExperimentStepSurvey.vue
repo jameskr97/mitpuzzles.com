@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { submitExperimentSurvey } from "@/services/app.ts";
-import { useCurrentExperiment } from "@/store/useCurrentExperiment.ts";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Container from "@/components/ui/Container.vue";

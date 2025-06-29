@@ -21,8 +21,6 @@ import posthog from "posthog-js";
 import { ACTIVE_EXPERIMENTS, ACTIVE_GAMES, DEV_TOOLS } from "@/constants.ts";
 import { useAppConfig } from "@/store/app.ts";
 import logger from "@/services/logger.ts";
-import { NetDriver } from "@/services/transport/netdriver.ts";
-import { WebsocketGameService } from "@/services/game/WebsocketGameService.ts";
 import { provideGameService } from "@/services/game/useGameService.ts";
 import { usePuzzleMetadataStore } from "@/store/puzzle.ts";
 

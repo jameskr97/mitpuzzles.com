@@ -7,7 +7,6 @@ import {
   StepperTitle,
   StepperTrigger,
 } from "@/components/ui/stepper";
-import type { PropType } from "vue";
 import Container from "@/components/ui/Container.vue";
 import { useExperimentController } from "@/features/prolific.composables/useExperimentController.ts";
 import { useRoute } from "vue-router";

@@ -2,7 +2,6 @@ import type { NetDriver } from "@/services/transport/netdriver.ts";
 import mitt, { type Emitter, type EventType } from "mitt";
 import { type Ref, ref } from "vue";
 import type {
-  CommandExperimentInit,
   CommandExperimentStep,
   CommandIdentify,
   EventExperimentState, EventIdentified,
@@ -13,14 +12,13 @@ import type {
   CommandAction,
   CommandClear,
   CommandLoad,
-  CommandMistakeCount,
   CommandRefresh,
   CommandResume,
   CommandSubmit,
   CommandToggleTutorial,
   EventState,
   EventSubmitResult,
-  PayloadPuzzleType, SupportedPuzzleTypes
+  SupportedPuzzleTypes,
 } from "@/codegen/websocket/game.schema";
 import type { CommandExperimentConsent } from "@/codegen/websocket/experiment.schema";
 
@@ -31,6 +29,7 @@ type Events = {
 
   experiment_state: string;
 };
+export type IGameServiceEvents = IGameService<Events>
 
 /**
  * Service for managing game interactions.
@@ -72,7 +71,7 @@ export class WebsocketGameService implements IGameService<Events> {
   load = (puzzle_type: string) =>
     this.send<CommandLoad>({
       kind: "load",
-      puzzle_type: puzzle_type as PayloadPuzzleType,
+      puzzle_type: puzzle_type as SupportedPuzzleTypes,
     });
   resume = (puzzle_type: string, attempt_id: string) =>
     this.send<CommandResume>({

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed, nextTick, type PropType, provide, reactive, toRefs } from "vue";
+import { computed, type PropType, provide, reactive, toRefs } from "vue";
 import { useGridPositions, useGridLayout } from "@/features/games.components/useGridLayout.ts";
 import type { BoardContext } from "@/features/games.components/board.ts";
-import { useElementSize, useEventListener } from "@vueuse/core";
+import { useElementSize } from "@vueuse/core";
 
 const props = defineProps({
   // Board Dimensions

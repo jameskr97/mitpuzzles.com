@@ -1,8 +1,4 @@
 import type { BoardEvents, Cell } from "@/features/games.components/board.interaction.ts";
-import { inject } from "vue";
-import { ModuleManager } from "@/services/eventbus.ts";
-import type { GameModuleInterface } from "@/services/eventbus.modules/game.ts";
-import { createPuzzleSession } from "@/composables/useCurrentPuzzle.ts";
 import type { usePuzzleController } from "@/composables/usePuzzleController.ts";
 
 /**

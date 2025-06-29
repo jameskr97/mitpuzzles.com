@@ -4,7 +4,6 @@ import KakurasuPuzzle from "@/features/games/kakurasu/kakurasu.puzzle.vue";
 import { ref, computed, inject } from "vue";
 import { remap } from "@/services/util.ts";
 import type { PuzzleStateKakurasu } from "@/services/states.ts";
-import { ModuleManager } from "@/services/eventbus.ts";
 import type { GameModuleInterface } from "@/services/eventbus.modules/game.ts";
 import { createPuzzleSession } from "@/composables/useCurrentPuzzle.ts";
 import { useActivePuzzleStore } from "@/store/useActivePuzzleStore.ts";

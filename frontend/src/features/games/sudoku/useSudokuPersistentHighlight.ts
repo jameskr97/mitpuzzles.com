@@ -1,6 +1,5 @@
 import type { RenderEvents } from "@/features/games.composables/setupPuzzleInteractionBridge.ts";
 import type { PuzzleStateSudoku } from "@/services/states.ts";
-import type { createPuzzleSession } from "@/composables/useCurrentPuzzle.ts";
 import { computed } from "vue";
 
 export interface PersistentHighlightOptions {

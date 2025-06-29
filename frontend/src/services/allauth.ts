@@ -53,9 +53,6 @@ export async function login(payload: AuthInfo): Promise<PayloadResponse> {
 export async function logout(): Promise<PayloadResponse> {
   return await request("delete", ENDPOINTS.session);
 }
-export async function getConfig(): Promise<PayloadResponse> {
-  return await request("get", ENDPOINTS.config);
-}
 export async function getSession(): Promise<PayloadResponse> {
   return await request("get", ENDPOINTS.session);
 }

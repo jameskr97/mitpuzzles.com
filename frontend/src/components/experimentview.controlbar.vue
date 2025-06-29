@@ -1,29 +1,7 @@
 <script setup lang="ts">
-import { useGameLayout } from "@/composables/useGameLayout.ts";
-import { onMounted, onUnmounted } from "vue";
-import { getGameScale } from "@/store/scale.ts";
 import Container from "@/components/ui/Container.vue";
-import GameViewControlBarTimer from "@/components/gameview.controlbar.timer.vue";
-import GameViewControlBarSettings from "@/components/GameViewControlBarSettings.vue";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import GameViewInstructionModal from "@/components/GameViewInstructionModal.vue";
-import { getPuzzleDisplayName } from "@/utils.ts";
-import { usePuzzleController } from "@/composables/usePuzzleController.ts";
-import { useRoute } from "vue-router";
-import { usePuzzleMetadataStore } from "@/store/puzzle.ts";
-import type { PayloadPuzzleType } from "@/codegen/websocket/game.schema";
-import { useExperimentController } from "@/features/prolific.composables/useExperimentController.ts";
-
-
-const route = useRoute()
-const ctrl = useExperimentController(route.meta.experiment_key as string);
 
 ////////////////////////////////////////////////////////////////////////
 //// props

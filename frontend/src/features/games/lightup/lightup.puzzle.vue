@@ -7,7 +7,7 @@ import BoardBackground from "@/features/games.components/board.background.vue";
 import type { PuzzleStateLightup } from "@/services/states.ts";
 import { LightupCellStates, LightWallStates } from "@/features/games/lightup/lightup.model.ts";
 import { type createPuzzleInteractionBridge } from "@/features/games.composables/setupPuzzleInteractionBridge.ts";
-import { onMounted, ref, watch } from "vue";
+import { ref } from "vue";
 import { check_violation_rule } from "@/utils.ts";
 
 const props = defineProps<{

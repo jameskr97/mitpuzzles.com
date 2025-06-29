@@ -5,7 +5,6 @@ import { onMounted, ref, watch } from "vue";
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,

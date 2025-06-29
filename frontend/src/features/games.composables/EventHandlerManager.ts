@@ -1,4 +1,3 @@
-import { createPuzzleSession } from "@/composables/useCurrentPuzzle.ts";
 import type { usePuzzleController } from "@/composables/usePuzzleController.ts";
 
 /**

@@ -5,8 +5,9 @@ import { inject, computed } from "vue";
 
 const board = inject<BoardContext>("boardContext")!;
 const layout = useGridLayout(board);
+// noinspection JSUnusedGlobalSymbols
 const positions = useGridPositions(board);
-
+// noinspection JSUnusedGlobalSymbols
 const game_grid_gap = computed(() => board.borderConfig.outer?.thickness ?? 0);
 </script>
 

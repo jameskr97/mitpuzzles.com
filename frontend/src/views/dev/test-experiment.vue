@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import SudokuExperiment from "@/features/prolific.experiments/2025.05.29.sudoku/ExperimentMain.vue";
 import { onMounted } from "vue";
-import { provideGameService, useGameService } from "@/services/game/useGameService.ts";
+import { useGameService } from "@/services/game/useGameService.ts";
 
 const ensure_prolific = () => {
   if (ws.identity_mode !== "prolific") {
