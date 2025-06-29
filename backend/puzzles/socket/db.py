@@ -7,6 +7,7 @@ from django.db.models import Min, F
 from django.utils import timezone
 
 from experiments.models import ProlificParticipation, ExperimentPuzzlePool, ExperimentPuzzleAttempt
+from puzzles.models import Puzzle
 
 
 @database_sync_to_async
@@ -33,31 +34,39 @@ def get_or_create_prolific_participation(visitor_id, experiment_id, subject_id, 
 
 @database_sync_to_async
 def create_attempts_and_update_pool(part):
+    """
+    Simplified puzzle distribution - gives the same 3 puzzles to everyone.
+
+    Researchers can modify FIXED_PUZZLE_IDS to change which puzzles are distributed.
+
+    aa836eec14430fe0
+    482568dbc5f7b628
+    5e9753f2c2618c33
+    a05b4bcd4cbd270b
+    3a14dcd67752b017
+    8740b14434966ae4
+    fd1a0334102ca2ef
+    39a71cd2aae42f9c
+    c027b23ca7779140
+    2cff32b30eaf385a
+    bcf02c353ab695c4
+    4e879ebfbb8c613a
+    """
+    # Configuration: Researchers can modify these puzzle IDs
+    FIXED_PUZZLE_HASHES = ["8740b14434966ae4", "fd1a0334102ca2ef", "39a71cd2aae42f9c"]
+
+    # Keep transaction.atomic() for defensive programming and Django best practices
     with transaction.atomic():
-        qs = (ExperimentPuzzlePool.objects
-              .select_for_update()
-              .filter(experiment=part.experiment))
-
-        min_served = qs.aggregate(Min("served"))["served__min"]
-        bucket = list(qs.filter(served=min_served))
-        if len(bucket) < 4:
-            qs.update(served=0)
-            bucket = list(qs.filter(served=0))
-
-        chosen_rows = random.sample(bucket, k=4)
-        ExperimentPuzzlePool.objects.filter(
-            pk__in=[r.pk for r in chosen_rows]
-        ).update(served=F("served") + 1)
-
+        puzzle_objects = Puzzle.objects.filter(puzzle_hash__in=FIXED_PUZZLE_HASHES).all()
         attempts = ExperimentPuzzleAttempt.objects.bulk_create([
             ExperimentPuzzleAttempt(
                 visitor_id=part.visitor.id,
                 prolific_session=part,
-                puzzle=r.puzzle,
+                puzzle=puzzle,
                 board_state=[],
                 action_history=[],
                 attempt_order=index
-            ) for index, r in enumerate(chosen_rows)
+            ) for index, puzzle in enumerate(puzzle_objects)
         ])
 
         return [
