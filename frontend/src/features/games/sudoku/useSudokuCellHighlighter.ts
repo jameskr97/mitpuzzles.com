@@ -87,8 +87,9 @@ export function useSudokuCellHighlighter(ctrl: ReturnType<typeof usePuzzleContro
       if (!isPrefilled(row, col))         classes.push("text-sky-600!"); // Text color based on whether it's prefilled
 
       // Violation styling
-      if (ctrl.state.value?.violations && check_violation_rule(ctrl.state.value.violations, row, col, ["row_duplicate_violation", "col_duplicate_violation", "box_duplicate_violation"]))
-        classes.push("border-red-500!", "border-2");
+      if (!isPrefilled(row, col) && ctrl.state.value?.violations && check_violation_rule(ctrl.state.value.violations, row, col, ["row_duplicate_violation", "col_duplicate_violation", "box_duplicate_violation"])){
+        classes.push("bg-red-100!");
+      }
       return classes;
     },
   };
