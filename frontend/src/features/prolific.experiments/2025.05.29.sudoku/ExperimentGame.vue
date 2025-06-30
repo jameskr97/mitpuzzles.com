@@ -19,9 +19,6 @@ import { remap } from "@/services/util.ts";
 import { Badge } from "@/components/ui/badge";
 import type { useExperimentController } from "@/features/prolific.composables/useExperimentController.ts";
 
-/* ------------------------------------------------------------------ */
-/*  props & aliases                                                   */
-/* ------------------------------------------------------------------ */
 const props = defineProps({
   context: {
     type: Object as PropType<ReturnType<typeof useExperimentController>>,
@@ -31,16 +28,9 @@ const props = defineProps({
 const ec = props.context; // experiment controller
 const ws = useGameService() as WebsocketGameService;
 
-/* ------------------------------------------------------------------ */
-/*  reactive state                                                    */
-/* ------------------------------------------------------------------ */
-// const total_points = ref<number>(0);
-// const trial_running = ref<boolean>(true);
+
 const scale = ref<number>(1);
 const scale_remapped = computed(() => remap([1, 100], [1, 4], scale.value));
-// const btn_finish_trial_enabled = ref<boolean>();
-// const showing_board_end = ref<boolean>(false);
-// const board_interactable = ref<boolean>(true); // can the user interact with the board?
 
 const pc = usePuzzleController("sudoku", { autoResume: false });
 const bridge = createPuzzleInteractionBridge("sudoku");
@@ -49,39 +39,6 @@ const b2 = withSudokuFocusBehavior(pc, bridge);
 const setBehavioursEnabled = (enabled: boolean) => {
   b2.setEnabled(enabled);
 };
-
-// function finished_trial() {
-//   setBehavioursEnabled(false);
-//   ec.points.value += pc.state.value.points_earned!;
-//   ec.finishTrial()
-//   trial_running.value = false;
-//   board_interactable.value = false;
-//   showing_board_end.value = true;
-//   // ec.setTutorialEnabled("sudoku", true);
-// }
-
-// function run_next_trial() {
-//   ec.nextTrial()
-//   trial_running.value = true;
-//   board_interactable.value = true
-//   showing_board_end.value      = false;  // hide transition overlay
-//   btn_finish_trial_enabled.value = false; // gate Finish btn until board filled
-//   setBehavioursEnabled(true);
-//   // ec.setTutorialEnabled("sudoku", false);
-// }
-
-// disable the "Finish Trial" button until every board cell is filled
-// watch(
-//   () => pc.state.value,
-//   (state) => {
-//     if (!state) return;
-//
-//     // check if the board is solved
-//     const is_filled = state.board.every((cell) => cell !== 0);
-//     btn_finish_trial_enabled.value = is_filled;
-//   },
-//   { immediate: true },
-// );
 
 watch(
   () => pc.state.value,
@@ -109,14 +66,7 @@ watch(
   { immediate: true },
 );
 
-// watch(
-//   () => ec.showErrorsScreen.value,
-//   (show) => {
-//     console.log("showErrorsScreen changed:", show);
-//     setBehavioursEnabled(!show);
-//   },
-//   { immediate: true },
-// );
+
 
 function onFinish() {
   ec.finishTrial(pc.state.value.points_earned ?? 0);
@@ -126,29 +76,6 @@ function onNext() {
   ec.nextTrial();
 }
 
-// keep UI in sync with server‑side completion state
-// watch(
-//   () => ec.isCurrentCompleted,
-//   (completed) => {
-//     console.log("Completion state changed:", completed.value);
-//     trial_running.value      = !completed.value;
-//     board_interactable.value = !completed.value;
-//     // ec.setTutorialEnabled("sudoku", completed.value);
-//     setBehavioursEnabled(!completed.value);
-//   },
-//   { immediate: true },
-// );
-// watch(
-//   () => ec.isCurrentCompleted.value,      // boolean
-//   (completed) => {
-//     trial_running.value      = !completed;      // swap buttons
-//     board_interactable.value = !completed;      // freeze board
-//     btn_finish_trial_enabled.value = completed; // enable “Next” right away
-//     // ec.setTutorialEnabled("sudoku", completed); // show mistakes only in transition
-//     setBehavioursEnabled(!completed);           // disable cell behaviours when frozen
-//   },
-//   { immediate: true },
-// );
 </script>
 
 <template>
@@ -160,13 +87,13 @@ function onNext() {
           <div class="flex flex-col">
             <div class="flex flex-row w-full">
               <v-icon name="co-magnifying-glass" :scale="1.5" />
-              <Slider :min="1" :max="100" :step="1" class="mx-2" />
+              <Slider v-model="scale" :min="1" :max="100" :step="1" class="mx-2" />
             </div>
 
             <!-- Buttons -->
             <div class="grid grid-cols-1 w-full gap-1 mt-2">
               <Button
-                variant="success"
+                variant="blue"
                 class="w-full"
                 v-if="ec.trialRunning.value"
                 :disabled="!ec.canFinishTrial.value"
