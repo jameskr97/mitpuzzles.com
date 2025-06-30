@@ -39,9 +39,6 @@ const app = useAppConfig();
           Your username is <span class="font-bold">{{ visitor.generated_username }}</span> and can be changed from the
           sidebar.
         </p>
-        <p>
-          Current RTT: {{ app.rtt || '??' }}ms.
-        </p>
       </div>
     </div>
   </Container>
