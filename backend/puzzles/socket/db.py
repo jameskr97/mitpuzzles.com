@@ -54,6 +54,7 @@ def create_attempts_and_update_pool(part):
     """
     # Configuration: Researchers can modify these puzzle IDs
     FIXED_PUZZLE_HASHES = ["8740b14434966ae4", "fd1a0334102ca2ef", "39a71cd2aae42f9c"]
+    random.shuffle(FIXED_PUZZLE_HASHES)
 
     # Keep transaction.atomic() for defensive programming and Django best practices
     with transaction.atomic():
