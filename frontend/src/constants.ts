@@ -15,7 +15,7 @@ import {
 
 export const ACTIVE_GAMES: Record<string, ReturnType<typeof create_game_entry>> = {
   minesweeper: create_game_entry("💣", "Minesweeper", "minesweeper"),
-  sudoku: create_game_entry("🧩", "Sudoku", "sudoku", 4, [withSudokuBehaviors]),
+  sudoku: create_game_entry("🔢", "Sudoku", "sudoku", 4, [withSudokuBehaviors]),
   tents: create_game_entry("⛺", "Tents", "tents"),
   kakurasu: create_game_entry("⬛", "Kakurasu", "kakurasu"),
   lightup: create_game_entry("💡", "Light Up", "lightup")
