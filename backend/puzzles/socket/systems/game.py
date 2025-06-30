@@ -18,7 +18,6 @@ from puzzles.socket.transport.rooms import room_name, get_room
 from puzzles.socket.transport.router import command
 
 logger = logging.getLogger(__name__)
-logging.getLogger('django.db.backends').setLevel(logging.DEBUG)
 
 
 def _make_state(env: WebsocketEnvelope, wrapper: EngineWrapper, sid: str):
@@ -172,13 +171,13 @@ async def handle_action(env: WebsocketEnvelope, ctx):
             "old_state": old_state,
             "new_state": wrap.engine.board_state,
         }
-        print("Recording action:", action_record)
         if wrap.storage.action_history is None:
             wrap.storage.action_history = []
         wrap.storage.action_history.append(action_record)
 
         await wrap.sync_and_flush()
         await _broadcast_state(ctx, env, wrap, cmd.attempt_id)
+
 
 
 @command("clear")

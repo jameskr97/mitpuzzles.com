@@ -208,6 +208,11 @@ LOGGING = {
             'level': 'WARNING',
             'propagate': False,
         },
+        'django.db.backends': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
         'daphne': {
             'handlers': ['console'],
             'level': 'WARNING',
