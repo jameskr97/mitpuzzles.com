@@ -95,7 +95,7 @@ function makeRemoteController(puzzle_type: gtypes.SupportedPuzzleTypes, autoResu
     }
 
     const index = cell.row * (state.value.cols ?? 0) + cell.col;
-    if (state.value.immutable[index] === 1) return;
+    if (cell.zone === "game" && state.value.immutable[index] === 1) return;
 
     game.action({
       kind: "action",
@@ -130,6 +130,7 @@ function makeRemoteController(puzzle_type: gtypes.SupportedPuzzleTypes, autoResu
 
   function request_puzzle_clear() {
     if (!state.value || !state.value.attempt_id) return;
+    show_solved_state.value = false;
     game.clear(state.value.attempt_id, puzzle_type as string);
   }
 
