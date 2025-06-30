@@ -51,7 +51,7 @@ const board2: PuzzleStateKakurasu = {
         <div class="text-xl mb-2">
           Kakurasu is a logic puzzle played on a grid. Each row and column has a value (1, 2, 3...), and your goal is to fill cells to match the target sums.
         </div>
-        <PuzzleKakurasu :scale="3" :state="board0" class="mx-auto" />
+        <PuzzleKakurasu :scale="1" :state="board0" class="mx-auto" />
       </div>
     </template>
 
@@ -60,7 +60,7 @@ const board2: PuzzleStateKakurasu = {
         <div class="text-xl mb-2">
           Click on cells to fill them in. When a cell is filled, add its row value and column value to their respective sums. Aim to match all target sums shown at the edges.
         </div>
-        <PuzzleKakurasu :scale="3" :state="board1" class="mx-auto" />
+        <PuzzleKakurasu :scale="1" :state="board1" class="mx-auto" />
       </div>
     </template>
 
@@ -69,7 +69,7 @@ const board2: PuzzleStateKakurasu = {
         <div class="text-xl mb-2">
           The puzzle is solved when all filled cells add up to exactly the target sums for every row and column. Submit your answer when complete.
         </div>
-        <PuzzleKakurasu :scale="3" :state="board2" class="mx-auto" />
+        <PuzzleKakurasu :scale="1" :state="board2" class="mx-auto" />
       </div>
     </template>
   </GameViewInstructionsSlider>
