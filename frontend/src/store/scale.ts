@@ -18,7 +18,7 @@ const useScaleStore = defineStore("mitlogic.scale", () => {
   /** returns a computed<number> that you can read *and* write */
   function scaleFor(type: string, variant = "default") {
     return computed<number[]>({
-      get: () => [scales.value[key(type, variant)] ?? [40]],
+      get: () => [scales.value[key(type, variant)] ?? [20]],
       set: (v:number[]) => (scales.value[key(type, variant)] = v[0]),
     });
   }

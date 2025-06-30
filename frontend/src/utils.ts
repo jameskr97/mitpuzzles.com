@@ -43,7 +43,7 @@ export function create_experiment(key: string, flow: any) {
 /** Simplifies resetting all of localStorage through a version variable. */
 export class StorageVersionManager {
   // Change this to current date when updating the storage version
-  private static readonly VERSION = "2025-06-17";
+  private static readonly VERSION = "2025-06-30";
   static clearOldStorage() {
     const saved = localStorage.getItem("mitlogic.storageVersion");
     if (saved !== StorageVersionManager.VERSION) {
