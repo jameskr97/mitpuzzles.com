@@ -141,79 +141,79 @@ function onQuizSubmitted(allCorrect: boolean) {
 
 <template>
   <div class="container contents-main-wrapper mx-auto max-w-[75ch] flex flex-col prose">
-    <!--    <h3 class="text-2xl font-semibold text-slate-700 border-b-2 border-b-primary my-2">Game Overview</h3>-->
+        <h3 class="text-2xl font-semibold text-slate-700 border-b-2 border-b-primary my-2">Game Overview</h3>
 
-    <!--    <div>-->
-    <!--      <p>-->
-    <!--        Sudoku is a logic puzzle played on a square. The grid is divided into 9 rows and 9 columns, forming 9 smaller-->
-    <!--        grids (3x3 squares). In order to solve a sudoku board, every square must be filled in with a number from 1 to 9.-->
-    <!--        Some numbers are already filled in when you start, and they cannot be changed.-->
-    <!--      </p>-->
-    <!--      <p>-->
-    <!--        Your job is figuring out which numbers go into the empty squares by looking at numbers that are already filled-->
-    <!--        in the row, column, or 3x3 squares.-->
-    <!--      </p>-->
-    <!--      <p>However, there are some important rules around how many times you can use each number!</p>-->
-    <!--    </div>-->
+        <div>
+          <p>
+            Sudoku is a logic puzzle played on a square. The grid is divided into 9 rows and 9 columns, forming 9 smaller
+            grids (3x3 squares). In order to solve a sudoku board, every square must be filled in with a number from 1 to 9.
+            Some numbers are already filled in when you start, and they cannot be changed.
+          </p>
+          <p>
+            Your job is figuring out which numbers go into the empty squares by looking at numbers that are already filled
+            in the row, column, or 3x3 squares.
+          </p>
+          <p>However, there are some important rules around how many times you can use each number!</p>
+        </div>
 
-    <!--    <h3 class="text-2xl font-semibold text-slate-700 border-b-2 border-b-primary my-2">Sudoku Rules</h3>-->
+        <h3 class="text-2xl font-semibold text-slate-700 border-b-2 border-b-primary my-2">Sudoku Rules</h3>
 
-    <!--    <div class="grid grid-cols-2 gap-x-5 gap-y-10 w-full">-->
-    <!--      <div class="flex flex-col gap-1 row-start-1">-->
-    <!--        <div>-->
-    <!--          First, each <strong>row</strong> must include every number from 1 to 9, and each number must appear exactly-->
-    <!--          <strong>once</strong>.-->
-    <!--        </div>-->
-    <!--        <div class="italic">-->
-    <!--          The highlighted row has the numbers 3, 4, 2, 6, 5, and 1. It needs the numbers 7, 8, and 9 for the row to be-->
-    <!--          complete.-->
-    <!--        </div>-->
-    <!--        <Container class="border-black/10 bg-amber-500/20! border-1">-->
-    <!--          <div>-->
-    <!--            For example, 8 could be in any one of the locations-->
-    <!--            <span class="font-bold">highlighted with an orange border</span>.-->
-    <!--          </div>-->
-    <!--        </Container>-->
-    <!--      </div>-->
-    <!--      <RowHighlighted :state="gameState0" :scale="0.75"></RowHighlighted>-->
+        <div class="grid grid-cols-2 gap-x-5 gap-y-10 w-full">
+          <div class="flex flex-col gap-1 row-start-1">
+            <div>
+              First, each <strong>row</strong> must include every number from 1 to 9, and each number must appear exactly
+              <strong>once</strong>.
+            </div>
+            <div class="italic">
+              The highlighted row has the numbers 3, 4, 2, 6, 5, and 1. It needs the numbers 7, 8, and 9 for the row to be
+              complete.
+            </div>
+            <Container class="border-black/10 bg-amber-500/20! border-1">
+              <div>
+                For example, 8 could be in any one of the locations
+                <span class="font-bold">highlighted with an orange border</span>.
+              </div>
+            </Container>
+          </div>
+          <RowHighlighted :state="gameState0" :scale="0.75"></RowHighlighted>
 
-    <!--      <div class="flex flex-col gap-4 row-start-2">-->
-    <!--        <div>-->
-    <!--          Second, each <strong>column</strong> must include every number from 1 to 9, and each number must appear-->
-    <!--          exactly <strong>once</strong>.-->
-    <!--        </div>-->
-    <!--        <div class="italic">-->
-    <!--          The highlighted row has the numbers 6, 8, 3, 4, and 1. It needs the numbers 2, 5, 7, and 9 for the column to-->
-    <!--          be complete.-->
-    <!--        </div>-->
-    <!--        <Container class="border-black/10 bg-amber-500/20! border-1">-->
-    <!--          <div>-->
-    <!--            Since the highlighted column already contains an 8, this column is <span class="font-bold">ruled out</span>-->
-    <!--            as a possible location for 8 in the third row.-->
-    <!--          </div>-->
-    <!--        </Container>-->
-    <!--      </div>-->
-    <!--      <ColHighlighted :state="gameState0" :scale="0.75"></ColHighlighted>-->
+          <div class="flex flex-col gap-4 row-start-2">
+            <div>
+              Second, each <strong>column</strong> must include every number from 1 to 9, and each number must appear
+              exactly <strong>once</strong>.
+            </div>
+            <div class="italic">
+              The highlighted row has the numbers 6, 8, 3, 4, and 1. It needs the numbers 2, 5, 7, and 9 for the column to
+              be complete.
+            </div>
+            <Container class="border-black/10 bg-amber-500/20! border-1">
+              <div>
+                Since the highlighted column already contains an 8, this column is <span class="font-bold">ruled out</span>
+                as a possible location for 8 in the third row.
+              </div>
+            </Container>
+          </div>
+          <ColHighlighted :state="gameState0" :scale="0.75"></ColHighlighted>
 
-    <!--      <div class="flex flex-col gap-4 row-start-3">-->
-    <!--        <div>-->
-    <!--          Third, each <strong>box</strong> must include every number from 1 to 9, and each number must appear exactly-->
-    <!--          <strong>once</strong>.-->
-    <!--        </div>-->
-    <!--        <div class="italic">-->
-    <!--          The highlighted box has the numbers 9, 2, 4, 8, 3, and 1. It needs the numbers 5, 6, and 7 for the box to be-->
-    <!--          complete.-->
-    <!--        </div>-->
-    <!--        <Container class="border-black/10 bg-amber-500/20! border-1">-->
-    <!--          <div>-->
-    <!--            Since the highlighted box already contains an 8, it rules out one more location for 8 in the third row. This-->
-    <!--            allows us <span class="font-bold">to deduce the correct location for 8 in the third row</span>.-->
-    <!--          </div>-->
-    <!--        </Container>-->
-    <!--      </div>-->
-    <!--      <BoxHighlighted :state="gameState0With8" :scale="0.75"></BoxHighlighted>-->
-    <!--    </div>-->
-    <!--    -->
+          <div class="flex flex-col gap-4 row-start-3">
+            <div>
+              Third, each <strong>box</strong> must include every number from 1 to 9, and each number must appear exactly
+              <strong>once</strong>.
+            </div>
+            <div class="italic">
+              The highlighted box has the numbers 9, 2, 4, 8, 3, and 1. It needs the numbers 5, 6, and 7 for the box to be
+              complete.
+            </div>
+            <Container class="border-black/10 bg-amber-500/20! border-1">
+              <div>
+                Since the highlighted box already contains an 8, it rules out one more location for 8 in the third row. This
+                allows us <span class="font-bold">to deduce the correct location for 8 in the third row</span>.
+              </div>
+            </Container>
+          </div>
+          <BoxHighlighted :state="gameState0With8" :scale="0.75"></BoxHighlighted>
+        </div>
+
     <h3 class="text-2xl font-semibold text-slate-700 border-b-2 border-b-primary pb-2 mb-4">Additional Challenge</h3>
     <p>
       In addition to the standard Sudoku rules explained above,
