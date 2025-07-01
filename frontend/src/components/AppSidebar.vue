@@ -65,7 +65,7 @@ const close_sidebar_on_mobile = () => {
         </SidebarGroupContent>
       </SidebarGroup>
 
-      <SidebarGroup v-if="isDev || user.isAdmin">
+      <SidebarGroup>
         <SidebarGroupLabel class="text-lg">Dev Tools</SidebarGroupLabel>
         <SidebarMenu>
           <SidebarMenuItem v-for="tool in DEV_TOOLS" :key="tool.key">
@@ -99,12 +99,13 @@ const close_sidebar_on_mobile = () => {
             </SidebarMenuButton>
           </AppFeedbackModal>
 
-          <AppThemeButton>
-            <SidebarMenuButton>
-              <AppThemeIcon />
-              Dark Mode
-            </SidebarMenuButton>
-          </AppThemeButton>
+<!--          <AppThemeButton>-->
+<!--            <SidebarMenuButton>-->
+<!--              <AppThemeIcon />-->
+<!--              Dark Mode-->
+<!--            </SidebarMenuButton>-->
+<!--          </AppThemeButton>-->
+
         </SidebarMenu>
       </SidebarGroup>
       <SidebarSeparator />
