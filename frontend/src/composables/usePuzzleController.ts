@@ -1,4 +1,4 @@
-import { computed, ref, shallowRef, watch } from "vue";
+import { computed, ref, shallowRef, watch, type Ref, type ComputedRef } from "vue";
 import type * as gtypes from "@/codegen/websocket/game.schema";
 import type { EventState, SupportedPuzzleTypes } from "@/codegen/websocket/game.schema";
 import { useGameService } from "@/services/game/useGameService.ts";
@@ -6,13 +6,42 @@ import type { Cell } from "@/features/games.components/board.interaction.ts";
 import { PuzzleTimer } from "@/utils.ts";
 import { usePuzzleMetadataStore } from "@/store/puzzle.ts";
 import type { MutablePuzzleState } from "@/services/states.ts";
+import { getPuzzle } from "@/services/app.ts";
 
-const cache = new Map<string, ReturnType<typeof makeRemoteController>>();
+
+interface PuzzleDefinition<T=any> {
+  puzzle_id: number;
+  puzzle_type: String;
+  rows: number;
+  cols: number;
+  initial_state: number[];
+  solution_hash: string;
+  strict_solution_hash: string;
+  meta: Record<string, T>;
+}
+
+interface PuzzleController {
+  puzzle_type: SupportedPuzzleTypes;
+  definition: PuzzleDefinition;
+  puzzle_state: Ref<MutablePuzzleState | null>;
+  isReady: ComputedRef<boolean>;
+  is_solved: Ref<boolean>;
+  show_solved_state: Ref<boolean>;
+  handleCellClick: (cell: Cell, button?: number, override?: number) => void;
+  request_new_puzzle: () => void;
+  request_puzzle_clear: () => void;
+  request_puzzle_solved: () => void;
+  selected_variant: ComputedRef<[number, string] | null>;
+  timer: PuzzleTimer;
+  tutorial_mode: Ref<boolean>;
+}
+
+const cache = new Map<string, ReturnType<typeof makeRemoteController | typeof makeLocalController>>();
 
 type ControllerOpts = {
   mode?: "remote" | "local";
   /** optional starting snapshot for local sessions */
-  initialState?: EventState;
+  initialState?: MutablePuzzleState;
   autoResume?: boolean;
 };
 
@@ -22,10 +51,11 @@ export function usePuzzleController(puzzle: SupportedPuzzleTypes, opts: Controll
   // if (!cache.has(key)) {
   //   cache.set(key, makeRemoteController(puzzle, false));
   // }
-
+  console.log('CREATING KEY', key, 'for puzzle', puzzle, 'with mode', mode);
   if (!cache.has(key)) {
     if (mode === "local") {
-      cache.set(key, makeLocalController(puzzle, opts.initialState));
+      console.log("local controller")
+      cache.set(key, makeLocalController(puzzle));
     } else {
       cache.set(key, makeRemoteController(puzzle, opts.autoResume ?? true));
     }
@@ -33,7 +63,7 @@ export function usePuzzleController(puzzle: SupportedPuzzleTypes, opts: Controll
   return cache.get(key)!;
 }
 
-function makeRemoteController(puzzle_type: gtypes.SupportedPuzzleTypes, autoResume: boolean = true) {
+export function makeRemoteController(puzzle_type: gtypes.SupportedPuzzleTypes, autoResume: boolean = true) {
   const game = useGameService();
   const puzzle_metadata = usePuzzleMetadataStore();
   const state = shallowRef<EventState | null>(null);
@@ -166,62 +196,39 @@ function makeRemoteController(puzzle_type: gtypes.SupportedPuzzleTypes, autoResu
   };
 }
 
-function makeLocalController(puzzle_type: SupportedPuzzleTypes, initial: MutablePuzzleState | undefined) {
+function makeLocalController(puzzle_type: SupportedPuzzleTypes, initial?: PuzzleDefinition) {
   /* We keep state in-memory only */
-  const state = ref<MutablePuzzleState>(
-    <MutablePuzzleState>initial ?? {
-      puzzle_type,
-      rows: 0,
-      cols: 0,
-      board: [],
-      immutable: [],
-      tutorial_mode: false,
-      solved: false,
-      attempt_id: "LOCAL-" + Math.random().toString(36).slice(2),
-    },
-  );
-
-  if (puzzle_type === "sudoku") {
-    state.value.immutable = state.value.board.map((cell) => (cell !== 0 ? 1 : 0));
-  }
-
-  const is_solved = ref(state.value?.solved ?? false);
+  const puzzle_definition = ref<PuzzleDefinition | undefined>(initial);
+  const metadata = usePuzzleMetadataStore()
+  const is_solved = ref(false);
   const show_solved_state = ref(false);
 
-  /* derived */
-  const rows = computed(() => state.value?.rows ?? 0);
-  const cols = computed(() => state.value?.cols ?? 0);
-  const isReady = computed(() => !!state.value);
+  const isReady = computed(() => !!puzzle_definition.value);
 
   /* mutate board locally */
   function handleCellClick(cell: Cell, button = 0, override?: number) {
-    if (!state.value) return;
-    const idx = cell.row * (state.value.cols ?? 0) + cell.col;
-    if (state.value.immutable[idx] === 1) return;
-    state.value.board[idx] = override ?? (state.value.board[idx] + 1) % 10; // demo logic
+    console.log('clicked cell', cell);
   }
 
   function request_puzzle_clear() {
-    if (!state.value) return;
-    state.value.board = state.value.board.map(() => 0);
+    console.log('request_puzzle_clear() called');
   }
 
-  function request_new_puzzle() {
-    console.warn("Local controller: request_new_puzzle() is a no-op.");
+  async function request_new_puzzle() {
+    const variant = metadata.getSelectedVariant(puzzle_type as string);
+    const puzzle = await getPuzzle(puzzle_type as string, variant[0], variant[1]);
+    console.log(puzzle)
   }
 
   function request_puzzle_solved() {
-    console.warn("Local controller: submit() is a no-op.");
+    console.log("Local controller: submit() is a no-op.");
   }
 
   const timer = new PuzzleTimer(puzzle_type);
 
   return {
-    mode: "local",
-    puzzleType: puzzle_type,
-    state,
-    rows,
-    cols,
+    puzzle_type,
+    definition: puzzle_definition,
     isReady,
     is_solved,
     show_solved_state,

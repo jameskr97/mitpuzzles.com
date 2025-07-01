@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useGameLayout } from "@/composables/useGameLayout.ts";
-import { onMounted, onUnmounted } from "vue";
+import { inject, onMounted, onUnmounted } from "vue";
 import { getGameScale } from "@/store/scale.ts";
 import Container from "@/components/ui/Container.vue";
 import GameViewControlBarTimer from "@/components/gameview.controlbar.timer.vue";
@@ -18,12 +18,11 @@ import { getPuzzleDisplayName } from "@/utils.ts";
 import { usePuzzleController } from "@/composables/usePuzzleController.ts";
 import { useRoute } from "vue-router";
 import { usePuzzleMetadataStore } from "@/store/puzzle.ts";
-import type { PayloadPuzzleType } from "@/codegen/websocket/game.schema";
 
 const route = useRoute();
 const layout = useGameLayout();
 const gt = route.meta.game_type as PayloadPuzzleType;
-const puzzle = usePuzzleController(gt);
+const puzzle = inject("puzzle")
 const { scale } = getGameScale();
 const puzzle_metadata = usePuzzleMetadataStore();
 ////////////////////////////////////////////////////////////////////////

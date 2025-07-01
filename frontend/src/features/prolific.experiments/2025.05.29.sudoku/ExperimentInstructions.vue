@@ -143,7 +143,7 @@ function onQuizSubmitted(allCorrect: boolean) {
 
     <div>
       <p>
-        Sudoku is a logic puzzle played on a square. The grid is divided into 9 rows and 9 columns, forming 9 smaller
+        Sudoku is a logic puzzle played on a grid. The grid is divided into 9 rows and 9 columns, forming 9 smaller
         grids (3x3 squares). In order to solve a sudoku board, every square must be filled in with a number from 1 to 9.
         Some numbers are already filled in when you start, and they cannot be changed.
       </p>

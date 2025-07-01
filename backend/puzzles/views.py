@@ -1,11 +1,12 @@
 from django.db.models import Q, Min
 from rest_framework import status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.viewsets import  ReadOnlyModelViewSet
 
 from puzzles import models, serializers
-from puzzles.models import FreeplayPuzzleAttempt
+from puzzles.models import FreeplayPuzzleAttempt, Puzzle
 from puzzles.models.leaderboard import PuzzleAttempt
 from puzzles.serializers import LeaderboardEntrySerializer
 
@@ -149,3 +150,78 @@ def leaderboard_view(request):
         })
 
     return Response({"leaderboard": leaderboard, "count": len(leaderboard)})
+
+
+class PuzzleDefinitionViewSet(ReadOnlyModelViewSet):
+    """
+    Read-only viewset for retrieving and formatting existing puzzles.
+    Handles:
+    - Puzzle retrieval from database
+    - Solution hashing for validation
+    - Type-specific metadata formatting
+    - Frontend-ready puzzle definitions
+    """
+    queryset = models.Puzzle.objects.filter(puzzle_type__in=['minesweeper', 'sudoku', 'tents', 'kakurasu', 'lightup']).all()
+
+    def get_serializer_class(self):
+        return serializers.PuzzleDefinitionSerializer
+
+    @action(detail=False, methods=['get'])
+    def random(self, request) -> Response:
+        """
+        Get a random puzzle of specified type/size/difficulty.
+
+        GET /api/puzzles/random/?puzzle_type=sudoku&size=9x9&difficulty=medium
+        """
+        puzzle_type = request.query_params.get('puzzle_type')
+        size = request.query_params.get('size')
+        difficulty = request.query_params.get('difficulty')
+
+        # if no params are given, return completely random puzzle
+        if not puzzle_type and not size and not difficulty:
+            print("Returning completely random puzzle")
+            random_puzzle = self.get_queryset().order_by("?").first()
+            serializer = serializers.PuzzleDefinitionSerializer(random_puzzle)
+            return Response(serializer.data)
+
+        filter = {}
+        if puzzle_type:
+            filter['puzzle_type'] = puzzle_type
+        if size:
+            filter['puzzle_size'] = size
+        if difficulty:
+            filter['puzzle_difficulty'] = difficulty
+
+        random_puzzle = self.get_queryset().filter(**filter).order_by("?").first()
+        serializer = self.get_serializer_class()
+        res = serializer(random_puzzle)
+        return Response(res.data)
+
+    @action(detail=False, methods=['get'])
+    def types(self, request) -> Response:
+        """
+        Get available puzzle types with their configurations.
+
+        GET /api/puzzles/types/
+        """
+        puzzle_types = self._get_available_puzzle_types()
+        return Response(puzzle_types)
+
+    def _get_available_puzzle_types(self):
+        """Get configuration for all available puzzle types."""
+        # return "types"
+        types_config = {}
+
+        # # Get distinct puzzle types from database
+        puzzle_types = list(self.get_queryset().order_by('puzzle_type').distinct('puzzle_type').values_list('puzzle_type', flat=True))
+
+        for puzzle_type in puzzle_types:
+            puzzles = Puzzle.objects.filter(puzzle_type=puzzle_type).order_by('puzzle_type')
+            difficulty_combinations = list(puzzles.values_list('puzzle_size', 'puzzle_difficulty').distinct())
+            types_config[puzzle_type] = {
+                'available_difficulties': difficulty_combinations,
+                'default_difficulty': difficulty_combinations[0],
+                'total_puzzles': puzzles.count()
+            }
+
+        return types_config

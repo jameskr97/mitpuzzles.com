@@ -125,24 +125,24 @@ export function createPuzzleInteractionBridge(
   /**
    * Set up a watcher that emits the onBoardModified event when the board changes
    */
-  // if (ctrl.state && Array.isArray(ctrl.state)) {
-  //   // Initial board state tracking
-  //   const initialBoard = [...ctrl.state];
-  //
-  //   // Watch for changes to the board
-  //   setInterval(() => {
-  //     if (session.state.value && Array.isArray(session.state.value.board)) {
-  //       const currentBoard = session.state.value.board;
-  //       // Only emit if the board actually changed
-  //       if (JSON.stringify(initialBoard) !== JSON.stringify(currentBoard)) {
-  //         gameEventManager.emit("onBoardModified", currentBoard);
-  //         // Update tracked board
-  //         initialBoard.splice(0, initialBoard.length, ...currentBoard);
-  //       }
-  //     }
-  //   }, 100); // Check every 100ms
-  // }
-  //
+  if (ctrl.state && Array.isArray(ctrl.state)) {
+    // Initial board state tracking
+    const initialBoard = [...ctrl.state];
+
+    // Watch for changes to the board
+    setInterval(() => {
+      if (ctrl.state.value && Array.isArray(ctrl.state.value.board)) {
+        const currentBoard = ctrl.state.value.board;
+        // Only emit if the board actually changed
+        if (JSON.stringify(initialBoard) !== JSON.stringify(currentBoard)) {
+          gameEventManager.emit("onBoardModified", currentBoard);
+          // Update tracked board
+          initialBoard.splice(0, initialBoard.length, ...currentBoard);
+        }
+      }
+    }, 100); // Check every 100ms
+  }
+
   /**
    * Return the public API of the interaction bridge
    */
