@@ -7,7 +7,7 @@ import BoardBackground from "@/features/games.components/board.background.vue";
 import type { PuzzleStateLightup } from "@/services/states.ts";
 import { LightupCellStates, LightWallStates } from "@/features/games/lightup/lightup.model.ts";
 import { type createPuzzleInteractionBridge } from "@/features/games.composables/setupPuzzleInteractionBridge.ts";
-import { ref } from "vue";
+import { watch, ref } from "vue";
 import { check_violation_rule } from "@/utils.ts";
 
 const props = defineProps<{
@@ -65,12 +65,12 @@ props.interact?.addGameBehaviour((_) => ({
 }));
 
 // if (!props.interact) {
-//   watch(
-//     () => props.state.board,
-//     (board) => {
-//       update_lit_cells(board);
-//     },
-//   );
+  watch(
+    () => props.state.board,
+    (board) => {
+      update_lit_cells(board);
+    },
+  );
 // }
 
 const bind = props.interact?.getBridge();
