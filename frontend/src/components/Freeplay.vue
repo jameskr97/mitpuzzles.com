@@ -6,6 +6,7 @@ import GameViewComponent from "@/components/gameview.component.vue";
 import { createPuzzleInteractionBridge } from "@/features/games.composables/setupPuzzleInteractionBridge.ts";
 import { usePuzzleController } from "@/composables/usePuzzleController.ts";
 import type { SupportedPuzzleTypes } from "@/codegen/websocket/game.schema";
+import { provide } from "vue";
 
 // load game rules as markdown
 const route = useRoute();
@@ -14,6 +15,7 @@ const game_entry = ACTIVE_GAMES[gt];
 
 // load game state + data
 const puzzle = usePuzzleController(gt);
+provide("puzzle", puzzle);
 const bridge = createPuzzleInteractionBridge(gt);
 for (const withBehavior of game_entry["defaultBehaviors"]) {
   withBehavior(puzzle, bridge);
