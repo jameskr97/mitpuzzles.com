@@ -210,7 +210,7 @@ LOGGING = {
         },
         'django.db.backends': {
             'handlers': ['console'],
-            'level': 'DEBUG',
+            'level': 'WARNING',
             'propagate': False,
         },
         'daphne': {
@@ -221,7 +221,7 @@ LOGGING = {
         # Your app loggers
         'puzzles': {
             'handlers': ['detailed_console'],
-            'level': 'DEBUG',
+            'level': 'INFO',
             'propagate': False,
         },
     },

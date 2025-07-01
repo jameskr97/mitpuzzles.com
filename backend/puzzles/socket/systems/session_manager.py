@@ -43,7 +43,7 @@ class EngineWrapper:
 
     async def sync_and_flush(self):
         """Sync current board state to the backing DB model."""
-        logger.info(f"[SessionManager] Flushing session {self.storage.id}. State: {self.engine.board_state}")
+        logger.debug(f"[SessionManager] Flushing session {self.storage.id}. State: {self.engine.board_state}")
         p = GAMEMODE_TO_ATTEMPT_TABLE_MAP[self.mode].objects.select_related("puzzle")
         # self.storage = await database_sync_to_async(p.get)(id=self.storage.id)
 
