@@ -18,6 +18,7 @@ import { Slider } from "@/components/ui/slider";
 import { remap } from "@/services/util.ts";
 import { Badge } from "@/components/ui/badge";
 import type { useExperimentController } from "@/features/prolific.composables/useExperimentController.ts";
+import { Input } from "@/components/ui/input";
 
 const props = defineProps({
   context: {
@@ -90,7 +91,8 @@ function onNext() {
           <div class="flex flex-col">
             <div class="flex flex-row w-full">
               <v-icon name="co-magnifying-glass" :scale="1.5" />
-              <Slider v-model="scale" :min="1" :max="100" :step="1" class="mx-2" />
+              <input type="range" min="1" max="100" step="1" v-model="scale" class="mx-2 w-full" />
+<!--              <Slider v-model="scale" :min="1" :max="100" :step="1" class="mx-2" />-->
             </div>
 
             <!-- Buttons -->
