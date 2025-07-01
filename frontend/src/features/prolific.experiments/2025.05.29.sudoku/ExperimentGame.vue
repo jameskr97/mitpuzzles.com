@@ -34,7 +34,7 @@ const scale_remapped = computed(() => remap([1, 100], [1, 4], scale.value));
 
 const pc = usePuzzleController("sudoku", { autoResume: false });
 const bridge = createPuzzleInteractionBridge("sudoku");
-withSudokuBehaviors(pc, bridge);
+const b1 = withSudokuBehaviors(pc, bridge);
 const b2 = withSudokuFocusBehavior(pc, bridge);
 const setBehavioursEnabled = (enabled: boolean) => {
   b2.setEnabled(enabled);
@@ -70,10 +70,13 @@ watch(
 
 function onFinish() {
   ec.finishTrial(pc.state.value.points_earned ?? 0);
+  b1.setShowCorrectCells(true);
+  b1.clearActiveCell()
 }
 
 function onNext() {
   ec.nextTrial();
+  b1.setShowCorrectCells(false);
 }
 
 </script>

@@ -1,4 +1,4 @@
-import { computed, ref, readonly } from "vue";
+import { computed, readonly, ref } from "vue";
 import type { RenderEvents } from "@/features/games.composables/setupPuzzleInteractionBridge.ts";
 import type { BoardEvents, Cell } from "@/features/games.components/board.interaction.ts";
 import type { PuzzleStateSudoku } from "@/services/states.ts";
@@ -6,7 +6,8 @@ import { check_violation_rule } from "@/utils.ts";
 import { isCellMatch } from "@/features/games/sudoku/sudoku.utility.ts";
 import type { usePuzzleController } from "@/composables/usePuzzleController.ts";
 
-export type SudokuSession = { state: { value: PuzzleStateSudoku };
+export type SudokuSession = {
+  state: { value: PuzzleStateSudoku };
 };
 
 /**
@@ -15,7 +16,10 @@ export type SudokuSession = { state: { value: PuzzleStateSudoku };
  */
 export function useSudokuCellHighlighter(ctrl: ReturnType<typeof usePuzzleController>) {
   const enabled = ref(true); // Enable/disable highlighting behavior
-  const setEnabled = (value: boolean) => enabled.value = value;
+  const setEnabled = (value: boolean) => (enabled.value = value);
+
+  const showCorrectCells = ref(false); // Show correct cells (for testing/debugging)
+  const setShowCorrectCells = (value: boolean) => (showCorrectCells.value = value);
 
   const subgridSize = computed(() => {
     const rows = ctrl.state.value?.rows;
@@ -29,15 +33,15 @@ export function useSudokuCellHighlighter(ctrl: ReturnType<typeof usePuzzleContro
     return match.row || match.col || match.box;
   };
   const isCellActive = (row: number, col: number) => activeCell.value?.row === row && activeCell.value?.col === col;
-  const isPrefilled = (row: number, col: number) => ctrl.state.value?.board_initial[row * ctrl.state.value?.cols + col] !== 0;
-
+  const isPrefilled = (row: number, col: number) =>
+    ctrl.state.value?.board_initial[row * ctrl.state.value?.cols + col] !== 0;
 
   // Input behavior
   const inputBehavior: Partial<BoardEvents> = {
-    onCellClick(cell: Cell, _event: MouseEvent): boolean {
-      if(!enabled.value) return false;
+    onCellMouseDown(cell: Cell, _event: MouseEvent): boolean {
+      if (!enabled.value) return false;
       if (!ctrl.state.value) return false;
-      activeCell.value = cell
+      activeCell.value = cell;
       return false; // Let other behaviors handle the actual cell interaction
     },
 
@@ -60,7 +64,7 @@ export function useSudokuCellHighlighter(ctrl: ReturnType<typeof usePuzzleContro
 
       // Handle number input
       if (!isNaN(keyAsNumber) && keyAsNumber >= 1 && keyAsNumber <= ctrl.state.value.rows) {
-        ctrl.handleCellClick(cell, 0, keyAsNumber);
+        ctrl.handleCellClick(activeCell.value, 0, keyAsNumber);
         return true;
       }
 
@@ -79,15 +83,26 @@ export function useSudokuCellHighlighter(ctrl: ReturnType<typeof usePuzzleContro
   // Render behavior
   const renderBehavior: Partial<RenderEvents> = {
     isCellActive,
-    isCellVisible(_row: number, _col: number): boolean { return true },
+    isCellVisible(_row: number, _col: number): boolean {
+      return true;
+    },
     getCellClasses(row: number, col: number): string[] {
+      const is_violation =
+        ctrl.state.value?.violations &&
+        check_violation_rule(ctrl.state.value.violations, row, col, [
+          "row_duplicate_violation",
+          "col_duplicate_violation",
+          "box_duplicate_violation",
+        ]);
+      const is_prefilled = isPrefilled(row, col);
       const classes: string[] = [];
-      if (isCellActive(row, col))         classes.push('bg-slate-300!'); // Active cell border
-      if (shouldHighlightCell(row, col))  classes.push("bg-slate-200!"); // Highlight background for related cells
-      if (!isPrefilled(row, col))         classes.push("text-sky-600!"); // Text color based on whether it's prefilled
+      if (showCorrectCells.value && !is_violation && !is_prefilled) classes.push("bg-green-100"); // Highlight correct cells
+      if (isCellActive(row, col)) classes.push("bg-slate-300!"); // Active cell border
+      if (shouldHighlightCell(row, col)) classes.push("bg-slate-200!"); // Highlight background for related cells
+      if (!isPrefilled(row, col)) classes.push("text-sky-600!"); // Text color based on whether it's prefilled
 
       // Violation styling
-      if (!isPrefilled(row, col) && ctrl.state.value?.violations && check_violation_rule(ctrl.state.value.violations, row, col, ["row_duplicate_violation", "col_duplicate_violation", "box_duplicate_violation"])){
+      if (!is_prefilled && is_violation) {
         classes.push("bg-red-100!");
       }
       return classes;
@@ -102,8 +117,9 @@ export function useSudokuCellHighlighter(ctrl: ReturnType<typeof usePuzzleContro
     clearActiveCell: () => (activeCell.value = null),
     isCellActive,
     shouldHighlightCell,
+    setShowCorrectCells,
     isPrefilled,
-    setEnabled
+    setEnabled,
   };
 }
 
