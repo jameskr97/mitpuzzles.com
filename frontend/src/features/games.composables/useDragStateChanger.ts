@@ -24,7 +24,7 @@ export function useDragStateChanger(ctrl: ReturnType<typeof usePuzzleController>
   }
 
   function onCellEnter(cell: Cell, event: MouseEvent): boolean {
-    if (isMouseDown.value == false || cell.zone !== activeZone || firstClickedCell == null) return false;
+    if (isMouseDown.value == false || cell.zone !== "game" || firstClickedCell == null) return false;
     const desiredState = ctrl.state.value?.board[firstClickedCell.row * ctrl.state.value.cols + firstClickedCell.col];
     const currentState = ctrl.state.value?.board[cell.row * ctrl.state.value.cols + cell.col];
 
