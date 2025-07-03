@@ -3,7 +3,6 @@ import { computed, inject, onMounted, onUnmounted, ref } from "vue";
 import { ACTIVE_GAMES } from "@/constants.ts";
 import { remap } from "@/services/util.ts";
 
-
 // const socket = inject<ReturnType<typeof usePuzzleSocket>>("puzzle_socket");
 // if (!socket) throw new Error("Puzzle socket not found");
 // const active_store = useActivePuzzleStore();
