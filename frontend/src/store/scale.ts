@@ -19,7 +19,7 @@ const useScaleStore = defineStore("mitlogic.scale", () => {
   function scaleFor(type: string, variant = "default") {
     return computed<number[]>({
       get: () => [scales.value[key(type, variant)] ?? [20]],
-      set: (v:number[]) => (scales.value[key(type, variant)] = v[0]),
+      set: (v: number[]) => (scales.value[key(type, variant)] = v[0]),
     });
   }
   return { scaleFor };
@@ -30,12 +30,8 @@ export function getGameScale(): any {
   const route = useRoute();
   const store = useScaleStore();
 
-  // Get the game type from the route meta
-  const game_type = route.meta.game_type as string;
-  const game_entry = ACTIVE_GAMES[game_type];
-
   // Create user-accessible scale properties
   const scale = store.scaleFor(game_type);
-  const scale_remapped = computed(() => remap([0, 100], [1, game_entry.scale_max], scale.value[0]));
+  const scale_remapped = computed(() => remap([0, 100], [1, 6], scale.value[0]));
   return { scale, scale_remapped };
 }
