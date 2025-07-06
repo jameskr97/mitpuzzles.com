@@ -1,0 +1,145 @@
+<script setup lang="ts">
+import { onMounted, ref } from "vue";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import Container from "@/components/ui/Container.vue";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import AppLogo from "@/components/AppLogo.vue";
+import { useExperimentContext } from "@/features/experiments/core/useExperimentContext.ts";
+import { useGameHistoryStore } from "@/store/useGameHistoryStore.ts";
+import { databaseManager } from "@/store/database";
+import { useCurrentExperiment } from "@/store/useCurrentExperiment.ts";
+import { type ProlificExperimentPayload, submitProlificExperiment } from "@/services/app.ts";
+
+const context = useExperimentContext();
+const historyStore = useGameHistoryStore();
+const experimentStore = useCurrentExperiment();
+
+const age = ref<number>();
+const gender = ref<string>("");
+const education = ref<string>("");
+const experience = ref<string>("");
+const feedback = ref<string>("");
+
+async function onSubmit() {
+  console.log("attempting to submit")
+  const experimentId = context.getExperimentData().experimentId;
+  const sessionId = experimentStore.prolific_session_id!;
+  const data = await databaseManager.history.exportUserInputData(experimentId, sessionId);
+
+  const final_payload: ProlificExperimentPayload = {
+    experiment_id: experimentId,
+    prolific_participant_id: experimentStore.prolific_participant_id!,
+    prolific_study_id: experimentStore.prolific_study_id!,
+    prolific_session_id: experimentStore.prolific_session_id!,
+    experiment_data: data,
+    survey: {
+      age: age.value,
+      gender: gender.value,
+      education: education.value,
+      experience: experience.value,
+      feedback: feedback.value,
+    },
+  };
+
+  try {
+    const res = await submitProlificExperiment(final_payload);
+    window.location.href = `https://app.prolific.co/submissions/complete?cc=CZPLX09E`;
+  } catch (huh) {
+    console.error("Error submitting survey:", huh);
+  }
+}
+</script>
+
+<template>
+  <div class="w-full flex-1 flex flex-col">
+    <form class="flex flex-col gap-3 mx-auto prose flex-1 max-w-prose" @submit.prevent="onSubmit">
+      <Container>
+        <div class="text-3xl text-center">Completion Survey</div>
+        <div class="text-lg pt-2 text-center">
+          Thank you for completing our experiments. Please submit out the following survey to be redirected back towards
+          prolific.
+        </div>
+      </Container>
+      <Container class="grid grid-cols-[1.3fr_2fr] gap-3 items-center p-5">
+        <!-- Age -->
+        <div class="text-xl">Age</div>
+        <Input v-model="age" type="number" placeholder="Age" class="input w-full" min="18" max="130" required />
+
+        <!-- Gender -->
+        <div class="text-xl">Gender</div>
+        <Select v-model="gender" required>
+          <SelectTrigger class="w-full">
+            <SelectValue placeholder="Gender" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value="male">Male</SelectItem>
+              <SelectItem value="female">Female</SelectItem>
+              <SelectItem value="other">Other</SelectItem>
+              <SelectItem value="none">Prefer not to say</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+        <!--        <select v-model="gender" class="select w-full" required>-->
+        <!--          <option disabled selected>Select...</option>-->
+
+        <!--        </select>-->
+
+        <div class="text-xl">Education Level</div>
+        <Select v-model="education" required>
+          <SelectTrigger class="w-full">
+            <SelectValue placeholder="Education Level" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value="high_school">High School</SelectItem>
+              <SelectItem value="bachelors">Bachelor's Degree</SelectItem>
+              <SelectItem value="masters">Master's Degree</SelectItem>
+              <SelectItem value="doctorate">Doctorate</SelectItem>
+              <SelectItem value="other">Other</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+
+        <div class="text-xl text-nowrap">Prior Sudoku Experience</div>
+        <Select v-model="experience" required>
+          <SelectTrigger class="w-full">
+            <SelectValue placeholder="Prior Sudoku Experience" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value="0">0 prior games</SelectItem>
+              <SelectItem value="1-5">1-5 prior games</SelectItem>
+              <SelectItem value="5-50">5-50 prior games</SelectItem>
+              <SelectItem value="more-50">More than 50 prior games</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+      </Container>
+
+      <Container>
+        <div class="text-xl mb-2">General Feedback</div>
+        <div class="text-base mb-2">
+          Did you experience any issues, or do you have any other feedback you would like to share with the researchers?
+        </div>
+        <Textarea
+          v-model="feedback"
+          placeholder="Your feedback about the experiment"
+          class="textarea w-full"
+          rows="4"
+        ></Textarea>
+      </Container>
+
+      <Container class="flex flex-col w-full items-center mx-auto">
+        <AppLogo class="w-100" />
+        <div class="text-xl italic text-center">
+          Did you enjoy playing? Check out <a href="https://mitpuzzles.com">mitpuzzles.com</a> for more puzzles!
+        </div>
+      </Container>
+
+      <Button class="btn btn-primary mt-4 block mx-auto">Submit</Button>
+    </form>
+  </div>
+</template>
