@@ -53,6 +53,7 @@ export const enum MinesweeperCell {
   EIGHT = 8,
   FLAG = 9,
   SAFE = 10,
+  EMPTY = 11,
 }
 
 // endregion
@@ -99,7 +100,7 @@ const LIGHTUP_TO_ENUM: Record<number, LightupCell> = {
 };
 
 const MINESWEEPER_TO_ENUM: Record<number, MinesweeperCell> = {
-  [0]: MinesweeperCell.UNMARKED,
+  [0]: MinesweeperCell.EMPTY,
   [1]: MinesweeperCell.ONE,
   [2]: MinesweeperCell.TWO,
   [3]: MinesweeperCell.THREE,
