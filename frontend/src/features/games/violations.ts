@@ -33,8 +33,8 @@ export const VIOLATION_MAP: Record<string, ViolationMetadata> = {
     title: "Bulb Intersect Violation",
     description: "These bulbs are in the same row or column as another bulb, which is not allowed.",
   },
-  numbered_wll_constraint_violated: {
-    title: "Wal count constraint violated",
+  numbered_wall_constraint_violated: {
+    title: "Wall count constraint violated",
     description: "There are too many bulbs around these numbered walls.",
   },
 

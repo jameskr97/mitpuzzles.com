@@ -3,16 +3,16 @@ import BoardContainer from "@/features/games.components/board.container.vue";
 import BoardBorders from "@/features/games.components/board.borders.vue";
 import BoardCells from "@/features/games.components/board.cellgrid.vue";
 import BoardInteraction from "@/features/games.components/board.interaction.vue";
-import type { PuzzleStateKakurasu } from "@/services/states.ts";
 import { type createPuzzleInteractionBridge } from "@/features/games.composables/setupPuzzleInteractionBridge.ts";
 import { check_violation_rule } from "@/utils.ts";
+import type { PuzzleState, KakurasuMeta } from "@/services/game/engines/types.ts";
+import { KakurasuCell } from "@/services/game/engines/translator.ts";
 
 const props = defineProps<{
   scale?: number;
-  state: PuzzleStateKakurasu;
+  state: PuzzleState<KakurasuMeta>;
   interact?: ReturnType<typeof createPuzzleInteractionBridge>;
 }>();
-
 enum KakurasuCellStates {
   Empty = 0,
   Filled = 1,
@@ -23,14 +23,14 @@ enum KakurasuCellStates {
 const bind = props.interact?.getBridge();
 const borderConfig = {
   outer: { thickness: 1, borderClass: "bg-black" },
-  inner: { thickness: 1, borderClass: "bg-black" }
+  inner: { thickness: 1, borderClass: "bg-black" },
 };
 </script>
 <template>
   <BoardContainer
-    v-if="state"
-    :rows="state.rows"
-    :cols="state.cols"
+    v-if="state.definition"
+    :rows="state.definition.rows"
+    :cols="state.definition.cols"
     :scale="scale"
     :gutter-top="1"
     :gutter-left="1"
@@ -38,18 +38,17 @@ const borderConfig = {
     :gutter-bottom="1"
     class-game-cell="border-black"
     :border-config="borderConfig"
-    :cell-size="40"
   >
     <BoardBorders />
     <BoardInteraction v-if="interact" :bind="bind" />
     <BoardCells v-if="state">
       <template v-slot:cell="{ row, col }">
         <div
-          v-if="state.board[row * state.cols + col] === KakurasuCellStates.Filled"
+          v-if="state.board[row][col] === KakurasuCell.BLACK"
           class="border-1 bg-black border-white h-full w-full"
         ></div>
         <div
-          v-if="state.board[row * state.cols + col] === KakurasuCellStates.Crossed"
+          v-if="state.board[row][col] === KakurasuCell.CROSS"
           class="bg-[url(/assets/kakurasu/cross.svg)] bg-contain w-full h-full"
         ></div>
       </template>
@@ -72,7 +71,7 @@ const borderConfig = {
               : 'text-blue-500'
           "
         >
-          {{ state.row_sums[props.row] }}
+          {{ state.definition.meta.row_sums[props.row] }}
         </div>
       </template>
       <template v-slot:bottom="props">
@@ -84,7 +83,7 @@ const borderConfig = {
               : 'text-blue-500'
           "
         >
-          <span>{{ state.col_sums[props.col] }}</span>
+          <span>{{ state.definition.meta.col_sums[props.col] }}</span>
         </div>
       </template>
     </BoardCells>

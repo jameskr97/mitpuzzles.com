@@ -5,19 +5,18 @@ import BoardCells from "@/features/games.components/board.cellgrid.vue";
 import BoardInteraction from "@/features/games.components/board.interaction.vue";
 import { type createPuzzleInteractionBridge } from "@/features/games.composables/setupPuzzleInteractionBridge.ts";
 import { computed } from "vue";
-import type { PuzzleStateSudoku } from "@/services/states.ts";
+import type { PuzzleState } from "@/services/game/engines/types.ts";
 
 ////////////////////////////////////////////////////////////////////////
 // Props + State
 const props = defineProps<{
   scale?: number;
-  state: PuzzleStateSudoku;
+  state: PuzzleState;
   interact?: ReturnType<typeof createPuzzleInteractionBridge>;
 }>();
 
 function is_prefilled(row: number, col: number): boolean {
-  const index = row * props.state.cols + col;
-  return props.state.board_initial[index] !== 0;
+  return props.state.definition.initial_state[row][col] !== 0;
 }
 
 const bind = props.interact?.getBridge(false);
@@ -26,15 +25,21 @@ const render = props.interact?.getRenderBehaviors();
 const T = 3;
 const MAJOR = "bg-gray-500";
 const borderConfig = computed(() => ({
-  everyNthCol: { n: Math.sqrt(props.state.cols), style: { thickness: T, borderClass: MAJOR } },
-  everyNthRow: { n: Math.sqrt(props.state.cols), style: { thickness: T, borderClass: MAJOR } },
+  everyNthCol: { n: Math.sqrt(props.state.definition.cols), style: { thickness: T, borderClass: MAJOR } },
+  everyNthRow: { n: Math.sqrt(props.state.definition.cols), style: { thickness: T, borderClass: MAJOR } },
   outer: { thickness: T, borderClass: MAJOR },
   inner: { borderClass: "bg-gray-400" },
 }));
 </script>
 
 <template>
-  <BoardContainer v-if="state" :cols="state.cols" :rows="state.rows" :scale="scale" :border-config="borderConfig" :cell-size="40">
+  <BoardContainer
+    v-if="state"
+    :cols="state.definition.cols"
+    :rows="state.definition.rows"
+    :scale="scale"
+    :border-config="borderConfig"
+  >
     <BoardBorders />
     <BoardInteraction :bind="bind" />
     <BoardCells>
@@ -47,12 +52,12 @@ const borderConfig = computed(() => ({
           <span v-if="render?.getCellContent">
             {{ render?.getCellContent(row, col) ?? "" }}
           </span>
-          <div v-else-if="state.board[row * state.cols + col] != 0">
+          <div v-else-if="state.board[row][col] != 0">
             <span v-if="is_prefilled(row, col)">
-              {{ state.board[row * state.cols + col] }}
+              {{ state.board[row][col] }}
             </span>
-            <span v-else-if="state.board[row * state.cols + col] != 0">
-              {{ state.board[row * state.cols + col] }}
+            <span v-else-if="state.board[row][col] != 0">
+              {{ state.board[row][col] }}
             </span>
           </div>
         </div>

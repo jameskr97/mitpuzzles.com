@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import GameViewInstructionsSlider from "@/components/gameview.instructions.slider.vue";
+import FreeplayGameViewInstructionSlider from "@/features/freeplay/FreeplayGameViewInstructionSlider.vue";
 import PuzzleTents from "@/features/games/tents/tents.puzzle.vue";
 import { useRoute } from "vue-router";
 import { useGameLayout } from "@/composables/useGameLayout.ts";
 import { computed } from "vue";
 import { ACTIVE_GAMES } from "@/constants.ts";
-import type { PuzzleStateTents } from "@/services/states.ts";
+import type { PuzzleState, TentsMeta } from "@/services/game/engines/types.ts";
 
 const route = useRoute();
 const layout = useGameLayout();
@@ -13,36 +13,58 @@ const game_type = route.meta.game_type as string;
 const game_type_capitalized = computed(() => game_type.charAt(0).toUpperCase() + game_type.slice(1));
 const game_entry = ACTIVE_GAMES[game_type];
 
-// @ts-expect-error ignore any missing fields
-const board0: PuzzleStateTents = {
+const def = {
   rows: 6,
   cols: 6,
-  row_counts: [2, 1, 1, 1, 1, 1],
-  col_counts: [2, 0, 1, 1, 1, 2],
-  board: [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0],
+  meta: {
+    row_tent_counts: [2, 1, 1, 1, 1, 1],
+    col_tent_counts: [2, 0, 1, 1, 1, 2],
+  },
+};
+const board0: PuzzleState<TentsMeta> = {
+  // @ts-expect-error intentionally partially defined
+  definition: def,
+  board: [
+    [0, 1, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 1],
+    [0, 0, 0, 1, 0, 0],
+    [0, 0, 0, 1, 0, 1],
+    [0, 0, 0, 1, 0, 0],
+    [0, 1, 0, 0, 0, 0],
+  ],
+  solved: false,
+  violations: [],
 };
 
-// @ts-expect-error ignore any missing fields
-const board1: PuzzleStateTents = {
-  rows: 6,
-  cols: 6,
-  row_counts: [2, 1, 1, 1, 1, 1],
-  col_counts: [2, 0, 1, 1, 1, 2],
-  board: [2, 1, 0, 0, 0, 0, 0, 0, 0, 2, 0, 1, 0, 0, 0, 1, 2, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0],
+const board1: PuzzleState<TentsMeta> = {
+  // @ts-expect-error intentionally partially defined
+  definition: def,
+  board: [
+    [2, 1, 0, 0, 0, 0],
+    [0, 0, 0, 2, 0, 1],
+    [0, 0, 0, 1, 2, 0],
+    [0, 0, 0, 1, 0, 1],
+    [0, 0, 0, 1, 0, 0],
+    [0, 1, 0, 0, 0, 0],
+  ],
 };
 
-// @ts-expect-error ignore any missing fields
-const board2: PuzzleStateTents = {
-  rows: 6,
-  cols: 6,
-  row_counts: [2, 1, 1, 1, 1, 1],
-  col_counts: [2, 0, 1, 1, 1, 2],
-  board: [2, 1, 0, 0, 2, 0, 2, 0, 0, 2, 0, 1, 0, 0, 0, 1, 2, 0, 0, 2, 0, 1, 0, 1, 2, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0, 0],
+const board2: PuzzleState<TentsMeta> = {
+  // @ts-expect-error intentionally partially defined
+  definition: def,
+  board: [
+    [2, 1, 0, 0, 2, 0],
+    [2, 0, 0, 2, 0, 1],
+    [0, 0, 0, 1, 2, 0],
+    [0, 2, 0, 1, 0, 1],
+    [2, 0, 0, 1, 0, 0],
+    [0, 1, 0, 0, 0, 0],
+  ],
 };
 </script>
 
 <template>
-  <GameViewInstructionsSlider :num_pages="3">
+  <FreeplayGameViewInstructionSlider :num_pages="3">
     <template #page1>
       <div class="flex flex-col gap-2 m-2 h-full text-center">
         <div class="text-xl mb-2">
@@ -72,5 +94,5 @@ const board2: PuzzleStateTents = {
         <PuzzleTents :scale="1" :state="board2" class="mx-auto" />
       </div>
     </template>
-  </GameViewInstructionsSlider>
+  </FreeplayGameViewInstructionSlider>
 </template>
