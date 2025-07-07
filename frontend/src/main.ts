@@ -8,21 +8,25 @@ import { useVisitorStore } from "@/store/visitor.ts";
 // Components & Views
 import App from "./App.vue";
 import MarkdownPage from "@/views/MarkdownPage.vue";
+import ExperimentRunner from "@/features/experiments/core/ExperimentRunner.vue";
 import { OhVueIcon } from "@/icons";
 // Markdown content
 import mdAbout from "./views/aboutus.md?raw";
 // Utility
-import { detectModeFromPath, StorageVersionManager } from "@/utils.ts";
+import { StorageVersionManager } from "@/utils.ts";
 // Style
 import "./style.css";
 // PostHog
 import posthog from "posthog-js";
 // Socket
 import { ACTIVE_EXPERIMENTS, ACTIVE_GAMES, DEV_TOOLS } from "@/constants.ts";
-import { useAppConfig } from "@/store/app.ts";
 import logger from "@/services/logger.ts";
-import { provideGameService } from "@/services/game/useGameService.ts";
-import { usePuzzleMetadataStore } from "@/store/puzzle.ts";
+import { getExperimentConfig } from "@/features/experiments/ExperimentLoader.ts";
+import { useGameMetadataStore } from "@/store/useGameMetadataStore.ts";
+import { useGameStateStore } from "@/store/useGameStateStore.ts";
+import { useGameScalesStore } from "@/store/useGameScaleStore.ts";
+import { useGameAttemptStore } from "@/store/useGameAttemptStore.ts";
+import { useGameHistoryStore } from "@/store/useGameHistoryStore.ts";
 
 if (import.meta.hot) {
   import.meta.hot.accept(["./constants.ts"], () => {
@@ -58,10 +62,10 @@ const route = {
     meta,
   }),
   experiment: (key: string) => ({
-    path: `/experiment/${key}`,
-    name: `experiment-${key}`,
-    meta: { experiment_key: key },
-    component: () => import(`@/features/prolific.experiments/${key}/ExperimentMain.vue`),
+    path: `/experiment/:experiment_id`,
+    name: `experiment`,
+    component: ExperimentRunner,
+    props: (route) => ({}),
   }),
 };
 
@@ -74,8 +78,15 @@ const routerConfig: RouterOptions = {
     ...Object.values(DEV_TOOLS).map(({ key, meta }) => route.dev(key, meta)),
     ...Object.keys(ACTIVE_EXPERIMENTS).map(route.experiment),
     ...Object.keys(ACTIVE_GAMES).map(route.game),
-    // ...Object.keys(DEV_TOOLS).map(route.dev),
     { path: "/:pathMatch(.*)*", name: "404", component: () => import("./views/404.vue") },
+    {
+      path: "/experiment/:experiment_id",
+      name: "experiment",
+      component: ExperimentRunner,
+      props: (route) => ({
+        config: getExperimentConfig(route.params.experiment_id),
+      }),
+    },
   ],
 };
 
@@ -88,15 +99,15 @@ const routerConfig: RouterOptions = {
   // if there is no user, the visitor ID is used to identify the user
   await useAuthStore().updateStore();
   await useVisitorStore().init();
-  await usePuzzleMetadataStore().refreshAllVariantsOnce();
 
-  // set app mode (freeplay, prolific)
-  const cfg = useAppConfig();
-  cfg.setMode(detectModeFromPath());
-
-  // app socket
-  const gs = provideGameService();
-  app.provide("GameService", gs);
+  // initialize indexeddb + pinia stores
+  await Promise.all([
+    useGameMetadataStore().initializeStore(),
+    useGameStateStore().init(),
+    useGameScalesStore().initializeStore(),
+    useGameAttemptStore().initializeStore(),
+    useGameHistoryStore().initializeStore(),
+  ]);
 
   // posthog
   const posthogApiKey = import.meta.env.VITE_POSTHOG_API_KEY;

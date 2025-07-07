@@ -1,10 +1,14 @@
 import { format_game_stopwatch } from "@/services/util.ts";
+import { computed, type ComputedRef, defineAsyncComponent, ref, type Ref } from "vue";
+import logger from "@/services/logger.ts";
+import { useLocalStorage } from "@vueuse/core";
+import { defaultPuzzles } from "@/services/puzzle.defaults.ts";
+import type { RuleViolation } from "@/services/game/engines/PuzzleEngine.ts";
 
 export function create_game_entry(
   icon: string,
   sidebar_title: string,
   key: string,
-  scale_max: number = 10,
   defaultBehaviors: Array<any> = [],
 ): any {
   return {
@@ -15,11 +19,16 @@ export function create_game_entry(
     instructions: defineAsyncComponent({ loader: () => import(`@/features/games/${key}/instructions.vue`) }),
     default: defaultPuzzles[key],
     defaultBehaviors,
-    scale_max,
   };
 }
 
-export function create_dev_tool(key: string, icon: string, display_name: string, meta: object = {}, requires_admin: boolean = false) {
+export function create_dev_tool(
+  key: string,
+  icon: string,
+  display_name: string,
+  meta: object = {},
+  requires_admin: boolean = false,
+) {
   return {
     key,
     icon,
@@ -44,6 +53,7 @@ export function create_experiment(key: string, flow: any) {
 export class StorageVersionManager {
   // Change this to current date when updating the storage version
   private static readonly VERSION = "2025-06-30";
+
   static clearOldStorage() {
     const saved = localStorage.getItem("mitlogic.storageVersion");
     if (saved !== StorageVersionManager.VERSION) {
@@ -57,12 +67,6 @@ export class StorageVersionManager {
     }
   }
 }
-
-import { computed, type ComputedRef, defineAsyncComponent, ref, type Ref } from "vue";
-import logger from "@/services/logger.ts";
-import { useLocalStorage } from "@vueuse/core";
-import type { GameViolation } from "@/services/states.ts";
-import { defaultPuzzles } from "@/services/puzzle.defaults.ts";
 
 export class PuzzleTimer {
   private timer_id: number | null = null;
@@ -120,17 +124,16 @@ export class PuzzleTimer {
  * @param col
  * @param rule
  */
-export function check_violation_rule(violations: GameViolation[], row: number, col: number, rule: string | string[]) {
+export function check_violation_rule(violations: RuleViolation[], row: number, col: number, rule: string | string[]) {
   if (!violations || !Array.isArray(violations)) return false;
   if (violations.length === 0) return false;
   if (typeof rule === "string") rule = [rule];
 
   return violations.some(
     (violation) =>
-      rule.includes(violation.rule_type) && violation.locations.some((loc) => loc.row === row && loc.col === col),
+      rule.includes(violation.rule_name) && violation.locations.some((loc) => loc.row === row && loc.col === col),
   );
 }
-
 
 export function shuffle(array: any[]) {
   for (let i = array.length - 1; i > 0; i--) {
@@ -156,12 +159,9 @@ export function getPuzzleDisplayName(parts?: string[]): string {
   return `${parts[0]} ${name}`;
 }
 
-
 export type MaybeOptions<T> = boolean | Partial<T>;
-export function normalizeOptions<T extends object>(
-  value: boolean | Partial<T> | undefined,
-  defaults: T
-): T | null {
+
+export function normalizeOptions<T extends object>(value: boolean | Partial<T> | undefined, defaults: T): T | null {
   if (value === true) return defaults;
   if (typeof value === "object") return { ...defaults, ...value };
   return null;
