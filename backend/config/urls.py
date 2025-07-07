@@ -24,7 +24,6 @@ from django.urls import include, path, re_path
 from django.views.generic.base import RedirectView
 
 from core import views
-from puzzles.socket.transport.consumer import TransportConsumer
 from tracking import views as tracking_views
 
 
@@ -55,6 +54,7 @@ urlpatterns = [
 
     # 1st-party app endpoints
     path("api/puzzle/", include("puzzles.urls")),
+    path("api/experiment/", include("experiments.urls")),
     path("api/feedback", views.FeedbackAPIView.as_view()),
     path("api/visitor", tracking_views.visitor_init),
     path('api/visitor/username', tracking_views.change_visitor_username),
@@ -65,9 +65,5 @@ urlpatterns = [
     # ),
     # All other paths are served the root html file (frontend redirect)
     re_path(r"^.*$", serve_root),
-]
-
-websocket_urlpatterns = [
-    re_path(f'ws/puzzlet/$', TransportConsumer.as_asgi()),
 ]
 

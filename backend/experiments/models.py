@@ -37,24 +37,11 @@ class ProlificParticipation(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     # Study Tracking
-    consented_at = models.DateTimeField(null=True, blank=True)
     visitor = models.ForeignKey('tracking.Visitor', on_delete=models.CASCADE)
-    experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE)
+    experiment_id = models.CharField(null=False)
     survey_response = models.JSONField(null=True, blank=True)
 
-    # Minimal progress tracking
-    current_step = models.CharField(max_length=100)  # 0 = not started
-    current_trial = models.IntegerField(default=0)  # 0 = not started
-    completed = models.BooleanField(default=False)
-
-    # experiment metadata
-    metadata = models.JSONField(default=dict, blank=True)
-
-    def get_current_attempt(self) -> "ExperimentPuzzleAttempt":
-        return ExperimentPuzzleAttempt.objects.filter(
-            prolific_session=self,
-            attempt_order=self.current_trial
-        ).first()
+    experiment_data = models.JSONField(default=dict, blank=True)
 
 
 class ExperimentPuzzlePool(models.Model):

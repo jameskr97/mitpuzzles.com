@@ -21,9 +21,7 @@ class AbstractPuzzleAttempt(models.Model):
 
     # puzzle data
     puzzle = models.ForeignKey(Puzzle, on_delete=models.CASCADE, related_name="%(class)ss")
-    board_state = models.JSONField()
     action_history = models.JSONField(default=list, blank=True)
-    is_solved = models.BooleanField(default=False)
 
     @classmethod
     def get_or_create_for_actor(cls, visitor_id, puzzle_type: str) -> Self:

@@ -78,7 +78,6 @@ INSTALLED_APPS = [
     "tracking",
     "puzzles",
     "experiments",
-    # "protocol"
 ]
 
 MIDDLEWARE = [
@@ -145,6 +144,12 @@ CHANNEL_LAYERS = {
             "hosts": [REDIS_DB],
         },
     },
+}
+
+# django rest framework
+REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20,
 }
 
 LOGGING = {
