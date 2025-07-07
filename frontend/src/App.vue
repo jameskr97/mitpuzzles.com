@@ -15,7 +15,7 @@ const app = useAppConfig();
     <TooltipProvider>
       <SidebarProvider>
         <AppSidebar v-if="app.isFreeplay" />
-        <main class="h-full w-full m-2">
+        <main class="h-full w-full box-content">
           <AppMobileNavbar v-if="app.isFreeplay" />
           <router-view v-slot="{ Component, route }">
             <component :is="Component" :key="route.path" />
