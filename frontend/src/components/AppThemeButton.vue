@@ -9,7 +9,7 @@ import {
 import type { PropType } from "vue";
 
 const colorMode = useColorMode({ disableTransition: false });
-colorMode.value = "light"
+colorMode.value = "light";
 type Align = "start" | "center" | "end" | undefined;
 
 const props = defineProps({

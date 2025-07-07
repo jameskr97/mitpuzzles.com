@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 
 ////////////////////////////////////////////////////////////////////////
 //// props
-defineEmits(['submitClick'])
+defineEmits(["submitClick"]);
 </script>
 
 <template>
@@ -18,9 +18,7 @@ defineEmits(['submitClick'])
 
       <!-- Buttons -->
       <div class="grid grid-cols-1 lg:grid-cols-4 w-full gap-1 mt-2">
-        <Button variant="success"  @click="puzzle.request_puzzle_solved()">
-          Done
-        </Button>
+        <Button variant="success" @click="puzzle.request_puzzle_solved()"> Done </Button>
       </div>
     </div>
   </Container>

@@ -99,13 +99,12 @@ const close_sidebar_on_mobile = () => {
             </SidebarMenuButton>
           </AppFeedbackModal>
 
-<!--          <AppThemeButton>-->
-<!--            <SidebarMenuButton>-->
-<!--              <AppThemeIcon />-->
-<!--              Dark Mode-->
-<!--            </SidebarMenuButton>-->
-<!--          </AppThemeButton>-->
-
+          <!--          <AppThemeButton>-->
+          <!--            <SidebarMenuButton>-->
+          <!--              <AppThemeIcon />-->
+          <!--              Dark Mode-->
+          <!--            </SidebarMenuButton>-->
+          <!--          </AppThemeButton>-->
         </SidebarMenu>
       </SidebarGroup>
       <SidebarSeparator />

@@ -1,38 +1,30 @@
 <script setup lang="ts">
 import { ACTIVE_GAMES } from "@/constants.ts";
 import { useRoute } from "vue-router";
-import { getGameScale } from "@/store/scale.ts";
-import GameViewComponent from "@/components/gameview.component.vue";
+import FreeplayGameView from "@/features/freeplay/FreeplayGameView.vue";
+import { useFreeplayPuzzle } from "@/composables/useFreeplayPuzzle.ts";
 import { createPuzzleInteractionBridge } from "@/features/games.composables/setupPuzzleInteractionBridge.ts";
-import { usePuzzleController } from "@/composables/usePuzzleController.ts";
-import type { SupportedPuzzleTypes } from "@/codegen/websocket/game.schema";
-import { provide } from "vue";
+import { useGameScalesStore } from "@/store/useGameScaleStore.ts";
 
-// load game rules as markdown
 const route = useRoute();
-const gt = route.meta.game_type as SupportedPuzzleTypes;
+const gt = route.meta.game_type as string;
+const puzzle = await useFreeplayPuzzle(gt);
 const game_entry = ACTIVE_GAMES[gt];
+const scaleStore = useGameScalesStore();
 
-// load game state + data
-const puzzle = usePuzzleController(gt);
-provide("puzzle", puzzle);
-const bridge = createPuzzleInteractionBridge(gt);
+const bridge = createPuzzleInteractionBridge(puzzle);
 for (const withBehavior of game_entry["defaultBehaviors"]) {
   withBehavior(puzzle, bridge);
 }
-
-const scale = getGameScale();
 </script>
 
 <template>
-  <GameViewComponent>
-    <div v-if="!puzzle.isReady.value">Loading...</div>
+  <FreeplayGameView :puzzle="puzzle" class="mt-2">
     <component
-      v-else
       :is="game_entry.component"
-      :state="puzzle.state.value"
-      :scale="scale.scale_remapped.value"
+      :state="puzzle.state_puzzle.value"
+      :scale="scaleStore.getScaleRemapped(gt)"
       :interact="bridge"
     />
-  </GameViewComponent>
+  </FreeplayGameView>
 </template>
