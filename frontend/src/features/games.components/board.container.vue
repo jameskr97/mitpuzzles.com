@@ -41,10 +41,7 @@ const calculatedScale = computed(() => {
   if (props.scale) return props.scale;
   if (!rprops.parentEl) return 1; // no scale and no parent element? return default of 1;
   if (!parent.width.value || !parent.height.value || !p.fullWidth.value || !p.fullHeight.value) return 1;
-  return Math.min(
-    parent.width.value / p.fullWidth.value,
-    parent.height.value / p.fullHeight.value
-  );
+  return Math.min(parent.width.value / p.fullWidth.value, parent.height.value / p.fullHeight.value);
 });
 
 defineExpose({
@@ -64,8 +61,10 @@ defineExpose({
     <div
       :style="{
         transform: `scale(${calculatedScale})`,
-        left: (l.has_left_gutter.value || l.has_right_gutter.value ? p.gameGridOuterGap.value * calculatedScale : 0) + 'px',
-        top: (l.has_top_gutter.value || l.has_bottom_gutter.value ? p.gameGridOuterGap.value * calculatedScale : 0) + 'px',
+        left:
+          (l.has_left_gutter.value || l.has_right_gutter.value ? p.gameGridOuterGap.value * calculatedScale : 0) + 'px',
+        top:
+          (l.has_top_gutter.value || l.has_bottom_gutter.value ? p.gameGridOuterGap.value * calculatedScale : 0) + 'px',
         // left: p.gameGridOuterGap.value * scale + 'px',
         // top:  p.gameGridOuterGap.value * scale + 'px',
         width: p.fullWidth.value + 'px',

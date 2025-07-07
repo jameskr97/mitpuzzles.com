@@ -99,7 +99,11 @@ const gutterBorders = [
       <div
         v-for="(_, ic) in board.cols"
         class="absolute z-100"
-        :class="(index + 1) % board.borderConfig.everyNthRow?.n === 0 ? border.style.borderClass : board.borderConfig.inner?.borderClass"
+        :class="
+          (index + 1) % board.borderConfig.everyNthRow?.n === 0
+            ? border.style.borderClass
+            : board.borderConfig.inner?.borderClass
+        "
         :style="{
           left: positions.gameGridStartX.value + offset.gameInnerBorderOffsetsX.value[ic] + 'px',
           top: positions.gameGridStartY.value + border.top - (border.style.thickness ?? board.gap) + 'px',
@@ -115,7 +119,11 @@ const gutterBorders = [
       <div
         v-for="(_, ir) in board.rows"
         class="absolute z-100"
-        :class="(index + 1) % board.borderConfig.everyNthCol?.n === 0 ? border.style.borderClass : board.borderConfig.inner?.borderClass"
+        :class="
+          (index + 1) % board.borderConfig.everyNthCol?.n === 0
+            ? border.style.borderClass
+            : board.borderConfig.inner?.borderClass
+        "
         :style="{
           left: positions.gameGridStartX.value + border.left - (border.style.thickness ?? board.gap) + 'px',
           top: positions.gameGridStartY.value + offset.gameInnerBorderOffsetsY.value[ir] + 'px',
@@ -132,7 +140,11 @@ const gutterBorders = [
     <div
       v-for="(border, index) in borderCalc.game_grid_borders_row.value"
       class="absolute -z-9999"
-      :class="(index + 1) % board.borderConfig.everyNthRow?.n === 0 ? border.style.borderClass : board.borderConfig.inner?.borderClass"
+      :class="
+        (index + 1) % board.borderConfig.everyNthRow?.n === 0
+          ? border.style.borderClass
+          : board.borderConfig.inner?.borderClass
+      "
       :style="{
         left: positions.gameGridStartX.value + 'px',
         top: positions.gameGridStartY.value + border.top - (border.style.thickness ?? board.gap) + 'px',
@@ -145,7 +157,11 @@ const gutterBorders = [
       v-for="(border, index) in borderCalc.game_grid_borders_column.value"
       v-show="(index + 1) % board.borderConfig?.everyNthCol?.n === 0"
       class="absolute -z-9999"
-      :class="(index + 1) % board.borderConfig?.everyNthCol?.n === 0 ? border.style.borderClass : board.borderConfig.inner?.borderClass"
+      :class="
+        (index + 1) % board.borderConfig?.everyNthCol?.n === 0
+          ? border.style.borderClass
+          : board.borderConfig.inner?.borderClass
+      "
       :style="{
         left: positions.gameGridStartX.value + border.left - (border.style.thickness ?? board.gap) + 'px',
         top: positions.gameGridStartY.value + 'px',

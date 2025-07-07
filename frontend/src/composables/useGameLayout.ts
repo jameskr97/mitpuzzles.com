@@ -8,7 +8,6 @@ export function useGameLayout() {
   const route = useRoute();
   const game_type = route.meta.game_type as string;
 
-
   const isFirstVisit = computed(() => !store.hasVisitedGame(game_type));
   const instructions_visible = computed({
     get: () => isFirstVisit.value || store.booleanFor("instructions").value,
@@ -18,7 +17,7 @@ export function useGameLayout() {
         store.markGameAsVisited(game_type);
       }
       store.booleanFor("instructions").value = value;
-    }
+    },
   });
   const leaderboard_visible = store.booleanFor("leaderboard");
 
@@ -53,6 +52,6 @@ export const useGameLayoutStore = defineStore("mitlogic.layout", () => {
   return {
     booleanFor,
     hasVisitedGame,
-    markGameAsVisited
+    markGameAsVisited,
   };
 });

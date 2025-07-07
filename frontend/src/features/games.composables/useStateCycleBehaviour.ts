@@ -1,8 +1,7 @@
 import type { BoardEvents, Cell } from "@/features/games.components/board.interaction.ts";
-import type { usePuzzleController } from "@/composables/usePuzzleController.ts";
+import type { PuzzleController } from "@/services/game/engines/types.ts";
 
-export function useStateCycleBehaviour(ctrl: ReturnType<typeof usePuzzleController>): Partial<BoardEvents> {
-
+export function useStateCycleBehaviour(ctrl: PuzzleController): Partial<BoardEvents> {
   return {
     /**
      * Tell the backend session that a cell was clicked.
@@ -11,7 +10,7 @@ export function useStateCycleBehaviour(ctrl: ReturnType<typeof usePuzzleControll
      * @param event
      */
     onCellMouseDown(cell: Cell, event: MouseEvent): boolean {
-      ctrl.handleCellClick(cell, event.button)
+      ctrl.handle_cell_click(cell, event);
       return false;
     },
   };

@@ -1,4 +1,4 @@
-import type { usePuzzleController } from "@/composables/usePuzzleController.ts";
+import type { PuzzleController } from "@/services/game/engines/types.ts";
 
 /**
  * EventHandlerListKey<TEvents> - Type alias for event names
@@ -81,10 +81,7 @@ export class EventHandlerManager<TEvents extends { [TEventKey in keyof TEvents]:
    * @param session - The puzzle session data passed to the behavior function
    * @returns The same object that the behavior function returned
    */
-  addBehaviour<T extends Partial<TEvents>, State = ReturnType<typeof usePuzzleController>>(
-    behaviour: (session: State) => T,
-    session: State,
-  ): T {
+  addBehaviour<T extends Partial<TEvents>>(behaviour: (session: PuzzleController) => T, session: PuzzleController): T {
     const additions = behaviour(session);
 
     for (const key in additions) {

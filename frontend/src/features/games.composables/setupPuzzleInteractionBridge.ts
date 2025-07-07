@@ -3,8 +3,7 @@ import { useDragStateChanger } from "@/features/games.composables/useDragStateCh
 import { useClearStateBehaviour } from "@/features/games.composables/useClearStateBehaviour.ts";
 import { useStateCycleBehaviour } from "@/features/games.composables/useStateCycleBehaviour.ts";
 import { EventHandlerManager } from "@/features/games.composables/EventHandlerManager.ts";
-import { usePuzzleController } from "@/composables/usePuzzleController.ts";
-import type { SupportedPuzzleTypes } from "@/codegen/websocket/game.schema";
+import type { PuzzleController } from "@/services/game/engines/types.ts";
 
 /**
  * Game Events - Interface for game-level events
@@ -45,7 +44,6 @@ export interface RenderEvents {
   getRightGutterStyles?: (row: number, col: number) => Record<string, string>;
 }
 
-
 /**
  * Create a bridge between the puzzle interaction and the puzzle state.
  * - This allows users to add custom behaviours to the puzzle interaction.
@@ -53,12 +51,7 @@ export interface RenderEvents {
  * - Note, the order of the behaviours is important, as they are called in the order they are added.
  * @param session The puzzle state session
  */
-export function createPuzzleInteractionBridge(
-  puzzle_type: SupportedPuzzleTypes,
-  opts: { mode?: "remote" | "local"; state?: any } = {},
-) {
-  const ctrl = usePuzzleController(puzzle_type, opts)
-
+export function createPuzzleInteractionBridge(controller: PuzzleController) {
   // Create event handler managers for each type of event
   const boardEventManager = new EventHandlerManager<BoardEvents>();
   const gameEventManager = new EventHandlerManager<GameEvents>();
@@ -70,10 +63,8 @@ export function createPuzzleInteractionBridge(
    * @param behaviour A function that takes the session and returns board event handlers
    * @returns The compiled behavior object that was added
    */
-  function addInputBehaviour<T extends Partial<BoardEvents>>(
-    behaviour: (ctrl: ReturnType<typeof usePuzzleController>) => T,
-  ): T {
-    return boardEventManager.addBehaviour(behaviour, ctrl);
+  function addInputBehaviour<T extends Partial<BoardEvents>>(behaviour: (ctrl: PuzzleController) => T): T {
+    return boardEventManager.addBehaviour(behaviour, controller);
   }
 
   /**
@@ -82,8 +73,8 @@ export function createPuzzleInteractionBridge(
    * @param behaviour A function that takes the session and returns game event handlers
    * @returns The compiled behavior object that was added
    */
-  function addGameBehaviour<T extends Partial<GameEvents>>(behaviour: (puzzle: typeof ctrl) => T): T {
-    return gameEventManager.addBehaviour(behaviour, ctrl);
+  function addGameBehaviour<T extends Partial<GameEvents>>(behaviour: (puzzle: PuzzleController) => T): T {
+    return gameEventManager.addBehaviour(behaviour, controller);
   }
 
   /**
@@ -92,8 +83,8 @@ export function createPuzzleInteractionBridge(
    * @param behaviour A function that takes the session and returns render event handlers
    * @returns The compiled behavior object that was added
    */
-  function addRenderBehaviour<T extends Partial<RenderEvents>>(behaviour: (puzzle: typeof ctrl) => T): T {
-    return renderEventManager.addBehaviour(behaviour, ctrl);
+  function addRenderBehaviour<T extends Partial<RenderEvents>>(behaviour: (puzzle: PuzzleController) => T): T {
+    return renderEventManager.addBehaviour(behaviour, controller);
   }
 
   /**
@@ -125,23 +116,23 @@ export function createPuzzleInteractionBridge(
   /**
    * Set up a watcher that emits the onBoardModified event when the board changes
    */
-  if (ctrl.state && Array.isArray(ctrl.state)) {
-    // Initial board state tracking
-    const initialBoard = [...ctrl.state];
-
-    // Watch for changes to the board
-    setInterval(() => {
-      if (ctrl.state.value && Array.isArray(ctrl.state.value.board)) {
-        const currentBoard = ctrl.state.value.board;
-        // Only emit if the board actually changed
-        if (JSON.stringify(initialBoard) !== JSON.stringify(currentBoard)) {
-          gameEventManager.emit("onBoardModified", currentBoard);
-          // Update tracked board
-          initialBoard.splice(0, initialBoard.length, ...currentBoard);
-        }
-      }
-    }, 100); // Check every 100ms
-  }
+  // if (ctrl.state && Array.isArray(ctrl.state)) {
+  //   // Initial board state tracking
+  //   const initialBoard = [...ctrl.state];
+  //
+  //   // Watch for changes to the board
+  //   setInterval(() => {
+  //     if (ctrl.state.value && Array.isArray(ctrl.state.value.board)) {
+  //       const currentBoard = ctrl.state.value.board;
+  //       // Only emit if the board actually changed
+  //       if (JSON.stringify(initialBoard) !== JSON.stringify(currentBoard)) {
+  //         gameEventManager.emit("onBoardModified", currentBoard);
+  //         // Update tracked board
+  //         initialBoard.splice(0, initialBoard.length, ...currentBoard);
+  //       }
+  //     }
+  //   }, 100); // Check every 100ms
+  // }
 
   /**
    * Return the public API of the interaction bridge
