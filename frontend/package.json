@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite --host",
     "build": "vue-tsc -b && vite build",
-    "build-prod": "vue-tsc -b && vite build --base=/static/frontend --outDir=./dist/static/frontend",
+    "build-prod": "vite build --base=/static/frontend --outDir=./dist/static/frontend",
     "watch": "vue-tsc -b && vite build --watch",
     "preview": "vite preview",
     "fmt": "prettier --write src/",
@@ -30,7 +30,7 @@
     "pinia": "^3.0.1",
     "pino": "^9.6.0",
     "posthog-js": "^1.245.1",
-    "reka-ui": "^2.3.1",
+    "reka-ui": "^2.3.2",
     "tailwind-merge": "^3.3.1",
     "tailwindcss": "^4.0.6",
     "tw-animate-css": "^1.3.4",
