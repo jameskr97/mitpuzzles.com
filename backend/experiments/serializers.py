@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import ProlificParticipation, Experiment
+from .models import ProlificParticipation
 from tracking.models import Visitor
 
 
