@@ -15,10 +15,11 @@ import {
 import FreeplayGameViewInstructionModal from "@/features/freeplay/FreeplayGameViewInstructionModal.vue";
 import { getPuzzleDisplayName } from "@/utils.ts";
 import { useRoute } from "vue-router";
-import { usePuzzleMetadataStore } from "@/store/puzzle.ts";
 import type { PUZZLE_TYPES } from "@/constants.ts";
-import { useGameScalesStore, useGameAttemptStore } from "@/store/game.ts";
 import type { PuzzleController } from "@/services/game/engines/types.ts";
+import { useGameScalesStore } from "@/store/useGameScaleStore.ts";
+import { useGameAttemptStore } from "@/store/useGameAttemptStore.ts";
+import { useGameMetadataStore } from "@/store/useGameMetadataStore.ts";
 
 const route = useRoute();
 const gt = route.meta.game_type as PUZZLE_TYPES;
@@ -26,7 +27,7 @@ const puzzle = inject<PuzzleController>("puzzle")!;
 const layout = inject<ReturnType<typeof useGameLayout>>("layout")!;
 const scaleStore = useGameScalesStore();
 const attemptStore = useGameAttemptStore();
-const puzzle_metadata = usePuzzleMetadataStore();
+const puzzle_metadata = useGameMetadataStore();
 
 ////////////////////////////////////////////////////////////////////////
 //// puzzle difficulty dropdown
@@ -54,6 +55,22 @@ defineProps({
   showVariant: { type: Boolean, default: true },
   showTimer: { type: Boolean, default: true },
   showSettings: { type: Boolean, default: true },
+});
+
+onMounted(() => {
+  const isMac = navigator.platform.toUpperCase().includes("MAC");
+  function handleKeydown(e: KeyboardEvent) {
+    const modifierPressed = isMac ? e.metaKey : e.ctrlKey;
+    if (modifierPressed && (e.key === "=" || e.key === "-")) {
+      const increment = e.key === "=" ? 5 : -5;
+      e.preventDefault();
+      const newScale = Math.max(0, Math.min(100, currentScale.value[0] + increment));
+      scaleStore.setScale(gt, newScale);
+    }
+  }
+
+  window.addEventListener("keydown", handleKeydown);
+  onUnmounted(() => window.removeEventListener("keydown", handleKeydown));
 });
 </script>
 

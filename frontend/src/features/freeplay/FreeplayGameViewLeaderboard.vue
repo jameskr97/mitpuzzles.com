@@ -4,19 +4,18 @@ import { inject, onMounted, ref, watch } from "vue";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import Container from "@/components/ui/Container.vue";
 import type { PuzzleController } from "@/services/game/engines/types.ts";
-import { usePuzzleMetadataStore } from "@/store/game.ts";
+import { useGameMetadataStore } from "@/store/useGameMetadataStore.ts";
 
 const puzzle = inject<PuzzleController>("puzzle")!;
 const puzzle_type = puzzle.state_puzzle.value.definition.puzzle_type;
 
-const metaStore = usePuzzleMetadataStore();
+const metaStore = useGameMetadataStore();
 const leaderboard = ref<Awaited<ReturnType<typeof getLeaderboard>> | null>(null);
 const update_leaderboard = async () => {
   const [size, diff] = metaStore.getSelectedVariant(puzzle_type);
   const data = await getLeaderboard(puzzle_type, size, diff);
   leaderboard.value = data.data;
 };
-
 watch(() => puzzle.state_puzzle.value.definition.puzzle_type, update_leaderboard);
 onMounted(update_leaderboard);
 </script>
@@ -35,7 +34,7 @@ onMounted(update_leaderboard);
     <Table v-else>
       <TableHeader>
         <TableRow>
-          <TableHead class="p-0"> Rank </TableHead>
+          <TableHead class="p-0"> Rank</TableHead>
           <TableHead>Time</TableHead>
           <TableHead>Username</TableHead>
         </TableRow>

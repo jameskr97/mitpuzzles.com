@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { inject, ref } from "vue";
 import type { PuzzleController } from "@/services/game/engines/types.ts";
-import { useGameAttemptStore } from "@/store/game.ts";
+import { useGameAttemptStore } from "@/store/useGameAttemptStore.ts";
 
 const puzzle = inject<PuzzleController>("puzzle")!;
 const attemptStore = useGameAttemptStore();

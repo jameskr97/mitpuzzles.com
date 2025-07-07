@@ -12,8 +12,9 @@ import type { PUZZLE_TYPES } from "@/constants.ts";
 import FreeplayGameViewControlbar from "@/features/freeplay/FreeplayGameViewControlbar.vue";
 import FreeplayGameViewViolations from "@/features/freeplay/FreeplayGameViewViolations.vue";
 import FreeplayGameViewLeaderboard from "@/features/freeplay/FreeplayGameViewLeaderboard.vue";
-import { useGameScalesStore, usePuzzleMetadataStore } from "@/store/game.ts";
 import type { PuzzleController } from "@/services/game/engines/types.ts";
+import { useGameMetadataStore } from "@/store/useGameMetadataStore.ts";
+import { useGameScalesStore } from "@/store/useGameScaleStore.ts";
 
 const props = defineProps({
   puzzle: { type: Object as PropType<PuzzleController>, required: true },
@@ -25,13 +26,57 @@ const gt = route.meta.game_type as PUZZLE_TYPES;
 
 const layout = useGameLayout();
 const scaleStore = useGameScalesStore();
-const metaStore = usePuzzleMetadataStore();
+const metaStore = useGameMetadataStore();
 const scale_remapped = scaleStore.getScaleRemapped(gt);
 
 // Provide to all child components
 provide("puzzle", props.puzzle);
 provide("layout", layout);
 </script>
+
+<style>
+.shake-once {
+  animation: shake 0.15s ease-in-out 2.5;
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(10px);
+  }
+  75% {
+    transform: translateX(-10px);
+  }
+}
+
+.heartbeat-once {
+  animation: heartbeat 1s ease-in-out 1;
+}
+
+@keyframes heartbeat {
+  0% {
+    transform: scale(1);
+  }
+
+  14% {
+    transform: scale(1.05);
+  }
+
+  28% {
+    transform: scale(1);
+  }
+
+  42% {
+    transform: scale(1.05);
+  }
+
+  70% {
+    transform: scale(1);
+  }
+}
+</style>
 
 <template>
   <div class="flex flex-col mx-auto">
@@ -52,7 +97,7 @@ provide("layout", layout);
           :variant="puzzle.state_puzzle.value.solved ? 'blue' : 'destructive'"
           class="justify-self-end text-nowrap text-base"
         >
-          <span v-if="puzzle.state_puzzle.value.solved">Your solution is correct</span>
+          <span v-if="puzzle.state_puzzle.value.solved">You got it!</span>
           <span v-else>Not Quite!</span>
         </Badge>
       </div>
@@ -66,7 +111,12 @@ provide("layout", layout);
           class="select-none origin-center transform-gpu"
           :class="{ 'pointer-events-none': puzzle.state_puzzle.value.solved === true }"
         >
-          <Container>
+          <Container
+            :class="{
+            'shake-once': puzzle.state_ui.value.animate_failure,
+            'heartbeat-once':  puzzle.state_ui.value.animate_success,
+          }"
+          >
             <slot name="default" :scale="scale_remapped"></slot>
           </Container>
         </div>
