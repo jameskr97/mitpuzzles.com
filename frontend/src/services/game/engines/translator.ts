@@ -182,7 +182,7 @@ export function toResearchFormat<T extends CellType>(grid: DeveloperGrid<T>, puz
 
   return grid.map((row) =>
     row.map((cell) => {
-      const numberValue = translationMap[cell as string];
+      const numberValue = translationMap[cell as T];
       if (numberValue === undefined) {
         throw new Error(`Unknown cell enum ${cell} for puzzle type ${puzzle_type}`);
       }
@@ -203,7 +203,7 @@ function getToEnumMap(puzzle_type: PUZZLE_TYPES): Record<number, CellType> {
     minesweeper: MINESWEEPER_TO_ENUM,
   };
   if (!(puzzle_type in map_of_maps)) throw new Error(`Unknown puzzle type: ${puzzle_type}`);
-  return map_of_maps[puzzle_type];
+  return map_of_maps[puzzle_type as keyof typeof map_of_maps];
 }
 
 function getFromEnumMap(puzzle_type: PUZZLE_TYPES): Record<string, number> {
@@ -216,7 +216,7 @@ function getFromEnumMap(puzzle_type: PUZZLE_TYPES): Record<string, number> {
     "minesweeper": ENUM_TO_MINESWEEPER
   };
   if (!(puzzle_type in map_of_maps)) throw new Error(`Unknown puzzle type: ${puzzle_type}`);
-  return map_of_maps[puzzle_type] as Record<string, number>;
+  return map_of_maps[puzzle_type as keyof typeof map_of_maps];
 }
 
 ///////////////////////////////////////////////////////////////////////////////
