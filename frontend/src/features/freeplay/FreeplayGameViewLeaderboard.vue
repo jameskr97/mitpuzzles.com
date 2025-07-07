@@ -1,35 +1,35 @@
 <script setup lang="ts">
-import { getLeaderboard } from "@/services/app.ts";
-import { inject, onMounted, ref, watch } from "vue";
+import { inject, watch, computed } from "vue";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import Container from "@/components/ui/Container.vue";
 import type { PuzzleController } from "@/services/game/engines/types.ts";
 import { useGameMetadataStore } from "@/store/useGameMetadataStore.ts";
+import { useFreeplayLeaderboardStore } from "@/store/useFreeplayLeaderboardStore.ts";
 
 const puzzle = inject<PuzzleController>("puzzle")!;
 const puzzle_type = puzzle.state_puzzle.value.definition.puzzle_type;
 
 const metaStore = useGameMetadataStore();
-const leaderboard = ref<Awaited<ReturnType<typeof getLeaderboard>> | null>(null);
-const update_leaderboard = async () => {
-  const [size, diff] = metaStore.getSelectedVariant(puzzle_type);
-  const data = await getLeaderboard(puzzle_type, size, diff);
-  leaderboard.value = data.data;
-};
-watch(() => puzzle.state_puzzle.value.definition.puzzle_type, update_leaderboard);
-onMounted(update_leaderboard);
+const current_variant = computed(() => metaStore.getSelectedVariant(puzzle_type));
+const size = computed(() => current_variant.value[0]);
+const difficulty = computed(() => current_variant.value[1]);
+
+const leaderStore = useFreeplayLeaderboardStore();
+
+watch(() => metaStore.getSelectedVariant(puzzle_type), async (newVariant) => {
+  await leaderStore.refreshLeaderboard(puzzle_type, newVariant[0], newVariant[1]);
+}, { immediate: true });
 </script>
 
 <template>
   <Container class="rounded shadow w-full p-2">
     <div class="text-xl">Leaderboard</div>
     <div class="divider m-0"></div>
-    <div v-if="!leaderboard">
-      <div class="text-center text-gray-500 p-4">Loading leaderboard...</div>
-    </div>
-    <div v-else-if="leaderboard.count === 0" class="text-center text-gray-500 p-4 w-full">
-      No entries yet for the {{ metaStore.getSelectedVariant(puzzle_type)[0] }} {{ puzzle_type }} with difficulty
-      {{ metaStore.getSelectedVariant(puzzle_type)[1] }}.
+    {{leaderStore.leaderboardEntryCount(puzzle_type, size, difficulty)}}
+    {{ puzzle_type }} {{ size }} {{ difficulty }}
+    <div v-if="leaderStore.leaderboardEntryCount(puzzle_type, size, difficulty) === 0" class="text-center text-gray-500 p-4 w-full">
+      No entries yet for the {{ size }} {{ puzzle_type }} with difficulty
+      {{ difficulty }}.
     </div>
     <Table v-else>
       <TableHeader>
@@ -40,7 +40,7 @@ onMounted(update_leaderboard);
         </TableRow>
       </TableHeader>
       <TableBody>
-        <TableRow v-for="(entry, index) in leaderboard.leaderboard" :key="index">
+        <TableRow v-for="(entry, index) in leaderStore.getLeaderboard(puzzle_type, size, difficulty)" :key="index">
           <TableCell>{{ entry.rank }}</TableCell>
           <TableCell>{{ entry.duration_display }}</TableCell>
           <TableCell>{{ entry.username }}</TableCell>

@@ -24,7 +24,7 @@ export abstract class BaseRepository<T> {
     return this.db.performTransaction(this.storeName, "readonly", (store) => (store as IDBObjectStore).getAll());
   }
 
-  protected async clear(): Promise<void> {
+  async clear(): Promise<void> {
     await this.db.performTransaction(this.storeName, "readwrite", (store) => (store as IDBObjectStore).clear());
   }
 

@@ -12,6 +12,7 @@ import { useGameStateStore } from "@/store/useGameStateStore.ts";
 import { useGameMetadataStore } from "@/store/useGameMetadataStore.ts";
 import { useGameAttemptStore } from "@/store/useGameAttemptStore.ts";
 import { useGameHistoryStore } from "@/store/useGameHistoryStore.ts";
+import { useFreeplayLeaderboardStore } from "@/store/useFreeplayLeaderboardStore.ts";
 
 // Factory function to create the right engine type
 async function createEngine<T>(puzzle_type: string, definition: PuzzleDefinition<T>): Promise<PuzzleEngine> {
@@ -39,6 +40,7 @@ export async function useFreeplayPuzzle(puzzle_type: string): Promise<PuzzleCont
   const gameStore = useGameStateStore();
   const attemptStore = useGameAttemptStore();
   const historyStore = useGameHistoryStore();
+  const leaderStore = useFreeplayLeaderboardStore();
 
   // get initial puzzle definition from defaults if available
   const default_difficulty = metadataStore.getSelectedVariant(puzzle_type);
@@ -141,6 +143,9 @@ export async function useFreeplayPuzzle(puzzle_type: string): Promise<PuzzleCont
       attemptStore.stopTimer(puzzle_type);
       await attemptStore.markPuzzleSolved(puzzle_type);
       await historyStore.uploadAttemptHistory(state_puzzle.value.definition, "freeplay");
+
+      const [size, difficulty] = metadataStore.getSelectedVariant(puzzle_type);
+      await leaderStore.refreshLeaderboard(puzzle_type, size, difficulty);
     } else {
       show_solved_state_timeout.value = setTimeout(() => (state_ui.value.show_solved_state = false), 3000);
     }
