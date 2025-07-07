@@ -1,13 +1,14 @@
 import type { RenderEvents } from "@/features/games.composables/setupPuzzleInteractionBridge.ts";
 import type { PuzzleStateSudoku } from "@/services/states.ts";
 import { computed } from "vue";
+import type { PuzzleState } from "@/services/game/engines/types.ts";
 
 export interface PersistentHighlightOptions {
   row?: number;
   col?: number;
   box?: number;
-  highlight_cells?: { row: number; col: number, classStyle: string }[];
-  specific_cell_class?: { row: number; col: number, classStyle: string }[];
+  highlight_cells?: { row: number; col: number; classStyle: string }[];
+  specific_cell_class?: { row: number; col: number; classStyle: string }[];
   cells?: { row: number; col: number }[];
   cell_class?: string;
 }
@@ -15,7 +16,7 @@ export interface PersistentHighlightOptions {
 /**
  * Sudoku highlighting behavior - handles persistent row/col/box highlighting
  */
-export function useSudokuPersistentHighlighter(board: PuzzleStateSudoku, options?: PersistentHighlightOptions) {
+export function useSudokuPersistentHighlighter(board: PuzzleState, options?: PersistentHighlightOptions) {
   const highlightOptions = {
     row: options?.row ?? -1,
     col: options?.col ?? -1,
@@ -25,7 +26,7 @@ export function useSudokuPersistentHighlighter(board: PuzzleStateSudoku, options
     specific_cell_class: options?.specific_cell_class ?? [],
     cell_class: options?.cell_class ?? "",
   };
-  const subgridSize = computed(() => Math.sqrt(board.rows || 9));
+  const subgridSize = computed(() => Math.sqrt(board.definition.rows || 9));
 
   // Render behavior
   const renderBehavior: Partial<RenderEvents> = {
@@ -70,7 +71,7 @@ export function useSudokuPersistentHighlighter(board: PuzzleStateSudoku, options
  * Convenience function to register Sudoku highlight behavior
  */
 export function withSudokuPersistentHighlighter(
-  board: PuzzleStateSudoku,
+  board: PuzzleState,
   bridge: any,
   persistentOptions?: PersistentHighlightOptions,
 ) {
