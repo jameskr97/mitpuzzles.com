@@ -2,7 +2,6 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 import { markExperimentConsented, markAtStep } from "@/services/app.ts";
 
-
 export const useCurrentExperiment = defineStore("mitlogic.currentExperiment", () => {
   const prolific_session_id = ref<string | null>(null);
   const prolific_study_id = ref<string | null>(null);
@@ -22,7 +21,7 @@ export const useCurrentExperiment = defineStore("mitlogic.currentExperiment", ()
     }
 
     try {
-      const res = await markExperimentConsented(prolific_session_id.value)
+      const res = await markExperimentConsented(prolific_session_id.value);
       console.log("markExperimentConsented response:", res);
       return true;
     } catch (error) {
@@ -33,12 +32,12 @@ export const useCurrentExperiment = defineStore("mitlogic.currentExperiment", ()
 
   async function markNextStep(step: string): Promise<boolean> {
     try {
-      const res = await markAtStep(prolific_session_id.value!, step)
+      const res = await markAtStep(prolific_session_id.value!, step);
       console.log("markAtNextStep response:", res);
-      return true
+      return true;
     } catch (error) {
-      console.log("Error marking at next step:", error)
-      return false
+      console.log("Error marking at next step:", error);
+      return false;
     }
   }
 
@@ -50,7 +49,6 @@ export const useCurrentExperiment = defineStore("mitlogic.currentExperiment", ()
     current_step,
     setExperimentSession,
     markConsented,
-    markNextStep
-  }
-
-})
+    markNextStep,
+  };
+});
