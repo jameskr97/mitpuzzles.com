@@ -25,6 +25,7 @@ env = environ.FileAwareEnv(
     DATABASE_URL=(str, "postgres://mitlogic:mitlogic@localhost:5432/mitlogic"),
     REDIS_HOST=(str, "localhost"),
     REDIS_PORT=(int, 6379),
+    MAINTAINENCE_MODE=(bool, False),
 )
 environ.Env.read_env(BACKEND_DIR / ".env")
 
@@ -34,6 +35,7 @@ DEBUG = env("DEBUG")
 SECRET_KEY = env("SECRET_KEY")
 DATABASES = {"default": env.db("DATABASE_URL")}
 REDIS_DB = (env("REDIS_HOST"), env("REDIS_PORT"))
+MAINTAINCE_MODE = env("MAINTAINENCE_MODE")
 
 # Essential Django settings
 ROOT_URLCONF = "config.urls"
@@ -72,6 +74,7 @@ INSTALLED_APPS = [
     "allauth.headless",
     "rest_framework",
     "django_json_widget",
+    "maintenance_mode",
     # Local Apps
     "core",
     "accounts",
@@ -84,6 +87,7 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "tracking.middleware.VisitorMiddleware",
+    "maintenance_mode.middleware.MaintenanceModeMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",  # must be below SecurityMiddleware
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
