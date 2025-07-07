@@ -5,6 +5,8 @@ import { markExperimentConsented, markAtStep } from "@/services/app.ts";
 
 export const useCurrentExperiment = defineStore("mitlogic.currentExperiment", () => {
   const prolific_session_id = ref<string | null>(null);
+  const prolific_study_id = ref<string | null>(null);
+  const prolific_participant_id = ref<string | null>(null);
   const experiment_id = ref<string | null>(null);
   const current_step = ref<string | null>(null);
 
@@ -41,6 +43,8 @@ export const useCurrentExperiment = defineStore("mitlogic.currentExperiment", ()
   }
 
   return {
+    prolific_participant_id,
+    prolific_study_id,
     prolific_session_id,
     experiment_id,
     current_step,
