@@ -1,0 +1,46 @@
+import { defineStore } from "pinia";
+import { Thumbmark } from "@thumbmarkjs/thumbmarkjs";
+import { api } from "@/services/axios.ts";
+import { shared_http_cache } from "@/store/database/HTTPCache.ts";
+
+const CACHE_VERSION = 1;
+const CACHE_STORAGE_KEY = 'mitlogic.cache.version';
+
+export const useAppStore = defineStore("mitlogic.appconfig", {
+  state: () => ({
+    thumbmark: {} as Record<string, any>,
+    lastCacheVersion: 0,
+    login_modal_open: false,
+  }),
+  getters: {
+    needsCacheInvalidation: (state) => state.lastCacheVersion < CACHE_VERSION,
+  },
+  actions: {
+    open_login_modal() { this.login_modal_open = true; },
+    close_login_modal() { this.login_modal_open = false; },
+
+    async updateDeviceFingerprint() {
+      this.thumbmark = await(new Thumbmark()).get();
+      try {
+        await api.put("/api/device", { thumbmark: this.thumbmark  });
+      } catch (error: any) {}
+    },
+
+    invalidateAllCaches() {
+      caches.delete(shared_http_cache.CACHE_NAME); // clear http cache
+      localStorage.removeItem('mitlogic.puzzle.scales'); // clear scales cache
+
+      this.lastCacheVersion = CACHE_VERSION;
+      localStorage.setItem(CACHE_STORAGE_KEY, CACHE_VERSION.toString());
+    },
+
+    initCacheVersion() {
+      const storedVersion = localStorage.getItem(CACHE_STORAGE_KEY);
+      this.lastCacheVersion = storedVersion ? parseInt(storedVersion) : 0;
+
+      if (this.lastCacheVersion < CACHE_VERSION)
+        this.invalidateAllCaches();
+    },
+
+  },
+});
