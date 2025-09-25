@@ -1,0 +1,902 @@
+[
+  [
+    {
+      "id": "662565c7d5892cde",
+      "puzzle_type": "minesweeper",
+      "priority": 1,
+      "rows": 3,
+      "cols": 3,
+      "initial_state": [
+        [
+          -1,
+          3,
+          -1
+        ],
+        [
+          3,
+          -1,
+          -1
+        ],
+        [
+          -1,
+          -1,
+          1
+        ]
+      ],
+      "solution": [
+        [
+          -3,
+          3,
+          -3
+        ],
+        [
+          3,
+          -3,
+          -4
+        ],
+        [
+          -3,
+          -4,
+          1
+        ]
+      ],
+      "n_mines": 4,
+      "difficulty": 0.1833333333333333,
+      "idx": 7
+    },
+    {
+      "id": "3fa759a042aa0428",
+      "puzzle_type": "minesweeper",
+      "priority": 1,
+      "rows": 3,
+      "cols": 3,
+      "initial_state": [
+        [
+          -1,
+          -1,
+          -1
+        ],
+        [
+          2,
+          4,
+          2
+        ],
+        [
+          -1,
+          -1,
+          -1
+        ]
+      ],
+      "solution": [
+        [
+          -3,
+          -4,
+          -3
+        ],
+        [
+          2,
+          4,
+          2
+        ],
+        [
+          -3,
+          -4,
+          -3
+        ]
+      ],
+      "n_mines": 4,
+      "difficulty": 0.31666666666666665,
+      "idx": 16
+    }
+  ],
+  [
+    {
+      "id": "81ef9f4121455356",
+      "puzzle_type": "minesweeper",
+      "priority": 1,
+      "rows": 3,
+      "cols": 3,
+      "initial_state": [
+        [
+          -1,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          1
+        ],
+        [
+          -1,
+          1,
+          -1
+        ]
+      ],
+      "solution": [
+        [
+          -3,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          1
+        ],
+        [
+          -4,
+          1,
+          -3
+        ]
+      ],
+      "n_mines": 2,
+      "difficulty": 0.0,
+      "idx": 5
+    },
+    {
+      "id": "3a8ea022da4f5bbd",
+      "puzzle_type": "minesweeper",
+      "priority": 1,
+      "rows": 3,
+      "cols": 3,
+      "initial_state": [
+        [
+          1,
+          1,
+          0
+        ],
+        [
+          -1,
+          1,
+          0
+        ],
+        [
+          -1,
+          1,
+          0
+        ]
+      ],
+      "solution": [
+        [
+          1,
+          1,
+          0
+        ],
+        [
+          -3,
+          1,
+          0
+        ],
+        [
+          -4,
+          1,
+          0
+        ]
+      ],
+      "n_mines": 1,
+      "difficulty": 0.0,
+      "idx": 7
+    }
+  ],
+  [
+    {
+      "id": "21baedb036f0b4e8",
+      "puzzle_type": "minesweeper",
+      "priority": 1,
+      "rows": 3,
+      "cols": 3,
+      "initial_state": [
+        [
+          -1,
+          -1,
+          -1
+        ],
+        [
+          2,
+          4,
+          3
+        ],
+        [
+          1,
+          -1,
+          -1
+        ]
+      ],
+      "solution": [
+        [
+          -3,
+          -4,
+          -3
+        ],
+        [
+          2,
+          4,
+          3
+        ],
+        [
+          1,
+          -3,
+          -3
+        ]
+      ],
+      "n_mines": 4,
+      "difficulty": 0.2,
+      "idx": 8
+    },
+    {
+      "id": "8521fd1feff001f5",
+      "puzzle_type": "minesweeper",
+      "priority": 1,
+      "rows": 3,
+      "cols": 3,
+      "initial_state": [
+        [
+          1,
+          -1,
+          -1
+        ],
+        [
+          -1,
+          4,
+          -1
+        ],
+        [
+          2,
+          -1,
+          2
+        ]
+      ],
+      "solution": [
+        [
+          1,
+          -4,
+          -3
+        ],
+        [
+          -3,
+          4,
+          -3
+        ],
+        [
+          2,
+          -3,
+          2
+        ]
+      ],
+      "n_mines": 4,
+      "difficulty": 0.0,
+      "idx": 6
+    }
+  ],
+  [
+    {
+      "id": "d02ddebeed3ff782",
+      "puzzle_type": "minesweeper",
+      "priority": 1,
+      "rows": 3,
+      "cols": 3,
+      "initial_state": [
+        [
+          0,
+          1,
+          1
+        ],
+        [
+          1,
+          2,
+          -1
+        ],
+        [
+          1,
+          -1,
+          -1
+        ]
+      ],
+      "solution": [
+        [
+          0,
+          1,
+          1
+        ],
+        [
+          1,
+          2,
+          -3
+        ],
+        [
+          1,
+          -3,
+          -4
+        ]
+      ],
+      "n_mines": 2,
+      "difficulty": 0.0,
+      "idx": 4
+    },
+    {
+      "id": "bbcebf8a27cd957c",
+      "puzzle_type": "minesweeper",
+      "priority": 1,
+      "rows": 3,
+      "cols": 3,
+      "initial_state": [
+        [
+          1,
+          -1,
+          1
+        ],
+        [
+          -1,
+          3,
+          -1
+        ],
+        [
+          2,
+          -1,
+          -1
+        ]
+      ],
+      "solution": [
+        [
+          1,
+          -4,
+          1
+        ],
+        [
+          -3,
+          3,
+          -3
+        ],
+        [
+          2,
+          -3,
+          -4
+        ]
+      ],
+      "n_mines": 3,
+      "difficulty": 0.02,
+      "idx": 15
+    }
+  ],
+  [
+    {
+      "id": "9c21bdabc7edf5a9",
+      "puzzle_type": "minesweeper",
+      "priority": 1,
+      "rows": 3,
+      "cols": 3,
+      "initial_state": [
+        [
+          1,
+          -1,
+          -1
+        ],
+        [
+          -1,
+          3,
+          1
+        ],
+        [
+          -1,
+          2,
+          -1
+        ]
+      ],
+      "solution": [
+        [
+          1,
+          -4,
+          -3
+        ],
+        [
+          -3,
+          3,
+          1
+        ],
+        [
+          -3,
+          2,
+          -4
+        ]
+      ],
+      "n_mines": 3,
+      "difficulty": 0.32,
+      "idx": 18
+    },
+    {
+      "id": "3b0aacfed1e8771c",
+      "puzzle_type": "minesweeper",
+      "priority": 1,
+      "rows": 3,
+      "cols": 3,
+      "initial_state": [
+        [
+          1,
+          1,
+          -1
+        ],
+        [
+          1,
+          -1,
+          -1
+        ],
+        [
+          -1,
+          -1,
+          1
+        ]
+      ],
+      "solution": [
+        [
+          1,
+          1,
+          -4
+        ],
+        [
+          1,
+          -3,
+          -4
+        ],
+        [
+          -4,
+          -4,
+          1
+        ]
+      ],
+      "n_mines": 1,
+      "difficulty": 0.12,
+      "idx": 0
+    }
+  ],
+  [
+    {
+      "id": "13d98293bf0a505b",
+      "puzzle_type": "minesweeper",
+      "priority": 1,
+      "rows": 3,
+      "cols": 3,
+      "initial_state": [
+        [
+          -1,
+          -1,
+          2
+        ],
+        [
+          2,
+          4,
+          -1
+        ],
+        [
+          -1,
+          2,
+          -1
+        ]
+      ],
+      "solution": [
+        [
+          -3,
+          -3,
+          2
+        ],
+        [
+          2,
+          4,
+          -3
+        ],
+        [
+          -4,
+          2,
+          -3
+        ]
+      ],
+      "n_mines": 4,
+      "difficulty": 0.04,
+      "idx": 16
+    },
+    {
+      "id": "42f9bf3c8ef23ef9",
+      "puzzle_type": "minesweeper",
+      "priority": 1,
+      "rows": 3,
+      "cols": 3,
+      "initial_state": [
+        [
+          2,
+          -1,
+          1
+        ],
+        [
+          -1,
+          -1,
+          2
+        ],
+        [
+          -1,
+          4,
+          -1
+        ]
+      ],
+      "solution": [
+        [
+          2,
+          -4,
+          1
+        ],
+        [
+          -3,
+          -3,
+          2
+        ],
+        [
+          -3,
+          4,
+          -3
+        ]
+      ],
+      "n_mines": 4,
+      "difficulty": 0.0,
+      "idx": 2
+    }
+  ],
+  [
+    {
+      "id": "cb1e8bc8b12bba72",
+      "puzzle_type": "minesweeper",
+      "priority": 1,
+      "rows": 3,
+      "cols": 3,
+      "initial_state": [
+        [
+          -1,
+          -1,
+          1
+        ],
+        [
+          2,
+          2,
+          -1
+        ],
+        [
+          -1,
+          -1,
+          1
+        ]
+      ],
+      "solution": [
+        [
+          -4,
+          -3,
+          1
+        ],
+        [
+          2,
+          2,
+          -4
+        ],
+        [
+          -4,
+          -3,
+          1
+        ]
+      ],
+      "n_mines": 2,
+      "difficulty": 0.52,
+      "idx": 19
+    },
+    {
+      "id": "8ba8af55d37f6519",
+      "puzzle_type": "minesweeper",
+      "priority": 1,
+      "rows": 3,
+      "cols": 3,
+      "initial_state": [
+        [
+          -1,
+          2,
+          -1
+        ],
+        [
+          -1,
+          4,
+          1
+        ],
+        [
+          -1,
+          -1,
+          1
+        ]
+      ],
+      "solution": [
+        [
+          -3,
+          2,
+          -4
+        ],
+        [
+          -3,
+          4,
+          1
+        ],
+        [
+          -3,
+          -3,
+          1
+        ]
+      ],
+      "n_mines": 4,
+      "difficulty": 0.2,
+      "idx": 9
+    }
+  ],
+  [
+    {
+      "id": "9c1ae2379d146f43",
+      "puzzle_type": "minesweeper",
+      "priority": 1,
+      "rows": 3,
+      "cols": 3,
+      "initial_state": [
+        [
+          -1,
+          -1,
+          -1
+        ],
+        [
+          2,
+          2,
+          1
+        ],
+        [
+          -1,
+          1,
+          -1
+        ]
+      ],
+      "solution": [
+        [
+          -4,
+          -3,
+          -4
+        ],
+        [
+          2,
+          2,
+          1
+        ],
+        [
+          -3,
+          1,
+          -4
+        ]
+      ],
+      "n_mines": 2,
+      "difficulty": 0.24000000000000005,
+      "idx": 13
+    },
+    {
+      "id": "0c0bbdcf578f4898",
+      "puzzle_type": "minesweeper",
+      "priority": 1,
+      "rows": 3,
+      "cols": 3,
+      "initial_state": [
+        [
+          1,
+          1,
+          1
+        ],
+        [
+          2,
+          -1,
+          2
+        ],
+        [
+          -1,
+          -1,
+          2
+        ]
+      ],
+      "solution": [
+        [
+          1,
+          1,
+          1
+        ],
+        [
+          2,
+          -3,
+          2
+        ],
+        [
+          -4,
+          -3,
+          2
+        ]
+      ],
+      "n_mines": 2,
+      "difficulty": 0.0,
+      "idx": 12
+    }
+  ],
+  [
+    {
+      "id": "8e5b127902c8bf5a",
+      "puzzle_type": "minesweeper",
+      "priority": 1,
+      "rows": 3,
+      "cols": 3,
+      "initial_state": [
+        [
+          1,
+          -1,
+          1
+        ],
+        [
+          -1,
+          4,
+          -1
+        ],
+        [
+          2,
+          -1,
+          -1
+        ]
+      ],
+      "solution": [
+        [
+          1,
+          -4,
+          1
+        ],
+        [
+          -3,
+          4,
+          -3
+        ],
+        [
+          2,
+          -3,
+          -3
+        ]
+      ],
+      "n_mines": 4,
+      "difficulty": 0.08,
+      "idx": 19
+    },
+    {
+      "id": "52070a606d0bcef2",
+      "puzzle_type": "minesweeper",
+      "priority": 1,
+      "rows": 3,
+      "cols": 3,
+      "initial_state": [
+        [
+          2,
+          -1,
+          2
+        ],
+        [
+          -1,
+          -1,
+          -1
+        ],
+        [
+          1,
+          3,
+          -1
+        ]
+      ],
+      "solution": [
+        [
+          2,
+          -3,
+          2
+        ],
+        [
+          -3,
+          -4,
+          -3
+        ],
+        [
+          1,
+          3,
+          -3
+        ]
+      ],
+      "n_mines": 4,
+      "difficulty": 0.18,
+      "idx": 4
+    }
+  ],
+  [
+    {
+      "id": "ccffce70b5b7e7dc",
+      "puzzle_type": "minesweeper",
+      "priority": 1,
+      "rows": 3,
+      "cols": 3,
+      "initial_state": [
+        [
+          -1,
+          -1,
+          1
+        ],
+        [
+          3,
+          -1,
+          2
+        ],
+        [
+          -1,
+          2,
+          -1
+        ]
+      ],
+      "solution": [
+        [
+          -3,
+          -3,
+          1
+        ],
+        [
+          3,
+          -4,
+          2
+        ],
+        [
+          -3,
+          2,
+          -3
+        ]
+      ],
+      "n_mines": 4,
+      "difficulty": 0.12,
+      "idx": 1
+    },
+    {
+      "id": "6006d1ad47c37eb2",
+      "puzzle_type": "minesweeper",
+      "priority": 1,
+      "rows": 3,
+      "cols": 3,
+      "initial_state": [
+        [
+          1,
+          1,
+          -1
+        ],
+        [
+          -1,
+          3,
+          -1
+        ],
+        [
+          -1,
+          -1,
+          1
+        ]
+      ],
+      "solution": [
+        [
+          1,
+          1,
+          -4
+        ],
+        [
+          -3,
+          3,
+          -4
+        ],
+        [
+          -3,
+          -3,
+          1
+        ]
+      ],
+      "n_mines": 3,
+      "difficulty": 0.2,
+      "idx": 11
+    }
+  ]
+]

@@ -41,7 +41,6 @@ export function useGameRecorder(options: GameRecorderOptions = {}) {
   const current_hover_cell = ref<Cell | null>(null);
   const hover_start_time = ref<number | null>(null);
 
-
   // helper functions
   const set_mode = (newMode: "freeplay" | "experiment") => {
     mode.value = newMode;
@@ -209,8 +208,9 @@ export function useGameRecorder(options: GameRecorderOptions = {}) {
       record_hover(puzzle_type, current_hover_cell.value, duration);
 
       // record dwell event only if duration >= threshold
-      if (duration >= hover_threshold.value)
+      if (duration >= hover_threshold.value) {
         record_dwell(puzzle_type, current_hover_cell.value, hover_start_time.value, Date.now());
+      }
     }
     clearHoverTimer();
     hover_start_time.value = null;
@@ -219,7 +219,6 @@ export function useGameRecorder(options: GameRecorderOptions = {}) {
   const clearHoverTimer = () => {
     current_hover_cell.value = null;
   };
-
 
   // cleanup function
   const cleanup = () => {
@@ -278,7 +277,6 @@ export function useGameRecorder(options: GameRecorderOptions = {}) {
     record_clear,
     record_tutorial_toggle,
     record_custom_event,
-
 
     // export functionality
     export_experiment_actions,
