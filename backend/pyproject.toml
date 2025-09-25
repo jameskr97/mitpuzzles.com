@@ -1,0 +1,38 @@
+[project]
+name = "app"
+version = "0.1.0"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "aiosqlite>=0.21.0",
+    "alembic>=1.16.5",
+    "asyncpg>=0.30.0",
+    "fastapi-users[sqlalchemy,oauth]>=14.0.1",
+    "fastapi[all]>=0.116.1",
+    "psycopg2-binary>=2.9.10",
+    "resend>=2.13.1",
+    "typer>=0.16.1",
+    "uuid6>=2025.0.1",
+]
+
+[dependency-groups]
+dev = [
+    "black[d]>=25.1.0",
+    "go-task-bin>=3.44.1",
+    "mkdocs-material>=9.6.18",
+    "pytest>=8.4.1",
+    "pytest-asyncio>=1.1.0",
+    "ruff>=0.12.10",
+]
+
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project.scripts]
+task = "go_task_bin:task"
+cli = "cli.main:app"
+
+[tool.ruff]
+line-length = 160

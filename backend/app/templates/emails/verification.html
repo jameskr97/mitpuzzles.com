@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Verify Your Email - MIT Puzzles</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-100">
+    <div class="mx-auto my-10 max-w-lg overflow-hidden rounded-lg border bg-white shadow-lg">
+      <!-- Body -->
+      <div class="space-y-4 p-8">
+        <p class="text-lg text-gray-700">Hey {{USERNAME}}! You just signed up at <span class="font-semibold">mitpuzzles.com</span></p>
+
+        <p class="text-gray-600">Please click the link below to verify your email address and complete your registration:</p>
+
+        <!-- CTA Button -->
+        <div class="py-4 text-center">
+          <a href="{{VERIFICATION_LINK}}" class="inline-block rounded-lg bg-blue-600 px-3 py-2 text-lg font-bold text-white transition-colors duration-200 hover:bg-blue-700"> Verify Email Address </a>
+        </div>
+
+        <!-- Alternative link -->
+        <div class="space-y-2 text-sm text-gray-500">
+          <p>Or copy and paste this link into your browser:</p>
+          <p class="rounded bg-gray-100 p-2 font-mono text-xs break-all">{{VERIFICATION_LINK}}</p>
+        </div>
+
+        <!-- Footer note -->
+        <div class="mt-6 border-t border-gray-200 pt-4">
+          <p class="text-sm text-gray-500">If you didn't sign up for MIT Puzzles, you can safely ignore this email.</p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,10 @@
+Hey {{USERNAME}}!
+
+You just signed up at mitpuzzles.com.
+Please verify your email by clicking this link:
+
+{{VERIFICATION_LINK}}
+
+This link will expire in 24 hours.
+
+If you didn't sign up for MIT Puzzles, you can safely ignore this email.
