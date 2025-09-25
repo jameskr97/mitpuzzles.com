@@ -1,114 +1,99 @@
 <script setup lang="ts">
 import FreeplayGameViewInstructionSlider from "@/features/freeplay/FreeplayGameViewInstructionSlider.vue";
-import PuzzleNonograms from "@/features/games/nonograms/nonograms.puzzle.vue";
-import type { NonogramMeta, PuzzleDefinition, PuzzleState } from "@/services/game/engines/types.ts";
+import PuzzleKakurasu from "@/features/games/kakurasu/kakurasu.puzzle.vue";
+import type { KakurasuMeta, PuzzleDefinition, PuzzleState } from "@/services/game/engines/types.ts";
 import { Separator } from "@/components/ui/separator";
 import FreeplayGameViewInstructionPage from "@/features/freeplay/FreeplayGameViewInstructionPage.vue";
 
 // @ts-expect-error ignore any missing fields
-const def: PuzzleDefinition<NonogramMeta> = {
-  rows: 5,
-  cols: 5,
+const def: PuzzleDefinition<KakurasuMeta> = {
+  rows: 4,
+  cols: 4,
   meta: {
-    row_hints: [[3], [1], [1, 2], [1, 2], [1, 2]],
-    col_hints: [[2], [1, 3], [1], [3], [3]],
+    row_sums: [1, 5, 1, 0],
+    col_sums: [6, 0, 0, 2],
   },
+};
+
+const boardEmpty: PuzzleState<KakurasuMeta> = {
+  definition: def,
   board: [
-    [0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
   ],
 };
 
-const boardEmpty: PuzzleState<NonogramMeta> = {
+const boardHighlight: Partial<PuzzleState<KakurasuMeta>> = {
   definition: def,
   board: [
-    [0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0],
-  ],
-};
-
-const boardHighlight: Partial<PuzzleState<NonogramMeta>> = {
-  definition: def,
-  board: [
-    [0, 0, 0, 0, 0],
-    [1, 1, 1, 1, 0],
-    [0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0],
+    [1, 1, 1, 1],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
   ],
 };
 
 // @ts-expect-error ignore any missing fields
-const solution: Partial<PuzzleState<NonogramMeta>> = {
+const solution: Partial<PuzzleState<KakurasuMeta>> = {
   definition: def,
   board: [
-    [1, 1, 1, 0, 0],
-    [1, 0, 0, 0, 0],
-    [0, 1, 0, 1, 1],
-    [0, 1, 0, 1, 1],
-    [0, 1, 0, 1, 1],
+    [1, 0, 0, 0],
+    [1, 0, 0, 1],
+    [1, 0, 0, 0],
+    [0, 0, 0, 0],
   ],
 };
 
 // @ts-expect-error ignore any missing fields
-const board2: Partial<PuzzleState<NonogramMeta>> = {
+const board2: Partial<PuzzleState<KakurasuMeta>> = {
   definition: def,
   board: [
-    [1, 0, 0, 0, 0],
-    [0, 1, 1, 0, 0],
-    [1, 0, 1, 0, 0],
-    [1, 1, 0, 1, 0],
-    [1, 1, 0, 1, 0],
+    [1, 0, 0, 0],
+    [0, 1, 1, 0],
+    [1, 0, 1, 0],
+    [1, 1, 0, 1],
   ],
 };
 
-const page3Left: Partial<PuzzleState<NonogramMeta>> = {
+const page3Left: Partial<PuzzleState<KakurasuMeta>> = {
   definition: def,
   board: [
-    [0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 1],
-    [0, 0, 0, 0, 1],
-    [0, 0, 0, 0, 1],
+    [0, 0, 0, 0],
+    [1, 0, 0, 1],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
   ],
 };
 
-const page3Right: Partial<PuzzleState<NonogramMeta>> = {
+const page3Right: Partial<PuzzleState<KakurasuMeta>> = {
   definition: def,
   board: [
-    [0, 0, 0, 0, 1],
-    [0, 0, 0, 0, 1],
-    [0, 0, 0, 0, 1],
-    [0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0],
+    [0, 1, 1, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
   ],
 };
 
-const page4Right: Partial<PuzzleState<NonogramMeta>> = {
+const page4Right: Partial<PuzzleState<KakurasuMeta>> = {
   definition: def,
   board: [
-    [0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0],
-    [0, 1, 0, 1, 1],
+    [1, 0, 0, 0],
+    [1, 0, 0, 0],
+    [1, 0, 0, 0],
+    [0, 0, 0, 0],
   ],
 };
 
-const page4Left: Partial<PuzzleState<NonogramMeta>> = {
+const page4Left: Partial<PuzzleState<KakurasuMeta>> = {
   definition: def,
   board: [
-    [0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0],
-    [1, 0, 1, 1, 0],
+    [0, 0, 0, 0],
+    [1, 0, 0, 0],
+    [0, 0, 0, 0],
+    [1, 0, 0, 0],
   ],
 };
 </script>
@@ -119,11 +104,11 @@ const page4Left: Partial<PuzzleState<NonogramMeta>> = {
       <FreeplayGameViewInstructionPage>
         <template #instruction>
           <div class="mb-2">
-            Nonograms is a logic puzzle played on a grid where you mark cells black to meet specific requirements.
+            Kakurasu is a logic puzzle played on a grid where you mark some cells black to meet specific requirements.
           </div>
         </template>
         <template #board>
-          <PuzzleNonograms :scale="1" :state="boardEmpty" class="mx-auto" />
+          <PuzzleKakurasu :scale="1" :state="boardEmpty" class="mx-auto" />
         </template>
       </FreeplayGameViewInstructionPage>
     </template>
@@ -140,16 +125,16 @@ const page4Left: Partial<PuzzleState<NonogramMeta>> = {
 
             <ul class="list-disc list-inside">
               <li class="italic">
-                The numbers in each row/column represent the run lengths. Your goal is to place black cells to form consecutive runs that match these numbers.
+                The sum of the column numbers of all black cells in a row equals the target sum for that row.
               </li>
               <li class="italic">
-                For example, in the below grid, the second column has "1" on top of "3". This means that there should be a single black cell, then at least one empty cell, then 3 consecutive black cells in that column.
+                The sum of the row numbers of all black cells in a column equals the target sum for that column.
               </li>
             </ul>
           </div>
         </template>
         <template #board>
-          <PuzzleNonograms :state="solution" class="mx-auto" />
+          <PuzzleKakurasu :state="solution" class="mx-auto" />
         </template>
       </FreeplayGameViewInstructionPage>
     </template>
@@ -157,17 +142,18 @@ const page4Left: Partial<PuzzleState<NonogramMeta>> = {
     <template #page3>
       <FreeplayGameViewInstructionPage>
         <template #instruction>
-          <div>
-            The numbers only define the length of the black blocks, not the space between them. Looking at the right-most column with hint "3", both placements below are valid since each has 3 consecutive black cells.
-          </div>
+          <div>There are usually multiple ways to satisfy individual row and column target-sums.</div>
+          <div>The row sum of 5 can be made two ways.</div>
         </template>
         <template #board>
           <div class="flex flex-row justify-between gap-2 text-center">
             <div class="flex flex-col gap-2">
-              <PuzzleNonograms :scale="0.7" :state="page3Left" class="mx-auto" />
+              <PuzzleKakurasu :scale="0.8" :state="page3Left" class="mx-auto" />
+              <div>1 + 4 = 5</div>
             </div>
             <div class="flex flex-col gap-2">
-              <PuzzleNonograms :scale="0.7" :state="page3Right" class="mx-auto" />
+              <PuzzleKakurasu :scale="0.8" :state="page3Right" class="mx-auto" />
+              <div>2 + 3 = 5</div>
             </div>
           </div>
         </template>
@@ -177,15 +163,17 @@ const page4Left: Partial<PuzzleState<NonogramMeta>> = {
     <template #page4>
       <FreeplayGameViewInstructionPage>
         <template #instruction>
-          <div>Similarly, the bottom-most row with hints "1" and "2" can be satisfied in multiple ways - a single black cell, then at least one empty cell, then 2 consecutive black cells.</div>
+          <div>The column sum of 6 can also be made two ways.</div>
         </template>
         <template #board>
           <div class="flex flex-row justify-between gap-2 text-center">
             <div class="flex flex-col gap-2">
-              <PuzzleNonograms :scale="0.7" :state="page4Left" class="mx-auto" />
+              <PuzzleKakurasu :scale="0.8" :state="page4Right" class="mx-auto" />
+              <div>3 + 2 + 1 = 6</div>
             </div>
             <div class="flex flex-col gap-2">
-              <PuzzleNonograms :scale="0.7" :state="page4Right" class="mx-auto" />
+              <PuzzleKakurasu :scale="0.8" :state="page4Left" class="mx-auto" />
+              <div>4 + 2 = 6</div>
             </div>
           </div>
         </template>
@@ -196,18 +184,18 @@ const page4Left: Partial<PuzzleState<NonogramMeta>> = {
       <FreeplayGameViewInstructionPage>
         <template #instruction>
           <div>
-            The puzzle is solved when each row and column contains the exact runs specified by their hints. While
+            The puzzle is solved when the black cells in each row/column add up to their corresponding target-sum. While
             there may be multiple ways to satisfy individual rows or columns, the correct solution will uniquely satisfy
-            all row and column hints simultaneously.
+            all row and column sums simultaneously.
           </div>
           <Separator />
           <div>
-            For instance, the unique solution to this puzzle is shown below, as each row and column hint pattern is
+            For instance, the unique solution to this puzzle is shown below, as each row and column target-sum are
             satisfied.
           </div>
         </template>
         <template #board>
-          <PuzzleNonograms :state="solution" class="mx-auto" />
+          <PuzzleKakurasu :state="solution" class="mx-auto" />
         </template>
       </FreeplayGameViewInstructionPage>
 
