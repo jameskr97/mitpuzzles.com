@@ -1,0 +1,4 @@
+site_name: mitpuzzles.com docs
+site_url: http://docs.mitpuzzles.com
+theme:
+  name: material

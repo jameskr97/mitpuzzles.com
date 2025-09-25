@@ -1,0 +1,6 @@
+.DS_Store
+frontend/.env
+node_modules/
+*.pyc
+.docker/.env
+backend/.env
