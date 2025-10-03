@@ -47,16 +47,6 @@ async def _check_required_tables():
     except Exception as e:
         return False, f"failed to check tables: {str(e)}"
 
-
-def _check_static_files():
-    """check static file configuration"""
-    if settings.SERVE_STATIC_FILES:
-        if not os.path.exists(settings.STATIC_FILES_PATH):
-            return False, f"static files directory not found: {settings.STATIC_FILES_PATH}"
-        return True, f"static files directory exists: {settings.STATIC_FILES_PATH}"
-    return True, "static file serving disabled (development mode)"
-
-
 def _check_environment_config():
     """check environment configuration"""
     issues = []
@@ -77,12 +67,9 @@ def _check_environment_config():
 
 async def run_pre_start_checks():
     """run all pre-start checks and exit if any fail"""
-    # get uvicorn's logger to match formatting
-
     uvicorn_logger.info("🔍 running pre-start checks...")
     checks = [
         ("environment config", _check_environment_config),
-        ("static files", _check_static_files),
         ("database connection", _check_database_connection),
         ("required tables", _check_required_tables),
     ]
@@ -179,33 +166,6 @@ async def oauth2_authorize_callback_error_handler(request: Request, exc: OAuth2A
 @app.get("/health", tags=["Health"])
 async def health_check():
     return {"status": "ok"}
-
-
-# deployment-specific configuration
-if settings.SERVE_STATIC_FILES and os.path.exists(settings.STATIC_FILES_PATH):
-    uvicorn_logger.info("mounting spa")
-    # mount static files at root to match frontend build expectations
-    app.mount("/static", StaticFiles(directory=settings.STATIC_FILES_PATH), name="static")
-
-    @app.get("/{path:path}")
-    async def spa_handler(path: str):
-        """serve spa for all non-api routes"""
-        # skip api routes - they're handled by the routers above
-        # serve index.html for all spa routes to handle client-side routing
-        frontend_index = os.path.join(settings.STATIC_FILES_PATH, "index.html")
-        return FileResponse(frontend_index)
-elif settings.ENVIRONMENT.value == "local":
-    # redirect to frontend dev server for local development
-    from fastapi.responses import RedirectResponse
-
-    @app.get("/{path:path}")
-    async def redirect_to_frontend(request: Request, path: str):
-        """redirect non-api get requests to frontend dev server"""
-        # redirect to frontend dev server
-        frontend_url = f"http://localhost:3000/{path}"
-        if request.url.query:
-            frontend_url += f"?{request.url.query}"
-        return RedirectResponse(url=frontend_url, status_code=302)
 
 
 def main() -> None:

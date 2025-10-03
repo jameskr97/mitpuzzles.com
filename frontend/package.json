@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "vite --host",
     "build": "vue-tsc -b && vite build",
-    "build-prod": "vite build --base=/static",
+    "build-prod": "vite build",
     "watch": "vue-tsc -b && vite build --watch",
     "preview": "vite preview",
     "fmt": "prettier --write src/features/experiment-core",
