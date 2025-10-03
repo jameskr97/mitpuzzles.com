@@ -31,5 +31,5 @@ jobs:
         file: ./Frontend.dockerfile
         push: true
         tags: ghcr.io/${{ github.repository }}/frontend-dev
-        build-args: |
+        secrets: |
           VITE_POSTHOG_API_KEY=${{ secrets.VITE_POSTHOG_API_KEY }}

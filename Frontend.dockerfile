@@ -1,15 +1,15 @@
 ############################################################
 ##### Build Arguments
 ARG FRONTEND_IMAGE=docker.io/library/node:20-bookworm-slim
-ARG VITE_POSTHOG_API_KEY
 
 ############################################################
 ##### Frontend Builder
 FROM ${FRONTEND_IMAGE} AS frontend-builder
 WORKDIR /app
 COPY frontend/ /app
-ENV VITE_POSTHOG_API_KEY=${VITE_POSTHOG_API_KEY}
-RUN npm install && npm run build-prod
+RUN --mount=type=secret,id=VITE_POSTHOG_API_KEY \
+    export VITE_POSTHOG_API_KEY=$(cat /run/secrets/VITE_POSTHOG_API_KEY) && \
+    npm install && npm run build-prod
 
 ############################################################
 ##### Caddy with Static Files
