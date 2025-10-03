@@ -1,11 +1,14 @@
 import { type experiment_definition, node_type } from "@/features/experiment-core";
 import type { trial_meta } from "@/features/experiment-core/graph/types.ts";
 
+// check if visitor is from prolific (has PROLIFIC_PID URL parameter)
+const is_prolific_visitor = new URLSearchParams(window.location.search).has("PROLIFIC_PID");
+
 export default {
   id: "metacognition",
   title: "Metacognition",
   description: "Testing prospective and retrospective confidence judgments in a minesweeper task.",
-  entry_node: "consent",
+  entry_node: is_prolific_visitor ? "consent" : "instructions", // skip consent for direct visitors
   nodes: [
     {
       id: "consent",

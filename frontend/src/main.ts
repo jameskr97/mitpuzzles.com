@@ -78,7 +78,11 @@ const routerConfig: RouterOptions = {
       path: "/experiment/:experiment_id",
       name: "experiment",
       component: ExperimentRunner,
-      meta: { showSidebar: false }
+      meta: {
+        showSidebar: () => {
+          return !new URLSearchParams(window.location.search).has("PROLIFIC_PID");
+        }
+      }
     },
     { path: "/:pathMatch(.*)*", name: "404", component: () => import("./views/404.vue") },
   ],

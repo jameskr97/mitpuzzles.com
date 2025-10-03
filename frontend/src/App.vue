@@ -4,14 +4,21 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import AppMobileNavbar from "@/components/AppMobileNavbar.vue";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import UserUsernameModal from "@/components/UserUsernameModal.vue";
-import { useAppStore } from "@/store/useAppStore.ts";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useRoute } from "vue-router";
 import { computed } from "vue";
 
-const app = useAppStore();
 const authStore = useAuthStore();
+const route = useRoute();
 
 const showUsernameModal = computed(() => authStore.needsUsername);
+
+// computed property to handle sidebar visibility logic
+const shouldShowSidebar = computed(() => {
+  const showSidebarMeta = route.meta.showSidebar;
+  if (typeof showSidebarMeta === 'function') return showSidebarMeta();
+  return showSidebarMeta !== false;
+});
 
 </script>
 
@@ -19,9 +26,9 @@ const showUsernameModal = computed(() => authStore.needsUsername);
   <Suspense>
     <TooltipProvider>
       <SidebarProvider>
-        <AppSidebar v-if="$route.meta.showSidebar !== false" />
+        <AppSidebar v-if="shouldShowSidebar" />
         <main class="h-[100dvh] w-full box-content">
-          <AppMobileNavbar v-if="$route.meta.showSidebar !== false" />
+          <AppMobileNavbar v-if="shouldShowSidebar" />
           <router-view v-slot="{ Component, route }">
             <component :is="Component" :key="route.path" />
           </router-view>

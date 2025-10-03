@@ -17,11 +17,14 @@ function load_all_minesweeper_stimuli(): raw_stimuli {
   return all_stimuli;
 }
 
+// check if visitor is from prolific (has PROLIFIC_PID URL parameter)
+const is_prolific_visitor = new URLSearchParams(window.location.search).has("PROLIFIC_PID");
+
 export default {
   id: "forced-choice",
   title: "Forced Choice",
   description: "Experiment where participants are forced to choose between puzzles.",
-  entry_node: "consent",
+  entry_node: is_prolific_visitor ? "consent" : "instructions", // skip consent for direct visitors
   nodes: [
     {
       id: "consent",
