@@ -1,0 +1,53 @@
+# local testing setup, no ssl
+name: mitpuzzles-local
+
+volumes:
+  postgres-data:
+  maintenance-data:
+
+services:
+  postgres:
+    image: postgres:18
+    restart: unless-stopped
+    ports: ["5432:5432"]
+    volumes: [postgres-data:/var/lib/postgresql/data]
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: mitpuzzles
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # caddy reverse proxy + frontend static files (http only)
+  frontend:
+    build:
+      dockerfile: Frontend.dockerfile
+      context: ..
+    restart: unless-stopped
+    ports: ["3000:80"]
+    environment:
+      DOMAIN: localhost:3000
+    volumes:
+      - maintenance-data:/srv/maintenance
+    depends_on: [backend]
+
+  backend:
+    build:
+      dockerfile: Backend.dockerfile
+      context: ..
+    restart: unless-stopped
+    ports: ["8000:8000"]
+    environment:
+      SECRET: ${SECRET_KEY}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/mitpuzzles
+      ENVIRONMENT: local
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      OAUTH_GOOGLE_CLIENT_ID: ${OAUTH_GOOGLE_CLIENT_ID}
+      OAUTH_GOOGLE_CLIENT_SECRET: ${OAUTH_GOOGLE_CLIENT_SECRET}
+    volumes: [maintenance-data:/srv/maintenance]
+    depends_on:
+      postgres:
+        condition: service_healthy

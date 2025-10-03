@@ -1,0 +1,75 @@
+name: mitpuzzles
+
+volumes:
+  postgres-data:
+  caddy-data:
+  caddy-config:
+  maintenance-data:
+
+services:
+  postgres:
+    image: postgres:18
+    restart: unless-stopped
+    volumes: [postgres-data:/var/lib/postgresql/data]
+    ports: [5432:5432]
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: mitpuzzles
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # automated database backups
+  postgres-backup:
+    image: prodrigestivill/postgres-backup-local:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: ${POSTGRES_DB:-mitpuzzles}
+      POSTGRES_USER: ${POSTGRES_USER:-mitpuzzles}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_EXTRA_OPTS: '-Z6 --schema=public --blobs'
+      SCHEDULE: '@daily'
+      BACKUP_KEEP_DAYS: 30
+      BACKUP_KEEP_WEEKS: 4
+      BACKUP_KEEP_MONTHS: 6
+      HEALTHCHECK_PORT: 8080
+    volumes: [./config/postgres-backup/backups:/backups]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    image: ghcr.io/jameskr97/mitpuzzles.com/frontend-dev:latest
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    environment:
+      DOMAIN: ${DOMAIN:-mitpuzzles.com}
+    volumes:
+      - caddy-data:/data # SSL certificates & ACME data
+      - caddy-config:/config # Caddy config cache
+      - maintenance-data:/srv/maintenance # If using maintenance mode
+
+  backend:
+    image: ghcr.io/jameskr97/mitpuzzles.com/backend-dev:latest
+    restart: unless-stopped
+    environment:
+      SECRET: ${SECRET_KEY}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-mitpuzzles}:${POSTGRES_PASSWORD:-password}@postgres:5432/${POSTGRES_DB:-mitpuzzles}
+      ENVIRONMENT: production
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      OAUTH_GOOGLE_CLIENT_ID: ${OAUTH_GOOGLE_CLIENT_ID}
+      OAUTH_GOOGLE_CLIENT_SECRET: ${OAUTH_GOOGLE_CLIENT_SECRET}
+    volumes: [maintenance-data:/srv/maintenance]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health', timeout=10)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    depends_on:
+      postgres:
+        condition: service_healthy
