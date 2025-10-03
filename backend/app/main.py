@@ -1,19 +1,16 @@
-import os
 import logging
 import asyncio
 from contextlib import asynccontextmanager
 from httpx_oauth.integrations.fastapi import OAuth2AuthorizeCallbackError
 from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
 from fastapi import Request, Response
-from fastapi.responses import FileResponse
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.modules import authentication, device_tracking, feedback, experiments, puzzle
-from app.config import settings
+from app.config import settings, DeploymentEnvironment
 from app.dependencies import async_session_maker
 
 logger = logging.getLogger(__name__)
@@ -114,8 +111,8 @@ app = FastAPI(
         "name": "James",
         "email": "jameskr@mit.edu",
     },
-    docs_url="/api/docs",
-    redoc_url="/api/redoc",
+    docs_url="/api/docs" if settings.ENVIRONMENT != DeploymentEnvironment.PRODUCTION else None,
+    redoc_url="/api/redoc" if settings.ENVIRONMENT != DeploymentEnvironment.PRODUCTION else None,
     lifespan=lifespan,
 )
 app.include_router(device_tracking.router)
