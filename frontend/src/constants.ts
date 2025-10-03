@@ -15,7 +15,7 @@ export const ACTIVE_GAMES: Record<string, ReturnType<typeof create_game_entry>> 
   kakurasu: create_game_entry("⬛", "Kakurasu", "kakurasu"),
   lightup: create_game_entry("💡", "Light Up", "lightup"),
   nonograms: create_game_entry("🏁", "Nonograms", "nonograms"),
-  battleships: create_game_entry("🚢", "Battleships", "battleships"),
+  // battleships: create_game_entry("🚢", "Battleships", "battleships"),
 };
 export type PUZZLE_TYPES = keyof typeof ACTIVE_GAMES;
 

@@ -1,0 +1,36 @@
+# replace with your actual domain
+mitpuzzles.com {
+    # specific handlers first
+    handle /maintenance.json {
+        root * /srv/maintenance
+        file_server
+    }
+
+    # api proxy (handle all /api paths including nested ones)
+    handle /api/* {
+        reverse_proxy backend:8000
+    }
+
+    # general static file serving (with fallback)
+    handle {
+        root * /srv
+        file_server
+        try_files {path} /index.html
+    }
+
+    # security headers (apply to all)
+    header {
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy strict-origin-when-cross-origin
+    }
+
+    encode gzip
+
+    # logs for monitoring
+    log {
+        output file /var/log/caddy/access.log
+        format json
+    }
+}

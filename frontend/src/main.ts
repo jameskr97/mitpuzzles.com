@@ -86,6 +86,23 @@ const routerConfig: RouterOptions = {
 
 /** app initialization */
 (async () => {
+  // check for maintenance mode before initializing full app
+  try {
+    const response = await fetch('/maintenance.json');
+    if (response.ok) {
+      const maintenanceData = await response.json();
+      // if file exists, we're in maintenance mode
+      const { default: MaintenanceMode } = await import('@/components/MaintenanceMode.vue');
+      const maintenanceApp = createApp(MaintenanceMode, {
+        reason: maintenanceData.reason || null
+      });
+      maintenanceApp.mount('#app');
+      return;
+    }
+  } catch (error) {
+    // 404 or network error - maintenance mode is OFF, continue with normal startup
+  }
+
   logger.debug("Bootstrapping app...");
   const router = createRouter(routerConfig);
   const app = createApp(App).use(createPinia()).use(router).component("v-icon", OhVueIcon);
