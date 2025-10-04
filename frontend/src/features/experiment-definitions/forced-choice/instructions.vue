@@ -96,7 +96,7 @@ let quiz: { answer: boolean; question: string }[] = [
     <div class="flex flex-col gap-2">
       <p>
         There are <span class="font-bold">{{ executor?.total_trial_count }} trials</span> in this experiment.
-        In each trial, you will be presented with a choice of two 3x3 minsweeper boards.
+        In each trial, you will be presented with a choice of two 3x3 minesweeper boards.
         Consider the two boards, and select the one you believe you can
         <span class="font-bold">solve the quickest.</span>
         Once you click the "Solve Selected Board" button, you will have to solve whichever board is currently selected.
@@ -106,7 +106,7 @@ let quiz: { answer: boolean; question: string }[] = [
       <div class="text-2xl text-center font-bold">Demo of Board Selection</div>
       <div class="text-center">Press your arrow key or click on a box to toggle between puzzles.</div>
       <div class="text-sm italic text-gray-500 text-center">
-        You will have have up to 30 seconds to view puzzles and make a selection.
+        You will have up to 30 seconds to view puzzles and make a selection.
         <br />
         The timer will start after you first view a puzzle.
         <br />

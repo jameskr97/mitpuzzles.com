@@ -190,7 +190,7 @@ const page4Left: Partial<PuzzleState<NonogramMeta>> = {
     <template #page4>
       <FreeplayGameViewInstructionPage>
         <template #instruction>
-          <div>Similarly, the bottom-most row with hints "1" and "2" can be satisfied in multiple ways - a single black cell, then at least one empty cell, then 2 consecutive black cells.</div>
+          <div>Similarly, the bottom row with hints "1" and "2" can be satisfied in multiple ways - a single black cell, then at least one empty cell, then 2 consecutive black cells.</div>
         </template>
         <template #board>
           <div class="flex flex-row justify-between gap-2 text-center">

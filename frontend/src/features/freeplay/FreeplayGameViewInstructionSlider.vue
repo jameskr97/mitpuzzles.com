@@ -25,6 +25,7 @@ const done = () => {
           <div>
             <div class="font-bold">Game Controls</div>
             <slot name="controls"></slot>
+            <div>Click <span class="text-green-600">submit</span> when you think you have solved the puzzle.</div>
           </div>
           <div>
             <div class="font-bold">Misc Information</div>
@@ -32,7 +33,7 @@ const done = () => {
               <li>
                 You can click in the information circle
                 <v-icon name="hi-information-circle" :scale="1.5" class="cursor-pointer" />
-                to r eview these rules.
+                to review these rules.
               </li>
 
               <li>

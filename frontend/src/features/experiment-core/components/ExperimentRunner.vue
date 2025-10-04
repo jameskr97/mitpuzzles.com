@@ -107,7 +107,7 @@ const loaded_custom_component = computed(() => {
       <!-- loading state -->
       <div v-if="loading" class="text-center">
         <div class="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-        <p class="text-gray-600">loading experiment...</p>
+        <p class="text-gray-600">Loading experiment...</p>
       </div>
 
       <!-- error state -->
@@ -141,7 +141,7 @@ const loaded_custom_component = computed(() => {
               @complete="handle_node_complete"
             />
 
-            <!-- fallback to default componencts -->
+            <!-- fallback to default components -->
             <ConsentNode v-else-if="executor.current_node.type === node_type.CONSENT" :node="executor.current_node" @complete="handle_node_complete" />
             <InstructionsNode v-else-if="executor.current_node.type === node_type.INSTRUCTIONS" :node="executor.current_node" @complete="handle_node_complete" />
             <SurveyNode v-else-if="executor.current_node.type === node_type.SURVEY" :node="executor.current_node" @complete="handle_node_complete" />
@@ -164,7 +164,7 @@ const loaded_custom_component = computed(() => {
                   executor?.graph.graph_data.id
                 }}"
               </p>
-              <button @click="handle_node_complete" class="continue-button">continue anyway</button>
+              <button @click="handle_node_complete" class="continue-button">Continue Anyway</button>
             </div>
 
             <!-- placeholder for unimplemented node types -->

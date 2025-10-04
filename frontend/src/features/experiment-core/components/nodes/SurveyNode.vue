@@ -96,7 +96,7 @@ function submit_survey() {
       <Container>
         <div class="text-3xl text-center">Completion Survey</div>
         <div class="text-lg pt-2 text-center">
-          Thank you for completing our experiments. Please submit out the following survey to be redirected back towards
+          Thank you for completing our experiments. Please complete the following survey to be redirected back towards
           prolific.
         </div>
       </Container>

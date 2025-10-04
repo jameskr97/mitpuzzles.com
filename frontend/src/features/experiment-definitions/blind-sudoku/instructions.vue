@@ -10,6 +10,7 @@ import Container from "@/components/ui/Container.vue";
 import { shuffle } from "@/utils.ts";
 import { GraphExecutor } from "@/features/experiment-core";
 import { Button } from "@/components/ui/button";
+import InstructionHeader from "@/features/experiment-core/components/InstructionHeader.vue";
 
 const executor = inject<Ref<GraphExecutor>>("experiment-executor");
 
@@ -125,10 +126,10 @@ let quiz: { answer: boolean; question: string }[] = shuffle([
 </script>
 
 <template>
-  <div class="container contents-main-wrapper mx-auto max-w-[78ch] flex flex-col prose">
-    <h3 class="text-2xl font-semibold text-slate-700 border-b-2 border-b-primary my-2">Game Overview</h3>
+  <Container class="max-w-[75ch] flex flex-col">
+    <InstructionHeader>Game Overview</InstructionHeader>
 
-    <div>
+    <div class="flex flex-col gap-5">
       <p>
         Sudoku is a logic puzzle played on a grid. The grid is divided into 9 rows and 9 columns, forming 9 smaller
         grids (3x3 squares). In order to solve a sudoku board, every square must be filled in with a number from 1 to 9.
@@ -141,7 +142,7 @@ let quiz: { answer: boolean; question: string }[] = shuffle([
       <p>However, there are some important rules around how many times you can use each number!</p>
     </div>
 
-    <h3 class="text-2xl font-semibold text-slate-700 border-b-2 border-b-primary my-2">Sudoku Rules</h3>
+    <InstructionHeader>Sudoku Rules</InstructionHeader>
 
     <div class="grid grid-cols-[auto_min-content] gap-x-5 gap-y-10 w-full">
       <div class="grid col-span-2 grid-cols-subgrid">
@@ -192,7 +193,7 @@ let quiz: { answer: boolean; question: string }[] = shuffle([
             <strong>once</strong>.
           </div>
           <div class="italic">
-            The highlighted box has the numbers 9, 2, 4, 8, 3, and 1. It needs the numbers 5, 6, and 7 for the box to be
+            The highlighted box has the numbers 8, 1, 2, 6, and 5. It needs the numbers 3, 4, 7 and 9 for the box to be
             complete.
           </div>
           <Container class="border-black/10 bg-amber-500/20! border-1">
@@ -206,7 +207,7 @@ let quiz: { answer: boolean; question: string }[] = shuffle([
       </div>
     </div>
 
-    <h3 class="text-2xl font-semibold text-slate-700 border-b-2 border-b-primary pb-2 mb-4">Additional Challenge</h3>
+    <InstructionHeader>Additional Challenge</InstructionHeader>
     <p>
       In addition to the standard Sudoku rules explained above,
       <span class="font-bold">
@@ -215,16 +216,15 @@ let quiz: { answer: boolean; question: string }[] = shuffle([
       Below we explain how you can interact with the board.
     </p>
 
-    <h4 class="text-xl font-medium text-slate-700 mt-8">How to interact with the board:</h4>
+    <InstructionHeader class="border-dashed text-xl">How to interact with the board:</InstructionHeader>
 
-    <ul class="text-lg">
+    <ul class="list-disc ml-4">
       <li><strong>Hover:</strong> Move your mouse over the board to preview which area to reveal.</li>
       <li>
         <strong>Reveal:</strong> Click on a cell to reveal that cell
         <div class="inline-block h-5 w-5 bg-slate-300 rounded border-1 border-black/40"></div>
         (dark blue) and the row, column, and box which it belongs to (light blue)
-        <div class="inline-block h-5 w-5 bg-slate-200 rounded border-1 border-black/40"></div>
-        .
+        <div class="inline-block h-5 w-5 bg-slate-200 rounded border-1 border-black/40"></div>.
       </li>
       <li>
         <strong>Input:</strong> Enter a number in the selected cell (dark blue) by pressing number keys 1 to 9 on your
@@ -232,10 +232,10 @@ let quiz: { answer: boolean; question: string }[] = shuffle([
         changed again later.
       </li>
     </ul>
-    <div class="flex flex-col w-full items-center">
+    <Container class="flex flex-col items-center max-w-fit mx-auto my-4">
       <div class="alert alert-info mb-4">Try using the board below to see how it will work!</div>
       <PuzzleSudoku :state="demo_puzzle_state" :scale="1" :interact="demo_interact" />
-    </div>
+    </Container>
 
     <!-- scoring section only for prolific users -->
     <div v-if="is_prolific_visitor">
@@ -267,7 +267,7 @@ let quiz: { answer: boolean; question: string }[] = shuffle([
 
     <!-- For direct visitors: show consent text and skip quiz -->
     <div v-if="is_direct_visitor">
-      <h3 class="text-2xl font-semibold text-slate-700 border-b-2 border-b-secondary pb-2 mb-4">We need your consent to proceed</h3>
+      <InstructionHeader>We need your consent to proceed</InstructionHeader>
       <div class="flex flex-col gap-4 p-4 border rounded-lg bg-gray-50">
         <p>By completing this study, you are participating in a study being performed by
         cognitive scientists in the MIT Department of Brain and Cognitive Science.
@@ -298,5 +298,5 @@ let quiz: { answer: boolean; question: string }[] = shuffle([
         </div>
       </div>
     </div>
-  </div>
+  </Container>
 </template>

@@ -268,7 +268,6 @@ onMounted(() => {
 
     <!-- prospective judgment phase -->
     <div v-else-if="state_machine.current_state.value === trial_state.prospective" class="flex flex-col gap-5">
-      {{prospective_responses}}
       <div class="text-xl">
         <p>
           There were <span class="font-bold">{{ number_of_initial_unmarked_cells }} unknown cells</span>
@@ -378,8 +377,6 @@ onMounted(() => {
 
     <!-- retrospective judgment phase -->
     <div v-else-if="state_machine.current_state.value === trial_state.retrospective" class="flex flex-col gap-5">
-      {{retrospective_responses}}
-      {{can_proceed_from_retrospective}}
 
       <div class="text-xl">
         <p>

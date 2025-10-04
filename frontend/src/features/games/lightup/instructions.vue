@@ -73,7 +73,7 @@ boardPage5.board[4][3] = LightupCell.BULB;
         <template #instruction>
           <div>
             When placed on a square,
-            <span class="font-bold">a lightbulb illuminates all cells in its row and column</span> until the light is
+            <span class="font-bold">a light bulb illuminates all cells in its row and column</span> until the light is
             blocked by a black cell.
           </div>
         </template>
@@ -88,11 +88,11 @@ boardPage5.board[4][3] = LightupCell.BULB;
         <template #instruction>
           <div>
             Some black cells contain numbers. These indicate exactly
-            <span class="font-bold">how many bulbs must be placed next to its</span>
-            (not diagonally). Cells marked "0" must not have any bulbs next to them. Unnumbered black cells can have any
+            <span class="font-bold">how many bulbs must be placed next to it</span>
+            (horizontally or vertically adjacent). Cells marked "0" must not have any bulbs next to them. Unnumbered black cells can have any
             number of adjacent bulbs.
           </div>
-          <div>In the example below, the two bulbs placed satisfy the numbers "2", "2" and "1" next to it:</div>
+          <div>In the example below, the two bulbs placed satisfy the numbers "2", "2" and "1" next to them:</div>
         </template>
         <template #board>
           <PuzzleLightup :state="boardPage3" :scale="1" class="mx-auto" />

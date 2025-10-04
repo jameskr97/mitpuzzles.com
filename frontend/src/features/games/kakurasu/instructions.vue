@@ -143,7 +143,7 @@ const page4Left: Partial<PuzzleState<KakurasuMeta>> = {
       <FreeplayGameViewInstructionPage>
         <template #instruction>
           <div>There are usually multiple ways to satisfy individual row and column target-sums.</div>
-          <div>The row sum of 5 can be made two ways.</div>
+          <div>The row sum of 5 can be made in two ways.</div>
         </template>
         <template #board>
           <div class="flex flex-row justify-between gap-2 text-center">
@@ -163,7 +163,7 @@ const page4Left: Partial<PuzzleState<KakurasuMeta>> = {
     <template #page4>
       <FreeplayGameViewInstructionPage>
         <template #instruction>
-          <div>The column sum of 6 can also be made two ways.</div>
+          <div>The column sum of 6 can also be made in two ways.</div>
         </template>
         <template #board>
           <div class="flex flex-row justify-between gap-2 text-center">
@@ -184,13 +184,13 @@ const page4Left: Partial<PuzzleState<KakurasuMeta>> = {
       <FreeplayGameViewInstructionPage>
         <template #instruction>
           <div>
-            The puzzle is solved when the black cells in each row/column add up to their corresponding target-sum. While
+            The puzzle is solved when the black cells in each row/column add up to their corresponding target-sums. While
             there may be multiple ways to satisfy individual rows or columns, the correct solution will uniquely satisfy
             all row and column sums simultaneously.
           </div>
           <Separator />
           <div>
-            For instance, the unique solution to this puzzle is shown below, as each row and column target-sum are
+            For instance, the unique solution to this puzzle is shown below, as each row and column target-sums are
             satisfied.
           </div>
         </template>

@@ -16,7 +16,7 @@ defineEmits(["complete"]);
     <div v-else class="text-gray-600">
       <InstructionHeader>Instructions</InstructionHeader>
       <div>
-        These are the default instructions. Define an `instructions.vue` in your <code class="italic font-bold">experiment-defintions/{{ executor?.graph.graph_data.id }}</code> folder to
+        These are the default instructions. Define an `instructions.vue` in your <code class="italic font-bold">experiment-definitions/{{ executor?.graph.graph_data.id }}</code> folder to
         have this be updated with that.
       </div>
     </div>

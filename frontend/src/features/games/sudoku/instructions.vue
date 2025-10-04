@@ -138,7 +138,7 @@ const BoxHighlighted = getPersistentHighlightSudokuBoard({ box: 1 });
             <strong>once</strong>.
           </div>
           <div class="italic">
-            The highlighted box has the numbers 9, 2, 4, 8, 3, and 1. It needs the numbers 5, 6, and 7 for the box to be
+            The highlighted box has the numbers 8, 1, 2, 6, and 5. It needs the numbers 3, 4, 7 and 9 for the box to be
             complete.
           </div>
         </template>
