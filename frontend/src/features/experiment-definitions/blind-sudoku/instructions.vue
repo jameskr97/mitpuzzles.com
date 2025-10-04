@@ -237,13 +237,16 @@ let quiz: { answer: boolean; question: string }[] = shuffle([
       <PuzzleSudoku :state="demo_puzzle_state" :scale="1" :interact="demo_interact" />
     </div>
 
-    <h3 class="text-2xl font-semibold text-slate-700 border-b-2 border-b-secondary pb-2 mb-4">Scoring</h3>
-    <div class="mb-4">
-      <p>
-        <span class="font-bold">You will be asked to solve {{ executor?.total_trial_count }} boards.</span> You will be able to earn a bonus depending
-        on your performance. Each correct number <span class="font-bold">will earn you 2 points.</span> Any incorrect
-        cell loses you 2 points. Each point is worth $0.01 (e.g. 100 points would earn you $1.00)
-      </p>
+    <!-- scoring section only for prolific users -->
+    <div v-if="is_prolific_visitor">
+      <h3 class="text-2xl font-semibold text-slate-700 border-b-2 border-b-secondary pb-2 mb-4">Scoring</h3>
+      <div class="mb-4">
+        <p>
+          <span class="font-bold">You will be asked to solve {{ executor?.total_trial_count }} boards.</span> You will be able to earn a bonus depending
+          on your performance. Each correct number <span class="font-bold">will earn you 2 points.</span> Any incorrect
+          cell loses you 2 points. Each point is worth $0.01 (e.g. 100 points would earn you $1.00)
+        </p>
+      </div>
     </div>
 
     <!-- For Prolific visitors: show comprehension quiz -->

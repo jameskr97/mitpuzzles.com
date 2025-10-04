@@ -147,13 +147,16 @@ let quiz: { answer: boolean; question: string }[] = shuffle([
     <p>For instance, you might place flags and safe marks so that the board looks like the one shown below:</p>
     <PuzzleMinesweeper :state="gameState3" class="mx-auto" />
 
-    <InstructionHeader>Scoring</InstructionHeader>
-    <p>
-      <span class="font-bold">You will be asked to solve {{ executor?.total_trial_count }} boards.</span> You will be able
-      to earn a bonus depending on your performance. Each correct square
-      <span class="font-bold">will earn you 1 point.</span> You cannot lose points for incorrect squares. Each point is
-      worth $0.01 (e.g. 100 points would earn you $1.00)
-    </p>
+    <!-- scoring section only for prolific users -->
+    <div v-if="is_prolific_visitor">
+      <InstructionHeader>Scoring</InstructionHeader>
+      <p>
+        <span class="font-bold">You will be asked to solve {{ executor?.total_trial_count }} boards.</span> You will be able
+        to earn a bonus depending on your performance. Each correct square
+        <span class="font-bold">will earn you 1 point.</span> You cannot lose points for incorrect squares. Each point is
+        worth $0.01 (e.g. 100 points would earn you $1.00)
+      </p>
+    </div>
 
     <!-- For Prolific visitors: show comprehension quiz -->
     <div v-if="is_prolific_visitor">

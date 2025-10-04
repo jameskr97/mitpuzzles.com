@@ -9,7 +9,7 @@ interface GameEvent {
   experiment_id?: string;       // for experiment events
   timestamp: number;            // when event occurred
   sequence: number;             // order index for sorting
-  action_type: "click" | "keypress" | "hover" | "clear" | "tutorial_toggle" | "custom";
+  action_type: "click" | "keypress" | "hover" | "dwell" | "clear" | "tutorial_toggle" | "custom";
   
   // action-specific data
   cell?: { row: number, col: number };

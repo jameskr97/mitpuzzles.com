@@ -60,6 +60,8 @@ export interface PuzzleController<TMeta = any> {
   handle_cell_click: (cell: Cell, event: MouseEvent, override?: number) => void;
   handle_cell_key_down: (cell: Cell, event: KeyboardEvent, key: string | number) => void;
   handle_cell_focus?: (cell: Cell, event: MouseEvent) => void;
+  handle_hover_start?: (cell: Cell, event: MouseEvent) => void;
+  handle_hover_end?: (cell: Cell, event: MouseEvent) => void;
 
   // metadata getters
   get_incorrect_cells?: () => { row: number; col: number }[];

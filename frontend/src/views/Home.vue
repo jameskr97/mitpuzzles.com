@@ -21,9 +21,9 @@ const authStore = useAuthStore();
     <Container class="grid grid-cols-1">
       <div class="flex flex-col">
         <div class="text-lg">
-          <p>
+          <p class="text-center">
             MIT's Computational Cogitive Science Lab wants to
-            <span class="font-bold italic text-red-700">understand human reasoning and congition </span>
+            <span class="font-bold italic text-red-700">understand human reasoning and cognition </span>
             through logic puzzles. Help science and have fun!
           </p>
         </div>

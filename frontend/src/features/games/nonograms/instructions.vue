@@ -45,6 +45,19 @@ const boardHighlight: Partial<PuzzleState<NonogramMeta>> = {
 };
 
 // @ts-expect-error ignore any missing fields
+const page2: Partial<PuzzleState<NonogramMeta>> = {
+  definition: def,
+  board: [
+    [0, 1, 0, 0, 0],
+    [0, 0, 0, 0, 0],
+    [0, 1, 0, 0, 0],
+    [0, 1, 0, 0, 0],
+    [0, 1, 0, 0, 0],
+  ],
+};
+
+
+// @ts-expect-error ignore any missing fields
 const solution: Partial<PuzzleState<NonogramMeta>> = {
   definition: def,
   board: [
@@ -149,7 +162,7 @@ const page4Left: Partial<PuzzleState<NonogramMeta>> = {
           </div>
         </template>
         <template #board>
-          <PuzzleNonograms :state="solution" class="mx-auto" />
+          <PuzzleNonograms :state="page2" class="mx-auto" />
         </template>
       </FreeplayGameViewInstructionPage>
     </template>

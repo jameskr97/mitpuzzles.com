@@ -12,6 +12,7 @@ export interface GameRecorderOptions {
   capture_board_snapshots?: boolean;
   capture_hover_events?: boolean;
   hover_threshold_ms?: number;
+  dwell_threshold_ms?: number;
 }
 
 /**
@@ -24,6 +25,7 @@ export function useGameRecorder(options: GameRecorderOptions = {}) {
     capture_board_snapshots = true,
     capture_hover_events = false,
     hover_threshold_ms = 500,
+    dwell_threshold_ms = 1000,
   } = options;
 
   // configuration
@@ -32,6 +34,7 @@ export function useGameRecorder(options: GameRecorderOptions = {}) {
   const capture_snapshots = ref(capture_board_snapshots);
   const capture_hovers = ref(capture_hover_events);
   const hover_threshold = ref(hover_threshold_ms);
+  const dwell_threshold = ref(dwell_threshold_ms); // threshold for dwell time events
 
   // dependencies
   const historyStore = usePuzzleHistoryStore();
@@ -204,13 +207,13 @@ export function useGameRecorder(options: GameRecorderOptions = {}) {
     if (hover_start_time.value && current_hover_cell.value) {
       const duration = Date.now() - hover_start_time.value;
 
-      // record hover event regardless of duration
-      record_hover(puzzle_type, current_hover_cell.value, duration);
-
       // record dwell event only if duration >= threshold
-      if (duration >= hover_threshold.value) {
+      if (duration >= hover_threshold.value)
+        record_hover(puzzle_type, current_hover_cell.value, duration);
+
+      if (duration >= dwell_threshold.value)
         record_dwell(puzzle_type, current_hover_cell.value, hover_start_time.value, Date.now());
-      }
+
     }
     clearHoverTimer();
     hover_start_time.value = null;

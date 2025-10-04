@@ -3,6 +3,7 @@ import FreeplayGameViewInstructionSlider from "@/features/freeplay/FreeplayGameV
 import type { PuzzleState, TentsMeta } from "@/services/game/engines/types.ts";
 import PuzzleTents from "@/features/games/tents/tents.puzzle.vue";
 import FreeplayGameViewInstructionPage from "@/features/freeplay/FreeplayGameViewInstructionPage.vue";
+import { TentsCell } from "@/services/game/engines/translator.ts";
 
 const definition = {
   rows: 4,
@@ -25,14 +26,14 @@ const boardPage1: PuzzleState<TentsMeta> = {
 };
 
 const boardPage2 = JSON.parse(JSON.stringify(boardPage1));
-// boardPage2.board[2][2] = TentsCell.TENT;
-// boardPage2.board[3][3] = TentsCell.TENT;
+boardPage2.board[2][2] = TentsCell.TENT;
+boardPage2.board[3][3] = TentsCell.TENT;
 
 const boardPage3 = JSON.parse(JSON.stringify(boardPage1));
-// boardPage3.board[0][0] = TentsCell.TENT;
-// boardPage3.board[0][2] = TentsCell.TENT;
-// boardPage3.board[2][3] = TentsCell.TENT;
-// boardPage3.board[3][1] = TentsCell.TENT;
+boardPage3.board[0][0] = TentsCell.TENT;
+boardPage3.board[0][2] = TentsCell.TENT;
+boardPage3.board[2][3] = TentsCell.TENT;
+boardPage3.board[3][1] = TentsCell.TENT;
 </script>
 
 <template>
