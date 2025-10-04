@@ -20,8 +20,7 @@ import datetime
 import uuid
 import uuid6
 
-# Error Catching
-
+AUTH_SESSION_TIME = 3600 * 24 * 30 # stay logged in for 30 days
 
 # Schemas
 class UserRead(schemas.BaseUser[uuid.UUID]):
@@ -78,12 +77,12 @@ async def get_access_token_db(session: AsyncSession = Depends(get_async_session)
 
 
 def get_database_strategy(access_token_db: AccessTokenDatabase[AccessToken] = Depends(get_access_token_db)) -> DatabaseStrategy:
-    return DatabaseStrategy(access_token_db, lifetime_seconds=3600)
+    return DatabaseStrategy(access_token_db, lifetime_seconds=AUTH_SESSION_TIME)
 
 
 cookie_transport = CookieTransport(
     cookie_name="access_token",
-    cookie_max_age=3600,
+    cookie_max_age=AUTH_SESSION_TIME, # stay logged in for one year
 )
 auth_backend = AuthenticationBackend(name="cookie", transport=cookie_transport, get_strategy=get_database_strategy)
 

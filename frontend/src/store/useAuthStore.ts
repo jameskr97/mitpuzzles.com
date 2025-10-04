@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import axios, { type AxiosResponse } from "axios";
+import posthog from "posthog-js";
 
 export interface User {
   id: string;
@@ -47,6 +48,11 @@ export const useAuthStore = defineStore("auth", {
       try {
         const response = await axios.get("/api/users/me");
         this.user = response.data;
+        // identify user to posthog
+        posthog.identify(this.user?.id,
+          { email: this.user?.email, username: this.user?.username}
+        )
+
         return this.user;
       } catch (error: any) {
         if (error.response?.status === 401) {
@@ -74,9 +80,7 @@ export const useAuthStore = defineStore("auth", {
             "Content-Type": "application/x-www-form-urlencoded",
           },
         });
-        
-        // After successful login, fetch user data
-        await this.fetchCurrentUser();
+        await this.fetchCurrentUser(); // After successful login, fetch user data
         return this.user;
       } catch (error: any) {
         this.error = error.response?.data?.detail || "Login failed";
