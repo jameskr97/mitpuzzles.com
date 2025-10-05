@@ -43,6 +43,12 @@ const route = {
     component: () => import(`@/views/${view}.vue`),
     meta: { showSidebar: sidebar },
   }),
+  admin: (path: string, name: string, view: string, sidebar: boolean = true) => ({
+    path,
+    name,
+    component: () => import(`@/views/${view}.vue`),
+    meta: { showSidebar: sidebar, requiresAdmin: true },
+  }),
   markdown: (path: string, name: string, content: string, proseClass = "prose-lg") => ({
     path,
     name,
@@ -69,6 +75,7 @@ const routerConfig: RouterOptions = {
   history: createWebHistory(),
   routes: [
     route.view("", "Home", "Home"),
+    route.admin("/admin/data-download", "DataDownload", "DataDownload"),
     route.view("/signup", "signup", "Signup", false),
     route.view("/verify-email", "verify-email", "SignupVerifyEmail", false),
     route.markdown("/about-us", "about-us", mdAbout),

@@ -430,6 +430,134 @@ class PuzzleService:
 
         return {"leaderboard": leaderboard_entries, "count": len(leaderboard_entries)}
 
+    async def get_game_data_summary(self):
+        """get summary of all game data grouped by puzzle type"""
+        from sqlalchemy import select, func, case
+
+        # get puzzle counts by type
+        puzzle_counts_stmt = (
+            select(
+                Puzzle.puzzle_type,
+                func.count(Puzzle.id).label('total_puzzles')
+            )
+            .group_by(Puzzle.puzzle_type)
+            .order_by(Puzzle.puzzle_type)
+        )
+
+        # get attempt counts by puzzle type
+        attempt_counts_stmt = (
+            select(
+                Puzzle.puzzle_type,
+                func.count(FreeplayPuzzleAttempt.id).label('total_attempts'),
+                func.sum(case((FreeplayPuzzleAttempt.user_id.is_not(None), 1), else_=0)).label('authenticated_attempts'),
+                func.sum(case((FreeplayPuzzleAttempt.user_id.is_(None), 1), else_=0)).label('anonymous_attempts'),
+                func.sum(case((FreeplayPuzzleAttempt.is_solved == True, 1), else_=0)).label('solved_attempts')
+            )
+            .join(Puzzle, FreeplayPuzzleAttempt.puzzle_id == Puzzle.id)
+            .group_by(Puzzle.puzzle_type)
+            .order_by(Puzzle.puzzle_type)
+        )
+
+        puzzle_counts_result = await self.db.execute(puzzle_counts_stmt)
+        puzzle_counts = {row.puzzle_type: row.total_puzzles for row in puzzle_counts_result.all()}
+
+        attempt_counts_result = await self.db.execute(attempt_counts_stmt)
+        attempt_counts = {row.puzzle_type: {
+            'total_attempts': row.total_attempts,
+            'authenticated_attempts': row.authenticated_attempts or 0,
+            'anonymous_attempts': row.anonymous_attempts or 0,
+            'solved_attempts': row.solved_attempts or 0
+        } for row in attempt_counts_result.all()}
+
+        # combine data
+        summary_data = []
+        all_types = set(puzzle_counts.keys()) | set(attempt_counts.keys())
+
+        for puzzle_type in sorted(all_types):
+            puzzle_count = puzzle_counts.get(puzzle_type, 0)
+            attempt_data = attempt_counts.get(puzzle_type, {
+                'total_attempts': 0,
+                'authenticated_attempts': 0,
+                'anonymous_attempts': 0,
+                'solved_attempts': 0
+            })
+
+            summary_data.append({
+                'puzzle_type': puzzle_type,
+                'total_puzzles': puzzle_count,
+                'total_attempts': attempt_data['total_attempts'],
+                'authenticated_attempts': attempt_data['authenticated_attempts'],
+                'anonymous_attempts': attempt_data['anonymous_attempts'],
+                'solved_attempts': attempt_data['solved_attempts']
+            })
+
+        return summary_data
+
+    async def export_game_data(self, puzzle_type: str, user_type: Optional[str] = None):
+        """export game data as json"""
+        from sqlalchemy import select
+        from sqlalchemy.orm import selectinload
+
+        # export freeplay attempts
+        stmt = (
+            select(FreeplayPuzzleAttempt)
+            .options(
+                selectinload(FreeplayPuzzleAttempt.puzzle),
+                selectinload(FreeplayPuzzleAttempt.user),
+                selectinload(FreeplayPuzzleAttempt.device)
+            )
+            .join(Puzzle, FreeplayPuzzleAttempt.puzzle_id == Puzzle.id)
+            .where(Puzzle.puzzle_type == puzzle_type)
+        )
+
+        # filter by user type if specified
+        if user_type == 'authenticated':
+            stmt = stmt.where(FreeplayPuzzleAttempt.user_id.is_not(None))
+        elif user_type == 'anonymous':
+            stmt = stmt.where(FreeplayPuzzleAttempt.user_id.is_(None))
+
+        stmt = stmt.order_by(FreeplayPuzzleAttempt.created_at.desc())
+
+        result = await self.db.execute(stmt)
+        attempts = result.scalars().all()
+
+        if not attempts:
+            raise HTTPException(status_code=404, detail=f"no attempts found for puzzle type {puzzle_type}")
+
+        export_data = []
+        for attempt in attempts:
+            attempt_data = {
+                'id': str(attempt.id),
+                'created_at': attempt.created_at.isoformat(),
+                'timestamp_start': attempt.timestamp_start,
+                'timestamp_finish': attempt.timestamp_finish,
+                'action_history': attempt.action_history,
+                'board_state': attempt.board_state,
+                'used_tutorial': attempt.used_tutorial,
+                'is_solved': attempt.is_solved,
+                'device_id': str(attempt.device_id) if attempt.device_id else None,
+                'user_id': str(attempt.user_id) if attempt.user_id else None,
+                'puzzle': {
+                    'id': str(attempt.puzzle.id),
+                    'puzzle_type': attempt.puzzle.puzzle_type,
+                    'puzzle_size': attempt.puzzle.puzzle_size,
+                    'puzzle_difficulty': attempt.puzzle.puzzle_difficulty,
+                    'complete_id': attempt.puzzle.complete_id
+                }
+            }
+
+            # add user info if available
+            if attempt.user:
+                attempt_data['user'] = {
+                    'id': str(attempt.user.id),
+                    'username': attempt.user.username,
+                    'email': attempt.user.email
+                }
+
+            export_data.append(attempt_data)
+
+        return export_data
+
 
 # routes
 router = APIRouter(prefix="/api/puzzle", tags=["Puzzles"])
@@ -549,3 +677,55 @@ async def get_freeplay_leaderboard(
     )
 
     return LeaderboardResponse.model_validate(leaderboard_data)
+
+
+@router.get("/admin/summary")
+async def get_game_data_summary(
+    db: AsyncDatabase,
+    user: User = Depends(fastapi_users.current_user())
+):
+    """
+    get summary of all game data for admin users.
+
+    returns list of puzzle types with puzzle counts and attempt statistics.
+    requires admin authentication.
+    """
+    if not user.is_superuser:
+        raise HTTPException(status_code=403, detail="admin access required")
+
+    service = PuzzleService(db)
+    return await service.get_game_data_summary()
+
+
+@router.get("/admin/{puzzle_type}/export")
+async def export_game_data(
+    puzzle_type: str,
+    db: AsyncDatabase,
+    user: User = Depends(fastapi_users.current_user()),
+    user_type: Optional[str] = Query(None, description="Filter by user type: authenticated or anonymous")
+):
+    """
+    export game data as json download.
+
+    optionally filter by user_type (authenticated, anonymous).
+    returns json file download with all freeplay attempt data.
+    requires admin authentication.
+    """
+    if not user.is_superuser:
+        raise HTTPException(status_code=403, detail="admin access required")
+
+    service = PuzzleService(db)
+    data = await service.export_game_data(puzzle_type, user_type)
+
+    # create filename
+    user_type_suffix = f"_{user_type}" if user_type else ""
+    filename = f"{puzzle_type}{user_type_suffix}_game_export.json"
+
+    from fastapi.responses import JSONResponse
+    return JSONResponse(
+        content=data,
+        headers={
+            "Content-Disposition": f"attachment; filename={filename}",
+            "Content-Type": "application/json"
+        }
+    )

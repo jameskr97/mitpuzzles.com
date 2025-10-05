@@ -8,9 +8,10 @@ from datetime import datetime
 from typing import Optional, Dict, Any, List
 
 import uuid6
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, Response, HTTPException, Query
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
-from sqlalchemy import String, DateTime, ForeignKey, UniqueConstraint, Index
+from sqlalchemy import String, DateTime, ForeignKey, UniqueConstraint, Index, select, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -88,52 +89,6 @@ class ExperimentProlificData(Base):
 
     def __repr__(self):
         return f"<ProlificData(run_id={self.run_id}, pid={self.prolific_pid}, study={self.study_id})>"
-
-
-# Keep old model for backwards compatibility during migration
-# class ProlificParticipation(Base):
-#     """Legacy Prolific participation model - DEPRECATED, use ExperimentParticipation + ProlificData"""
-#
-#     __tablename__ = "prolific_participation"
-#     __table_args__ = (
-#         # ensure unique participation per study/session/subject combo
-#         UniqueConstraint("prolific_subject_id", "prolific_study_id", "prolific_session_id", name="unique_prolific_participation"),
-#         # index for faster lookups
-#         Index("idx_prolific_subject", "prolific_subject_id"),
-#         Index("idx_prolific_study", "prolific_study_id"),
-#     )
-#
-#     # id + audit
-#     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid6.uuid7)
-#     created_at: Mapped[datetime] = mapped_column(DateTime(), default=datetime.utcnow, nullable=False)
-#     updated_at: Mapped[datetime] = mapped_column(DateTime(), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-#
-#     # website identifiers
-#     device_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("device.id", ondelete="CASCADE"), nullable=True)
-#     user_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("user.id", ondelete="SET NULL"), nullable=True)
-#
-#     # prolific identifiers from URL parameters
-#     prolific_subject_id: Mapped[str] = mapped_column(String(100), nullable=False)
-#     prolific_study_id: Mapped[str] = mapped_column(String(100), nullable=False)
-#     prolific_session_id: Mapped[str] = mapped_column(String(100), nullable=False)
-#
-#     # study tracking
-#     experiment_id: Mapped[str] = mapped_column(String(100), nullable=False)
-#     survey_response: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True)
-#     experiment_data: Mapped[List[Any]] = mapped_column(JSON, default=dict, nullable=False)
-#
-#     # Relationships
-#     device: Mapped["Device"] = relationship("Device", backref="prolific_participations")
-#     user: Mapped[Optional["User"]] = relationship("User", backref="prolific_participations")
-#
-#     @hybrid_property
-#     def is_authenticated(self) -> bool:
-#         return self.user_id is not None
-#
-#     def __repr__(self):
-#         return f"<ProlificParticipation(id={self.id}, subject={self.prolific_subject_id}, study={self.prolific_study_id})>"
-#
-
 
 ### Schemas
 class ExperimentRunExperimentData(BaseModel):
@@ -239,6 +194,171 @@ class ExperimentService:
         await self.db.refresh(participation)
         return participation
 
+    async def get_experiments_summary(self):
+        """get summary of all experiments grouped by experiment_id"""
+        from sqlalchemy import case
+
+        # get basic counts first
+        stmt = (
+            select(
+                ExperimentRun.experiment_id,
+                func.count().label('total_runs'),
+                func.sum(case((ExperimentRun.recruitment_platform == 'direct', 1), else_=0)).label('direct_runs'),
+                func.sum(case((ExperimentRun.recruitment_platform == 'prolific', 1), else_=0)).label('prolific_runs')
+            )
+            .group_by(ExperimentRun.experiment_id)
+            .order_by(ExperimentRun.experiment_id)
+        )
+
+        result = await self.db.execute(stmt)
+        experiments = result.all()
+
+        # calculate average duration for each experiment manually
+        summary_data = []
+        for exp in experiments:
+            # get all runs for this experiment to calculate average duration
+            duration_stmt = select(ExperimentRun).where(ExperimentRun.experiment_id == exp.experiment_id)
+            duration_result = await self.db.execute(duration_stmt)
+            runs = duration_result.scalars().all()
+
+            total_duration = 0
+            valid_runs = 0
+
+            for run in runs:
+                experiment_data = run.experiment_data.get('experiment', {})
+                start_time = experiment_data.get('timestamp_start')
+                end_time = experiment_data.get('timestamp_end')
+
+                if start_time and end_time:
+                    duration = (end_time - start_time) / 1000  # convert to seconds
+                    total_duration += duration
+                    valid_runs += 1
+
+            avg_duration = round(total_duration / valid_runs) if valid_runs > 0 else 0
+
+            summary_data.append({
+                'experiment_id': exp.experiment_id,
+                'total_runs': exp.total_runs,
+                'direct_runs': exp.direct_runs or 0,
+                'prolific_runs': exp.prolific_runs or 0,
+                'avg_duration_seconds': avg_duration
+            })
+
+        return summary_data
+
+    async def get_experiment_details(self, experiment_id: str):
+        """get detailed experiment info with node statistics"""
+        # get all runs for this experiment
+        stmt = (
+            select(ExperimentRun)
+            .where(ExperimentRun.experiment_id == experiment_id)
+            .order_by(ExperimentRun.created_at.desc())
+        )
+        result = await self.db.execute(stmt)
+        runs = result.scalars().all()
+
+        if not runs:
+            raise HTTPException(status_code=404, detail=f"experiment {experiment_id} not found")
+
+        # calculate node statistics
+        node_stats = {}
+        total_duration = 0
+        run_count = len(runs)
+
+        for run in runs:
+            nodes = run.experiment_data.get('nodes', [])
+            experiment_data = run.experiment_data.get('experiment', {})
+
+            # calculate total duration for this run
+            start_time = experiment_data.get('timestamp_start', 0)
+            end_time = experiment_data.get('timestamp_end', 0)
+            if start_time and end_time:
+                total_duration += (end_time - start_time) / 1000  # convert to seconds
+
+            # process each node
+            for node in nodes:
+                node_name = node.get('name', 'unknown')
+                node_start = node.get('timestamp_start', 0)
+                node_end = node.get('timestamp_end', 0)
+
+                if node_start and node_end:
+                    duration = (node_end - node_start) / 1000  # convert to seconds
+
+                    if node_name not in node_stats:
+                        node_stats[node_name] = {'total_time': 0, 'count': 0}
+
+                    node_stats[node_name]['total_time'] += duration
+                    node_stats[node_name]['count'] += 1
+
+        # calculate averages
+        avg_node_stats = [
+            {
+                'node_name': name,
+                'avg_time_seconds': round(stats['total_time'] / stats['count']) if stats['count'] > 0 else 0
+            }
+            for name, stats in node_stats.items()
+        ]
+
+        # separate runs by platform
+        direct_runs = [run for run in runs if run.recruitment_platform == 'direct']
+        prolific_runs = [run for run in runs if run.recruitment_platform == 'prolific']
+
+        return {
+            'experiment_id': experiment_id,
+            'total_runs': run_count,
+            'direct_runs': len(direct_runs),
+            'prolific_runs': len(prolific_runs),
+            'avg_duration_seconds': round(total_duration / run_count) if run_count > 0 else 0,
+            'node_stats': avg_node_stats
+        }
+
+    async def export_experiment_data(self, experiment_id: str, platform: Optional[str] = None):
+        """export experiment data as json"""
+        from sqlalchemy.orm import selectinload
+
+        stmt = (
+            select(ExperimentRun)
+            .options(selectinload(ExperimentRun.prolific))
+            .where(ExperimentRun.experiment_id == experiment_id)
+        )
+
+        if platform:
+            stmt = stmt.where(ExperimentRun.recruitment_platform == platform)
+
+        stmt = stmt.order_by(ExperimentRun.created_at.desc())
+
+        result = await self.db.execute(stmt)
+        runs = result.scalars().all()
+        print(result)
+
+        if not runs:
+            raise HTTPException(status_code=404, detail=f"no data found for experiment {experiment_id}")
+
+        export_data = []
+        for run in runs:
+            run_data = {
+                'id': str(run.id),
+                'experiment_id': run.experiment_id,
+                'recruitment_platform': run.recruitment_platform,
+                'created_at': run.created_at.isoformat(),
+                'experiment_data': run.experiment_data,
+                'device_id': str(run.device_id),
+                'user_id': str(run.user_id) if run.user_id else None
+            }
+
+            # add prolific data if available
+            if run.prolific:
+                run_data['prolific_data'] = {
+                    'prolific_pid': run.prolific.prolific_pid,
+                    'study_id': run.prolific.study_id,
+                    'session_id': run.prolific.session_id
+                }
+
+            export_data.append(run_data)
+
+        return export_data
+
+
 
 ### Routes
 router = APIRouter(prefix="/api/experiment", tags=["Experiments"])
@@ -288,3 +408,73 @@ async def create_experiment_participation(
     service = ExperimentService(db)
     await service.create_experiment_participation(run_data=run_data, device_id=device_id, user=user)
     return Response(status_code=201)
+
+
+@router.get("/admin/summary")
+async def get_experiments_summary(
+    db: AsyncDatabase,
+    user: User = Depends(fastapi_users.current_user())
+):
+    """
+    get summary of all experiments for admin users.
+
+    returns list of experiments with run counts and basic stats.
+    requires admin authentication.
+    """
+    if not user.is_superuser:
+        raise HTTPException(status_code=403, detail="admin access required")
+
+    service = ExperimentService(db)
+    return await service.get_experiments_summary()
+
+
+@router.get("/admin/{experiment_id}")
+async def get_experiment_details(
+    experiment_id: str,
+    db: AsyncDatabase,
+    user: User = Depends(fastapi_users.current_user())
+):
+    """
+    get detailed experiment info with node statistics.
+
+    returns experiment details including averaged node times.
+    requires admin authentication.
+    """
+    if not user.is_superuser:
+        raise HTTPException(status_code=403, detail="admin access required")
+
+    service = ExperimentService(db)
+    return await service.get_experiment_details(experiment_id)
+
+
+@router.get("/admin/{experiment_id}/export")
+async def export_experiment_data(
+    experiment_id: str,
+    db: AsyncDatabase,
+    user: User = Depends(fastapi_users.current_user()),
+    platform: Optional[str] = Query(None, description="Filter by platform: direct or prolific")
+):
+    """
+    export experiment data as json download.
+
+    optionally filter by platform (direct, prolific).
+    returns json file download with all experiment run data.
+    requires admin authentication.
+    """
+    if not user.is_superuser:
+        raise HTTPException(status_code=403, detail="admin access required")
+
+    service = ExperimentService(db)
+    data = await service.export_experiment_data(experiment_id, platform)
+
+    # create filename
+    platform_suffix = f"_{platform}" if platform else ""
+    filename = f"{experiment_id}{platform_suffix}_export.json"
+
+    return JSONResponse(
+        content=data,
+        headers={
+            "Content-Disposition": f"attachment; filename={filename}",
+            "Content-Type": "application/json"
+        }
+    )

@@ -10,6 +10,7 @@ import { EngineMinesweeper } from "@/services/game/engines/games/minesweeper.ts"
 import CryptoJS from "crypto-js";
 import { EngineNonograms } from "@/services/game/engines/games/nonograms.ts";
 import { EngineBattleships } from "@/services/game/engines/games/battleships.ts";
+import axios from "axios";
 
 export function create_game_entry(
   icon: string,
@@ -105,6 +106,28 @@ export function getPuzzleDisplayName(parts?: string[]): string {
     .join(" ");
   return `${parts[0]} ${name}`;
 }
+
+export async function download_blob(url: string, filename: string) {
+  try {
+    const response = await axios.get(url, {
+      responseType: 'blob'
+    })
+
+    // create download
+    const blob = new Blob([response.data], { type: 'application/json' })
+    const blob_url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = blob_url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    window.URL.revokeObjectURL(blob_url)
+  } catch (err) {
+    console.error(`error downloading file from ${url}:`, err)
+  }
+}
+
 
 export function createPuzzleEngine<T>(definition: PuzzleDefinition<T>, board?: number[][]): PuzzleEngine {
   switch (definition.puzzle_type) {

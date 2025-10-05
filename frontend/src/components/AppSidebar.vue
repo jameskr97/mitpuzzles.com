@@ -58,15 +58,28 @@ const close_sidebar_on_mobile = () => {
         <SidebarGroupContent>
           <SidebarMenu>
             <SidebarMenuItem v-for="(value, index) in ACTIVE_EXPERIMENTS">
-              <SidebarMenuButton asChild tooltip="ok">
+              <SidebarMenuButton asChild>
                 <router-link :to="'/experiment/' + value.key" :key="value.key" class="text-xl" @click="close_sidebar_on_mobile">
-                  {{value.icon}}
-                  {{value.title}}
+                  <span>{{value.icon}}</span>
+                  <span>{{value.title}}</span>
                 </router-link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroupContent>
+      </SidebarGroup>
+
+      <SidebarGroup v-if="user.isAdmin">
+        <SidebarGroupLabel>Data Access</SidebarGroupLabel>
+        <SidebarMenu>
+          <SidebarMenuItem></SidebarMenuItem>
+          <SidebarMenuButton asChild>
+            <router-link to="/admin/data-download" class="text-xl">
+              <span>🧮</span>
+              <span>Data Download</span>
+            </router-link>
+          </SidebarMenuButton>
+        </SidebarMenu>
       </SidebarGroup>
 
       <SidebarGroup v-if="user.isAdmin">
