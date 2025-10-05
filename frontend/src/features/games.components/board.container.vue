@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, type PropType, provide, reactive, toRefs } from "vue";
 import { useGridPositions, useGridLayout } from "@/features/games.components/useGridLayout.ts";
-import type { BoardContext } from "@/features/games.components/board.ts";
+import type { BoardBordersConfig, BoardContext } from "@/features/games.components/board.ts";
 import { useElementSize } from "@vueuse/core";
 
 const props = defineProps({
@@ -11,7 +11,7 @@ const props = defineProps({
   cellSize: { type: Number, required: false, default: 40 },
   scale: { type: Number, required: false },
   // Board Styling
-  borderConfig: { type: Object, required: false, default: () => ({}) },
+  borderConfig: { type: Object as PropType<BoardBordersConfig>, required: false, default: () => ({}) },
   gap: { type: Number, required: false, default: 1 },
   // Gutters
   gutterTop: { type: Number, required: false, default: 0 },

@@ -18,13 +18,19 @@ const longestArray = (array: Array<Array<number>>) => array.reduce((longest, cur
   return current.length > longest.length ? current : longest;
 }, []);
 
-const gutter_left = computed(() => longestArray(props.state.definition.meta.row_hints).length  ?? 0);
-const gutter_top = computed(() => longestArray(props.state.definition.meta.col_hints).length ?? 0);
+const gutter_left = computed(() => longestArray(props.state.definition.meta!.row_hints).length  ?? 0);
+const gutter_top = computed(() => longestArray(props.state.definition.meta!.col_hints).length ?? 0);
 
 const bind = props.interact?.getBridge();
 const borderConfig = {
   outer: { thickness: 4, borderClass: "bg-black" },
   inner: { thickness: 1, borderClass: "bg-black" },
+  gutter_visibility: {
+    top_horizontal: false,
+    bottom_horizontal: false,
+    left_vertical: false,
+    right_vertical: false,
+  }
 };
 </script>
 <template>

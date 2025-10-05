@@ -24,9 +24,13 @@ const gutterBorders = [
   <!-- horizontal borders segments -->
   <!-- key chosen to force re-render when rows/cols change -->
   <template v-for="gutter in gutterBorders" :key="gutter.side">
-    <div class="relative" v-if="(layout[`has_${gutter.side}_gutter` as keyof typeof layout] as Ref<boolean>).value">
+    <div class="relative" v-if="(layout[`has_${gutter.side}_gutter` as keyof typeof layout] as Ref<boolean>).value && !(board.borderConfig.hide_gutter_borders === true || (typeof board.borderConfig.hide_gutter_borders === 'object' && board.borderConfig.hide_gutter_borders?.[gutter.side]))">
       <!-- horizontal border segments -->
-      <div v-for="(border, index) in gutter.data.borderHorizontal.value" :key="`h-${gutter.side}-${index}`">
+      <div
+        v-for="(border, index) in gutter.data.borderHorizontal.value"
+        :key="`h-${gutter.side}-${index}`"
+        v-if="board.borderConfig.gutter_visibility?.[`${gutter.side}_horizontal` as keyof typeof board.borderConfig.gutter_visibility] !== false"
+      >
         <div
           v-for="(_, ic) in gutter.data.colCount.value"
           :key="`h-${gutter.side}-${index}-${ic}`"
@@ -42,7 +46,11 @@ const gutterBorders = [
       </div>
 
       <!-- vertical border segments -->
-      <div v-for="(border, index) in gutter.data.borderVertical.value" :key="`v-${gutter.side}-${index}`">
+      <div
+        v-for="(border, index) in gutter.data.borderVertical.value"
+        :key="`v-${gutter.side}-${index}`"
+        v-if="board.borderConfig.gutter_visibility?.[`${gutter.side}_vertical` as keyof typeof board.borderConfig.gutter_visibility] !== false"
+      >
         <div
           v-for="(_, ir) in gutter.data.rowCount.value"
           class="absolute"
@@ -57,14 +65,30 @@ const gutterBorders = [
       </div>
 
       <!-- Background filler -->
+      <!-- Horizontal background filler -->
       <div
         v-for="(border, _) in gutter.data.borderHorizontal.value"
         class="absolute -z-9000"
+        v-if="board.borderConfig.gutter_visibility?.[`${gutter.side}_horizontal` as keyof typeof board.borderConfig.gutter_visibility] !== false"
         :style="{
           left: gutter.data.startX.value + 'px',
           top: gutter.data.startY.value + border.top - (border.style.thickness ?? board.gap) + 'px',
           height: (border.style.thickness ?? board.gap) + 'px',
           width: gutter.data.width.value + 'px',
+          backgroundColor: 'black',
+        }"
+      ></div>
+
+      <!-- Vertical background filler -->
+      <div
+        v-for="(border, _) in gutter.data.borderVertical.value"
+        class="absolute -z-9000"
+        v-if="board.borderConfig.gutter_visibility?.[`${gutter.side}_vertical` as keyof typeof board.borderConfig.gutter_visibility] !== false"
+        :style="{
+          left: gutter.data.startX.value + border.left - (border.style.thickness ?? board.gap) + 'px',
+          top: gutter.data.startY.value + 'px',
+          width: (border.style.thickness ?? board.gap) + 'px',
+          height: gutter.data.height.value + 'px',
           backgroundColor: 'black',
         }"
       ></div>

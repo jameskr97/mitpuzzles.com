@@ -24,6 +24,7 @@ const bind = props.interact?.getBridge();
 const borderConfig = {
   outer: { thickness: 1, borderClass: "bg-black" },
   inner: { thickness: 1, borderClass: "bg-black" },
+  hide_gutter_borders: true,
 };
 </script>
 <template>
