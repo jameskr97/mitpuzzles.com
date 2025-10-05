@@ -119,10 +119,10 @@ provide("layout", layout);
 
       <!-- Side panels -->
       <div class="flex flex-col mx-auto gap-2 col-span-2">
-        <FreeplayGameViewViolations
-          v-if="puzzle.state_ui.value.tutorial_mode"
-          :violations="puzzle.state_puzzle.value.violations"
-        />
+<!--        <FreeplayGameViewViolations-->
+<!--          v-if="puzzle.state_ui.value.tutorial_mode"-->
+<!--          :violations="puzzle.state_puzzle.value.violations"-->
+<!--        />-->
         <FreeplayGameViewLeaderboard v-if="layout.leaderboard_visible.value" />
       </div>
     </div>
