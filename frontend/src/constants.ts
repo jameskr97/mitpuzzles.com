@@ -7,6 +7,7 @@
 import { create_admin_tool, create_dev_tool, create_game_entry } from "@/utils.ts";
 import { withSudokuBehaviors } from "@/features/games/sudoku/useSudokuCellHighlighter.ts";
 import { useSudokuViolationHighlighter } from "@/features/games/sudoku/useSudokuViolationHighlighter.ts";
+import { withNonogramGutterMarking } from "@/features/games/nonograms/useNonogramGutterMarking.ts";
 
 export const ACTIVE_GAMES: Record<string, ReturnType<typeof create_game_entry>> = {
   minesweeper: create_game_entry("💣", "Minesweeper", "minesweeper"),
@@ -14,7 +15,7 @@ export const ACTIVE_GAMES: Record<string, ReturnType<typeof create_game_entry>> 
   tents: create_game_entry("⛺", "Tents", "tents"),
   kakurasu: create_game_entry("⬛", "Kakurasu", "kakurasu"),
   lightup: create_game_entry("💡", "Light Up", "lightup"),
-  nonograms: create_game_entry("🏁", "Nonograms", "nonograms"),
+  nonograms: create_game_entry("🏁", "Nonograms", "nonograms", [withNonogramGutterMarking]),
   // battleships: create_game_entry("🚢", "Battleships", "battleships"),
 };
 export type PUZZLE_TYPES = keyof typeof ACTIVE_GAMES;

@@ -11,6 +11,7 @@ import { defineStore } from "pinia";
 import { databaseManager } from "@/store/database";
 import { ref } from "vue";
 import { broadcast_channel_service } from "@/services/broadcast_channel";
+import type { GutterMarkings } from "@/features/games.composables/useGutterMarking";
 
 // constants + types
 type Precision = "seconds" | "centiseconds";
@@ -24,6 +25,7 @@ interface PuzzleProgressState {
   timestamp_finish: Record<string, number>; // when submit is clicked
   current_puzzle_states: Record<string, number[][]>; // current board state
   used_tutorial: Record<string, boolean>; // whether tutorial was used with violations shown
+  gutter_markings: Record<string, GutterMarkings>; // gutter completion markings
   displayPrecision: Precision; // show seconds or milliseconds
   updateInterval: NodeJS.Timeout | null; // unused, kept for compatibility
   broadcast_unsubscribers: (() => void)[]; // cleanup functions for broadcast listeners
@@ -36,6 +38,7 @@ export const usePuzzleProgressStore = defineStore("puzzle.progress", {
     timestamp_finish: {},
     current_puzzle_states: {},
     used_tutorial: {},
+    gutter_markings: {},
     displayPrecision: "seconds",
     updateInterval: null,
     broadcast_unsubscribers: [],
@@ -97,6 +100,7 @@ export const usePuzzleProgressStore = defineStore("puzzle.progress", {
         if (game.timestamp_finish) this.timestamp_finish[game.id] = game.timestamp_finish;
         if (game.state) this.current_puzzle_states[game.id] = game.state;
         if (game.used_tutorial) this.used_tutorial[game.id] = game.used_tutorial;
+        if (game.gutter_markings) this.gutter_markings[game.id] = game.gutter_markings;
       }
 
       this.setup_broadcast_listeners();
@@ -122,12 +126,14 @@ export const usePuzzleProgressStore = defineStore("puzzle.progress", {
       this.current_puzzle_states[puzzle_type] = initial_state;
       delete this.timestamp_finish[puzzle_type]; // if not present, puzzle is in progress
       delete this.used_tutorial[puzzle_type]; // reset tutorial usage
+      delete this.gutter_markings[puzzle_type]; // reset gutter markings
 
       await databaseManager.progress.update(puzzle_type, {
         timestamp_start: this.timestamp_start[puzzle_type],
         timestamp_finish: null,
         state: JSON.parse(JSON.stringify(initial_state)),
         used_tutorial: false,
+        gutter_markings: null,
       });
       broadcast_channel_service.broadcast_game_reset(puzzle_type, initial_state);
     },
@@ -156,6 +162,24 @@ export const usePuzzleProgressStore = defineStore("puzzle.progress", {
     /** toggles between seconds and millisecond precision for time display */
     async set_display_precision(show_centisecond: boolean) {
       this.displayPrecision = show_centisecond ? "centiseconds" : "seconds";
+    },
+
+    /** updates gutter markings for a puzzle */
+    async update_gutter_markings(puzzle_type: string, markings: GutterMarkings) {
+      this.gutter_markings[puzzle_type] = markings;
+      await databaseManager.progress.update(puzzle_type, {
+        gutter_markings: JSON.parse(JSON.stringify(markings)),
+      });
+      broadcast_channel_service.broadcast_gutter_markings_update(puzzle_type, markings);
+    },
+
+    /** resets gutter markings for a puzzle */
+    async reset_gutter_markings(puzzle_type: string) {
+      delete this.gutter_markings[puzzle_type];
+      await databaseManager.progress.update(puzzle_type, {
+        gutter_markings: null,
+      });
+      broadcast_channel_service.broadcast_gutter_markings_reset(puzzle_type);
     },
 
     /** setup broadcast channel listeners for cross-tab sync */
@@ -191,6 +215,20 @@ export const usePuzzleProgressStore = defineStore("puzzle.progress", {
       this.broadcast_unsubscribers.push(
         broadcast_channel_service.subscribe('tutorial_used', (message) => {
           this.used_tutorial[message.puzzle_type] = true;
+        })
+      );
+
+      // listen for gutter markings updates from other tabs
+      this.broadcast_unsubscribers.push(
+        broadcast_channel_service.subscribe('gutter_markings_update', (message) => {
+          this.gutter_markings[message.puzzle_type] = message.data.markings;
+        })
+      );
+
+      // listen for gutter markings reset from other tabs
+      this.broadcast_unsubscribers.push(
+        broadcast_channel_service.subscribe('gutter_markings_reset', (message) => {
+          delete this.gutter_markings[message.puzzle_type];
         })
       );
     },

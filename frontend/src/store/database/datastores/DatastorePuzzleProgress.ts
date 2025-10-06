@@ -7,6 +7,7 @@ interface PuzzleProgressData {
   timestamp_start: number | null;
   timestamp_finish: number | null;
   state: number[][] | null;
+  gutter_markings: any | null;
   lastUpdated: number;
 }
 
@@ -29,6 +30,7 @@ export class DatastorePuzzleProgress extends BaseRepository<PuzzleProgressData> 
       timestamp_finish: null,
       state: null,
       used_tutorial: false,
+      gutter_markings: null,
 
       // overried with existing then updates
       ...existing,

@@ -4,7 +4,7 @@
  */
 
 interface GameStateMessage {
-  type: 'game_state_update' | 'game_reset' | 'game_solved' | 'tutorial_used' | 'new_puzzle';
+  type: 'game_state_update' | 'game_reset' | 'game_solved' | 'tutorial_used' | 'new_puzzle' | 'gutter_markings_update' | 'gutter_markings_reset';
   puzzle_type: string;
   data: any;
   timestamp: number;
@@ -88,6 +88,31 @@ class BroadcastChannelService {
       type: 'new_puzzle',
       puzzle_type,
       data: { puzzle_definition },
+      timestamp: Date.now()
+    } satisfies GameStateMessage);
+  }
+
+  /**
+   * broadcast gutter markings update to other tabs
+   */
+  broadcast_gutter_markings_update(puzzle_type: string, markings: any) {
+    markings = JSON.parse(JSON.stringify(markings)); // deep copy
+    this.channel.postMessage({
+      type: 'gutter_markings_update',
+      puzzle_type,
+      data: { markings },
+      timestamp: Date.now()
+    } satisfies GameStateMessage);
+  }
+
+  /**
+   * broadcast gutter markings reset to other tabs
+   */
+  broadcast_gutter_markings_reset(puzzle_type: string) {
+    this.channel.postMessage({
+      type: 'gutter_markings_reset',
+      puzzle_type,
+      data: {},
       timestamp: Date.now()
     } satisfies GameStateMessage);
   }

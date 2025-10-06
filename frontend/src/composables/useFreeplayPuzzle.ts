@@ -166,6 +166,7 @@ export async function useFreeplayPuzzle(puzzle_type: string): Promise<PuzzleCont
     const new_board = JSON.parse(JSON.stringify(currentEngine.value.board_state));
     recorder.record_clear(puzzle_type, old_board, new_board);
     state_ui.value.show_solved_state = false;
+    progressStore.reset_gutter_markings(puzzle_type);
     save_board_state();
   }
 
