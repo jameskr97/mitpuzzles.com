@@ -5,6 +5,7 @@ from typing import List
 
 import uuid6
 from fastapi import APIRouter, Response
+from fastapi.responses import JSONResponse
 from fastapi import Request, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy import String, DateTime, ForeignKey
@@ -142,7 +143,10 @@ async def create_device(http_request: Request, device: DevicePut, db: AsyncDatab
     """
     ds = DeviceService(db)
     device = await ds.put_device(http_request, device.thumbmark)
-    response = Response(status_code=202)
+    response = JSONResponse(
+        status_code=200,
+        content={"device_id": str(device.id)}
+    )
     response.set_cookie(
         DEVICE_COOKIE_NAME,
         value=str(device.id),

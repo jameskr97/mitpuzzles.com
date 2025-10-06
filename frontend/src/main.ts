@@ -144,7 +144,7 @@ const routerConfig: RouterOptions = {
   const appStore = useAppStore();
   const authStore = useAuthStore();
   appStore.initCacheVersion();
-  appStore.updateDeviceFingerprint();
+  await appStore.updateDeviceFingerprint();
 
   await authStore.initializeAuth();
   init_cached_endpoints();
@@ -160,7 +160,16 @@ const routerConfig: RouterOptions = {
   // posthog
   const posthogApiKey = import.meta.env.VITE_POSTHOG_API_KEY;
   if (posthogApiKey) {
-    posthog.init(posthogApiKey);
+    posthog.init(posthogApiKey, {
+        api_host: 'https://us.i.posthog.com',
+        defaults: '2025-05-24',
+        person_profiles: 'identified_only',
+    });
+
+    // register device_id with all posthog events
+    if (appStore.device_id) {
+      posthog.register({ device_id: appStore.device_id });
+    }
     app.provide("posthog", posthog);
   } else {
     if (import.meta.env.DEV) {

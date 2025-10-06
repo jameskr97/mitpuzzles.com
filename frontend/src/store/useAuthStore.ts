@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import axios, { type AxiosResponse } from "axios";
 import posthog from "posthog-js";
+import { useAppStore } from "./useAppStore";
 
 export interface User {
   id: string;
@@ -49,9 +50,14 @@ export const useAuthStore = defineStore("auth", {
         const response = await axios.get("/api/users/me");
         this.user = response.data;
         // identify user to posthog
+        const appStore = useAppStore();
         posthog.identify(this.user?.id,
-          { email: this.user?.email, username: this.user?.username}
-        )
+          {
+            email: this.user?.email,
+            username: this.user?.username,
+            last_login: new Date(),
+            device_id: appStore.device_id,
+          })
 
         return this.user;
       } catch (error: any) {
@@ -118,6 +124,7 @@ export const useAuthStore = defineStore("auth", {
       
       try {
         await axios.post("/api/auth/logout");
+        posthog.reset()
       } catch (error) {
         // Even if logout fails on server, clear local state
         console.warn("Logout request failed:", error);

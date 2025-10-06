@@ -9,6 +9,7 @@ const CACHE_STORAGE_KEY = 'mitlogic.cache.version';
 export const useAppStore = defineStore("mitlogic.appconfig", {
   state: () => ({
     thumbmark: {} as Record<string, any>,
+    device_id: null as string | null,
     lastCacheVersion: 0,
     login_modal_open: false,
   }),
@@ -22,7 +23,8 @@ export const useAppStore = defineStore("mitlogic.appconfig", {
     async updateDeviceFingerprint() {
       this.thumbmark = await(new Thumbmark()).get();
       try {
-        await api.put("/api/device", { thumbmark: this.thumbmark  });
+        const response = await api.put("/api/device", { thumbmark: this.thumbmark  });
+        this.device_id = response.data.device_id;
       } catch (error: any) {}
     },
 
