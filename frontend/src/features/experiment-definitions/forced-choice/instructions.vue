@@ -87,8 +87,7 @@ let quiz: { answer: boolean; question: string }[] = [
         <p>Mark squares as <b>safe</b> <i class="md-cell md-cell-empty"></i> if you believe they're free of mines.</p>
       </li>
       <li>
-        <u><i>Left-click</i> to cycle between flag and safe mark placements.</u> You can right-click to place a safe
-        mark directly.
+        <u><i>Left-click to cycle forward, right-click to cycle backward</i> between flag and safe mark placements.</u>
       </li>
     </ul>
 

@@ -116,7 +116,7 @@ boardPage3.board[3][1] = TentsCell.TENT;
     </template>
 
     <template #controls>
-      <div>Left click on a cell to cycle between:</div>
+      <div>Left click to cycle forward, right click to cycle backward between:</div>
       <ul class="list-disc">
         <li>Placing a tent <i class="md-cell md-cell-tent"></i></li>
         <li>Marking the cell as tent-free <i class="md-cell bg-green-300 rounded"></i></li>

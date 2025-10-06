@@ -134,7 +134,7 @@ boardPage5.board[4][3] = LightupCell.BULB;
     </template>
 
     <template #controls>
-      <div>Left click on a cell to cycle between:</div>
+      <div>Left click to cycle forward, right click to cycle backward between:</div>
       <ul class="list-decimal gap-2 h-full max-w-fit ml-8">
         <li>Placing a lightbulb <i class="md-cell md-cell-lightup-bulb bg-yellow-200 border rounded"></i></li>
         <li>

@@ -150,7 +150,7 @@ const board2: Partial<PuzzleState> = {
     </template>
 
     <template #controls>
-      <div>Left click on a cell to cycle between:</div>
+      <div>Left click to cycle forward, right click to cycle backward between:</div>
       <ul class="list-decimal gap-2 h-full w-full ml-8">
         <li>Placing a flag <i class="md-cell md-cell-flag"></i></li>
         <li>Placing a safe mark <i class="md-cell md-cell-empty"></i></li>

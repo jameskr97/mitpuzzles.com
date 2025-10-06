@@ -203,7 +203,7 @@ const page4Left: Partial<PuzzleState<KakurasuMeta>> = {
     </template>
 
     <template #controls>
-      <div>Left click on a cell to cycle between:</div>
+      <div>Left click to cycle forward, right click to cycle backward between:</div>
       <ul class="list-decimal gap-2 h-full w-full ml-8">
         <li>Placing a box <i class="md-cell bg-black"></i></li>
         <li>Placing a cross <i class="md-cell md-cell-kakurasu-cross"></i></li>
