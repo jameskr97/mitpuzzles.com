@@ -4,7 +4,7 @@
  * that we need to reference the game's data. Make sure there are no duplicates!
  */
 /* prettier-ignore */
-import { create_dev_tool, create_game_entry } from "@/utils.ts";
+import { create_admin_tool, create_dev_tool, create_game_entry } from "@/utils.ts";
 import { withSudokuBehaviors } from "@/features/games/sudoku/useSudokuCellHighlighter.ts";
 import { useSudokuViolationHighlighter } from "@/features/games/sudoku/useSudokuViolationHighlighter.ts";
 
@@ -21,7 +21,6 @@ export type PUZZLE_TYPES = keyof typeof ACTIVE_GAMES;
 
 export const DEV_TOOLS: Record<string, ReturnType<typeof create_dev_tool>> = {
   "test-board": create_dev_tool("test-board", "🎯", "Test Board"),
-  "puzzle-definition": create_dev_tool("puzzle-definition", "📐", "Puzzle Definition"),
 };
 
 export const ACTIVE_EXPERIMENTS: Record<string, any> = {
@@ -29,4 +28,9 @@ export const ACTIVE_EXPERIMENTS: Record<string, any> = {
   "metacognition": { key: "metacognition", title: "Confidence Check", icon: "🤔", description: "A game that tests your awareness of your own knowledge." },
   "blind-sudoku": { key: "blind-sudoku", title: "Spotlight Sudoku", icon: "🔍", description: "A variant of Sudoku where some numbers are hidden."},
 }
+
+export const ADMIN_TOOLS: Record<string, ReturnType<typeof create_admin_tool>> = {
+  "data-download": create_admin_tool("data-download", "🧮", "Data Download"),
+  "puzzle-browser": create_admin_tool("puzzle-browser", "🔍", "Puzzle Browser"),
+};
 

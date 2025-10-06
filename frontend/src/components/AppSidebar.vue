@@ -13,7 +13,7 @@ import {
   SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { ACTIVE_EXPERIMENTS, ACTIVE_GAMES, DEV_TOOLS } from "@/constants";
+import { ACTIVE_EXPERIMENTS, ACTIVE_GAMES, ADMIN_TOOLS, DEV_TOOLS } from "@/constants";
 import { useAuthStore } from "@/store/useAuthStore";
 import AppLogo from "@/components/AppLogo.vue";
 import AppFeedbackModal from "@/components/AppFeedbackModal.vue";
@@ -71,15 +71,18 @@ const close_sidebar_on_mobile = () => {
 
       <SidebarGroup v-if="user.isAdmin">
         <SidebarGroupLabel>Data Access</SidebarGroupLabel>
-        <SidebarMenu>
-          <SidebarMenuItem></SidebarMenuItem>
-          <SidebarMenuButton asChild>
-            <router-link to="/admin/data-download" class="text-xl">
-              <span>🧮</span>
-              <span>Data Download</span>
-            </router-link>
-          </SidebarMenuButton>
-        </SidebarMenu>
+        <SidebarGroupContent>
+          <SidebarMenu>
+            <SidebarMenuItem v-for="tool in Object.values(ADMIN_TOOLS)" :key="tool.key">
+              <SidebarMenuButton asChild :tooltip="tool.name">
+                <router-link :to="tool.route_path" class="text-xl" @click.capture="close_sidebar_on_mobile">
+                  <span>{{ tool.icon }}</span>
+                  <span>{{ tool.name }}</span>
+                </router-link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroupContent>
       </SidebarGroup>
 
       <SidebarGroup v-if="user.isAdmin">

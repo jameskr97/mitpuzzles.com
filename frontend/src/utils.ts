@@ -46,6 +46,19 @@ export function create_dev_tool(
   };
 }
 
+export function create_admin_tool(
+  key: string,
+  icon: string,
+  display_name: string,
+) {
+  return {
+    key,
+    icon,
+    name: display_name,
+    route_path: `/admin/${key}`,
+  };
+}
+
 /** Simplifies resetting all of localStorage through a version variable. */
 export class StorageVersionManager {
   // Change this to current date when updating the storage version

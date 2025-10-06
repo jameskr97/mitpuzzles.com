@@ -302,34 +302,11 @@ class PuzzleService:
 
     def format_puzzle_with_solution_for_admin(self, puzzle: Puzzle) -> Dict[str, Any]:
         """Transform database puzzle format to admin format with actual solution"""
+        res = self.format_puzzle_for_frontend(puzzle)
+        res["solution"] = puzzle.puzzle_data["solution"]
         puzzle_data = puzzle.puzzle_data
+        return res
 
-        if "size" in puzzle_data:
-            puzzle_data["rows"] = puzzle_data["size"]
-            puzzle_data["cols"] = puzzle_data["size"]
-
-        # Extract meta by removing fields that go to top level
-        meta = puzzle_data.copy()
-        meta.pop("rows", None)
-        meta.pop("cols", None)
-        meta.pop("game_state", None)
-        meta.pop("game_board", None)
-        meta.pop("id", None)
-        meta.pop("difficulty", None)
-        meta.pop("idx", None)
-        meta.pop("priority", None)
-        meta.pop("size", None)
-
-        return {
-            "id": puzzle.id,
-            "puzzle_type": puzzle.puzzle_type,
-            "rows": puzzle_data["rows"],
-            "cols": puzzle_data["cols"],
-            "initial_state": puzzle_data["game_state"],
-            "solution": puzzle_data["game_board"],
-            "solution_hash": self.calculate_puzzle_solution_hash_rle(puzzle.puzzle_type, puzzle_data["game_board"]),
-            "meta": meta,
-        }
 
     async def create_freeplay_attempt(self, attempt_data: FreeplayAttemptCreate, device_id: uuid.UUID, user: Optional[User] = None) -> FreeplayPuzzleAttempt:
         """Create new freeplay puzzle attempt with required device tracking and optional user."""
@@ -429,6 +406,84 @@ class PuzzleService:
             leaderboard_entries.append({"rank": rank, "duration_display": duration_display, "username": row.username})
 
         return {"leaderboard": leaderboard_entries, "count": len(leaderboard_entries)}
+
+    async def browse_puzzles(
+        self,
+        puzzle_types: Optional[List[str]] = None,
+        puzzle_sizes: Optional[List[str]] = None,
+        puzzle_difficulties: Optional[List[str]] = None,
+        has_attempts: Optional[str] = None,
+        limit: int = 36,
+        offset: int = 0
+    ) -> Dict[str, Any]:
+        """
+        Browse puzzles with optional filtering and pagination.
+        Returns formatted puzzles for frontend display.
+        """
+        from sqlalchemy import select, func, exists
+
+        # Exclude certain puzzle types from browse
+        excluded_types = ['battleships', 'hashi', 'norinori']
+
+        # Build filter conditions that will be applied to both queries
+        filter_conditions = [
+            ~Puzzle.puzzle_type.in_(excluded_types)  # Exclude certain puzzle types
+        ]
+
+        if puzzle_types and len(puzzle_types) > 0:
+            filter_conditions.append(Puzzle.puzzle_type.in_(puzzle_types))
+        if puzzle_sizes and len(puzzle_sizes) > 0:
+            filter_conditions.append(Puzzle.puzzle_size.in_(puzzle_sizes))
+        if puzzle_difficulties and len(puzzle_difficulties) > 0:
+            filter_conditions.append(Puzzle.puzzle_difficulty.in_(puzzle_difficulties))
+
+        # Handle attempts filter
+        if has_attempts == 'with_attempts':
+            # Only puzzles that have attempts
+            filter_conditions.append(exists().where(FreeplayPuzzleAttempt.puzzle_id == Puzzle.id))
+        elif has_attempts == 'without_attempts':
+            # Only puzzles that have no attempts
+            filter_conditions.append(~exists().where(FreeplayPuzzleAttempt.puzzle_id == Puzzle.id))
+
+        # Start with base query and apply all filters
+        query = select(Puzzle)
+        for condition in filter_conditions:
+            query = query.where(condition)
+
+        # Get total count with exactly the same filters
+        count_query = select(func.count(Puzzle.id))
+        for condition in filter_conditions:
+            count_query = count_query.where(condition)
+
+        total_count = await self.db.scalar(count_query)
+
+        # If no puzzles match the filter, return empty result
+        if total_count == 0:
+            return {
+                "puzzles": [],
+                "total_count": 0,
+                "offset": offset,
+                "limit": limit,
+                "has_more": False
+            }
+
+        # Apply pagination and ordering
+        query = query.order_by(Puzzle.puzzle_type).limit(limit).offset(offset)
+
+        # Execute query
+        result = await self.db.execute(query)
+        puzzles = result.scalars().all()
+
+        # Format puzzles for frontend
+        formatted_puzzles = [self.format_puzzle_for_frontend(puzzle) for puzzle in puzzles]
+
+        return {
+            "puzzles": formatted_puzzles,
+            "total_count": total_count,
+            "offset": offset,
+            "limit": limit,
+            "has_more": offset + limit < total_count
+        }
 
     async def get_game_data_summary(self):
         """get summary of all game data grouped by puzzle type"""
@@ -558,6 +613,121 @@ class PuzzleService:
 
         return export_data
 
+    async def get_dynamic_filter_options(
+        self,
+        puzzle_types: Optional[List[str]] = None,
+        puzzle_sizes: Optional[List[str]] = None,
+        puzzle_difficulties: Optional[List[str]] = None,
+        has_attempts: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Get available filter options with counts based on current selections.
+        Returns what filter values are possible given the current filter state.
+        """
+        from sqlalchemy import select, func, distinct, exists
+
+        # Exclude certain puzzle types from browse
+        excluded_types = ['battleships', 'hashi', 'norinori']
+
+        # Build base filter conditions (everything except the dimension we're calculating)
+        def get_base_conditions(exclude_dimension: str):
+            conditions = [
+                ~Puzzle.puzzle_type.in_(excluded_types)  # Always exclude certain puzzle types
+            ]
+
+            if exclude_dimension != 'puzzle_type' and puzzle_types and len(puzzle_types) > 0:
+                conditions.append(Puzzle.puzzle_type.in_(puzzle_types))
+            if exclude_dimension != 'puzzle_size' and puzzle_sizes and len(puzzle_sizes) > 0:
+                conditions.append(Puzzle.puzzle_size.in_(puzzle_sizes))
+            if exclude_dimension != 'puzzle_difficulty' and puzzle_difficulties and len(puzzle_difficulties) > 0:
+                conditions.append(Puzzle.puzzle_difficulty.in_(puzzle_difficulties))
+
+            # Handle attempts filter
+            if exclude_dimension != 'has_attempts' and has_attempts:
+                if has_attempts == 'with_attempts':
+                    conditions.append(exists().where(FreeplayPuzzleAttempt.puzzle_id == Puzzle.id))
+                elif has_attempts == 'without_attempts':
+                    conditions.append(~exists().where(FreeplayPuzzleAttempt.puzzle_id == Puzzle.id))
+
+            return conditions
+
+        # Get ALL puzzle types with their counts (including 0), excluding certain types
+        all_types_query = select(Puzzle.puzzle_type).distinct().where(~Puzzle.puzzle_type.in_(excluded_types))
+        all_types_result = await self.db.execute(all_types_query)
+        all_types = [row.puzzle_type for row in all_types_result.all()]
+
+        # Get counts for each type with current filters
+        available_types = []
+        for puzzle_type in all_types:
+            count_query = select(func.count(Puzzle.id)).where(Puzzle.puzzle_type == puzzle_type)
+            for condition in get_base_conditions('puzzle_type'):
+                count_query = count_query.where(condition)
+            count = await self.db.scalar(count_query)
+            available_types.append({"value": puzzle_type, "count": count})
+
+        # Get ALL puzzle sizes with their counts (including 0), excluding certain types
+        all_sizes_query = select(Puzzle.puzzle_size).distinct().where(~Puzzle.puzzle_type.in_(excluded_types))
+        all_sizes_result = await self.db.execute(all_sizes_query)
+        all_sizes = [row.puzzle_size for row in all_sizes_result.all()]
+
+        # Get counts for each size with current filters
+        available_sizes = []
+        for puzzle_size in all_sizes:
+            count_query = select(func.count(Puzzle.id)).where(Puzzle.puzzle_size == puzzle_size)
+            for condition in get_base_conditions('puzzle_size'):
+                count_query = count_query.where(condition)
+            count = await self.db.scalar(count_query)
+            available_sizes.append({"value": puzzle_size, "count": count})
+
+        # Get ALL puzzle difficulties with their counts (including 0), excluding certain types
+        all_difficulties_query = select(Puzzle.puzzle_difficulty).distinct().where(
+            Puzzle.puzzle_difficulty.is_not(None) & ~Puzzle.puzzle_type.in_(excluded_types)
+        )
+        all_difficulties_result = await self.db.execute(all_difficulties_query)
+        all_difficulties = [row.puzzle_difficulty for row in all_difficulties_result.all()]
+
+        # Get counts for each difficulty with current filters
+        available_difficulties = []
+        for puzzle_difficulty in all_difficulties:
+            count_query = select(func.count(Puzzle.id)).where(Puzzle.puzzle_difficulty == puzzle_difficulty)
+            for condition in get_base_conditions('puzzle_difficulty'):
+                count_query = count_query.where(condition)
+            count = await self.db.scalar(count_query)
+            available_difficulties.append({"value": puzzle_difficulty, "count": count})
+
+        # Get attempts filter counts
+        base_conditions = get_base_conditions('has_attempts')
+
+        # Total count
+        total_query = select(func.count(Puzzle.id))
+        for condition in base_conditions:
+            total_query = total_query.where(condition)
+        total_count = await self.db.scalar(total_query)
+
+        # With attempts count
+        with_attempts_query = select(func.count(Puzzle.id)).where(
+            exists().where(FreeplayPuzzleAttempt.puzzle_id == Puzzle.id)
+        )
+        for condition in base_conditions:
+            with_attempts_query = with_attempts_query.where(condition)
+        with_attempts_count = await self.db.scalar(with_attempts_query)
+
+        # Without attempts count
+        without_attempts_count = total_count - with_attempts_count
+
+        attempts_options = [
+            {"value": "all", "count": total_count},
+            {"value": "with_attempts", "count": with_attempts_count},
+            {"value": "without_attempts", "count": without_attempts_count}
+        ]
+
+        return {
+            "puzzle_types": available_types,
+            "puzzle_sizes": available_sizes,
+            "puzzle_difficulties": available_difficulties,
+            "attempts_options": attempts_options
+        }
+
 
 # routes
 router = APIRouter(prefix="/api/puzzle", tags=["Puzzles"])
@@ -592,6 +762,66 @@ async def get_random_puzzle(
 async def get_types(db: AsyncDatabase, response: Response, request: Request):
     puzzle = PuzzleService(db)
     return await puzzle.get_types()
+
+
+@router.get("/filter-options")
+async def get_filter_options(
+    db: AsyncDatabase,
+    puzzle_type: Optional[List[str]] = Query(default=None, description="Current puzzle type selections"),
+    puzzle_size: Optional[List[str]] = Query(default=None, description="Current puzzle size selections"),
+    puzzle_difficulty: Optional[List[str]] = Query(default=None, description="Current difficulty selections"),
+    has_attempts: Optional[str] = Query(default=None, description="Current attempts filter"),
+):
+    """
+    Get available filter options with counts based on current filter selections.
+
+    Returns dynamic filter options showing:
+    - Available values for each filter dimension
+    - Count of puzzles for each option
+    - Only shows combinations that actually exist in the database
+
+    Example: GET /api/puzzle/filter-options?puzzle_type=sudoku
+    """
+    service = PuzzleService(db)
+    return await service.get_dynamic_filter_options(
+        puzzle_types=puzzle_type,
+        puzzle_sizes=puzzle_size,
+        puzzle_difficulties=puzzle_difficulty,
+        has_attempts=has_attempts
+    )
+
+
+@router.get("/browse")
+async def browse_puzzles(
+    db: AsyncDatabase,
+    puzzle_type: Optional[List[str]] = Query(default=None, description="Filter by puzzle types (can specify multiple)"),
+    puzzle_size: Optional[List[str]] = Query(default=None, description="Filter by puzzle sizes (can specify multiple)"),
+    puzzle_difficulty: Optional[List[str]] = Query(default=None, description="Filter by difficulty levels (can specify multiple)"),
+    has_attempts: Optional[str] = Query(default=None, description="Filter by attempt status: 'with_attempts', 'without_attempts', or null for all"),
+    limit: int = Query(64, description="Number of puzzles to return", ge=1, le=100),
+    offset: int = Query(0, description="Number of puzzles to skip", ge=0),
+):
+    """
+    Browse puzzles with optional filtering and pagination.
+
+    Returns a paginated list of puzzles that can be filtered by:
+    - puzzle_type: minesweeper, sudoku, tents, etc. (can specify multiple)
+    - puzzle_size: 5x5, 9x9, etc. (can specify multiple)
+    - puzzle_difficulty: easy, medium, hard (can specify multiple)
+
+    Examples:
+    - GET /api/puzzle/browse?puzzle_type=sudoku&puzzle_type=minesweeper&limit=12
+    - GET /api/puzzle/browse?puzzle_size=9x9&puzzle_size=5x5&puzzle_difficulty=easy&puzzle_difficulty=hard
+    """
+    service = PuzzleService(db)
+    return await service.browse_puzzles(
+        puzzle_types=puzzle_type,
+        puzzle_sizes=puzzle_size,
+        puzzle_difficulties=puzzle_difficulty,
+        has_attempts=has_attempts,
+        limit=limit,
+        offset=offset
+    )
 
 
 @router.get("/definition/{puzzle_id}")

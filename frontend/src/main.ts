@@ -20,7 +20,7 @@ import "./style.css";
 // PostHog
 import posthog from "posthog-js";
 // Socket
-import { ACTIVE_GAMES, DEV_TOOLS } from "@/constants.ts";
+import { ACTIVE_GAMES, ADMIN_TOOLS, DEV_TOOLS } from "@/constants.ts";
 import logger from "@/services/logger.ts";
 import { usePuzzleMetadataStore } from "@/store/puzzle/usePuzzleMetadataStore.ts";
 import { usePuzzleProgressStore } from "@/store/puzzle/usePuzzleProgressStore.ts";
@@ -75,7 +75,7 @@ const routerConfig: RouterOptions = {
   history: createWebHistory(),
   routes: [
     route.view("", "Home", "Home"),
-    route.admin("/admin/data-download", "DataDownload", "DataDownload"),
+    ...Object.values(ADMIN_TOOLS).map(tool => route.admin(tool.route_path, tool.key, tool.key)),
     route.view("/signup", "signup", "Signup", false),
     route.view("/verify-email", "verify-email", "SignupVerifyEmail", false),
     route.markdown("/about-us", "about-us", mdAbout),
