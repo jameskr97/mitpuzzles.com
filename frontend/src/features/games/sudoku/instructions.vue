@@ -8,7 +8,7 @@ import PuzzleSudoku from "@/features/games/sudoku/sudoku.puzzle.vue";
 import FreeplayGameViewInstructionPage from "@/features/freeplay/FreeplayGameViewInstructionPage.vue";
 
 const route = useRoute();
-
+const BOARD_SCALE = 0.5;
 const def: Partial<PuzzleDefinition> = {
   rows: 9,
   cols: 9,
@@ -89,7 +89,7 @@ const BoxHighlighted = getPersistentHighlightSudokuBoard({ box: 1 });
           </div>
         </template>
         <template #board>
-          <PuzzleSudoku :state="gameState0" :scale="0.75" class="mx-auto"></PuzzleSudoku>
+          <PuzzleSudoku :state="gameState0" :scale="BOARD_SCALE" class="mx-auto"></PuzzleSudoku>
         </template>
       </FreeplayGameViewInstructionPage>
     </template>
@@ -107,7 +107,7 @@ const BoxHighlighted = getPersistentHighlightSudokuBoard({ box: 1 });
           </div>
         </template>
         <template #board>
-          <RowHighlighted :state="gameState0" :scale="0.75" class="mx-auto"></RowHighlighted>
+          <RowHighlighted :state="gameState0" :scale="BOARD_SCALE" class="mx-auto"></RowHighlighted>
         </template>
       </FreeplayGameViewInstructionPage>
     </template>
@@ -125,7 +125,7 @@ const BoxHighlighted = getPersistentHighlightSudokuBoard({ box: 1 });
           </div>
         </template>
         <template #board>
-          <ColHighlighted :state="gameState0" :scale="0.75" class="mx-auto"></ColHighlighted>
+          <ColHighlighted :state="gameState0" :scale="BOARD_SCALE" class="mx-auto"></ColHighlighted>
         </template>
       </FreeplayGameViewInstructionPage>
     </template>
@@ -143,7 +143,7 @@ const BoxHighlighted = getPersistentHighlightSudokuBoard({ box: 1 });
           </div>
         </template>
         <template #board>
-          <BoxHighlighted :state="gameState0" :scale="0.75" class="mx-auto"></BoxHighlighted>
+          <BoxHighlighted :state="gameState0" :scale="BOARD_SCALE" class="mx-auto"></BoxHighlighted>
         </template>
       </FreeplayGameViewInstructionPage>
     </template>

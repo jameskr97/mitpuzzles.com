@@ -5,7 +5,7 @@ import type { execution_state } from "@/features/experiment-core/graph/GraphExec
 import { GraphExecutor } from "@/features/experiment-core/graph/GraphExecutor";
 import Container from "@/components/ui/Container.vue";
 import DevOverlay from "@/features/experiment-core/components/DevOverlay.vue";
-import ProgressBar from "@/features/experiment-core/components/ProgressBar.vue";
+import ProgressBar from "@/components/ProgressBar.vue";
 import ExperimentPointsDisplay from "@/features/experiment-core/components/ExperimentPointsDisplay.vue";
 import { node_type } from "@/features/experiment-core";
 import { ExperimentLoader } from "@/features/experiment-core/ExperimentLoader.ts";
@@ -97,6 +97,7 @@ const loaded_custom_component = computed(() => {
       :current_step="executor.global_progress.current + 1"
       :segments="executor.global_progress.total"
       :show_numerical_progress="true"
+      class="order-first"
     />
     <ExperimentPointsDisplay
       v-if="executor?.current_node?.type === node_type.TRIAL && executor?.current_node?.config.meta.show_points"

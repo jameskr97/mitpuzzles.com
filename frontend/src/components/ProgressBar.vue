@@ -13,7 +13,7 @@ defineProps({
 
 <template>
   <Container
-    class="order-first min-w-fit md:w-full md:max-w-prose md:mx-auto h-8 m-2 mt-0 rounded-full! overflow-clip border-1 p-1! flex flex-row justify-between gap-1"
+    class="min-w-fit md:w-full md:max-w-prose md:mx-auto h-8 m-2 mt-0 rounded-full! overflow-clip border-1 p-1! flex flex-row justify-between gap-1"
     :key="current_step"
   >
     <div
