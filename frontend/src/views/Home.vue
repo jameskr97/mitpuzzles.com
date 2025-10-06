@@ -2,7 +2,6 @@
 import Container from "@/components/ui/Container.vue";
 import AlertEmailAlreadyVerified from "@/components/alert/AlertEmailAlreadyVerified.vue";
 import AlertEmailVerifiySuccess from "@/components/alert/AlertEmailVerifiySuccess.vue";
-import AlertMobileDevice from "@/components/alert/AlertMobileDevice.vue";
 import HomePuzzlePreview from "@/components/HomePuzzlePreview.vue";
 import { ACTIVE_GAMES } from "@/constants.ts";
 import { useAppStore } from "@/store/useAppStore.ts";
@@ -17,7 +16,6 @@ const authStore = useAuthStore();
   <div class="m-2 gap-2 flex flex-col">
     <AlertEmailAlreadyVerified v-if="$route.query.alreadyVerified" />
     <AlertEmailVerifiySuccess v-if="$route.query.verified" />
-    <AlertMobileDevice />
     <Container class="grid grid-cols-1">
       <div class="flex flex-col">
         <div class="text-lg">

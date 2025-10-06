@@ -75,6 +75,7 @@ export class BoardInteraction {
   private lastHover: Cell | null = null;
   private focused: Cell | null = null;
   private isMouseOnBoard: boolean = false; // Track if mouse is on the board
+  private mobileFocusCallback?: () => void; // Callback to focus mobile input
 
   constructor(
     private board: BoardContext,
@@ -182,6 +183,7 @@ export class BoardInteraction {
           if (!_.isEqual(this.focused, hit)) // don't focus a cell twice
             this.dispatchModelEvent("onCellFocus", this.lastMouseDown, event);
           this.focused = hit;
+          this.mobileFocusCallback?.(); // Trigger mobile input focus if callback is set
         }
         this.dispatchModelEvent("onCellMouseUp", hit, event);
         break;
@@ -380,5 +382,12 @@ export class BoardInteraction {
     }
 
     return null;
+  }
+
+  /**
+   * Set callback function to be called when mobile input should be focused
+   */
+  setMobileFocusCallback(callback: () => void) {
+    this.mobileFocusCallback = callback;
   }
 }
