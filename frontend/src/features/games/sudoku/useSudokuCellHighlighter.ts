@@ -5,6 +5,7 @@ import type { PuzzleStateSudoku } from "@/services/states.ts";
 import { check_violation_rule } from "@/utils.ts";
 import { isCellMatch } from "@/features/games/sudoku/sudoku.utility.ts";
 import type { PuzzleController } from "@/services/game/engines/types.ts";
+import { useSudokuViolationHighlighter } from "@/features/games/sudoku/useSudokuViolationHighlighter.ts";
 
 export type SudokuSession = {
   state: { value: PuzzleStateSudoku };
@@ -82,21 +83,25 @@ export function useSudokuCellHighlighter(ctrl: PuzzleController) {
       return true;
     },
     getCellClasses(row: number, col: number): string[] {
+      const RULES = ["row_duplicate_violation", "col_duplicate_violation", "box_duplicate_violation"];
       const is_prefilled = isPrefilled(row, col);
-      const classes: string[] = [];
       // Only add styling if we have a valid state with violations data
+      const is_violation = check_violation_rule(ctrl.state_puzzle.value.violations, row, col, RULES);
+      const classes: string[] = [];
 
-      const is_violation = check_violation_rule(ctrl.state_puzzle.value.violations, row, col, [
-        "row_duplicate_violation",
-        "col_duplicate_violation",
-        "box_duplicate_violation",
-      ]);
 
       if (isCellActive(row, col)) classes.push("bg-slate-300!"); // Active cell border
       if (shouldHighlightCell(row, col)) classes.push("bg-slate-200!"); // Highlight background for related cells
-      if (!is_prefilled) {
-        classes.push("text-sky-600!");
-      } // Text color based on whether it's prefilled
+
+      if (is_violation) {
+        if (ctrl.state_puzzle.value.definition.initial_state[row][col] === -1) {
+          classes.push("text-red-500!")
+        } else {
+          classes.push("border-red-500!", "border-[2px]");
+        }
+      } else {
+        if (!is_prefilled) classes.push("text-sky-600!"); // Text color based on whether it's prefilled
+      }
 
       // Violation styling - only add if not prefilled
       if (showCorrectCells.value && !is_prefilled) {
@@ -129,8 +134,12 @@ export function useSudokuCellHighlighter(ctrl: PuzzleController) {
  * Convenience function to register Sudoku highlight behavior
  */
 export function withSudokuBehaviors(controller: PuzzleController, bridge: any) {
-  const behavior = useSudokuCellHighlighter(controller);
-  bridge.addInputBehaviour(() => behavior.inputBehavior);
-  bridge.addRenderBehaviour(() => behavior.renderBehavior);
-  return behavior;
+  const cellHighlighter = useSudokuCellHighlighter(controller);
+  bridge.addInputBehaviour(() => cellHighlighter.inputBehavior);
+  bridge.addRenderBehaviour(() => cellHighlighter.renderBehavior);
+
+  // const violationBehavior = useSudokuViolationHighlighter(controller);
+  // bridge.addRenderBehaviour(() => violationBehavior);
+
+  return cellHighlighter
 }
