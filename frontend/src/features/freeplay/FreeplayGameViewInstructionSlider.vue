@@ -20,6 +20,8 @@ const go_previous = () => {
 const go_next = () => {
   if (currentStep.value < props.num_pages) {
     currentStep.value++;
+  } else if (currentStep.value === props.num_pages) {
+    done();
   }
 };
 
@@ -36,11 +38,7 @@ const handle_keydown = (event: KeyboardEvent) => {
     go_previous();
   } else if (event.key === "ArrowRight") {
     event.preventDefault();
-    if (currentStep.value < props.num_pages) {
-      go_next();
-    } else if (currentStep.value === props.num_pages) {
-      done();
-    }
+    go_next();
   }
 };
 
@@ -108,10 +106,7 @@ onUnmounted(() => {
         container_class="mx-2"
       />
 
-      <Button
-        class="btn btn-outline"
-        @click="go_next"
-      >
+      <Button class="btn btn-outline" @click="go_next">
         <kbd class="kbd kbd-sm">→</kbd>
       </Button>
 
