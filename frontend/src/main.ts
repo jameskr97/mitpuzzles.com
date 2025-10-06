@@ -75,7 +75,7 @@ const routerConfig: RouterOptions = {
   history: createWebHistory(),
   routes: [
     route.view("", "Home", "Home"),
-    ...Object.values(ADMIN_TOOLS).map(tool => route.admin(tool.route_path, tool.key, tool.key)),
+    ...Object.values(ADMIN_TOOLS).map((tool) => route.admin(tool.route_path, tool.key, tool.key)),
     route.view("/signup", "signup", "Signup", false),
     route.view("/verify-email", "verify-email", "SignupVerifyEmail", false),
     route.markdown("/about-us", "about-us", mdAbout),
@@ -88,8 +88,8 @@ const routerConfig: RouterOptions = {
       meta: {
         showSidebar: () => {
           return !new URLSearchParams(window.location.search).has("PROLIFIC_PID");
-        }
-      }
+        },
+      },
     },
     { path: "/:pathMatch(.*)*", name: "404", component: () => import("./views/404.vue") },
   ],
@@ -99,54 +99,73 @@ const routerConfig: RouterOptions = {
 (async () => {
   // check for maintenance mode before initializing full app
   try {
-    const response = await fetch('/maintenance.json');
+    const response = await fetch("/maintenance.json");
     if (response.ok) {
       const maintenanceData = await response.json();
       // if file exists, we're in maintenance mode
-      const { default: MaintenanceMode } = await import('@/components/MaintenanceMode.vue');
+      const { default: MaintenanceMode } = await import("@/components/MaintenanceMode.vue");
       const maintenanceApp = createApp(MaintenanceMode, {
-        reason: maintenanceData.reason || null
+        reason: maintenanceData.reason || null,
       });
-      maintenanceApp.mount('#app');
+      maintenanceApp.mount("#app");
       return;
     }
   } catch (error) {
     // 404 or network error - maintenance mode is OFF, continue with normal startup
   }
-
   logger.debug("Bootstrapping app...");
   const router = createRouter(routerConfig);
   const app = createApp(App).use(createPinia()).use(router).component("v-icon", OhVueIcon);
 
-  // set up router guard BEFORE initializing auth - this ensures it's active immediately
-  router.beforeEach(async (to, from, next) => {
-    if (to.meta.requiresAdmin) {
-      const authStore = useAuthStore();
-
-      // ensure user is loaded
-      if (authStore.user === null) {
-        try {
-          await authStore.fetchCurrentUser();
-        } catch (error) {
-          return next({ name: "Home" });
-        }
-      }
-
-      if (!authStore.isAdmin) {
-        return next({ name: "Home" });
-      }
-    }
-    next();
-  });
-
+  // get local device id
   // every user has a device fingerprint. this is used for anonymous tracking and analytics.
   // when the user is logged-in, they're associated by both user ID and device fingerprint.
   const appStore = useAppStore();
-  const authStore = useAuthStore();
-  appStore.initCacheVersion();
   await appStore.updateDeviceFingerprint();
+  appStore.initCacheVersion();
 
+  // posthog
+  const posthogApiKey = import.meta.env.VITE_POSTHOG_API_KEY;
+  if (posthogApiKey) {
+    posthog.init(posthogApiKey, {
+      disable_session_recording: window.location.hostname !== "mitpuzzles.com", // only enable session recording on production
+    });
+
+    // register device_id with all posthog events
+    const appStore = useAppStore();
+    if (appStore.device_id) posthog.register({ device_id: appStore.device_id });
+    app.provide("posthog", posthog);
+  } else {
+    if (import.meta.env.DEV) {
+      console.warn("PostHog API key (VITE_POSTHOG_API_KEY) is not set. PostHog will not be initialized.");
+    }
+  }
+
+  // initialize auth first
+  const authStore = useAuthStore();
   await authStore.initializeAuth();
+
+  // check initial route after auth is initialized but BEFORE mounting
+  const currentRoute = router.currentRoute.value;
+  if (currentRoute.meta.requiresAdmin && !authStore.isAdmin) {
+    console.log('Initial route requires admin, redirecting to Home');
+    await router.replace({ name: "Home" });
+  }
+
+  // set up router guard after auth initialization
+  router.beforeEach(async (to, from, next) => {
+    console.log(`Navigating to ${to.fullPath} from ${from.fullPath}`);
+    const isAdmin = authStore.isAdmin;
+    const requiresAdmin = to.meta.requiresAdmin || false;
+
+    if (requiresAdmin && !isAdmin) {
+      console.log('Access denied: Admins only');
+      next({ name: "Home" });
+    } else {
+      next();
+    }
+  });
+
   init_cached_endpoints();
 
   // initialize indexeddb + pinia stores
@@ -156,25 +175,5 @@ const routerConfig: RouterOptions = {
     usePuzzleMetadataStore().initializeStore(),
     usePuzzleHistoryStore().init(),
   ]);
-
-  // posthog
-  const posthogApiKey = import.meta.env.VITE_POSTHOG_API_KEY;
-  if (posthogApiKey) {
-    posthog.init(posthogApiKey, {
-        api_host: 'https://us.i.posthog.com',
-        defaults: '2025-05-24',
-        person_profiles: 'identified_only',
-    });
-
-    // register device_id with all posthog events
-    if (appStore.device_id) {
-      posthog.register({ device_id: appStore.device_id });
-    }
-    app.provide("posthog", posthog);
-  } else {
-    if (import.meta.env.DEV) {
-      console.warn("PostHog API key (VITE_POSTHOG_API_KEY) is not set. PostHog will not be initialized.");
-    }
-  }
   app.mount("#app");
 })();
