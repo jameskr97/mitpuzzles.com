@@ -6,6 +6,7 @@ import HomePuzzlePreview from "@/components/HomePuzzlePreview.vue";
 import { ACTIVE_GAMES } from "@/constants.ts";
 import { useAppStore } from "@/store/useAppStore.ts";
 import { useAuthStore } from "@/store/useAuthStore.ts";
+import EmailVerificationBanner from "@/components/EmailVerificationBanner.vue";
 
 const appStore = useAppStore();
 const authStore = useAuthStore();
@@ -14,6 +15,7 @@ const authStore = useAuthStore();
 <template>
 
   <div class="m-2 gap-2 flex flex-col">
+    <EmailVerificationBanner />
     <AlertEmailAlreadyVerified v-if="$route.query.alreadyVerified" />
     <AlertEmailVerifiySuccess v-if="$route.query.verified" />
     <Container class="grid grid-cols-1">

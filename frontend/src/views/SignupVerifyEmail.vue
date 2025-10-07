@@ -3,6 +3,7 @@ import { onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "@/store/useAuthStore.ts";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import posthog from "posthog-js";
 
 const route = useRoute();
 const router = useRouter();
@@ -11,7 +12,6 @@ const errorMessage = ref("");
 
 onMounted(async () => {
   const token = route.query.token as string;
-
   if (!token) {
     errorMessage.value = "No verification token provided.";
     return;
@@ -19,24 +19,25 @@ onMounted(async () => {
 
   try {
     await authStore.verifyEmail(token);
-    // Redirect to homepage with success flag
-    router.push({
-      path: "/",
-      query: { verified: "true" },
+    // track email verification with posthog
+    posthog.capture('email_verified', {
+      user_id: authStore.user?.id,
+      email: authStore.user?.email
     });
+
+    // fetch current user to update verification status and auto-login
+    await authStore.fetchCurrentUser();
+    await router.push("/?verified=true");
   } catch (error: any) {
     console.log("Verification error:", error);
 
-    // Handle different error cases based on status and detail
+    // handle different error cases based on status and detail
     if (error.response?.status === 400) {
       const errorDetail = error.response?.data?.detail;
 
       if (errorDetail === "VERIFY_USER_ALREADY_VERIFIED") {
-        // User already verified - redirect to home with flag
-        router.push({
-          path: "/",
-          query: { alreadyVerified: "true" },
-        });
+        // User already verified - redirect to home
+        await router.push("/?alreadyVerified=true");
       } else if (errorDetail === "VERIFY_USER_BAD_TOKEN") {
         // Bad token - shouldn't happen, but show support message
         errorMessage.value = "Invalid verification token. Please contact support@mitpuzzles.com for assistance.";

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BadgeCheck, Bell, ChevronsUpDown, CreditCard, LogOut, Sparkles } from "lucide-vue-next";
+import { ChevronsUpDown, LogOut } from "lucide-vue-next";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -40,12 +40,6 @@ const user = useAuthStore();
           align="center"
           :side-offset="4"
         >
-          <DropdownMenuGroup>
-            <DropdownMenuItem>
-              <BadgeCheck />
-              Account
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
           <DropdownMenuItem @click="user.logout">
             <LogOut />
             Log out

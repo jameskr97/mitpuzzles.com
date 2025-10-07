@@ -113,9 +113,28 @@ export const useAuthStore = defineStore("auth", {
     async verifyEmail(token: string) {
       try {
         await axios.post("/api/auth/verify", {token});
+        // track email verification with posthog
+        posthog.capture('email_verified',
+          { user_id: this.user?.id, email: this.user?.email }
+        );
       } catch (error: any) {
         this.error = error.response?.data?.detail;
         throw error;
+      }
+    },
+
+    async resend_verification_email() {
+      this.loading = true;
+      this.error = null;
+
+      try {
+        await axios.post("/api/auth/request-verify-token");
+        return { success: true };
+      } catch (error: any) {
+        this.error = error.response?.data?.detail || "Failed to resend verification email";
+        throw error;
+      } finally {
+        this.loading = false;
       }
     },
 

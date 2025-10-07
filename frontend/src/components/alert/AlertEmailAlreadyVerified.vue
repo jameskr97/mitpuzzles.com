@@ -3,7 +3,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 </script>
 
 <template>
-  <Alert class="m-2 bg-blue-50 border-blue-200">
+  <Alert class="mt-2 bg-blue-50 border-blue-200">
     <svg
       xmlns="http://www.w3.org/2000/svg"
       class="h-5 w-5 text-blue-600"

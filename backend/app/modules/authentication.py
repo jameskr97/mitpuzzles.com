@@ -8,19 +8,27 @@ from sqlalchemy.orm import relationship, Mapped, mapped_column
 from httpx_oauth.clients.google import GoogleOAuth2
 from fastapi_users.authentication import CookieTransport, AuthenticationBackend
 from fastapi_users import BaseUserManager, UUIDIDMixin, FastAPIUsers
-from fastapi import Depends, Request, APIRouter, Response
+from fastapi import Depends, Request, APIRouter, Response, HTTPException
+from fastapi.responses import JSONResponse
 
 from app.dependencies import get_async_session, AsyncSession
 from app.service.email import send_verification_email
 from app.models import Base
 from app.config import settings
 
-from typing import Optional
+from typing import Optional, Dict
 import datetime
 import uuid
 import uuid6
+from collections import defaultdict
+from datetime import datetime, timedelta
 
 AUTH_SESSION_TIME = 3600 * 24 * 30 # stay logged in for 30 days
+
+# Rate limiting for email verification resends
+VERIFICATION_RATE_LIMIT = 3  # max requests per hour
+VERIFICATION_RATE_WINDOW = 3600  # 1 hour in seconds
+verification_requests: Dict[str, list] = defaultdict(list) # TODO(james): use redis?
 
 # Schemas
 class UserRead(schemas.BaseUser[uuid.UUID]):
@@ -48,8 +56,8 @@ class User(Base):
     __tablename__ = "user"
     # id + audit
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid6.uuid7)
-    date_created: Mapped[datetime.datetime] = mapped_column(default=datetime.datetime.utcnow, nullable=False)
-    date_updated: Mapped[datetime.datetime] = mapped_column(default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow, nullable=False)
+    date_created: Mapped[datetime] = mapped_column(default=datetime.utcnow, nullable=False)
+    date_updated: Mapped[datetime] = mapped_column(default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     # users fields
     username: Mapped[Optional[str]] = mapped_column(String(length=50), unique=True, nullable=True)
@@ -96,6 +104,10 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
         if not user.is_verified:
             await self.request_verify(user)
 
+        # Auto-login the user after registration
+        if request and hasattr(request, 'state'):
+            request.state.auto_login_user = user
+
     async def on_after_request_verify(self, user: User, token: str, request: Optional[Request] = None):
         await send_verification_email(user.email, token)
 
@@ -138,7 +150,12 @@ oauth_google = GoogleOAuth2(client_id=settings.OAUTH_GOOGLE_CLIENT_ID, client_se
 router_auth = APIRouter(tags=["Authentication"])
 router_auth.include_router(prefix="/api/auth", router=fastapi_users.get_register_router(UserRead, UserCreate))
 router_auth.include_router(prefix="/api/auth", router=fastapi_users.get_auth_router(auth_backend))
-router_auth.include_router(prefix="/api/auth", router=fastapi_users.get_verify_router(UserRead))
+
+# get verify router and remove the default /request-verify-token route
+verify_router = fastapi_users.get_verify_router(UserRead)
+verify_router.routes = [route for route in verify_router.routes if not (hasattr(route, 'path') and route.path == '/request-verify-token')]
+
+router_auth.include_router(prefix="/api/auth", router=verify_router)
 router_auth.include_router(
     prefix="/api/oauth/google",
     router=fastapi_users.get_oauth_router(
@@ -146,5 +163,35 @@ router_auth.include_router(
     ),
 )
 
+# rate limiting helper function
+def check_verification_rate_limit(user_id: str) -> bool:
+    now = datetime.now()
+    user_requests = verification_requests[user_id]
+    # remove old requests outside the window
+    cutoff_time = now - timedelta(seconds=VERIFICATION_RATE_WINDOW)
+    verification_requests[user_id] = [req_time for req_time in user_requests if req_time > cutoff_time]
+    return len(verification_requests[user_id]) < VERIFICATION_RATE_LIMIT
+
+# Resend verification email endpoint
+@router_auth.post("/api/auth/request-verify-token")
+async def resend_verification_email(
+    user: User = Depends(fastapi_users.current_user()),
+    user_manager: UserManager = Depends(get_user_manager)
+):
+    """Resend verification email with rate limiting"""
+    if user.is_verified:
+        raise HTTPException(status_code=400, detail="User already verified")
+
+    user_id_str = str(user.id)
+    if not check_verification_rate_limit(user_id_str):
+        raise HTTPException(
+            status_code=429,
+            detail="Too many verification requests. Please wait before requesting again."
+        )
+
+    verification_requests[user_id_str].append(datetime.now())
+    await user_manager.request_verify(user)
+    return JSONResponse({"message": "Verification email sent"})
+
 router_user = APIRouter(tags=["Users"])
-router_user.include_router(prefix="/api/users", router=fastapi_users.get_users_router(UserRead, UserUpdate, requires_verification=True))
+router_user.include_router(prefix="/api/users", router=fastapi_users.get_users_router(UserRead, UserUpdate, requires_verification=False))

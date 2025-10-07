@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { computed, ref } from "vue";
 import { useAuthStore } from "@/store/useAuthStore.ts";
+import { useRouter } from "vue-router";
 import AppLogo from "@/components/AppLogo.vue";
 
 // Form Related Fields
@@ -12,9 +13,9 @@ const username = ref("");
 const email = ref("");
 const password = ref("");
 const passwordVerify = ref("");
-const registrationSuccess = ref(false);
+const router = useRouter();
 
-// Clear error when user starts typing
+const handle_signin_click = async () => await router.push({ path: "/", query: { showLogin: "true" } });
 const clearErrorOnInput = () => {
   if (authStore.error) {
     authStore.clearError();
@@ -44,10 +45,9 @@ const isFormValid = computed(() => {
 const authStore = useAuthStore();
 const submitForm = async () => {
   try {
-    const res = await authStore.register({ username: username.value, email: email.value, password: password.value });
-    // Handle successful registration (e.g., redirect to dashboard)
-    console.log("Registration successful", res);
-    registrationSuccess.value = true;
+    await authStore.register({ username: username.value, email: email.value, password: password.value });
+    await authStore.login({ email: email.value, password: password.value });
+    await router.push("/");
   } catch (error) {
     // Error is already stored in authStore.error
     console.error("Registration error:", error);
@@ -56,13 +56,12 @@ const submitForm = async () => {
 </script>
 <template>
   <div class="flex flex-col h-full w-full items-center justify-center p-4">
-    <Card v-if="!registrationSuccess" class="mx-auto md:w-[400px] w-full">
+    <Card class="mx-auto md:w-[400px] w-full">
       <CardHeader class="text-center">
         <AppLogo class="w-80 mb-4 mx-auto" />
         <Separator />
-        <CardTitle class="text-2xl"> Sign Up </CardTitle>
-
-        <CardDescription>Enter your information to create an account </CardDescription>
+        <CardTitle class="text-2xl">Sign Up</CardTitle>
+        <CardDescription>Enter your information to create an account</CardDescription>
       </CardHeader>
       <CardContent>
         <form @submit.prevent="submitForm">
@@ -129,12 +128,8 @@ const submitForm = async () => {
               <span v-if="authStore.error == 'REGISTER_USER_ALREADY_EXISTS'">
                 A user with that email already exists.
               </span>
-              <span v-if="authStore.error == 'REGISTER_INVALID_PASSWORD'">
-                {{ authStore.error }}
-              </span>
-              <span v-else>
-                {{ authStore.error }}
-              </span>
+              <span v-if="authStore.error == 'REGISTER_INVALID_PASSWORD'">{{ authStore.error }}</span>
+              <span v-else>{{ authStore.error }}</span>
             </div>
 
             <Button type="submit" class="w-full" :disabled="!isFormValid || authStore.loading">
@@ -158,26 +153,9 @@ const submitForm = async () => {
 
         <div class="mt-4 text-center text-sm">
           Already have an account?
-          <a href="#" class="underline"> Sign in </a>
+          <button @click="handle_signin_click" class="underline text-primary hover:text-primary/80"> Sign in </button>
         </div>
       </CardContent>
-    </Card>
-
-    <Card v-else class="mx-auto md:w-[400px] w-full">
-      <CardHeader class="text-center">
-        <CardTitle class="text-xl"> Registration Complete! </CardTitle>
-        <CardDescription>
-          <div
-            v-if="registrationSuccess"
-            class="text-sm text-black bg-green-100 border border-green-300 rounded-xl p-3"
-          >
-            <p>
-              Almost done! We've sent a verification email to <span class="font-bold">{{ email }}</span
-              >. Please click the link in the email to complete your registration.
-            </p>
-          </div>
-        </CardDescription>
-      </CardHeader>
     </Card>
   </div>
 </template>
