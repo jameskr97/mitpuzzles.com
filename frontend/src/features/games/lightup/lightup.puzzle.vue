@@ -97,7 +97,7 @@ const borderConfig = { outer: { thickness: 1, borderClass: "bg-black" } };
             v-if="state.board[row][col] === LightupCell.EMPTY"
             class="bg-white bg-cover w-full h-full"
             :class="{
-              'bg-white': !isCellLit(row, col),
+              'bg-white': !isCellLit(row, col) || state.board[row][col] === LightupCell.CROSS,
               'bg-yellow-200': isCellLit(row, col),
             }"
           ></div>
@@ -136,11 +136,14 @@ const borderConfig = { outer: { thickness: 1, borderClass: "bg-black" } };
           <!-- Cross -->
           <div
             v-else-if="state.board[row][col] === LightupCell.CROSS"
-            class="bg-[url(/assets/lightup/cross.svg)] bg-contain w-full h-full bg-white"
-            :class="{
-              'bg-yellow-200': isCellLit(row, col),
-            }"
-          ></div>
+            class="flex justify-center items-center h-full w-full"
+            :class="[ isCellLit(row, col) ? 'bg-yellow-200' : 'bg-white' ]"
+          >
+            <div
+              class="bg-[url(/assets/lightup/cross.svg)] bg-contain w-8/12 h-8/12 bg-white"
+              :class="[ isCellLit(row, col) ? 'bg-yellow-200' : 'bg-white' ]"
+            ></div>
+          </div>
         </div>
       </template>
     </BoardCells>

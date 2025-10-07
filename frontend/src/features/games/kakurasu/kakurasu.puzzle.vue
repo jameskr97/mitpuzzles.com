@@ -48,10 +48,10 @@ const borderConfig = {
           v-if="state.board[row][col] === KakurasuCell.BLACK"
           class="border-1 bg-black border-white h-full w-full"
         ></div>
-        <div
-          v-if="state.board[row][col] === KakurasuCell.CROSS"
-          class="bg-[url(/assets/kakurasu/cross.svg)] bg-contain w-full h-full"
-        ></div>
+        <div v-if="state.board[row][col] === KakurasuCell.CROSS"
+          class="flex justify-center items-center h-full w-full">
+          <div class="bg-[url(/assets/kakurasu/cross.svg)] bg-contain w-8/12 h-8/12"></div>
+        </div>
       </template>
       <template v-slot:top="props">
         <div class="flex justify-center items-center text-gray-400">
