@@ -20,6 +20,7 @@ from app.models import Base
 from app.modules.authentication import User, fastapi_users
 from app.service.encoder import PrecisePuzzleEncoder
 from app.modules.device_tracking import Device
+from app.utils import get_device_type_from_thumbmark
 
 
 # Models
@@ -559,7 +560,7 @@ class PuzzleService:
             .options(
                 selectinload(FreeplayPuzzleAttempt.puzzle),
                 selectinload(FreeplayPuzzleAttempt.user),
-                selectinload(FreeplayPuzzleAttempt.device)
+                selectinload(FreeplayPuzzleAttempt.device).selectinload(Device.thumbmarks)
             )
             .join(Puzzle, FreeplayPuzzleAttempt.puzzle_id == Puzzle.id)
             .where(Puzzle.puzzle_type == puzzle_type)
@@ -608,6 +609,15 @@ class PuzzleService:
                     'username': attempt.user.username,
                     'email': attempt.user.email
                 }
+
+            # add device type from latest thumbmark
+            if attempt.device and attempt.device.thumbmarks:
+                # get the most recent thumbmark
+                latest_thumbmark = attempt.device.thumbmarks[-1]
+                device_type = get_device_type_from_thumbmark(latest_thumbmark.thumbmark_data)
+                attempt_data['device_type'] = device_type
+            else:
+                attempt_data['device_type'] = 'desktop'  # fallback
 
             export_data.append(attempt_data)
 

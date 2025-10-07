@@ -1,7 +1,7 @@
 import hashlib
 import json
 from functools import wraps
-from typing import Callable
+from typing import Callable, Dict, Any, Optional
 from fastapi import Request, Response
 
 from app.cache import app_cache
@@ -65,3 +65,52 @@ def etag_support(cache_key: str, ttl_seconds: int = 3600):
         return wrapper
 
     return decorator
+
+
+def get_device_type_from_thumbmark(thumbmark_data: Optional[Dict[str, Any]]) -> str:
+    """
+    determine device type from thumbmark fingerprint data.
+
+    uses capability-based detection rather than user agent parsing:
+    - checks touch capability and pointer precision
+    - analyzes screen characteristics
+    - falls back to platform detection if needed
+
+    returns: "mobile", "tablet", or "desktop"
+    """
+    if not thumbmark_data or "components" not in thumbmark_data:
+        return "desktop"  # default fallback
+
+    components = thumbmark_data["components"]
+
+    # extract relevant data with safe defaults
+    system = components.get("system", {})
+    screen = components.get("screen", {})
+
+    # primary indicators
+    is_mobile = system.get("mobile", False)
+    is_touchscreen = screen.get("is_touchscreen", False)
+    max_touch_points = screen.get("maxTouchPoints", 0)
+    platform = system.get("platform", "")
+    media_matches = screen.get("mediaMatches", [])
+
+    # direct mobile detection
+    if is_mobile:
+        return "mobile"
+
+    # touch-enabled non-mobile = tablet
+    if is_touchscreen or max_touch_points > 0:
+        return "tablet"
+
+    # fine pointer + no touch = desktop
+    if "pointer: fine" in media_matches and not is_touchscreen:
+        return "desktop"
+
+    # platform-based fallback
+    if any(p in platform.lower() for p in ["iphone", "android"]):
+        return "mobile"
+    elif "ipad" in platform.lower():
+        return "tablet"
+
+    # default to desktop
+    return "desktop"
