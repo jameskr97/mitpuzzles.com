@@ -123,7 +123,7 @@ const page4Left: Partial<PuzzleState<KakurasuMeta>> = {
             </div>
             <Separator />
 
-            <ul class="list-disc list-inside">
+            <ul class="list-disc  ml-4">
               <li class="italic">
                 The sum of the column numbers of all black cells in a row equals the target sum for that row.
               </li>

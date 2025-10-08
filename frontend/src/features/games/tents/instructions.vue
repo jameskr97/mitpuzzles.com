@@ -42,18 +42,13 @@ boardPage3.board[3][1] = TentsCell.TENT;
       <FreeplayGameViewInstructionPage>
         <template #instruction>
           <div class="mb-2">
-            Tents is a logic puzzle played on a grid with trees <i class="md-cell md-cell-tree"></i> and empty cells.
-            Your job is to place tents <i class="md-cell md-cell-tent"></i> next to trees such that all constraints are
-            satisfied.
+            Tents is a logic puzzle in which the goal is to place tents <i class="md-cell md-cell-tent"></i> next to trees <i class="md-cell md-cell-tree"></i>  such that:
           </div>
-          <ul class="list-disc list-inside">
+          <ul class="list-disc ml-4">
+            <li>Each tent is uniquely paired with one tree (above, below, left, or right).</li>
             <li>Tents never touch each other, even diagonally.</li>
             <li>The number of tents in each row and column matches the target numbers on the edges of the grid.</li>
           </ul>
-          <div>
-            The puzzle is solved when all these conditions are met. The following pages will explain each type of
-            constraint.
-          </div>
         </template>
         <template #board>
           <PuzzleTents :state="boardPage1" class="mt-auto mx-auto" />
@@ -83,7 +78,7 @@ boardPage3.board[3][1] = TentsCell.TENT;
       <FreeplayGameViewInstructionPage>
         <template #instruction>
           <div>The numbers on the edges indicate exactly how many tents are in that row or column.</div>
-          <ul class="list-disc list-inside">
+          <ul class="list-disc ml-4">
             <li>
               For instance, the first row has a 2, requiring two tents, while the second row has 0, so it contains no
               tents.
@@ -117,7 +112,7 @@ boardPage3.board[3][1] = TentsCell.TENT;
 
     <template #controls>
       <div>Left click to cycle forward, right click to cycle backward between:</div>
-      <ul class="list-disc">
+      <ul class="list-decimal ml-8">
         <li>Placing a tent <i class="md-cell md-cell-tent"></i></li>
         <li>Marking the cell as tent-free <i class="md-cell bg-green-300 rounded"></i></li>
         <li>Clearing the cell</li>

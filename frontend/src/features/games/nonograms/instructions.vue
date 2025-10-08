@@ -127,23 +127,13 @@ const page4Left: Partial<PuzzleState<NonogramMeta>> = {
 </script>
 
 <template>
-  <FreeplayGameViewInstructionSlider :num_pages="5" slide-class="min-h-100">
+  <FreeplayGameViewInstructionSlider :num_pages="4" slide-class="min-h-100">
     <template #page1>
       <FreeplayGameViewInstructionPage>
         <template #instruction>
           <div class="mb-2">
-            Nonograms is a logic puzzle played on a grid where you mark cells black to meet specific requirements.
+            Nonograms is a logic puzzle in which the goal is to place black cells <span class="inline-block h-5 w-5 bg-black rounded"></span> such that:
           </div>
-        </template>
-        <template #board>
-          <PuzzleNonograms :scale="1" :state="boardEmpty" class="mx-auto" />
-        </template>
-      </FreeplayGameViewInstructionPage>
-    </template>
-
-    <template #page2>
-      <FreeplayGameViewInstructionPage>
-        <template #instruction>
           <div class="flex flex-col gap-2">
             <div>
               Cells can either be empty, black <span class="inline-block h-5 w-5 bg-black rounded"></span>, or crossed
@@ -151,7 +141,7 @@ const page4Left: Partial<PuzzleState<NonogramMeta>> = {
             </div>
             <Separator />
 
-            <ul class="list-disc list-inside">
+            <ul class="list-disc ml-4">
               <li class="italic">
                 The numbers in each row/column represent the run lengths. Your goal is to place black cells to form consecutive runs that match these numbers.
               </li>
@@ -167,7 +157,7 @@ const page4Left: Partial<PuzzleState<NonogramMeta>> = {
       </FreeplayGameViewInstructionPage>
     </template>
 
-    <template #page3>
+    <template #page2>
       <FreeplayGameViewInstructionPage>
         <template #instruction>
           <div>
@@ -187,7 +177,7 @@ const page4Left: Partial<PuzzleState<NonogramMeta>> = {
       </FreeplayGameViewInstructionPage>
     </template>
 
-    <template #page4>
+    <template #page3>
       <FreeplayGameViewInstructionPage>
         <template #instruction>
           <div>Similarly, the bottom row with hints "1" and "2" can be satisfied in multiple ways - a single black cell, then at least one empty cell, then 2 consecutive black cells.</div>
@@ -205,7 +195,7 @@ const page4Left: Partial<PuzzleState<NonogramMeta>> = {
       </FreeplayGameViewInstructionPage>
     </template>
 
-    <template #page5>
+    <template #page4>
       <FreeplayGameViewInstructionPage>
         <template #instruction>
           <div>

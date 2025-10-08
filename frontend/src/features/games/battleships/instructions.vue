@@ -45,7 +45,7 @@ const boardPage3 = JSON.parse(JSON.stringify(boardPage1));
             Your job is to place tents <i class="md-cell md-cell-tent"></i> next to trees such that all constraints are
             satisfied.
           </div>
-          <ul class="list-disc list-inside">
+          <ul class="list-disc ml-4">
             <li>Tents never touch each other, even diagonally.</li>
             <li>The number of tents in each row and column matches the target numbers on the edges of the grid.</li>
           </ul>
@@ -82,7 +82,7 @@ const boardPage3 = JSON.parse(JSON.stringify(boardPage1));
       <FreeplayGameViewInstructionPage>
         <template #instruction>
           <div>The numbers on the edges indicate exactly how many tents are in that row or column.</div>
-          <ul class="list-disc list-inside">
+          <ul class="list-disc ml-4">
             <li>
               For instance, the first row has a 2, requiring two tents, while the second row has 0, so it contains no
               tents.
