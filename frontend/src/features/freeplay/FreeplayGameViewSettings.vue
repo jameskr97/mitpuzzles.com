@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "reka-ui";
-import { inject } from "vue";
+import { inject, computed } from "vue";
 import type { PuzzleController } from "@/services/game/engines/types.ts";
 import { useGameLayout } from "@/composables/useGameLayout.ts";
 import { usePuzzleProgressStore } from "@/store/puzzle/usePuzzleProgressStore.ts";
@@ -15,6 +15,12 @@ import { usePuzzleProgressStore } from "@/store/puzzle/usePuzzleProgressStore.ts
 const puzzle = inject<PuzzleController>("puzzle")!;
 const layout = inject<ReturnType<typeof useGameLayout>>("layout")!;
 const progress = usePuzzleProgressStore();
+
+// @ts-ignore
+const show_centiseconds = computed({
+  get: () => progress.displayPrecision === "centiseconds",
+  set: (value: boolean) => progress.set_display_precision(value)
+});
 
 </script>
 
@@ -36,12 +42,12 @@ const progress = usePuzzleProgressStore();
           <Label for="leaderboard-visible">Show Leaderboard</Label>
         </div>
       </DropdownMenuLabel>
-      <DropdownMenuLabel>
-        <div class="flex items-center space-x-2">
-          <Switch @update:modelValue="payload => progress.set_display_precision(payload)" id="leaderboard-visible" />
-          <Label for="leaderboard-visible">Show Centiseconds</Label>
-        </div>
-      </DropdownMenuLabel>
+<!--      <DropdownMenuLabel>-->
+<!--        <div class="flex items-center space-x-2">-->
+<!--          <Switch v-model="show_centiseconds" id="show-centiseconds" />-->
+<!--          <Label for="show-centiseconds">Show Centiseconds</Label>-->
+<!--        </div>-->
+<!--      </DropdownMenuLabel>-->
     </DropdownMenuContent>
   </DropdownMenu>
 </template>
