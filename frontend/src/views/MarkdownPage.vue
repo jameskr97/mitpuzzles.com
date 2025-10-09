@@ -16,5 +16,5 @@ const html = md.render(props.content);
 </script>
 
 <template>
-  <div class="mx-auto prose" :class="proseClass" v-html="html"></div>
+  <div class="mx-auto prose px-4 pb-40" :class="proseClass" v-html="html"></div>
 </template>

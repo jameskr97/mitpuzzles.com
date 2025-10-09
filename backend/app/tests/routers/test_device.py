@@ -1,7 +1,7 @@
 from sqlalchemy import select
 import uuid
 
-from app.modules.device_tracking import DEVICE_COOKIE_NAME, Device, DeviceThumbmark
+from app.modules.tracking import DEVICE_COOKIE_NAME, Device, DeviceThumbmark
 
 thumbmark_1 = {
     "thumbmark": "this-is-number-01-test-thumbmark",  # must be 32 chars

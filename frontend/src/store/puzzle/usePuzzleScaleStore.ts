@@ -7,12 +7,12 @@ const STORAGE_KEY = 'mitlogic.puzzle.scales';
 export const usePuzzleScaleStore = defineStore("puzzle.scale", {
   state: () => ({
     scales: {} as Record<string, number>,
-    DEFAULT_SCALE: 10,
+    DEFAULT_SCALE: 50,
   }),
 
   getters: {
     getScale: (state) => (puzzle_type: string): number => state.scales[puzzle_type] ?? state.DEFAULT_SCALE,
-    getScaleRemapped: (state) => (puzzle_type: string): number => remap([0, 100], [1, 6], state.scales[puzzle_type]),
+    getScaleRemapped: (state) => (puzzle_type: string): number => remap([0, 100], [0.5, 2], state.scales[puzzle_type]),
   },
 
   actions: {

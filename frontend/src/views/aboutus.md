@@ -17,7 +17,7 @@ Our goal is to uncover how people manage their cognitive resources when facing c
 
 ## Privacy & Ethics
 
-We are committed to maintaining your privacy. All collected data is entirely anonymous and strictly for research purposes. Your gameplay data will never be shared commercially or used outside our scientific studies.
+We are committed to maintaining your privacy. All collected data is entirely anonymous and strictly for research purposes. Your gameplay data will never be shared commercially or used outside our scientific studies. You can review our privacy policy [by clicking here](/privacy-policy).
 
 ## Be a Part of Science
 

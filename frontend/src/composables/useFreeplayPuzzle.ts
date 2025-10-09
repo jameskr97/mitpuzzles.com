@@ -1,5 +1,5 @@
 import { PuzzleEngine } from "@/services/game/engines/PuzzleEngine.ts";
-import { computed, nextTick, ref } from "vue";
+import { computed, nextTick, onUnmounted, ref } from "vue";
 import type { Cell } from "@/features/games.components/board.interaction.ts";
 import type { PuzzleController, PuzzleState, PuzzleUIState } from "@/services/game/engines/types.ts";
 import { PuzzleConverter } from "@/services/game/engines/translator.ts";
@@ -26,8 +26,12 @@ export async function useFreeplayPuzzle(puzzle_type: string): Promise<PuzzleCont
   const selected = metadataStore.getSelectedVariant(puzzle_type);
   const puzzle_definition = await puzzleStore.getOrFetchPuzzle(puzzle_type, selected[0], selected[1]);
 
+  // track the actual loaded puzzle's variant (size x difficulty)
+  const current_puzzle_variant = ref<string[]>(selected);
+
   // UI State
   const show_solved_state_timeout = ref<ReturnType<typeof setTimeout>>();
+  const tutorial_used_on_current_puzzle = ref(false);
   const state_ui = ref<PuzzleUIState>({
     tutorial_mode: false,
     show_solved_state: progressStore.is_puzzle_solved(puzzle_type) ? true : false,
@@ -38,12 +42,13 @@ export async function useFreeplayPuzzle(puzzle_type: string): Promise<PuzzleCont
 
   const state_puzzle = computed<PuzzleState>(() => {
     const violations = state_ui.value.tutorial_mode ? currentEngine.value.get_violations() : [];
-    
+
     // Mark tutorial as used if tutorial mode is on AND violations are shown
     if (state_ui.value.tutorial_mode && violations.length > 0) {
       progressStore.mark_tutorial_used(puzzle_type);
+      tutorial_used_on_current_puzzle.value = true;
     }
-    
+
     return {
       definition: currentEngine.value.definition,
       board: currentEngine.value.board_state,
@@ -65,6 +70,7 @@ export async function useFreeplayPuzzle(puzzle_type: string): Promise<PuzzleCont
   // setup broadcast listeners for cross-tab sync
   // listen for game state updates from other tabs
   const broadcast_unsubscribers: (() => void)[] = [];
+  onUnmounted(() => broadcast_unsubscribers.forEach(fn => fn()))
   broadcast_unsubscribers.push(
     broadcast_channel_service.subscribe('game_state_update', (message) => {
       if (message.puzzle_type === puzzle_type) {
@@ -106,17 +112,32 @@ export async function useFreeplayPuzzle(puzzle_type: string): Promise<PuzzleCont
         console.log("Loading new puzzle from broadcast", message);
         const definition = message.data.puzzle_definition;
         const transformed_board = PuzzleConverter.fromResearch(definition.initial_state, puzzle_type);
-        
+
         // create new engine with the broadcasted puzzle definition
         currentEngine.value = createPuzzleEngine(definition, transformed_board);
         state_ui.value.show_solved_state = false;
+        state_ui.value.tutorial_mode = false;
+        tutorial_used_on_current_puzzle.value = false;
       }
     })
   );
 
   // Actions
   async function load_new_puzzle() {
+    // Save incomplete attempt if user made any moves
+    const events = historyStore.get_events(puzzle_type, "freeplay");
+    if (events.length > 0 && !progressStore.is_puzzle_solved(puzzle_type)) {
+      try {
+        await historyStore.upload_attempt_history(puzzle_type, "freeplay");
+      } catch (error) {
+        console.error("Failed to save incomplete attempt:", error);
+        // Continue anyway - don't block new puzzle request
+      }
+    }
+
     state_ui.value.show_solved_state = false;
+    state_ui.value.tutorial_mode = false;
+    tutorial_used_on_current_puzzle.value = false;
 
     const variant = metadataStore.getSelectedVariant(puzzle_type);
     const definition = await puzzleStore.requestNewPuzzle(puzzle_type, variant[0], variant[1]);
@@ -125,7 +146,10 @@ export async function useFreeplayPuzzle(puzzle_type: string): Promise<PuzzleCont
     await historyStore.clear_events(puzzle_type, "freeplay")
 
     currentEngine.value = createPuzzleEngine(definition, progressStore.current_puzzle_states[puzzle_type]);
-    
+
+    // update the current puzzle variant to match what was actually loaded
+    current_puzzle_variant.value = variant;
+
     // broadcast new puzzle to other tabs
     broadcast_channel_service.broadcast_new_puzzle(puzzle_type, definition);
   }
@@ -166,6 +190,8 @@ export async function useFreeplayPuzzle(puzzle_type: string): Promise<PuzzleCont
     const new_board = JSON.parse(JSON.stringify(currentEngine.value.board_state));
     recorder.record_clear(puzzle_type, old_board, new_board);
     state_ui.value.show_solved_state = false;
+    // Note: Don't reset tutorial_used_on_current_puzzle here
+    // If they used tutorial, clearing doesn't make them eligible again
     progressStore.reset_gutter_markings(puzzle_type);
     save_board_state();
   }
@@ -199,6 +225,8 @@ export async function useFreeplayPuzzle(puzzle_type: string): Promise<PuzzleCont
     // State
     state_puzzle,
     state_ui,
+    tutorial_used_on_current_puzzle,
+    current_puzzle_variant,
 
     // Actions
     request_new_puzzle: load_new_puzzle,

@@ -67,8 +67,8 @@ export function useSudokuCellHighlighter(ctrl: PuzzleController) {
 
       // Handle deletion
       if (key === "Backspace" || key === "Delete") {
-        ctrl.state_puzzle.value.board[activeCell.value.row][activeCell.value.col] = 0;
-        ctrl.handle_cell_key_down(activeCell.value, event, 0);
+        // Let the engine handle it - it will check can_modify_cell
+        ctrl.handle_cell_key_down(activeCell.value, event, key);
         return true;
       }
 

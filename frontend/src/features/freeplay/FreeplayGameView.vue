@@ -1,6 +1,6 @@
 <!-- GameView.vue - Main layout component with provide/inject -->
 <script setup lang="ts">
-import { type PropType, provide } from "vue";
+import { type PropType, provide, ref } from "vue";
 import { useRoute } from "vue-router";
 import { useGameLayout } from "@/composables/useGameLayout";
 
@@ -8,13 +8,18 @@ import { useGameLayout } from "@/composables/useGameLayout";
 import Container from "@/components/ui/Container.vue";
 import { Badge } from "@/components/ui/badge";
 import { getPuzzleDisplayName } from "@/utils";
-import type { PUZZLE_TYPES } from "@/constants.ts";
+import { ACTIVE_GAMES, type PUZZLE_TYPES } from "@/constants.ts";
 import FreeplayGameViewControlbar from "@/features/freeplay/FreeplayGameViewControlbar.vue";
 import FreeplayGameViewViolations from "@/features/freeplay/FreeplayGameViewViolations.vue";
 import FreeplayGameViewLeaderboard from "@/features/freeplay/FreeplayGameViewLeaderboard.vue";
 import type { PuzzleController } from "@/services/game/engines/types.ts";
 import { usePuzzleMetadataStore } from "@/store/puzzle/usePuzzleMetadataStore.ts";
 import { usePuzzleScaleStore } from "@/store/puzzle/usePuzzleScaleStore.ts";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import FreeplayGameViewInstructionModal from "@/features/freeplay/FreeplayGameViewInstructionModal.vue";
+import { Separator } from "@/components/ui/separator";
+import CompactInstructions from "@/features/freeplay/CompactInstructions.vue";
 
 const props = defineProps({
   puzzle: { type: Object as PropType<PuzzleController>, required: true },
@@ -23,11 +28,13 @@ const props = defineProps({
 // Initialize shared state once
 const route = useRoute();
 const gt = route.meta.game_type as PUZZLE_TYPES;
+const game_entry = ACTIVE_GAMES[gt];
 
 const layout = useGameLayout();
 const scaleStore = usePuzzleScaleStore();
 const metaStore = usePuzzleMetadataStore();
 const scale_remapped = scaleStore.getScaleRemapped(gt);
+const is_game_rules_open = ref(true);
 
 // Provide to all child components
 provide("puzzle", props.puzzle);
@@ -87,11 +94,13 @@ provide("layout", layout);
     <!-- Game header with tutorial mode indicator and puzzle name -->
     <Container class="mt-2 w-full md:max-w-prose mx-auto h-12">
       <div class="m-0 p-0 grid grid-cols-3 text-xl">
-        <Badge variant="default" v-if="puzzle.state_ui.value.tutorial_mode" class="justify-self-start text-nowrap">
-          Tutorial Mode
-        </Badge>
+        <!-- Tutorial Mode Toggle -->
+        <div class="flex items-center gap-2">
+          <Switch v-model="puzzle.state_ui.value.tutorial_mode" id="tutorial-toggle" />
+          <Label for="tutorial-toggle" class="cursor-pointer font-normal">Tutorial Mode</Label>
+        </div>
         <span class="col-start-2 text-center items-center">
-          {{ getPuzzleDisplayName(metaStore.getSelectedVariant(puzzle.state_puzzle.value.definition.puzzle_type)) }}
+          {{ getPuzzleDisplayName(puzzle.current_puzzle_variant.value) }}
         </span>
         <Badge
           v-if="puzzle.state_ui.value.show_solved_state"
@@ -107,23 +116,39 @@ provide("layout", layout);
     <!-- Main game area -->
     <div class="grid grid-cols-2 gap-2">
       <!-- Game board slot -->
-      <div class="grid md:grid-cols-[auto_1fr_auto] mx-auto col-span-full m-2 gap-2 justify-self-center">
-        <slot v-if="$slots['game-left']" name="game-left"></slot>
-        <div class="order-first md:order-none select-none origin-center transform-gpu" :class="{ 'pointer-events-none': puzzle.state_puzzle.value.solved === true }">
-          <Container :class="{ 'shake-once': puzzle.state_ui.value.animate_failure, 'heartbeat-once': puzzle.state_ui.value.animate_success }">
-            <slot name="default" :scale="scale_remapped"></slot>
-          </Container>
+      <div class="col-span-full m-2">
+        <!-- Left slot - fills available space on left -->
+        <div v-if="$slots['game-left']" class="hidden md:flex justify-end items-start mr-5">
+          <slot name="game-left"></slot>
         </div>
-        <slot v-if="$slots['game-right']" name="game-right" class=""></slot>
+
+        <!-- Game board - always centered, never moves -->
+        <div class="flex flex-col gap-2 items-center col-start-2">
+          <div class="select-none origin-center transform-gpu">
+            <Container
+              :class="{
+                'shake-once': puzzle.state_ui.value.animate_failure,
+                'heartbeat-once': puzzle.state_ui.value.animate_success,
+                'pointer-events-none': puzzle.state_puzzle.value.solved === true,
+              }"
+              class="max-w-fit mx-auto"
+            >
+              <slot name="default" :scale="scale_remapped" class="max-w-fit"></slot>
+            </Container>
+          </div>
+          <slot name="game-below"></slot>
+        </div>
+
+        <!-- Right slot - fills available space on right -->
+        <div v-if="$slots['game-right']" class="hidden md:flex justify-start items-start">
+          <slot name="game-right"></slot>
+        </div>
       </div>
 
       <!-- Side panels -->
-      <div class="flex flex-col mx-auto gap-2 col-span-2">
-<!--        <FreeplayGameViewViolations-->
-<!--          v-if="puzzle.state_ui.value.tutorial_mode"-->
-<!--          :violations="puzzle.state_puzzle.value.violations"-->
-<!--        />-->
-        <FreeplayGameViewLeaderboard v-if="layout.leaderboard_visible.value" />
+      <div class="flex flex-col md:flex-row mx-auto gap-2 col-span-2 items-start">
+        <CompactInstructions :puzzle="puzzle" class="w-80 flex-shrink"/>
+        <FreeplayGameViewLeaderboard class="w-80 flex-shrink" />
       </div>
     </div>
   </div>

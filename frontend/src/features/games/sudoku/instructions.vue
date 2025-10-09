@@ -8,7 +8,7 @@ import PuzzleSudoku from "@/features/games/sudoku/sudoku.puzzle.vue";
 import FreeplayGameViewInstructionPage from "@/features/freeplay/FreeplayGameViewInstructionPage.vue";
 
 const route = useRoute();
-const BOARD_SCALE = 0.5;
+const BOARD_SCALE = 0.7;
 const def: Partial<PuzzleDefinition> = {
   rows: 9,
   cols: 9,
@@ -77,7 +77,7 @@ const BoxHighlighted = getPersistentHighlightSudokuBoard({ box: 1 });
             <div class="flex flex-col gap-2">
               <div>
                 Sudoku is a logic puzzle played on a square grid. The grid is divided into several
-                <span class="font-bold">smaller square sub-grids (boxes)</span>. For example, below is a 9x9 sudoku
+                <span class="font-bold">smaller square sub-grids</span>. For example, below is a 9x9 sudoku
                 board, divided into 9 3x3 boxes.
               </div>
               <div>
@@ -134,7 +134,7 @@ const BoxHighlighted = getPersistentHighlightSudokuBoard({ box: 1 });
       <FreeplayGameViewInstructionPage>
         <template #instruction>
           <div>
-            Third, each <strong>box</strong> must include every number from 1 to 9, and each number must appear exactly
+            Third, each <strong>3x3 sub-grid</strong> must include every number from 1 to 9, and each number must appear exactly
             <strong>once</strong>.
           </div>
           <div class="italic">
@@ -147,6 +147,24 @@ const BoxHighlighted = getPersistentHighlightSudokuBoard({ box: 1 });
         </template>
       </FreeplayGameViewInstructionPage>
     </template>
+
+<!--    <template #page5>-->
+<!--      <FreeplayGameViewInstructionPage>-->
+<!--        <template #instruction>-->
+<!--          <p>-->
+<!--             The game is solved when each square is filled with a number from 1 to 9, following these rules.-->
+<!--          </p>-->
+<!--          <br>-->
+<!--          <p>-->
+<!--            Below is an example of a solved board.-->
+<!--          </p>-->
+<!--        </template>-->
+<!--        <template #board>-->
+<!--          put solved board here-->
+<!--&lt;!&ndash;          <BoxHighlighted :state="gameState0" :scale="BOARD_SCALE" class="mx-auto"></BoxHighlighted>&ndash;&gt;-->
+<!--        </template>-->
+<!--      </FreeplayGameViewInstructionPage>-->
+<!--    </template>-->
 
     <template #controls>
       <ul class="list-disc ml-4">

@@ -1,5 +1,5 @@
 # replace with your actual domain
-mitpuzzles.com {
+:80 {
     # specific handlers first
     handle /maintenance.json {
         root * /srv/maintenance

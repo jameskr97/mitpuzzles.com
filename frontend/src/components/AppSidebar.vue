@@ -103,8 +103,8 @@ const close_sidebar_on_mobile = () => {
       <SidebarGroup>
         <SidebarMenu>
           <!-- About Us Button -->
-          <SidebarMenuButton>
-            <router-link :to="{ name: 'about-us' }">
+          <SidebarMenuButton asChild>
+            <router-link :to="{ name: 'about-us' }" @click.capture="close_sidebar_on_mobile">
               <v-icon name="bi-info-circle-fill" />
               About Us
             </router-link>
@@ -117,6 +117,14 @@ const close_sidebar_on_mobile = () => {
               Feedback
             </SidebarMenuButton>
           </AppFeedbackModal>
+
+          <SidebarMenuButton asChild>
+            <router-link :to="{ name: 'privacy-policy' }" @click.capture="close_sidebar_on_mobile">
+              <v-icon name="bi-shield-lock-fill" />
+              Privacy Policy
+            </router-link>
+          </SidebarMenuButton>
+
 
           <!-- Login Modal -->
           <UserLoginModal v-if="!user.isAuthenticated">

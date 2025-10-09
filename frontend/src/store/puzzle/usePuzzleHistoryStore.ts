@@ -21,7 +21,7 @@ interface GameEvent {
   experiment_id?: string; // for experiment events
   timestamp: number; // when event occurred
   sequence: number; // order index for sorting
-  action_type: "click" | "keypress" | "hover" | "dwell" | "clear" | "tutorial_toggle" | "custom";
+  action_type: "click" | "keypress" | "hover" | "dwell" | "clear" | "tutorial_toggle" | "custom" | "puzzle_visible" | "puzzle_not_visible" | "visibility_summary";
 
   // action-specific data
   cell?: { row: number; col: number };
@@ -52,6 +52,31 @@ export const usePuzzleHistoryStore = defineStore("game.history", {
     get_events: (state) => (discriminator: string, mode: "freeplay" | "experiment") => {
       const key = `${discriminator}-${mode}`;
       return state.events[key] || [];
+    },
+
+    /** calculates total active time (ms) from visibility events */
+    get_active_time_ms: (state) => (discriminator: string, mode: "freeplay" | "experiment"): number => {
+      const key = `${discriminator}-${mode}`;
+      const events = state.events[key] || [];
+
+      let total_active_ms = 0;
+      let last_visible_timestamp: number | null = null;
+
+      for (const event of events) {
+        if (event.action_type === "puzzle_visible") {
+          last_visible_timestamp = event.timestamp;
+        } else if (event.action_type === "puzzle_not_visible" && last_visible_timestamp !== null) {
+          total_active_ms += event.timestamp - last_visible_timestamp;
+          last_visible_timestamp = null;
+        }
+      }
+
+      // if puzzle is still visible, add time from last visible to now
+      if (last_visible_timestamp !== null) {
+        total_active_ms += Date.now() - last_visible_timestamp;
+      }
+
+      return total_active_ms;
     },
   },
 
@@ -136,9 +161,19 @@ export const usePuzzleHistoryStore = defineStore("game.history", {
     /** uploads event history to server when puzzle is completed */
     async upload_attempt_history(puzzle_type: string, mode: "freeplay" | "experiment" = "freeplay"): Promise<void> {
       const events = this.get_events(puzzle_type, mode);
-      
+
       if (events.length === 0) {
         console.warn(`No events to upload for ${puzzle_type} in mode ${mode}`);
+        return;
+      }
+
+      // check if all events are visibility events - if so, don't submit
+      const has_non_visibility_events = events.some(
+        event => event.action_type !== "puzzle_visible" && event.action_type !== "puzzle_not_visible"
+      );
+
+      if (!has_non_visibility_events) {
+        console.log(`Skipping upload for ${puzzle_type} - only visibility events present (no user interaction)`);
         return;
       }
 
@@ -151,22 +186,39 @@ export const usePuzzleHistoryStore = defineStore("game.history", {
       const finish_timestamp = progressStore.timestamp_finish[puzzle_type];
       const final_board_state = progressStore.current_puzzle_states[puzzle_type];
 
+      // Calculate visibility metrics
+      const total_visible_ms = this.get_active_time_ms(puzzle_type, mode);
+      const visible_periods = events.filter(e => e.action_type === "puzzle_visible").length;
+
       // Transform events to match backend expected format
+      const action_history_events = events.map(event => ({
+        action: event.action_type,
+        timestamp: event.timestamp,
+        sequence: event.sequence,
+        cell: event.cell,
+        key: event.key,
+        old_value: event.old_value,
+        new_value: event.new_value,
+        board_snapshot: event.board_snapshot,
+        custom_data: event.custom_data,
+      }));
+
+      // Add visibility summary as final event
+      action_history_events.push({
+        action: "visibility_summary",
+        timestamp: Date.now(),
+        sequence: events.length + 1,
+        custom_data: {
+          total_visible_ms,
+          visible_periods,
+        },
+      });
+
       const payload = {
         puzzle_id: puzzle_id,
         timestamp_start: start_timestamp,
         timestamp_finish: finish_timestamp,
-        action_history: events.map(event => ({
-          action: event.action_type,
-          timestamp: event.timestamp,
-          sequence: event.sequence,
-          cell: event.cell,
-          key: event.key,
-          old_value: event.old_value,
-          new_value: event.new_value,
-          board_snapshot: event.board_snapshot,
-          custom_data: event.custom_data,
-        })),
+        action_history: action_history_events,
         board_state: final_board_state,
         is_solved: progressStore.is_puzzle_solved(puzzle_type),
         used_tutorial: progressStore.used_tutorial[puzzle_type] || false

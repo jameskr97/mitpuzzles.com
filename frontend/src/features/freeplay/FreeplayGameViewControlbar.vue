@@ -5,6 +5,8 @@ import Container from "@/components/ui/Container.vue";
 import FreeplayGameViewTimer from "@/features/freeplay/FreeplayGameViewTimer.vue";
 import GameViewControlBarSettings from "@/features/freeplay/FreeplayGameViewSettings.vue";
 import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -67,14 +69,7 @@ onMounted(() => {
 <template>
   <Container class="w-full md:max-w-prose mt-2 md:mt-0 mx-auto">
     <div class="flex flex-col">
-      <div class="flex flex-row w-full">
-        <FreeplayGameViewInstructionModal>
-          <template #trigger>
-            <v-icon name="hi-information-circle" :scale="1.5" class="mr-2 cursor-pointer" />
-          </template>
-        </FreeplayGameViewInstructionModal>
-
-        <GameViewControlBarSettings />
+      <div class="flex flex-row w-full items-center">
         <v-icon name="co-magnifying-glass" :scale="1.5" />
         <Slider :min="0" :max="100" :step="1" class="mx-2" v-model="currentScale" />
         <FreeplayGameViewTimer />

@@ -27,6 +27,10 @@ class Settings(BaseSettings):
     OAUTH_GOOGLE_CLIENT_ID: str = None
     OAUTH_GOOGLE_CLIENT_SECRET: str = None
 
+    # celery
+    CELERY_BROKER_URL: str = "redis://localhost:6379/0"
+    CELERY_RESULT_BACKEND: str = "redis://localhost:6379/0"
+
     # static files
     STATIC_FILES_PATH: str = "/app/static"
     SERVE_STATIC_FILES: bool = False

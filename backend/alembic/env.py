@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import create_async_engine
 # model imports TODO(james): replace noqa lines with a * import (move models to one module?)
 from app.models import Base
 from app.modules.authentication import User, OAuthAccount, AccessToken  # noqa: F401
-from app.modules.device_tracking import Device, DeviceThumbmark  # noqa: F401
+from app.modules.tracking import Device, DeviceThumbmark  # noqa: F401
 from app.modules.experiments import ExperimentRun, ExperimentProlificData  # noqa: F401
 from app.modules.feedback import Feedback  # noqa: F401
 from app.modules.puzzle import Puzzle, FreeplayPuzzleAttempt  # noqa: F401

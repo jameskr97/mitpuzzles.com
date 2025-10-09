@@ -10,12 +10,13 @@ import { useSudokuViolationHighlighter } from "@/features/games/sudoku/useSudoku
 import { withNonogramGutterMarking } from "@/features/games/nonograms/useNonogramGutterMarking.ts";
 
 export const ACTIVE_GAMES: Record<string, ReturnType<typeof create_game_entry>> = {
-  minesweeper: create_game_entry("💣", "Minesweeper", "minesweeper"),
-  sudoku: create_game_entry("🔢", "Sudoku", "sudoku", [withSudokuBehaviors]),
-  tents: create_game_entry("⛺", "Tents", "tents"),
   kakurasu: create_game_entry("⬛", "Kakurasu", "kakurasu"),
   lightup: create_game_entry("💡", "Light Up", "lightup"),
+  minesweeper: create_game_entry("💣", "Minesweeper", "minesweeper"),
+  mosaic: create_game_entry("🧩", "Mosaic", "mosaic"),
   nonograms: create_game_entry("🏁", "Nonograms", "nonograms", [withNonogramGutterMarking]),
+  sudoku: create_game_entry("🔢", "Sudoku", "sudoku", [withSudokuBehaviors]),
+  tents: create_game_entry("⛺", "Tents", "tents"),
   // battleships: create_game_entry("🚢", "Battleships", "battleships"),
 };
 export type PUZZLE_TYPES = keyof typeof ACTIVE_GAMES;
@@ -33,5 +34,6 @@ export const ACTIVE_EXPERIMENTS: Record<string, any> = {
 export const ADMIN_TOOLS: Record<string, ReturnType<typeof create_admin_tool>> = {
   "data-download": create_admin_tool("data-download", "🧮", "Data Download"),
   "puzzle-browser": create_admin_tool("puzzle-browser", "🔍", "Puzzle Browser"),
+  // "analytics-dashboard": create_admin_tool("analytics-dashboard", "📊", "Analytics Dashboard"),
 };
 

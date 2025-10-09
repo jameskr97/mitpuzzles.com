@@ -77,7 +77,7 @@ const board2: Partial<PuzzleState> = {
 </script>
 
 <template>
-  <FreeplayGameViewInstructionSlider :num_pages="4" slide-class="min-h-130">
+  <FreeplayGameViewInstructionSlider :num_pages="4">
     <template #page1>
       <FreeplayGameViewInstructionPage>
         <template #instruction>
@@ -86,6 +86,8 @@ const board2: Partial<PuzzleState> = {
             remain unrevealed. Your goal is to identify
             <span class="font-bold">which unrevealed cells contain mines.</span>
           </div>
+          <br>
+          <div>Below is an example board:</div>
         </template>
         <template #board>
           <PuzzleMinesweeper :scale="PUZZLE_SCALE" :state="boardPage1" class="" />
@@ -103,7 +105,7 @@ const board2: Partial<PuzzleState> = {
             </div>
             <div>
               In the example below, the cell with a
-              <span class="font-bold text-red-600">3</span> has four neighbors, three of which contain mines.
+              <span class="font-bold text-red-600">3</span> has four neighbors, highlighted in yellow, three of which contain mines.
             </div>
           </div>
         </template>
@@ -120,6 +122,7 @@ const board2: Partial<PuzzleState> = {
             You can flag <i class="md-cell md-cell-flag"></i> a cell to mark it as a suspected mine, or place a cross
             <i class="md-cell md-cell-empty"></i> to mark the cell as safe.
           </div>
+          <br>
           <div>
             In the example below, several flags have been placed to mark suspected mines, satisfying the number clues
             <span class="font-bold text-green-600">2</span>, <span class="font-bold text-red-600">3</span>,
@@ -141,7 +144,8 @@ const board2: Partial<PuzzleState> = {
             unmarked or marked safe, and <span class="font-bold">all number clues are satisfied</span> (i.e., the number
             of adjacent flags matches the number on the clue cell).
           </div>
-          <div>Below is an example of a solved board.</div>
+          <br>
+          <div>Below is an example of a solved board:</div>
         </template>
         <template #board>
           <PuzzleMinesweeper :scale="PUZZLE_SCALE" :state="boardSolved" class="" />

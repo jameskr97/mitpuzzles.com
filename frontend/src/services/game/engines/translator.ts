@@ -70,6 +70,22 @@ export const enum MinesweeperCell {
   UNMARKED_HIGHLIGHTED = 13,
 }
 
+export const enum MosaicCell {
+  ZERO = 0,
+  ONE = 1,
+  TWO = 2,
+  THREE = 3,
+  FOUR = 4,
+  FIVE = 5,
+  SIX = 6,
+  SEVEN = 7,
+  EIGHT = 8,
+  NINE = 9,
+  UNMARKED = 10,
+  SHADED = 11,
+  CROSS = 12,
+}
+
 // endregion
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -139,6 +155,22 @@ const MINESWEEPER_TO_ENUM: Record<number, MinesweeperCell> = {
   [-3]: MinesweeperCell.FLAG,
   [-4]: MinesweeperCell.SAFE,
 };
+
+const MOSAIC_TO_ENUM: Record<number, MosaicCell> = {
+  [0]: MosaicCell.ZERO,
+  [1]: MosaicCell.ONE,
+  [2]: MosaicCell.TWO,
+  [3]: MosaicCell.THREE,
+  [4]: MosaicCell.FOUR,
+  [5]: MosaicCell.FIVE,
+  [6]: MosaicCell.SIX,
+  [7]: MosaicCell.SEVEN,
+  [8]: MosaicCell.EIGHT,
+  [9]: MosaicCell.NINE,
+  [-1]: MosaicCell.UNMARKED,
+  [-3]: MosaicCell.SHADED,
+  [-4]: MosaicCell.CROSS,
+};
 // endregion
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -151,6 +183,7 @@ const ENUM_TO_BATTLESHIPS = buildReverseMap(BATTLESHIPS_TO_ENUM);
 const ENUM_TO_SUDOKU = buildReverseMap(SUDOKU_TO_ENUM);
 const ENUM_TO_LIGHTUP = buildReverseMap(LIGHTUP_TO_ENUM);
 const ENUM_TO_MINESWEEPER = buildReverseMap(MINESWEEPER_TO_ENUM);
+const ENUM_TO_MOSAIC = buildReverseMap(MOSAIC_TO_ENUM);
 
 function buildReverseMap<T extends number>(forwardMap: Record<number, T>): Record<T, number> {
   const reverseMap: Record<string, number> = {};
@@ -177,7 +210,7 @@ function buildReverseMap<T extends number>(forwardMap: Record<number, T>): Recor
 
 ///////////////////////////////////////////////////////////////////////////////
 // Type Definitions
-export type CellType = TentsCell | KakurasuCell | SudokuCell | LightupCell | MinesweeperCell | NonogramsCell | BattleshipsCell;
+export type CellType = TentsCell | KakurasuCell | SudokuCell | LightupCell | MinesweeperCell | NonogramsCell | BattleshipsCell | MosaicCell;
 export type ResearchGrid = number[][];
 export type DeveloperGrid<T extends CellType> = T[][];
 
@@ -232,6 +265,7 @@ function getToEnumMap(puzzle_type: PUZZLE_TYPES): Record<number, CellType> {
     sudoku: SUDOKU_TO_ENUM,
     lightup: LIGHTUP_TO_ENUM,
     minesweeper: MINESWEEPER_TO_ENUM,
+    mosaic: MOSAIC_TO_ENUM,
   };
   if (!(puzzle_type in map_of_maps)) throw new Error(`Unknown puzzle type: ${puzzle_type}`);
   return map_of_maps[puzzle_type as keyof typeof map_of_maps];
@@ -246,7 +280,8 @@ function getFromEnumMap(puzzle_type: PUZZLE_TYPES): Record<string, number> {
     "nonograms": ENUM_TO_NONOGRAMS,
     "sudoku": ENUM_TO_SUDOKU,
     "lightup": ENUM_TO_LIGHTUP,
-    "minesweeper": ENUM_TO_MINESWEEPER
+    "minesweeper": ENUM_TO_MINESWEEPER,
+    "mosaic": ENUM_TO_MOSAIC
   };
   if (!(puzzle_type in map_of_maps)) throw new Error(`Unknown puzzle type: ${puzzle_type}`);
   return map_of_maps[puzzle_type as keyof typeof map_of_maps];
@@ -262,6 +297,7 @@ export type PuzzleCellTypeMap = {
   nonograms: NonogramsCell;
   battleships: BattleshipsCell,
   lightup: LightupCell;
+  mosaic: MosaicCell;
 };
 
 export class PuzzleConverter {

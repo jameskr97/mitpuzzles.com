@@ -2,27 +2,45 @@ name: mitpuzzles
 
 volumes:
   postgres-data:
+  maintenance-data:
+  valkey-data:
   caddy-data:
   caddy-config:
-  maintenance-data:
+
+# Shared configurations
+x-backend-common: &backend-common
+  build:
+    dockerfile: Backend.dockerfile
+    context: ..
+  restart: unless-stopped
+  environment:
+    SECRET: ${SECRET_KEY}
+    DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-mitpuzzles}:${POSTGRES_PASSWORD:-password}@postgres:5432/${POSTGRES_DB:-mitpuzzles}
+    ENVIRONMENT: ${ENVIRONMENT:-local}
+    RESEND_API_KEY: ${RESEND_API_KEY}
+    OAUTH_GOOGLE_CLIENT_ID: ${OAUTH_GOOGLE_CLIENT_ID}
+    OAUTH_GOOGLE_CLIENT_SECRET: ${OAUTH_GOOGLE_CLIENT_SECRET}
+    CELERY_BROKER_URL: ${CELERY_BROKER_URL}
+    CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
 
 services:
   postgres:
     image: postgres:18
     restart: unless-stopped
     volumes: [postgres-data:/var/lib/postgresql/data]
-    ports: [5432:5432]
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: mitpuzzles
+      POSTGRES_USER: ${POSTGRES_USER:-mitpuzzles}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${POSTGRES_DB:-mitpuzzles}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mitpuzzles}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # automated database backups
+  # Automated database backups (production only)
   postgres-backup:
     image: prodrigestivill/postgres-backup-local:18
     restart: unless-stopped
@@ -41,28 +59,26 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    profiles: [production]  # Only runs in production
 
   frontend:
-    image: ghcr.io/jameskr97/mitpuzzles.com/frontend-dev:latest
+    image: ${FRONTEND_IMAGE:-build-local}
+    build:
+      dockerfile: Frontend.dockerfile
+      context: ..
     restart: unless-stopped
-    ports: ["80:80", "443:443"]
+    ports: ["${FRONTEND_PORTS:-3000:80}"]
     environment:
-      DOMAIN: ${DOMAIN:-mitpuzzles.com}
+      DOMAIN: ${DOMAIN:-localhost:3000}
     volumes:
-      - caddy-data:/data # SSL certificates & ACME data
-      - caddy-config:/config # Caddy config cache
-      - maintenance-data:/srv/maintenance # If using maintenance mode
+      - maintenance-data:/srv/maintenance
+      - caddy-data:/data # SSL certificates (production only)
+      - caddy-config:/config # Caddy config cache (production only)
+    depends_on: [backend]
 
   backend:
-    image: ghcr.io/jameskr97/mitpuzzles.com/backend-dev:latest
-    restart: unless-stopped
-    environment:
-      SECRET: ${SECRET_KEY}
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-mitpuzzles}:${POSTGRES_PASSWORD:-password}@postgres:5432/${POSTGRES_DB:-mitpuzzles}
-      ENVIRONMENT: production
-      RESEND_API_KEY: ${RESEND_API_KEY}
-      OAUTH_GOOGLE_CLIENT_ID: ${OAUTH_GOOGLE_CLIENT_ID}
-      OAUTH_GOOGLE_CLIENT_SECRET: ${OAUTH_GOOGLE_CLIENT_SECRET}
+    <<: *backend-common
+    ports: ["${BACKEND_PORTS:-8000:8000}"]
     volumes: [maintenance-data:/srv/maintenance]
     healthcheck:
       test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health', timeout=10)"]
@@ -73,3 +89,44 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      valkey:
+        condition: service_started
+
+  # valkey - celery broker
+  valkey:
+    image: valkey/valkey:8
+    restart: unless-stopped
+    ports: ["${VALKEY_PORT:-6379}:6379"]
+    volumes: [valkey-data:/data]
+    command: valkey-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # celery worker, beat (scheduler), flower (monitoring)
+  celery_worker:
+    <<: *backend-common
+    command: celery -A app.tasks.celery_app worker --loglevel=info
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+
+  celery_beat:
+    <<: *backend-common
+    command: celery -A app.tasks.celery_app beat --loglevel=info
+    depends_on:
+      valkey:
+        condition: service_healthy
+
+  flower:
+    <<: *backend-common
+    command: celery -A app.tasks.celery_app flower --port=5555
+    ports: ["${FLOWER_PORT:-5555}:5555"]
+    depends_on:
+      valkey:
+        condition: service_healthy
+    profiles: [monitoring]  # Optional service

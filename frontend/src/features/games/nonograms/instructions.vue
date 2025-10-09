@@ -127,32 +127,20 @@ const page4Left: Partial<PuzzleState<NonogramMeta>> = {
 </script>
 
 <template>
-  <FreeplayGameViewInstructionSlider :num_pages="4" slide-class="min-h-100">
+  <FreeplayGameViewInstructionSlider :num_pages="5" slide-class="min-h-100">
     <template #page1>
       <FreeplayGameViewInstructionPage>
         <template #instruction>
-          <div class="mb-2">
-            Nonograms is a logic puzzle in which the goal is to place black cells <span class="inline-block h-5 w-5 bg-black rounded"></span> such that:
-          </div>
-          <div class="flex flex-col gap-2">
-            <div>
-              Cells can either be empty, black <span class="inline-block h-5 w-5 bg-black rounded"></span>, or crossed
-              out <i class="md-cell md-cell-kakurasu-cross"></i>.
-            </div>
-            <Separator />
-
-            <ul class="list-disc ml-4">
-              <li class="italic">
-                The numbers in each row/column represent the run lengths. Your goal is to place black cells to form consecutive runs that match these numbers.
-              </li>
-              <li class="italic">
-                For example, in the below grid, the second column has "1" on top of "3". This means that there should be a single black cell, then at least one empty cell, then 3 consecutive black cells in that column.
-              </li>
-            </ul>
-          </div>
+          <p class="mb-2">
+            Nonograms is a logic puzzle in which the goal is to place black cells <span class="inline-block h-5 w-5 bg-black rounded"></span>
+            such that number constraints found on the edges of the board are satisfied.
+          </p>
+          <p>
+            Below is an example board:
+          </p>
         </template>
         <template #board>
-          <PuzzleNonograms :state="page2" class="mx-auto" />
+          <PuzzleNonograms :scale="0.7" :state="page2" class="mx-auto" />
         </template>
       </FreeplayGameViewInstructionPage>
     </template>
@@ -160,19 +148,15 @@ const page4Left: Partial<PuzzleState<NonogramMeta>> = {
     <template #page2>
       <FreeplayGameViewInstructionPage>
         <template #instruction>
-          <div>
-            The numbers only define the length of the black blocks, not the space between them. Looking at the right-most column with hint "3", both placements below are valid since each has 3 consecutive black cells.
-          </div>
+          <p class="mb-2">
+            To the left of each row and on top of each column are numbers that show the lengths of <span class="font-bold">runs of consecutive black squares</span> for that row/column.
+          </p>
+          <p>
+            Your goal is to mark cells black <span class="inline-block h-5 w-5 bg-black rounded"></span> to create runs that match these numbers.
+          </p>
         </template>
         <template #board>
-          <div class="flex flex-row justify-between gap-2 text-center">
-            <div class="flex flex-col gap-2">
-              <PuzzleNonograms :scale="0.7" :state="page3Left" class="mx-auto" />
-            </div>
-            <div class="flex flex-col gap-2">
-              <PuzzleNonograms :scale="0.7" :state="page3Right" class="mx-auto" />
-            </div>
-          </div>
+          <PuzzleNonograms :scale="0.7" :state="boardEmpty" class="mx-auto" />
         </template>
       </FreeplayGameViewInstructionPage>
     </template>
@@ -180,15 +164,17 @@ const page4Left: Partial<PuzzleState<NonogramMeta>> = {
     <template #page3>
       <FreeplayGameViewInstructionPage>
         <template #instruction>
-          <div>Similarly, the bottom row with hints "1" and "2" can be satisfied in multiple ways - a single black cell, then at least one empty cell, then 2 consecutive black cells.</div>
+          <p>
+            For instance, in the example below, looking at the right column with hint “3”, each of the 2 shown placements satisfies the number clue since each consists of 3 consecutive black squares.
+          </p>
         </template>
         <template #board>
-          <div class="flex flex-row justify-between gap-2 text-center">
+          <div class="flex flex-row justify-between gap-2 text-center max-w-100 overflow-x-scroll">
             <div class="flex flex-col gap-2">
-              <PuzzleNonograms :scale="0.7" :state="page4Left" class="mx-auto" />
+              <PuzzleNonograms :scale="0.5" :state="page3Left" class="mx-auto" />
             </div>
             <div class="flex flex-col gap-2">
-              <PuzzleNonograms :scale="0.7" :state="page4Right" class="mx-auto" />
+              <PuzzleNonograms :scale="0.5" :state="page3Right" class="mx-auto" />
             </div>
           </div>
         </template>
@@ -198,19 +184,38 @@ const page4Left: Partial<PuzzleState<NonogramMeta>> = {
     <template #page4>
       <FreeplayGameViewInstructionPage>
         <template #instruction>
-          <div>
-            The puzzle is solved when each row and column contains the exact runs specified by their hints. While
-            there may be multiple ways to satisfy individual rows or columns, the correct solution will uniquely satisfy
-            all row and column hints simultaneously.
+          <div class="mb-2">
+            Similarly, the bottom row with hints "1" and "2" can be satisfied in multiple ways - a single black cell, then at least one empty cell, then 2 consecutive black cells.
           </div>
-          <Separator />
           <div>
-            For instance, the unique solution to this puzzle is shown below, as each row and column hint pattern is
-            satisfied.
+            Note that when there are <span class="font-bold"> multiple runs</span> in the same row/column, they must be separated by at least one empty cell.
           </div>
         </template>
         <template #board>
-          <PuzzleNonograms :state="solution" class="mx-auto" />
+          <div class="flex flex-row justify-between gap-2 text-center">
+            <div class="flex flex-col gap-2">
+              <PuzzleNonograms :scale="0.5" :state="page4Left" class="mx-auto" />
+            </div>
+            <div class="flex flex-col gap-2">
+              <PuzzleNonograms :scale="0.5" :state="page4Right" class="mx-auto" />
+            </div>
+          </div>
+        </template>
+      </FreeplayGameViewInstructionPage>
+    </template>
+
+    <template #page5>
+      <FreeplayGameViewInstructionPage>
+        <template #instruction>
+          <p class="mb-2">
+            The correct solution will uniquely satisfy the runs specified by all rows and column hints simultaneously
+          </p>
+          <p>
+            Below is a full solved game board:
+          </p>
+        </template>
+        <template #board>
+          <PuzzleNonograms :scale="0.7" :state="solution" class="mx-auto" />
         </template>
       </FreeplayGameViewInstructionPage>
 

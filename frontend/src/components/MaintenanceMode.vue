@@ -18,7 +18,7 @@ const props = defineProps<{ reason?: string | null; }>();
       <h2 class="text-2xl font-bold text-gray-900 mb-4">mitpuzzles.com under maintenance.</h2>
 
       <Alert v-if="props.reason" variant="info" class="my-2">
-          {{ props.reason }}
+          <div>{{ props.reason }}</div>
       </Alert>
       <p class="text-gray-600 mb-6">Please check back shortly. Thank you for your patience.</p>
     </Container>

@@ -50,6 +50,12 @@ class PrecisePuzzleEncoder:
             "immutable_values": [],  # None
             "empty_values": [-1],  # EMPTYs
         },
+        "mosaic": {
+            "positive_values": [-3],  # SHADED (filled cells)
+            "negative_values": [-4],  # CROSS (pertinent negative for strict mode)
+            "immutable_values": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],  # Number clues 0-9 (immutable)
+            "empty_values": [-1],  # UNMARKED
+        },
     }
 
     def __init__(self, puzzle_type: str):

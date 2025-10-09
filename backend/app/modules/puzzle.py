@@ -19,7 +19,7 @@ from app.dependencies import AsyncDatabase, get_device_id
 from app.models import Base
 from app.modules.authentication import User, fastapi_users
 from app.service.encoder import PrecisePuzzleEncoder
-from app.modules.device_tracking import Device
+from app.modules.tracking import Device
 from app.utils import get_device_type_from_thumbmark
 
 
@@ -104,6 +104,83 @@ class FreeplayPuzzleAttempt(Base):
     def is_authenticated(self) -> bool:
         """Returns True if attempt is from an authenticated user."""
         return self.user_id is not None
+
+
+class PuzzlePriority(Base):
+    """
+    Tracks puzzles that should be served with priority.
+    Priority puzzles are served randomly first, then regular puzzles.
+    """
+    __tablename__ = "puzzle_priority"
+    __table_args__ = (
+        Index("idx_priority_active", "puzzle_id", "added_at", "removed_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(), primary_key=True, server_default=text("uuidv7()"))
+
+    # Puzzle reference
+    puzzle_id: Mapped[uuid.UUID] = mapped_column(UUID(), ForeignKey("puzzle.id", ondelete="CASCADE"), nullable=False)
+
+    # Temporal tracking
+    added_at: Mapped[datetime] = mapped_column(DateTime(timezone=False), default=datetime.utcnow, nullable=False)
+    removed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=False), nullable=True)
+
+    # Relationships
+    puzzle: Mapped["Puzzle"] = relationship("Puzzle", backref="priority_records")
+
+    @property
+    def is_active(self) -> bool:
+        """Returns True if this priority is currently active"""
+        return self.removed_at is None
+
+
+class PuzzleShown(Base):
+    """
+    Records every puzzle shown to a user/device.
+    Enforces: logged-in users can't see same puzzle on ANY device,
+             anonymous users can't see same puzzle on THEIR device.
+    """
+    __tablename__ = "puzzle_shown"
+    __table_args__ = (
+        Index("idx_shown_device_puzzle", "device_id", "puzzle_id"),
+        Index("idx_shown_user_puzzle", "user_id", "puzzle_id"),
+        Index("idx_shown_session", "session_id"),
+        Index("idx_shown_at", "shown_at"),
+        Index("idx_shown_device_unique", "device_id", "puzzle_id",
+              unique=True,
+              postgresql_where=text("user_id IS NULL")),
+        Index("idx_shown_user_unique", "user_id", "puzzle_id",
+              unique=True,
+              postgresql_where=text("user_id IS NOT NULL")),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(), primary_key=True, server_default=text("uuidv7()"))
+    shown_at: Mapped[datetime] = mapped_column(DateTime(timezone=False), default=datetime.utcnow, nullable=False)
+
+    # User/device/session identifiers
+    device_id: Mapped[uuid.UUID] = mapped_column(UUID(), ForeignKey("device.id", ondelete="CASCADE"), nullable=False)
+    user_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(), ForeignKey("user.id", ondelete="SET NULL"), nullable=True)
+    session_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(), nullable=True)
+
+    # Puzzle reference
+    puzzle_id: Mapped[uuid.UUID] = mapped_column(UUID(), ForeignKey("puzzle.id", ondelete="RESTRICT"), nullable=False)
+
+    # Link to attempt (if user submitted a solution)
+    attempt_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(),
+        ForeignKey("freeplay_puzzle_attempt.id", ondelete="SET NULL"),
+        nullable=True,
+        unique=True  # one-to-one relationship
+    )
+
+    # Denormalized for analytics
+    was_priority: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    # Relationships
+    device: Mapped["Device"] = relationship("Device", backref="puzzles_shown")
+    user: Mapped[Optional["User"]] = relationship("User", backref="puzzles_shown")
+    puzzle: Mapped["Puzzle"] = relationship("Puzzle", backref="shown_records")
+    attempt: Mapped[Optional["FreeplayPuzzleAttempt"]] = relationship("FreeplayPuzzleAttempt", backref="shown_record")
 
 
 # Schemas
@@ -242,7 +319,7 @@ class PuzzleService:
         Get a random puzzle of the specified type, size, and difficulty.
         If size is not specified, uses the smallest available size for that type.
         """
-        from sqlalchemy import select, func
+        from sqlalchemy import select, func, Integer, cast
 
         # Start with base query
         query = select(Puzzle).where(Puzzle.puzzle_type == puzzle_type)
@@ -265,9 +342,173 @@ class PuzzleService:
         if puzzle_difficulty:
             query = query.where(Puzzle.puzzle_difficulty == puzzle_difficulty)
 
+        if puzzle_type == "nonograms":
+            NONOGRAMS_MIN_BLACK_CELLS_PERCENTAGE = 0.1 # >10% must be black cells
+            count_black_cells = cast(Puzzle.puzzle_data['count_black_cells'].as_string(), Integer)
+            rows = cast(Puzzle.puzzle_data['rows'].as_string(), Integer)
+            cols = cast(Puzzle.puzzle_data['cols'].as_string(), Integer)
+            query = query.where(count_black_cells > (rows * cols * NONOGRAMS_MIN_BLACK_CELLS_PERCENTAGE))
+
         # Order by random
         query = query.order_by(func.random())
         return await self.db.scalar(query)
+
+    async def get_next_puzzle(
+        self,
+        device_id: uuid.UUID,
+        user_id: Optional[uuid.UUID],
+        puzzle_type: str,
+        puzzle_size: Optional[str] = None,
+        puzzle_difficulty: Optional[str] = None
+    ) -> Optional[Puzzle]:
+        """
+        Get next puzzle for user, enforcing uniqueness rules.
+        Prioritizes unshown priority puzzles, then random unshown puzzles.
+
+        Rules:
+        - Logged in users: can't see same puzzle on ANY device
+        - Anonymous users: can't see same puzzle on THEIR device
+        """
+        from sqlalchemy import select, func, or_, and_
+        from sqlalchemy.orm import aliased
+
+        # Build base query
+        query = select(Puzzle).where(Puzzle.puzzle_type == puzzle_type)
+
+        # Apply size/difficulty filters
+        if puzzle_size:
+            query = query.where(Puzzle.puzzle_size == puzzle_size)
+        else:
+            # Get smallest available size (same logic as get_random_puzzle)
+            size_query = select(Puzzle.puzzle_size).where(Puzzle.puzzle_type == puzzle_type).distinct()
+            sizes_result = await self.db.execute(size_query)
+            all_sizes = sizes_result.scalars().all()
+
+            if all_sizes:
+                smallest_size = min(all_sizes, key=lambda x: int(x.split("x")[0]))
+                query = query.where(Puzzle.puzzle_size == smallest_size)
+
+        if puzzle_difficulty:
+            query = query.where(Puzzle.puzzle_difficulty == puzzle_difficulty)
+
+        # Apply nonograms filter (same as get_random_puzzle)
+        if puzzle_type == "nonograms":
+            from sqlalchemy import Integer, cast
+            NONOGRAMS_MIN_BLACK_CELLS_PERCENTAGE = 0.1
+            count_black_cells = cast(Puzzle.puzzle_data['count_black_cells'].as_string(), Integer)
+            rows = cast(Puzzle.puzzle_data['rows'].as_string(), Integer)
+            cols = cast(Puzzle.puzzle_data['cols'].as_string(), Integer)
+            query = query.where(count_black_cells > (rows * cols * NONOGRAMS_MIN_BLACK_CELLS_PERCENTAGE))
+
+        # Left join with active priority records
+        PriorityAlias = aliased(PuzzlePriority)
+        query = query.outerjoin(
+            PriorityAlias,
+            and_(
+                Puzzle.id == PriorityAlias.puzzle_id,
+                PriorityAlias.removed_at == None
+            )
+        )
+
+        # Exclude puzzles based on uniqueness rules
+        ShownAlias = aliased(PuzzleShown)
+        if user_id:
+            # Logged in: exclude any puzzle this user has seen on ANY device
+            query = query.outerjoin(
+                ShownAlias,
+                and_(
+                    Puzzle.id == ShownAlias.puzzle_id,
+                    ShownAlias.user_id == user_id
+                )
+            )
+        else:
+            # Anonymous: exclude puzzles THIS device has seen (while anonymous)
+            query = query.outerjoin(
+                ShownAlias,
+                and_(
+                    Puzzle.id == ShownAlias.puzzle_id,
+                    ShownAlias.device_id == device_id,
+                    ShownAlias.user_id == None
+                )
+            )
+
+        query = query.where(ShownAlias.id == None)
+
+        # Try to get a priority puzzle first
+        priority_query = query.where(PriorityAlias.id.is_not(None)).order_by(func.random())
+        priority_puzzle = await self.db.scalar(priority_query.limit(1))
+
+        if priority_puzzle:
+            return priority_puzzle
+
+        # No priority puzzles left, get any random puzzle
+        random_query = query.order_by(func.random())
+        return await self.db.scalar(random_query.limit(1))
+
+    async def record_puzzle_shown(
+        self,
+        device_id: uuid.UUID,
+        user_id: Optional[uuid.UUID],
+        puzzle_id: uuid.UUID,
+        session_id: Optional[uuid.UUID] = None,
+    ) -> PuzzleShown:
+        """
+        Record that a puzzle was shown to a user/device.
+        Captures priority status at time of showing.
+        """
+        from sqlalchemy import select, and_
+
+        # Check if puzzle is currently a priority
+        priority_query = select(PuzzlePriority).where(
+            and_(
+                PuzzlePriority.puzzle_id == puzzle_id,
+                PuzzlePriority.removed_at == None
+            )
+        )
+        priority_record = await self.db.scalar(priority_query)
+
+        was_priority = priority_record is not None
+
+        # Create shown record
+        puzzle_shown = PuzzleShown(
+            device_id=device_id,
+            user_id=user_id,
+            session_id=session_id,
+            puzzle_id=puzzle_id,
+            was_priority=was_priority,
+        )
+
+        self.db.add(puzzle_shown)
+        await self.db.commit()
+        await self.db.refresh(puzzle_shown)
+        return puzzle_shown
+
+    async def link_puzzle_shown_to_attempt(
+        self,
+        puzzle_id: uuid.UUID,
+        device_id: uuid.UUID,
+        attempt_id: uuid.UUID
+    ) -> None:
+        """
+        Link a puzzle_shown record to a freeplay attempt.
+        Finds the most recent shown record for this puzzle/device and links it.
+        """
+        from sqlalchemy import select, and_, desc
+
+        # Find the most recent shown record for this puzzle and device
+        query = select(PuzzleShown).where(
+            and_(
+                PuzzleShown.puzzle_id == puzzle_id,
+                PuzzleShown.device_id == device_id,
+                PuzzleShown.attempt_id == None  # not already linked
+            )
+        ).order_by(desc(PuzzleShown.shown_at)).limit(1)
+
+        puzzle_shown = await self.db.scalar(query)
+
+        if puzzle_shown:
+            puzzle_shown.attempt_id = attempt_id
+            await self.db.commit()
 
     def calculate_puzzle_solution_hash_rle(self, puzzle_type, solution_state):
         ppe = PrecisePuzzleEncoder(puzzle_type)
@@ -334,6 +575,14 @@ class PuzzleService:
         self.db.add(attempt)
         await self.db.commit()
         await self.db.refresh(attempt)
+
+        # Link to puzzle_shown record if one exists
+        await self.link_puzzle_shown_to_attempt(
+            puzzle_id=attempt_data.puzzle_id,
+            device_id=device_id,
+            attempt_id=attempt.id
+        )
+
         return attempt
 
     async def get_freeplay_leaderboard(self, puzzle_type: str, puzzle_size: str, puzzle_difficulty: str, limit: int = 10) -> Dict[str, Any]:
@@ -764,6 +1013,60 @@ async def get_random_puzzle(
 
     if not puzzle:
         raise HTTPException(status_code=404, detail=f"No puzzle found for type='{puzzle_type}', size='{puzzle_size}', difficulty='{puzzle_difficulty}'")
+
+    return PuzzleIdResponse(puzzle_id=puzzle.id)
+
+
+@router.get("/next", response_model=PuzzleIdResponse)
+async def get_next_puzzle_endpoint(
+    db: AsyncDatabase,
+    device_id: uuid.UUID = Depends(get_device_id),
+    user: Optional[User] = Depends(fastapi_users.current_user(optional=True)),
+    puzzle_type: str = Query(..., description="Type of puzzle"),
+    puzzle_size: Optional[str] = Query(None, description="Size of puzzle"),
+    puzzle_difficulty: Optional[str] = Query(None, description="Difficulty level"),
+    session_id: Optional[uuid.UUID] = Query(None, description="Current session ID"),
+) -> PuzzleIdResponse:
+    """
+    Get the next puzzle for this user/device with priority and uniqueness enforcement.
+
+    Prioritizes:
+    1. Priority puzzles they haven't seen (in priority_order)
+    2. Random puzzles they haven't seen
+
+    Uniqueness rules:
+    - Logged in users: can't see same puzzle on ANY device
+    - Anonymous users: can't see same puzzle on THEIR device
+
+    Automatically records the view in puzzle_shown table.
+
+    Example: GET /api/puzzle/next?puzzle_type=sudoku&puzzle_difficulty=easy&session_id=...
+    """
+    service = PuzzleService(db)
+    user_id = user.id if user else None
+
+    # Get next puzzle
+    puzzle = await service.get_next_puzzle(
+        device_id=device_id,
+        user_id=user_id,
+        puzzle_type=puzzle_type,
+        puzzle_size=puzzle_size,
+        puzzle_difficulty=puzzle_difficulty
+    )
+
+    if not puzzle:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No available puzzles for type='{puzzle_type}', size='{puzzle_size}', difficulty='{puzzle_difficulty}' that you haven't seen"
+        )
+
+    # Record that this puzzle was shown
+    await service.record_puzzle_shown(
+        device_id=device_id,
+        user_id=user_id,
+        puzzle_id=puzzle.id,
+        session_id=session_id
+    )
 
     return PuzzleIdResponse(puzzle_id=puzzle.id)
 

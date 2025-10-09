@@ -1,7 +1,8 @@
 import { defineStore } from "pinia";
 import type { PuzzleDefinition } from "@/services/game/engines/types.ts";
 import { shared_http_cache } from "@/store/database/HTTPCache.ts";
-import { getRandomPuzzleID } from "@/services/app.ts";
+import { getNextPuzzleID } from "@/services/app.ts";
+import { useSessionTrackingStore } from "@/store/useSessionTrackingStore";
 
 // localStorage helpers
 export function getCurrentPuzzleID(puzzle_type: string): string | null {
@@ -38,10 +39,14 @@ export const usePuzzleDefinitionStore = defineStore("puzzle-definitions", {
 
     /** request a new puzzle from the server and set it as current */
     async requestNewPuzzle<TMeta>(puzzle_type: string, size: string, difficulty: string): Promise<PuzzleDefinition<TMeta>> {
-      // request 1: get random puzzle id
-      const res_id = await getRandomPuzzleID(puzzle_type, size, difficulty);
+      // Get session_id from session tracking store
+      const sessionStore = useSessionTrackingStore();
+      const session_id = sessionStore.session_id;
+
+      // request 1: get next puzzle id (with priority and uniqueness enforcement)
+      const res_id = await getNextPuzzleID(puzzle_type, size, difficulty, session_id);
       if (res_id.status !== 200) throw new Error("Failed to fetch new puzzle ID");
-      
+
       const puzzle_id = res_id.data.puzzle_id?.toString();
       if (!puzzle_id) throw new Error("Puzzle ID missing from response");
       this.setCurrentPuzzle(puzzle_type, puzzle_id);
@@ -49,7 +54,7 @@ export const usePuzzleDefinitionStore = defineStore("puzzle-definitions", {
       // request 2: get puzzle definition by id through http cache
       const definition = await this.getDefinitionByID(puzzle_id);
       if (!definition) throw new Error("Failed to fetch puzzle definition");
-      
+
       return definition as PuzzleDefinition<TMeta>;
     },
 

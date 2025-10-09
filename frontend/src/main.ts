@@ -27,6 +27,7 @@ import { usePuzzleProgressStore } from "@/store/puzzle/usePuzzleProgressStore.ts
 import { usePuzzleHistoryStore } from "@/store/puzzle/usePuzzleHistoryStore.ts";
 import { usePuzzleScaleStore } from "@/store/puzzle/usePuzzleScaleStore.ts";
 import { init_cached_endpoints } from "@/store/database/HTTPCache.ts";
+import { useSessionTrackingStore } from "@/store/useSessionTrackingStore.ts";
 
 if (import.meta.hot) {
   import.meta.hot.accept(["./constants.ts"], () => {
@@ -79,6 +80,7 @@ const routerConfig: RouterOptions = {
     route.view("/signup", "signup", "Signup", false),
     route.view("/verify-email", "verify-email", "SignupVerifyEmail", false),
     route.markdown("/about-us", "about-us", mdAbout),
+    route.view("/privacy-policy", "privacy-policy", "privacy-policy"),
     ...Object.values(DEV_TOOLS).map(({ key, meta }) => route.dev(key, meta)),
     ...Object.keys(ACTIVE_GAMES).map(route.game),
     {
@@ -123,6 +125,10 @@ const routerConfig: RouterOptions = {
   const appStore = useAppStore();
   await appStore.updateDeviceFingerprint();
   appStore.initCacheVersion();
+
+  // initialize session tracking after device fingerprint is available
+  const sessionTracker = useSessionTrackingStore();
+  await sessionTracker.initialize();
 
   // posthog
   const posthogApiKey = import.meta.env.VITE_POSTHOG_API_KEY;

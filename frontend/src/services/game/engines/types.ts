@@ -55,6 +55,7 @@ export interface PuzzleUIState {
 export interface PuzzleController<TMeta = any> {
   state_puzzle: Ref<PuzzleState<TMeta>>;
   state_ui: Ref<PuzzleUIState>;
+  current_puzzle_variant?: Ref<string[]>;
 
   // game actions
   handle_cell_click: (cell: Cell, event: MouseEvent, override?: number) => void;

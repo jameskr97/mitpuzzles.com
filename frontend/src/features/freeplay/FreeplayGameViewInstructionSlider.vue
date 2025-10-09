@@ -52,9 +52,9 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="grid grid-rows-[1fr_auto] justify-center w-full h-full">
+  <div class="grid grid-rows-[1fr_auto] justify-center w-full !max-h-130">
     <!-- Content Area with Scroll -->
-    <div class="overflow-y-auto min-h-0 px-4">
+    <div class="overflow-y-none min-h-0 px-4">
       <slot v-if="currentStep < num_pages" class="h-full" :name="'page' + (currentStep + 1)"></slot>
       <FreeplayGameViewInstructionPage layout_mode="content-only" v-else>
         <template #instruction>
@@ -65,6 +65,7 @@ onUnmounted(() => {
               <div>Click <span class="text-green-600">submit</span> when you think you have solved the puzzle.</div>
             </div>
           </div>
+
         </template>
 
         <template #board>
@@ -74,14 +75,7 @@ onUnmounted(() => {
                 <li>
                   You can click in the information circle
                   <v-icon name="hi-information-circle" :scale="1.5" class="cursor-pointer" />
-                  to review these rules.
-                </li>
-
-                <li>
-                  You can click on the settings gear
-                  <v-icon name="io-settings-outline" :scale="1.5" class="cursor-pointer" />
-                  to turn on tutorial mode. Tutorial mode will show you any game rules you break while trying to solve the
-                  puzzle.
+                  to review these rules at any time.
                 </li>
               </ul>
             </div>

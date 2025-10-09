@@ -12,6 +12,7 @@ import { databaseManager } from "@/store/database";
 import { ref } from "vue";
 import { broadcast_channel_service } from "@/services/broadcast_channel";
 import type { GutterMarkings } from "@/features/games.composables/useGutterMarking";
+import { usePuzzleHistoryStore } from "@/store/puzzle/usePuzzleHistoryStore";
 
 // constants + types
 type Precision = "seconds" | "centiseconds";
@@ -29,6 +30,8 @@ interface PuzzleProgressState {
   displayPrecision: Precision; // show seconds or milliseconds
   updateInterval: NodeJS.Timeout | null; // unused, kept for compatibility
   broadcast_unsubscribers: (() => void)[]; // cleanup functions for broadcast listeners
+  tracked_puzzles: Set<string>; // puzzles currently being tracked for visibility
+  visibility_listener: (() => void) | null; // cleanup function for visibility listener
 }
 
 export const usePuzzleProgressStore = defineStore("puzzle.progress", {
@@ -42,6 +45,8 @@ export const usePuzzleProgressStore = defineStore("puzzle.progress", {
     displayPrecision: "seconds",
     updateInterval: null,
     broadcast_unsubscribers: [],
+    tracked_puzzles: new Set(),
+    visibility_listener: null,
   }),
 
   getters: {
@@ -136,6 +141,9 @@ export const usePuzzleProgressStore = defineStore("puzzle.progress", {
         gutter_markings: null,
       });
       broadcast_channel_service.broadcast_game_reset(puzzle_type, initial_state);
+
+      // start tracking visibility for this puzzle
+      await this.start_visibility_tracking(puzzle_type, "freeplay");
     },
 
     /** marks puzzle as completed with current timestamp */
@@ -145,6 +153,10 @@ export const usePuzzleProgressStore = defineStore("puzzle.progress", {
         timestamp_finish: this.timestamp_finish[puzzle_type],
       });
       broadcast_channel_service.broadcast_game_solved(puzzle_type, this.timestamp_finish[puzzle_type]);
+
+      // stop tracking visibility for this puzzle
+      await this.stop_visibility_tracking(puzzle_type, "freeplay");
+
       return this;
     },
 
@@ -180,6 +192,71 @@ export const usePuzzleProgressStore = defineStore("puzzle.progress", {
         gutter_markings: null,
       });
       broadcast_channel_service.broadcast_gutter_markings_reset(puzzle_type);
+    },
+
+    /** starts tracking page visibility for a puzzle */
+    async start_visibility_tracking(puzzle_type: string, mode: "freeplay" | "experiment" = "freeplay") {
+      if (this.tracked_puzzles.has(puzzle_type)) {
+        console.log(`Already tracking visibility for ${puzzle_type}`);
+        return;
+      }
+
+      this.tracked_puzzles.add(puzzle_type);
+
+      // set up the visibility listener if not already set up
+      if (this.visibility_listener === null) {
+        this.setup_visibility_listener();
+      }
+
+      // record initial state
+      const history_store = usePuzzleHistoryStore();
+      if (!document.hidden) {
+        await history_store.add_event(puzzle_type, mode, "puzzle_visible", {});
+      } else {
+        await history_store.add_event(puzzle_type, mode, "puzzle_not_visible", {});
+      }
+    },
+
+    /** stops tracking page visibility for a puzzle */
+    async stop_visibility_tracking(puzzle_type: string, mode: "freeplay" | "experiment" = "freeplay") {
+      if (!this.tracked_puzzles.has(puzzle_type)) {
+        return;
+      }
+
+      // record final state if currently visible
+      if (!document.hidden) {
+        const history_store = usePuzzleHistoryStore();
+        await history_store.add_event(puzzle_type, mode, "puzzle_not_visible", {});
+      }
+
+      this.tracked_puzzles.delete(puzzle_type);
+
+      // clean up listener if no more puzzles are being tracked
+      if (this.tracked_puzzles.size === 0 && this.visibility_listener !== null) {
+        this.visibility_listener();
+        this.visibility_listener = null;
+      }
+    },
+
+    /** sets up the page visibility API listener */
+    setup_visibility_listener() {
+      const handle_visibility_change = async () => {
+        const history_store = usePuzzleHistoryStore();
+        const is_visible = !document.hidden;
+
+        // record event for all tracked puzzles
+        for (const puzzle_type of this.tracked_puzzles) {
+          const action_type = is_visible ? "puzzle_visible" : "puzzle_not_visible";
+          await history_store.add_event(puzzle_type, "freeplay", action_type, {});
+        }
+      };
+
+      document.addEventListener("visibilitychange", handle_visibility_change);
+
+      // return cleanup function
+      this.visibility_listener = () => {
+        document.removeEventListener("visibilitychange", handle_visibility_change);
+      };
     },
 
     /** setup broadcast channel listeners for cross-tab sync */

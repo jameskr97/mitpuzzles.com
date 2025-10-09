@@ -19,7 +19,7 @@ from sqlalchemy.types import JSON
 from app.dependencies import AsyncDatabase, get_device_id
 from app.models import Base
 from app.modules.authentication import User, fastapi_users
-from app.modules.device_tracking import Device
+from app.modules.tracking import Device
 
 
 # Models

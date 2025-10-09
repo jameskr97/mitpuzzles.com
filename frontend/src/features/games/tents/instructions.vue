@@ -30,28 +30,51 @@ boardPage2.board[2][2] = TentsCell.TENT;
 boardPage2.board[3][3] = TentsCell.TENT;
 
 const boardPage3 = JSON.parse(JSON.stringify(boardPage1));
-boardPage3.board[0][0] = TentsCell.TENT;
+// boardPage3.board[0][0] = TentsCell.TENT;
 boardPage3.board[0][2] = TentsCell.TENT;
-boardPage3.board[2][3] = TentsCell.TENT;
-boardPage3.board[3][1] = TentsCell.TENT;
+boardPage3.board[2][2] = TentsCell.TENT;
+// boardPage3.board[2][3] = TentsCell.TENT;
+// boardPage3.board[3][1] = TentsCell.TENT;
+
+const boardPage4 = JSON.parse(JSON.stringify(boardPage1));
+boardPage4.board[0][0] = TentsCell.TENT;
+boardPage4.board[0][2] = TentsCell.TENT;
+boardPage4.board[2][2] = TentsCell.EMPTY;
+boardPage4.board[2][3] = TentsCell.TENT;
+
+const boardPage5 = JSON.parse(JSON.stringify(boardPage1));
+boardPage5.board[0][0] = TentsCell.TENT;
+boardPage5.board[0][2] = TentsCell.TENT;
+boardPage5.board[3][1] = TentsCell.TENT;
+boardPage5.board[2][3] = TentsCell.TENT;
+for (let r = 0; r < boardPage5.board.length; r++) {
+  for (let c = 0; c < boardPage5.board[r].length; c++) {
+    const val = boardPage5.board[r][c];
+    // skip trees (1) and tents
+    if (val === TentsCell.TENT || val === 1) continue;
+    boardPage5.board[r][c] = /* tent-free mark (green) */ (TentsCell as any).MARK ?? 3;
+  }
+}
 </script>
 
 <template>
-  <FreeplayGameViewInstructionSlider :num_pages="4">
+  <FreeplayGameViewInstructionSlider :num_pages="5">
     <template #page1>
       <FreeplayGameViewInstructionPage>
         <template #instruction>
           <div class="mb-2">
-            Tents is a logic puzzle in which the goal is to place tents <i class="md-cell md-cell-tent"></i> next to trees <i class="md-cell md-cell-tree"></i>  such that:
+            Tents is a logic puzzle in which the goal is to place tents
+            <i class="md-cell md-cell-tent"></i> next to trees
+            <i class="md-cell md-cell-tree"></i>
+            subject to a number of constraints.
           </div>
-          <ul class="list-disc ml-4">
-            <li>Each tent is uniquely paired with one tree (above, below, left, or right).</li>
-            <li>Tents never touch each other, even diagonally.</li>
-            <li>The number of tents in each row and column matches the target numbers on the edges of the grid.</li>
-          </ul>
+          <div>
+            Below is a 4x4 example board with 4 trees:
+          </div>
+
         </template>
         <template #board>
-          <PuzzleTents :state="boardPage1" class="mt-auto mx-auto" />
+          <PuzzleTents :state="boardPage1" :scale="1.2" class="mt-auto mx-auto" />
         </template>
       </FreeplayGameViewInstructionPage>
     </template>
@@ -59,17 +82,22 @@ boardPage3.board[3][1] = TentsCell.TENT;
     <template #page2>
       <FreeplayGameViewInstructionPage>
         <template #instruction>
-          <div>
-            Tents must not touch each other, including diagonally. So, once you place a tent, cells horizontally,
-            vertically, and diagonally adjacent to it must be tent-free.
-          </div>
-          <div>
-            For instance, the configuration of tents below is <span class="font-bold">invalid</span> because the two
-            tents touch each other diagonally:
-          </div>
+          <p class="mx-auto">
+            Each tree must be paired with exactly one tent, placed <span class="font-bold">horizontally or vertically adjacent.</span>
+            A tree may have multiple tents next to it, but in the final solution only one of them forms its unique pair.
+          </p>
+          <br>
+<!--          <div>-->
+<!--            Multiple tents may be next to a tree (such as the middle tree in the second row),-->
+<!--            <span class="font-bold">but only one of the trees will be paired with it</span>-->
+<!--            in the final solution, ensuring a global 1-to-1, tree-to-tent pairing across the grid.-->
+<!--          </div>-->
+          <p>
+            For example, the middle tree in the second row touches two tents, but each actually belongs to the tree below it.
+          </p>
         </template>
         <template #board>
-          <PuzzleTents :state="boardPage2" :scale="1" class="mx-auto" />
+          <PuzzleTents :state="boardPage3" :scale="1.2" class="mx-auto" />
         </template>
       </FreeplayGameViewInstructionPage>
     </template>
@@ -77,7 +105,27 @@ boardPage3.board[3][1] = TentsCell.TENT;
     <template #page3>
       <FreeplayGameViewInstructionPage>
         <template #instruction>
+          <div>
+            Tents must not touch each other, including diagonally. Once you place a tent, cells horizontally,
+            vertically, and diagonally adjacent to it must be tent-free.
+          </div>
+          <br>
+          <div>
+            For instance, the configuration of tents below is <span class="font-bold">invalid</span> because the two
+            tents touch each other diagonally:
+          </div>
+        </template>
+        <template #board>
+          <PuzzleTents :state="boardPage2" :scale="1.2" class="mx-auto" />
+        </template>
+      </FreeplayGameViewInstructionPage>
+    </template>
+
+    <template #page4>
+      <FreeplayGameViewInstructionPage>
+        <template #instruction>
           <div>The numbers on the edges indicate exactly how many tents are in that row or column.</div>
+          <br>
           <ul class="list-disc ml-4">
             <li>
               For instance, the first row has a 2, requiring two tents, while the second row has 0, so it contains no
@@ -87,28 +135,26 @@ boardPage3.board[3][1] = TentsCell.TENT;
           </ul>
         </template>
         <template #board>
-          <PuzzleTents :state="boardPage3" :scale="1" class="mx-auto" />
+          <PuzzleTents :state="boardPage4" :scale="1.2" class="mx-auto" />
         </template>
       </FreeplayGameViewInstructionPage>
     </template>
 
-    <template #page4>
+    <template #page5>
       <FreeplayGameViewInstructionPage>
         <template #instruction>
-          <div class="mx-auto">
-            Every tree is paired with a unique tent, placed adjacent horizontally or vertically.
-          </div>
-          <div>
-            Multiple tents may be next to a tree,
-            <span class="font-bold">but only one of them will be paired with it</span>
-            in the final solution, ensuring a global 1–1 tree–tent pairing across the grid.
-          </div>
+          <p>The game is solved when you’ve placed tents equal to the number of trees, following the rules above.</p>
+          <br>
+          <p>Below is an example of a solved board:</p>
+          <br>
         </template>
         <template #board>
-          <PuzzleTents :state="boardPage3" :scale="1" class="mx-auto" />
+          <PuzzleTents :state="boardPage5" :scale="1.2" class="mx-auto" />
         </template>
       </FreeplayGameViewInstructionPage>
     </template>
+
+
 
     <template #controls>
       <div>Left click to cycle forward, right click to cycle backward between:</div>

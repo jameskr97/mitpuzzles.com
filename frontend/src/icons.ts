@@ -23,6 +23,7 @@ import {
   BiLayoutSidebarInset,
   BiMoonStarsFill,
   BiSunFill,
+  BiShieldLockFill,
   BiChevronDoubleUp,
   BiCheck,
   HiPencilAlt,
@@ -32,6 +33,8 @@ import {
   FaRegularArrowAltCircleRight,
   FaGoogle,
   FaUser,
+  MdKeyboardarrowdownRound,
+  RiTrophyLine,
 } from "oh-vue-icons/icons";
 
 addIcons(
@@ -56,6 +59,7 @@ addIcons(
   BiLayoutSidebarInset,
   BiMoonStarsFill,
   BiSunFill,
+  BiShieldLockFill,
   BiChevronDoubleUp,
   BiCheck,
   HiPencilAlt,
@@ -64,5 +68,7 @@ addIcons(
   CoMagnifyingGlass,
   FaRegularArrowAltCircleRight,
   FaGoogle,
-  FaUser
+  FaUser,
+  MdKeyboardarrowdownRound,
+  RiTrophyLine,
 );

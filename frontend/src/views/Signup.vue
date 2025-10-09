@@ -128,7 +128,8 @@ const submitForm = async () => {
               <span v-if="authStore.error == 'REGISTER_USER_ALREADY_EXISTS'">
                 A user with that email already exists.
               </span>
-              <span v-if="authStore.error == 'REGISTER_INVALID_PASSWORD'">{{ authStore.error }}</span>
+              <span v-else-if="authStore.error == 'REGISTER_INVALID_PASSWORD'">{{ authStore.error }}</span>
+              <span v-else-if="authStore.error == 'USERNAME_ALREADY_EXISTS'">That username is already taken.</span>
               <span v-else>{{ authStore.error }}</span>
             </div>
 

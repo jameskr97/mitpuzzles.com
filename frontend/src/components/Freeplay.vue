@@ -7,6 +7,9 @@ import { createPuzzleInteractionBridge } from "@/features/games.composables/setu
 import { usePuzzleScaleStore } from "@/store/puzzle/usePuzzleScaleStore.ts";
 import Container from "@/components/ui/Container.vue";
 import type { BattleshipsMeta } from "@/services/game/engines/types.ts";
+import SudokuNumberPad from "@/features/games/sudoku/SudokuNumberPad.vue";
+import { ref } from "vue";
+import { useGameLayout } from "@/composables/useGameLayout.ts";
 
 const route = useRoute();
 const gt = route.meta.game_type as string;
@@ -27,7 +30,7 @@ if (game_entry["defaultBehaviors"].length !== 0) {
 </script>
 
 <template>
-  <FreeplayGameView :puzzle="puzzle" class="mt-2 [touch-action:manipulation]">
+  <FreeplayGameView :puzzle="puzzle" class="mt-2 [touch-action:manipulation] !mx-2">
     <component
       :is="game_entry.component"
       :state="puzzle.state_puzzle.value"
@@ -35,8 +38,16 @@ if (game_entry["defaultBehaviors"].length !== 0) {
       :interact="bridge"
     />
 
-    <template #game-right>
+    <template #game-below>
+      <Container class="min-w-fit" v-if="puzzle.state_puzzle.value.definition.puzzle_type === 'sudoku'">
+        <SudokuNumberPad
+          :state="puzzle.state_puzzle.value"
+          :interact="bridge"
+        />
+      </Container>
+    </template>
 
+    <template #game-right>
       <Container
         v-if="puzzle.state_puzzle.value.definition.puzzle_type === 'battleships'"
         class="items-center grid grid-cols-[auto_1fr] gap-2 text-sm w-40 auto-rows-min"

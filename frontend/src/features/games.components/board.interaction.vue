@@ -9,6 +9,11 @@ const props = defineProps({
     required: false,
     default: null,
   },
+  bridge: {
+    type: Object as PropType<any>,
+    required: false,
+    default: null,
+  },
   enable_mobile_keyboard: {
     type: Boolean,
     required: false,
@@ -21,6 +26,11 @@ const board = inject<BoardContext>("boardContext")!;
 const interaction = new BoardInteraction(board, props.bind, (e: string, p: any) => {
   emits("inputEvent", { event_type: e, payload: p });
 });
+
+// Register this interaction instance with the bridge so other components can dispatch events
+if (props.bridge) {
+  props.bridge.registerBoardInteraction(interaction);
+}
 
 // Mobile keyboard support
 const mobile_input_ref = ref<HTMLInputElement | null>(null);

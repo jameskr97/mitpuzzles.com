@@ -8,12 +8,14 @@ from fastapi import APIRouter, Response
 from fastapi.responses import JSONResponse
 from fastapi import Request, HTTPException
 from pydantic import BaseModel, Field
-from sqlalchemy import String, DateTime, ForeignKey
+from sqlalchemy import String, DateTime, ForeignKey, Integer, Boolean, Index, func, cast, Date, text
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.orm import Session
 from sqlalchemy.types import JSON
+from datetime import timezone
+from typing import Optional
 
 from app.dependencies import AsyncDatabase
 from app.models import Base
@@ -33,6 +35,7 @@ class Device(Base):
     first_seen: Mapped[datetime] = mapped_column(DateTime(timezone=False), default=datetime.utcnow, nullable=False)
     last_seen: Mapped[datetime] = mapped_column(DateTime(timezone=False), default=datetime.utcnow, nullable=False)
     thumbmarks: Mapped[List["DeviceThumbmark"]] = relationship(back_populates="device", order_by="DeviceThumbmark.date_created")
+    session_activities: Mapped[List["SessionActivity"]] = relationship(back_populates="device")
 
 
 class DeviceThumbmark(Base):
@@ -45,6 +48,40 @@ class DeviceThumbmark(Base):
     thumbmark_data: Mapped[Dict] = mapped_column(JSON, nullable=False)
 
     device: Mapped[Device] = relationship(back_populates="thumbmarks")
+
+
+class SessionActivity(Base):
+    """Track individual user sessions for detailed analytics"""
+    __tablename__ = "session_activity"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid6.uuid7)
+    session_id: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True) # (client-generated UUIDv7)
+    device_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("device.id"), nullable=False)
+    user_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("user.id"), nullable=True)
+
+    # session timing (timezone-aware)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    last_heartbeat_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    ended_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    # activity metrics
+    active_seconds: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    # session context
+    initial_referrer: Mapped[Optional[str]] = mapped_column(String(2048), nullable=True)
+    ip_address: Mapped[str] = mapped_column(String(45), nullable=False)  # IPv6 max length
+
+    # relationships
+    device: Mapped[Device] = relationship("Device", back_populates="session_activities")
+    # Note: User relationship will be added via registry.configure_mappers()
+    # to avoid circular import issues
+
+    # indexes defined after columns
+    __table_args__ = (
+        Index("idx_session_device_started", device_id, started_at),
+        Index("idx_session_user_started", user_id, started_at),
+        Index("idx_session_ended_at", ended_at),  # Index for active session queries
+    )
 
 
 # Services
@@ -126,12 +163,77 @@ class DeviceService:
         return device
 
 
+class SessionTrackingService:
+    def __init__(self, db: Session):
+        self.db: Session = db
+
+    async def handle_heartbeat(self, session_id: str, device_id: uuid.UUID, user_id: Optional[uuid.UUID],
+                              active_duration_delta: int, ip_address: str, initial_referrer: Optional[str] = None):
+        """Handle a heartbeat from the client - create or update session"""
+        now = datetime.now(timezone.utc)
+
+        # Try to find existing session
+        session = await self.db.scalar(
+            select(SessionActivity).where(SessionActivity.session_id == session_id)
+        )
+
+        if session:
+            # Update existing session
+            session.last_heartbeat_at = now
+            session.active_seconds += active_duration_delta
+            # Update user_id if user logged in during session
+            if user_id and not session.user_id:
+                session.user_id = user_id
+        else:
+            # Create new session
+            session = SessionActivity(
+                session_id=session_id,
+                device_id=device_id,
+                user_id=user_id,
+                started_at=now,
+                last_heartbeat_at=now,
+                active_seconds=active_duration_delta,
+                ip_address=ip_address,
+                initial_referrer=initial_referrer
+            )
+            self.db.add(session)
+
+        await self.db.commit()
+        return session
+
+
+    async def get_active_users_count(self) -> int:
+        """Get count of active users (devices with heartbeat in last 2 minutes)"""
+        from datetime import timedelta
+        cutoff = datetime.now(timezone.utc) - timedelta(minutes=2)
+
+        count = await self.db.scalar(
+            select(func.count(func.distinct(SessionActivity.device_id)))
+            .where(
+                SessionActivity.ended_at.is_(None),  # Session is still active
+                SessionActivity.last_heartbeat_at > cutoff
+            )
+        )
+
+        return count or 0
+
+
 # Routers
 router = APIRouter()
 
 
 class DevicePut(BaseModel):
     thumbmark: Dict = Field(None, description="Thumbmark Data")
+
+
+class HeartbeatRequest(BaseModel):
+    session_id: str = Field(..., description="Client-generated UUIDv7 session identifier")
+    device_id: uuid.UUID = Field(..., description="Device ID from cookie")
+    user_id: Optional[uuid.UUID] = Field(None, description="User ID if logged in")
+    active_duration_delta: int = Field(..., description="Seconds of activity since last heartbeat")
+    initial_referrer: Optional[str] = Field(None, description="Initial referrer for new sessions")
+
+
 
 
 @router.put("/api/device", tags=["Device Tracking"])
@@ -155,3 +257,33 @@ async def create_device(http_request: Request, device: DevicePut, db: AsyncDatab
         max_age=ONE_YEAR_IN_SECONDS,
     )
     return response
+
+
+@router.post("/api/tracking/heartbeat", tags=["Session Tracking"])
+async def session_heartbeat(http_request: Request, heartbeat: HeartbeatRequest, db: AsyncDatabase):
+    """
+    Receive session heartbeat from client
+    - Creates new session if session_id doesn't exist
+    - Updates existing session with new activity duration
+    - Tracks user login state changes during session
+    """
+    session_service = SessionTrackingService(db)
+
+    session = await session_service.handle_heartbeat(
+        session_id=heartbeat.session_id,
+        device_id=heartbeat.device_id,
+        user_id=heartbeat.user_id,
+        active_duration_delta=heartbeat.active_duration_delta,
+        ip_address=http_request.client.host,
+        initial_referrer=heartbeat.initial_referrer
+    )
+
+    return {
+        "session_id": session.session_id,
+        "active_seconds": session.active_seconds,
+        "status": "updated" if session.started_at != session.last_heartbeat_at else "created"
+    }
+
+
+
+

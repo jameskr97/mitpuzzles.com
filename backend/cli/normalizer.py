@@ -21,6 +21,7 @@ class PuzzleNormalizer:
             "hashi": ["initial_state"],
             "minesweeper": ["initial_state"],
             "lightup": ["initial_state"],
+            "mosaic": ["initial_state"],
         }
 
         self.PUZZLE_NAMESPACE = uuid.UUID("ebf9c570-3a85-4898-b471-e0d4224952fc")

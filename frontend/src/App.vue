@@ -40,3 +40,10 @@ const shouldShowSidebar = computed(() => {
     </TooltipProvider>
   </Suspense>
 </template>
+
+<style>
+/* override reka-ui's excessive body padding when dropdowns open */
+body[style*="padding-right"] {
+  padding-right: 0 !important;
+}
+</style>

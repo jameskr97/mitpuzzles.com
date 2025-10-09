@@ -4,7 +4,9 @@ import {
   type DeveloperGrid,
   KakurasuCell,
   LightupCell,
-  MinesweeperCell, NonogramsCell,
+  MinesweeperCell,
+  MosaicCell,
+  NonogramsCell,
   SudokuCell,
   TentsCell,
 } from "@/services/game/engines/translator.ts";
@@ -89,6 +91,23 @@ export class RunLengthEncoder {
       negativeValues: [BattleshipsCell.WATER],
       immutableValues: [], // No immutable cells
       emptyValues: [BattleshipsCell.EMPTY], // Empty cells
+    },
+    mosaic: {
+      positiveValues: [MosaicCell.SHADED], // Shaded cells (marked)
+      negativeValues: [MosaicCell.CROSS], // Cross marks (pertinent negative)
+      immutableValues: [
+        MosaicCell.ZERO,
+        MosaicCell.ONE,
+        MosaicCell.TWO,
+        MosaicCell.THREE,
+        MosaicCell.FOUR,
+        MosaicCell.FIVE,
+        MosaicCell.SIX,
+        MosaicCell.SEVEN,
+        MosaicCell.EIGHT,
+        MosaicCell.NINE,
+      ], // Number clues 0-9 (given)
+      emptyValues: [MosaicCell.UNMARKED], // Unmarked cells
     }
   };
 

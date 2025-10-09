@@ -28,7 +28,7 @@ async def get_device_id(request: Request) -> uuid.UUID:
     Extract and validate device ID from cookie.
     Raises HTTPException if device ID is missing or invalid.
     """
-    from app.modules.device_tracking import DEVICE_COOKIE_NAME
+    from app.modules.tracking import DEVICE_COOKIE_NAME
 
     device_id_str = request.cookies.get(DEVICE_COOKIE_NAME)
     if not device_id_str:

@@ -11,7 +11,14 @@ import {
 export class SudokuInputHandler implements Partial<InputHandler> {
   on_cell_key_down(engine: PuzzleEngine, cell: Cell, key: string): boolean {
     if (cell.zone !== "game") return false;
-    // ensure the number is between 1 and engine.definition.rows
+
+    // Handle backspace/delete to clear cell
+    if (key === "Backspace" || key === "Delete") {
+      engine.board_state[cell.row][cell.col] = 0;
+      return true;
+    }
+
+    // Handle numeric input
     const num = parseInt(key);
     if (isNaN(num) || num < 1 || num > engine.definition.rows) return false;
     engine.board_state[cell.row][cell.col] = num;

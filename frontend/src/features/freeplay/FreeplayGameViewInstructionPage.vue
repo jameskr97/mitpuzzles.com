@@ -11,7 +11,6 @@ defineProps({
 
 <template>
   <div
-    class="h-full"
     :class="{
       'grid grid-rows-[auto_1fr] gap-2': layout_mode === 'split',
       'flex flex-col': layout_mode === 'content-only' || layout_mode === 'board-focus',
@@ -41,14 +40,7 @@ defineProps({
     </div>
 
     <!-- Board Content -->
-    <div
-      v-if="$slots.board"
-      class="flex items-center justify-center"
-      :class="{
-        'mx-auto': layout_mode === 'split' || layout_mode === 'content-only',
-        'flex-1': layout_mode === 'board-focus'
-      }"
-    >
+    <div v-if="$slots.board" class="min-h-100 mx-auto">
       <slot name="board"></slot>
     </div>
   </div>

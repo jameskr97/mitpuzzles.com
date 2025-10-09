@@ -1,6 +1,5 @@
 import { type BoardEvents } from "@/features/games.components/board.interaction.ts";
 import { useDragStateChanger } from "@/features/games.composables/useDragStateChanger.ts";
-import { useClearStateBehaviour } from "@/features/games.composables/useClearStateBehaviour.ts";
 import { useStateCycleBehaviour } from "@/features/games.composables/useStateCycleBehaviour.ts";
 import { useDwellBehaviour } from "@/features/games.composables/useDwellBehaviour.ts";
 import { EventHandlerManager } from "@/features/games.composables/EventHandlerManager.ts";
@@ -58,6 +57,9 @@ export function createPuzzleInteractionBridge(controller: PuzzleController, incl
   const gameEventManager = new EventHandlerManager<GameEvents>();
   const renderEventManager = new EventHandlerManager<RenderEvents>();
 
+  // Store reference to the BoardInteraction instance (set by board.interaction.vue)
+  let boardInteractionInstance: any = null;
+
   let hasDefaultBehaviours = false;
   if (includeDefaultBehaviours) {
     if (hasDefaultBehaviours) return;
@@ -96,7 +98,6 @@ export function createPuzzleInteractionBridge(controller: PuzzleController, incl
   }
 
   function addDefaultBehaviors() {
-    addInputBehaviour(useClearStateBehaviour);
     addInputBehaviour(useStateCycleBehaviour);
     addInputBehaviour(useDragStateChanger);
     addInputBehaviour(useDwellBehaviour);
@@ -143,6 +144,45 @@ export function createPuzzleInteractionBridge(controller: PuzzleController, incl
   // }
 
   /**
+   * Register the BoardInteraction instance
+   * Called by board.interaction.vue after creating the instance
+   */
+  function registerBoardInteraction(interaction: any) {
+    boardInteractionInstance = interaction;
+  }
+
+  /**
+   * Dispatch a keyboard event to the board
+   * This allows external components (like number pads) to trigger keyboard input
+   *
+   * @param key The key to dispatch (e.g., "1", "2", "Backspace")
+   */
+  function dispatchKeyboardEvent(key: string) {
+    if (!boardInteractionInstance) {
+      console.warn('BoardInteraction instance not registered yet');
+      return;
+    }
+
+    // Create a synthetic keyboard event
+    const event = new KeyboardEvent('keydown', {
+      key,
+      code: key === 'Backspace' ? 'Backspace' : key === 'Delete' ? 'Delete' : `Digit${key}`,
+      bubbles: true,
+      cancelable: true,
+    });
+
+    // Dispatch through the BoardInteraction instance
+    boardInteractionInstance.onKeyDown(event);
+  }
+
+  /**
+   * Get the currently focused cell from the BoardInteraction instance
+   */
+  function getFocusedCell() {
+    return boardInteractionInstance?.get_focused_cell?.() ?? null;
+  }
+
+  /**
    * Return the public API of the interaction bridge
    */
   return {
@@ -152,5 +192,8 @@ export function createPuzzleInteractionBridge(controller: PuzzleController, incl
     addDefaultBehaviors,
     getBridge, // Get compiled board event handlers
     getRenderBehaviors, // Get compiled rendering handlers
+    registerBoardInteraction, // Register the BoardInteraction instance
+    dispatchKeyboardEvent, // Dispatch keyboard events programmatically
+    getFocusedCell, // Get the currently focused cell
   };
 }

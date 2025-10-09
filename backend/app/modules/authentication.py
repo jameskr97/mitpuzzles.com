@@ -16,7 +16,7 @@ from app.service.email import send_verification_email
 from app.models import Base
 from app.config import settings
 
-from typing import Optional, Dict
+from typing import Optional, Dict, Union
 import datetime
 import uuid
 import uuid6
@@ -99,8 +99,25 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
     reset_password_token_secret = settings.SECRET
     verification_token_secret = settings.SECRET
 
+    async def validate_password(
+        self,
+        password: str,
+        user: Union[UserCreate, User],
+    ) -> None:
+        # validate password using parent class
+        await super().validate_password(password, user)
+
+        # check if username already exists (only during registration)
+        if isinstance(user, UserCreate) and hasattr(user, "username") and user.username is not None:
+            from sqlalchemy import select
+            statement = select(User).where(User.username == user.username)
+            result = await self.user_db.session.execute(statement)
+            existing_user = result.unique().scalar_one_or_none()
+
+            if existing_user:
+                raise HTTPException(status_code=400, detail="USERNAME_ALREADY_EXISTS")
+
     async def on_after_register(self, user: User, request: Optional[Request] = None):
-        print("User registered:", user.id, user.email)
         if not user.is_verified:
             await self.request_verify(user)
 
@@ -117,9 +134,11 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
         request: Optional[Request] = None,
         response: Optional[Response] = None,
     ) -> None:
-        if response:
-            response.status_code = 303
-            response.headers["Location"] = settings.FRONTEND_HOST
+        # only redirect for oauth logins (check if request came from oauth callback)
+        if request and "/oauth/" in str(request.url.path):
+            if response:
+                response.status_code = 303
+                response.headers["Location"] = settings.FRONTEND_HOST
 
     async def update(
         self,

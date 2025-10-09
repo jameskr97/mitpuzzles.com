@@ -9,7 +9,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from app.modules import authentication, device_tracking, feedback, experiments, puzzle
+from app.modules import authentication, tracking, feedback, experiments, puzzle, tracking_analytics
 from app.config import settings, DeploymentEnvironment
 from app.dependencies import async_session_maker
 
@@ -31,7 +31,7 @@ async def _check_database_connection():
 
 async def _check_required_tables():
     """check if required database tables exist"""
-    required_tables = ["puzzle", "device", "user", "feedback", "experiment_run"]
+    required_tables = ["puzzle", "device", "user", "feedback", "experiment_run", "session_activity"]
     try:
         async with async_session_maker() as session:
             result = await session.execute(text("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'"))
@@ -115,12 +115,13 @@ app = FastAPI(
     redoc_url="/api/redoc" if settings.ENVIRONMENT != DeploymentEnvironment.PRODUCTION else None,
     lifespan=lifespan,
 )
-app.include_router(device_tracking.router)
+app.include_router(tracking.router)
 app.include_router(authentication.router_auth)
 app.include_router(authentication.router_user)
 app.include_router(feedback.router)
 app.include_router(experiments.router)
 app.include_router(puzzle.router)
+app.include_router(tracking_analytics.router)
 
 app.add_middleware(
     CORSMiddleware,

@@ -56,11 +56,12 @@ boardPage5.board[4][3] = LightupCell.BULB;
     <template #page1>
       <FreeplayGameViewInstructionPage>
         <template #instruction>
-          <div class="mb-2">
-            Light Up is a logic puzzle played on a grid of black and white cells. An example board is shown below. Your
-            goal is to place light bulbs on white cells so that
+          <p class="mb-2">Light Up is a logic puzzle played on a grid of black and white cells.</p>
+          <p class="mb-2">
+            Your goal is to place light bulbs on white cells so that
             <span class="font-bold">all white cells are illuminated.</span>
-          </div>
+          </p>
+          <p>An example board is shown below.</p>
         </template>
         <template #board>
           <PuzzleLightup :state="boardPage1" :scale="1" class="mx-auto" />
@@ -86,13 +87,12 @@ boardPage5.board[4][3] = LightupCell.BULB;
     <template #page3>
       <FreeplayGameViewInstructionPage>
         <template #instruction>
-          <div>
-            Some black cells contain numbers. These indicate exactly
-            <span class="font-bold">how many bulbs must be placed next to it</span>
-            (horizontally or vertically adjacent). Cells marked "0" must not have any bulbs next to them. Unnumbered black cells can have any
-            number of adjacent bulbs.
-          </div>
-          <div>In the example below, the two bulbs placed satisfy the numbers "2", "2" and "1" next to them:</div>
+            <p>
+              A <span class="font-bold">numbered black cell</span> indicates <span class="italic">exactly</span> the number of bulbs that
+              must be placed next to it (horizontally or vertically adjacent).
+            </p>
+            <p>Black cells without numbers place no restriction on adjacent bulbs.</p>
+            <p>In the example below, the two bulbs placed satisfy the numbers "2", "2" and "1" next to them:</p>
         </template>
         <template #board>
           <PuzzleLightup :state="boardPage3" :scale="1" class="mx-auto" />
@@ -103,12 +103,12 @@ boardPage5.board[4][3] = LightupCell.BULB;
     <template #page4>
       <FreeplayGameViewInstructionPage>
         <template #instruction>
+          <p class="mb-2">
+            No two bulbs may be placed such that one is within the <span class="font-bold">illumination path of another</span>,
+            unless there is a black square between them blocking their light.
+          </p>
           <div>
-            No two bulbs may be placed such that <span class="font-bold">one illuminates the other</span>. Two bulbs may
-            share a row or column as long as there is a black square between them.
-          </div>
-          <div>
-            The example below shows an <span class="font-bold">invalid</span> placement (red) and a
+            The example below shows an <span class="font-bold">invalid</span> placement <span class="italic">(first column)</span> and a
             <span class="font-bold">valid</span> placement (green) of two bulbs sharing a column.
           </div>
         </template>
@@ -121,11 +121,12 @@ boardPage5.board[4][3] = LightupCell.BULB;
     <template #page5>
       <FreeplayGameViewInstructionPage>
         <template #instruction>
-          <div>
+          <div class="mb-2">
             The puzzle is solved when
             <span class="font-bold">all white cells are lit, no two bulbs illuminate each other,</span> and all numbered
             black cells have <span class="font-bold">the correct number of adjacent bulbs</span>.
           </div>
+          <div>Below is a fully solved board:</div>
         </template>
         <template #board>
           <PuzzleLightup :state="boardPage5" :scale="1" class="mx-auto" />

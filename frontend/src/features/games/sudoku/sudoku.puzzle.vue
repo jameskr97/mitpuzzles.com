@@ -41,7 +41,7 @@ const borderConfig = computed(() => ({
     :border-config="borderConfig"
   >
     <BoardBorders />
-    <BoardInteraction :bind="bind" :enable_mobile_keyboard="true" />
+    <BoardInteraction :bind="bind" :bridge="interact" />
     <BoardCells>
       <template #cell="{ row, col }">
         <div

@@ -7,6 +7,7 @@ import { EngineKakurasu } from "@/services/game/engines/games/kakurasu.ts";
 import { EngineTents } from "@/services/game/engines/games/tents.ts";
 import { EngineLightup } from "@/services/game/engines/games/lightup.ts";
 import { EngineMinesweeper } from "@/services/game/engines/games/minesweeper.ts";
+import { EngineMosaic } from "@/services/game/engines/games/mosaic.ts";
 import CryptoJS from "crypto-js";
 import { EngineNonograms } from "@/services/game/engines/games/nonograms.ts";
 import { EngineBattleships } from "@/services/game/engines/games/battleships.ts";
@@ -24,6 +25,7 @@ export function create_game_entry(
     name: sidebar_title,
     component: defineAsyncComponent({ loader: () => import(`@/features/games/${key}/${key}.puzzle.vue`) }),
     instructions: defineAsyncComponent({ loader: () => import(`@/features/games/${key}/instructions.vue`) }),
+    compact_instructions: defineAsyncComponent({ loader: () => import(`@/features/games/${key}/InstructionsCompact.vue`) }),
     default: defaultPuzzles[key],
     defaultBehaviors,
   };
@@ -158,6 +160,8 @@ export function createPuzzleEngine<T>(definition: PuzzleDefinition<T>, board?: n
       return new EngineLightup(definition, board);
     case "minesweeper":
       return new EngineMinesweeper(definition, board);
+    case "mosaic":
+      return new EngineMosaic(definition, board);
     default:
       return new PuzzleEngine(definition, board);
   }
