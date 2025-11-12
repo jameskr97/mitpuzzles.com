@@ -1,0 +1,24 @@
+{
+  "title": "Light Up",
+  "intro": "Light Up is a logic puzzle played on a grid of black and white cells.",
+  "goal": "Your goal is to place light bulbs on white cells so that <span class=\"font-bold\">all white cells are illuminated.</span>",
+  "board_example": "An example board is shown below.",
+  "rule_illuminate": "When placed on a square, <span class=\"font-bold\">a light bulb illuminates all cells in its row and column</span> until the light is blocked by a black cell.",
+  "rule_numbered_cells": "A <span class=\"font-bold\">numbered black cell</span> indicates <span class=\"italic\">exactly</span> the number of bulbs that must be placed next to it (horizontally or vertically adjacent).",
+  "rule_numbered_cells_detail": "Black cells without numbers place no restriction on adjacent bulbs.",
+  "example_numbered": "In the example below, the two bulbs placed satisfy the numbers \"2\", \"2\" and \"1\" next to them:",
+  "rule_no_touch": "No two bulbs may be placed such that one is within the <span class=\"font-bold\">illumination path of another</span>, unless there is a black square between them blocking their light.",
+  "example_invalid": "The example below shows an <span class=\"font-bold\">invalid</span> placement <span class=\"italic\">(first column)</span> and a <span class=\"font-bold\">valid</span> placement (green) of two bulbs sharing a column.",
+  "solved": "The puzzle is solved when <span class=\"font-bold\">all white cells are lit, no two bulbs illuminate each other,</span> and all numbered black cells have <span class=\"font-bold\">the correct number of adjacent bulbs</span>.",
+  "solved_board": "Below is a fully solved board:",
+  "control_cycle": "Left click to cycle forward, right click to cycle backward between:",
+  "control_place_bulb": "Placing a lightbulb <i class=\"md-cell md-cell-lightup-bulb bg-yellow-200 border rounded\"></i>",
+  "control_mark_cross": "Marking the cell with an <i class=\"md-cell md-cell-lightup-cross rounded\"></i> (to indicate no lightbulb will go there)",
+  "control_clear": "Clearing the cell.",
+  "compact": {
+    "intro": "Place light-bulbs in white cells so that:",
+    "rule_illuminate": "Every white cell is illuminated.",
+    "rule_no_touch": "No two bulbs (<i class=\"md-cell md-cell-lightup-bulb bg-yellow-200 border rounded border-black\"></i>) illuminate each other.",
+    "rule_numbered": "Any black cell with a number (0–4) must have exactly that many bulbs adjacent orthogonally."
+  }
+}

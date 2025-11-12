@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import FreeplayGameViewInstructionSlider from "@/features/freeplay/FreeplayGameViewInstructionSlider.vue";
 import type { PuzzleState, TentsMeta } from "@/services/game/engines/types.ts";
+import { InstructionSlider, InstructionPage } from "@/features/freeplay/components";
 import PuzzleTents from "@/features/games/tents/tents.puzzle.vue";
-import FreeplayGameViewInstructionPage from "@/features/freeplay/FreeplayGameViewInstructionPage.vue";
 
 const definition = {
   rows: 4,
@@ -23,22 +22,12 @@ const boardPage1: PuzzleState<TentsMeta> = {
     [0, 0, 1, 0],
   ],
 };
-
-const boardPage2 = JSON.parse(JSON.stringify(boardPage1));
-// boardPage2.board[2][2] = TentsCell.TENT;
-// boardPage2.board[3][3] = TentsCell.TENT;
-
-const boardPage3 = JSON.parse(JSON.stringify(boardPage1));
-// boardPage3.board[0][0] = TentsCell.TENT;
-// boardPage3.board[0][2] = TentsCell.TENT;
-// boardPage3.board[2][3] = TentsCell.TENT;
-// boardPage3.board[3][1] = TentsCell.TENT;
 </script>
 
 <template>
-  <FreeplayGameViewInstructionSlider :num_pages="4">
+  <InstructionSlider>
     <template #page1>
-      <FreeplayGameViewInstructionPage>
+      <InstructionPage>
         <template #instruction>
           <div class="mb-2">
             Tents is a logic puzzle played on a grid with trees <i class="md-cell md-cell-tree"></i> and empty cells.
@@ -55,13 +44,13 @@ const boardPage3 = JSON.parse(JSON.stringify(boardPage1));
           </div>
         </template>
         <template #board>
-          <PuzzleTents :state="boardPage1" class="mt-auto mx-auto" />
+          <PuzzleTents :state="boardPage1" />
         </template>
-      </FreeplayGameViewInstructionPage>
+      </InstructionPage>
     </template>
 
     <template #page2>
-      <FreeplayGameViewInstructionPage>
+      <InstructionPage>
         <template #instruction>
           <div>
             Tents must not touch each other, including diagonally. So, once you place a tent, cells horizontally,
@@ -73,13 +62,13 @@ const boardPage3 = JSON.parse(JSON.stringify(boardPage1));
           </div>
         </template>
         <template #board>
-          <PuzzleTents :state="boardPage2" :scale="1" class="mx-auto" />
+          <PuzzleTents :state="boardPage1" :scale="1" />
         </template>
-      </FreeplayGameViewInstructionPage>
+      </InstructionPage>
     </template>
 
     <template #page3>
-      <FreeplayGameViewInstructionPage>
+      <InstructionPage>
         <template #instruction>
           <div>The numbers on the edges indicate exactly how many tents are in that row or column.</div>
           <ul class="list-disc ml-4">
@@ -91,13 +80,13 @@ const boardPage3 = JSON.parse(JSON.stringify(boardPage1));
           </ul>
         </template>
         <template #board>
-          <PuzzleTents :state="boardPage3" :scale="1" class="mx-auto" />
+          <PuzzleTents :state="boardPage1" :scale="1" />
         </template>
-      </FreeplayGameViewInstructionPage>
+      </InstructionPage>
     </template>
 
     <template #page4>
-      <FreeplayGameViewInstructionPage>
+      <InstructionPage>
         <template #instruction>
           <div class="mx-auto">
             Every tree is paired with a unique tent, placed adjacent horizontally or vertically.
@@ -109,18 +98,18 @@ const boardPage3 = JSON.parse(JSON.stringify(boardPage1));
           </div>
         </template>
         <template #board>
-          <PuzzleTents :state="boardPage3" :scale="1" class="mx-auto" />
+          <PuzzleTents :state="boardPage1" :scale="1" />
         </template>
-      </FreeplayGameViewInstructionPage>
+      </InstructionPage>
     </template>
 
     <template #controls>
       <div>Left click on a cell to cycle between:</div>
-      <ul class="list-disc">
+      <ul class="list-disc ml-4">
         <li>Placing a tent <i class="md-cell md-cell-tent"></i></li>
         <li>Marking the cell as tent-free <i class="md-cell bg-green-300 rounded"></i></li>
         <li>Clearing the cell</li>
       </ul>
     </template>
-  </FreeplayGameViewInstructionSlider>
+  </InstructionSlider>
 </template>

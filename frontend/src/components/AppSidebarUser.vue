@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ChevronsUpDown, LogOut } from "lucide-vue-next";
+import { ChevronsUpDown, LogOut, Settings } from "lucide-vue-next";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -14,8 +14,14 @@ import {
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 import { useAuthStore } from "@/store/useAuthStore.ts";
 import UserAvatar from "@/components/UserAvatar.vue";
+import { useRouter } from "vue-router";
 
 const user = useAuthStore();
+const router = useRouter();
+
+const navigate_to_account = async () => {
+  await router.push("/account");
+};
 </script>
 
 <template>
@@ -24,6 +30,7 @@ const user = useAuthStore();
       <DropdownMenu>
         <DropdownMenuTrigger as-child>
           <SidebarMenuButton
+            data-testid="sidebar-user-menu"
             size="lg"
             class="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
           >
@@ -40,9 +47,14 @@ const user = useAuthStore();
           align="center"
           :side-offset="4"
         >
-          <DropdownMenuItem @click="user.logout">
+          <DropdownMenuItem @click="navigate_to_account">
+            <Settings />
+            {{ $t('ui:nav.account_settings') }}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem data-testid="btn-logout" @click="user.logout">
             <LogOut />
-            Log out
+            {{ $t('ui:nav.logout') }}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

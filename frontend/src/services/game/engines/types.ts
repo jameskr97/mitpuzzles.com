@@ -36,6 +36,16 @@ export type NonogramMeta = {
   count_black_cells: number;
 }
 
+export type HashiBridge = {
+  island1: [number, number]; // [row, col]
+  island2: [number, number]; // [row, col]
+  count: number; // 1 or 2
+};
+
+export type HashiMeta = {
+  bridges: HashiBridge[];
+};
+
 export type PuzzleState<T = any> = {
   definition: PuzzleDefinition<T>;
   board: number[][];

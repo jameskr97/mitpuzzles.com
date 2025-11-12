@@ -181,13 +181,32 @@ export const useAuthStore = defineStore("auth", {
     async updateUsername(username: string) {
       this.loading = true;
       this.error = null;
-      
+
       try {
         const response = await axios.patch("/api/users/me", { username });
         this.user = response.data;
         return this.user;
       } catch (error: any) {
         this.error = error.response?.data?.detail || "Failed to update username";
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async update_password(current_password: string, new_password: string) {
+      this.loading = true;
+      this.error = null;
+
+      try {
+        const response = await axios.patch("/api/users/me", {
+          password: new_password,
+          current_password: current_password
+        });
+        this.user = response.data;
+        return this.user;
+      } catch (error: any) {
+        this.error = error.response?.data?.detail || "Failed to update password";
         throw error;
       } finally {
         this.loading = false;

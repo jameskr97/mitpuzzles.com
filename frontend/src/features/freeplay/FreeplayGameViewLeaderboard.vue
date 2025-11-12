@@ -6,10 +6,19 @@ import type { PuzzleController } from "@/services/game/engines/types.ts";
 import { usePuzzleMetadataStore } from "@/store/puzzle/usePuzzleMetadataStore.ts";
 import { usePuzzleLeaderboardStore } from "@/store/puzzle/usePuzzleLeaderboardStore.ts";
 import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
+import { useTranslation } from "i18next-vue";
 
-const puzzle = inject<PuzzleController>("puzzle")!;
+const { t } = useTranslation();
+
+const props = defineProps<{
+  puzzle?: PuzzleController
+}>();
+
+const puzzle = inject<PuzzleController>("puzzle") || props.puzzle!;
 const puzzle_type = puzzle.state_puzzle.value.definition.puzzle_type;
 const is_leaderboard_open = ref(true);
+const time_period = ref<string>("weekly");
 
 const metaStore = usePuzzleMetadataStore();
 const current_variant = computed(() => metaStore.getSelectedVariant(puzzle_type));
@@ -18,9 +27,9 @@ const difficulty = computed(() => current_variant.value[1]);
 
 const leaderStore = usePuzzleLeaderboardStore();
 watch(
-  () => metaStore.getSelectedVariant(puzzle_type),
-  async (newVariant) => {
-    await leaderStore.refreshLeaderboard(puzzle_type, newVariant[0], newVariant[1]);
+  () => [metaStore.getSelectedVariant(puzzle_type), time_period.value] as const,
+  async ([newVariant, newTimePeriod]) => {
+    await leaderStore.refreshLeaderboard(puzzle_type, newVariant[0], newVariant[1], newTimePeriod);
   },
   { immediate: true },
 );
@@ -40,18 +49,18 @@ const tutorial_message = computed(() => {
 
   if (tutorial_on && tutorial_used) {
     return {
-      title: "Tutorial Mode Active",
-      description: "You've received tutorial feedback on this puzzle. You will be eligible for the leaderboard on the next puzzle.",
+      title: t('freeplay:leaderboard.tutorial_active_title'),
+      description: t('freeplay:leaderboard.tutorial_active_used_desc'),
     };
   } else if (tutorial_on && !tutorial_used) {
     return {
-      title: "Tutorial Mode Active",
-      description: "You cannot enter the leaderboard while tutorial mode is enabled. Turn off tutorial mode to remain eligible, or continue using tutorial to receive feedback.",
+      title: t('freeplay:leaderboard.tutorial_active_title'),
+      description: t('freeplay:leaderboard.tutorial_active_unused_desc'),
     };
   } else if (!tutorial_on && tutorial_used) {
     return {
-      title: "Tutorial Used",
-      description: "You used tutorial mode on this puzzle. You will be eligible for the leaderboard on the next puzzle.",
+      title: t('freeplay:leaderboard.tutorial_used_title'),
+      description: t('freeplay:leaderboard.tutorial_used_desc'),
     };
   }
 
@@ -64,7 +73,7 @@ const tutorial_message = computed(() => {
     <div class="flex items-center justify-between cursor-pointer select-none w-full">
       <div class="flex items-center">
         <v-icon name="ri-trophy-line" :scale="1.5" class="mr-2" />
-        <span class="text-xl">Leaderboard</span>
+        <span class="text-xl">{{ $t('freeplay:leaderboard.title') }}</span>
       </div>
       <v-icon
         name="md-keyboardarrowdown-round"
@@ -74,26 +83,48 @@ const tutorial_message = computed(() => {
       />
     </div>
     <template v-if="is_leaderboard_open">
-      <Separator class="my-2" />
+      <Separator class="mt-2 mb-1" />
+
+      <!-- Time period selector -->
+      <div class="flex justify-between">
+        <Button
+          class="px-3"
+          v-for="period in [
+            { value: 'today', label: $t('ui:time_period.today') },
+            { value: 'weekly', label: $t('ui:time_period.weekly') },
+            { value: 'monthly', label: $t('ui:time_period.monthly') },
+            { value: 'all_time', label: $t('ui:time_period.all_time') },
+          ]"
+          :key="period.value"
+          :variant="time_period === period.value ? 'outline' : 'link'"
+          @click="time_period = period.value"
+        >
+          {{ period.label }}
+        </Button>
+      </div>
 
       <!-- Leaderboard content (blurred when ineligible) -->
       <div v-if="!is_ineligible">
         <div
-          v-if="leaderStore.getLeaderboard(puzzle_type, size, difficulty).length === 0"
+          v-if="leaderStore.getLeaderboard(puzzle_type, size, difficulty, time_period).length === 0"
           class="text-center text-gray-500 p-4"
         >
-          No entries yet for the {{ size }} {{ puzzle_type }} with difficulty {{ difficulty }}.
+          {{ $t('freeplay:leaderboard.no_entries', { size, puzzle_type, difficulty }) }}
         </div>
         <Table v-else>
           <TableHeader>
             <TableRow>
-              <TableHead class="p-0"> Rank</TableHead>
-              <TableHead>Time</TableHead>
-              <TableHead>Username</TableHead>
+              <TableHead class="p-0">{{ $t('ui:table.rank') }}</TableHead>
+              <TableHead>{{ $t('ui:table.time') }}</TableHead>
+              <TableHead>{{ $t('ui:table.username') }}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            <TableRow v-for="(entry, index) in leaderStore.getLeaderboard(puzzle_type, size, difficulty)" :key="index">
+            <TableRow
+              v-for="(entry, index) in leaderStore.getLeaderboard(puzzle_type, size, difficulty, time_period)"
+              :class="{ 'font-bold': entry.is_current_user }"
+              :key="index"
+            >
               <TableCell>{{ entry.rank }}</TableCell>
               <TableCell>{{ entry.duration_display }}</TableCell>
               <TableCell>{{ entry.username }}</TableCell>

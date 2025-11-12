@@ -4,7 +4,9 @@ import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "@/store/useAuthStore.ts";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import posthog from "posthog-js";
+import { useTranslation } from "i18next-vue";
 
+const { t } = useTranslation();
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
@@ -13,7 +15,7 @@ const errorMessage = ref("");
 onMounted(async () => {
   const token = route.query.token as string;
   if (!token) {
-    errorMessage.value = "No verification token provided.";
+    errorMessage.value = t("auth:verification.error_no_token");
     return;
   }
 
@@ -40,17 +42,17 @@ onMounted(async () => {
         await router.push("/?alreadyVerified=true");
       } else if (errorDetail === "VERIFY_USER_BAD_TOKEN") {
         // Bad token - shouldn't happen, but show support message
-        errorMessage.value = "Invalid verification token. Please contact support@mitpuzzles.com for assistance.";
+        errorMessage.value = t("auth:verification.error_bad_token");
       } else {
         // Other 400 errors
-        errorMessage.value = "Verification failed. Please contact support@mitpuzzles.com for assistance.";
+        errorMessage.value = t("auth:verification.error_generic");
       }
     } else if (error.response?.status === 422) {
       // Validation error - shouldn't happen in normal flow
-      errorMessage.value = "An unexpected error occurred. Please contact support@mitpuzzles.com if this persists.";
+      errorMessage.value = t("auth:verification.error_unexpected");
     } else {
       // Generic error fallback
-      errorMessage.value = error.message || "Verification failed. Please try again or contact support@mitpuzzles.com.";
+      errorMessage.value = error.message || t("auth:verification.error_generic");
     }
   }
 });
@@ -61,15 +63,15 @@ onMounted(async () => {
     <Card class="mx-auto md:w-[400px] w-full">
       <CardHeader class="text-center">
         <CardTitle class="text-xl">
-          {{ errorMessage ? "Verification Failed" : "Verifying Your Email" }}
+          {{ errorMessage ? $t('auth:verification.failed_title') : $t('auth:verification.verifying_title') }}
         </CardTitle>
         <CardDescription>
           <div v-if="!errorMessage" class="flex flex-col items-center">
             <div class="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
           </div>
           <div v-else class="text-center space-y-2">
-            <p class="text-red-600">{{ errorMessage }}</p>
-            <a href="/signup" class="text-primary underline">Back to Sign Up</a>
+            <p data-testid="error-verification" class="text-red-600">{{ errorMessage }}</p>
+            <a href="/signup" class="text-primary underline">{{ $t('auth:verification.back_to_signup') }}</a>
           </div>
         </CardDescription>
       </CardHeader>

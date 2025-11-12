@@ -12,22 +12,25 @@ import CryptoJS from "crypto-js";
 import { EngineNonograms } from "@/services/game/engines/games/nonograms.ts";
 import { EngineBattleships } from "@/services/game/engines/games/battleships.ts";
 import axios from "axios";
+import { i18next } from "@/i18n.ts";
+import _ from "lodash";
 
-export function create_game_entry(
-  icon: string,
-  sidebar_title: string,
-  key: string,
-  defaultBehaviors: Array<any> = [],
-): any {
+export function create_game_entry(icon: string, key: string): any {
+  // Capitalize first letter for component name (e.g., "hashi" -> "Hashi")
+  const component_name = key.charAt(0).toUpperCase() + key.slice(1);
   return {
     key,
     icon,
-    name: sidebar_title,
-    component: defineAsyncComponent({ loader: () => import(`@/features/games/${key}/${key}.puzzle.vue`) }),
+    name: i18next.t(`puzzle:${key}:title`),
+    // Canvas component for home page preview
+    component: defineAsyncComponent({ loader: () => import(`@/features/games/${key}/${_.capitalize(key)}Canvas.vue`) }),
+    // Freeplay component for routing
+    freeplay: () => import(`@/features/games/${key}/${component_name}Freeplay.vue`),
+    // Default puzzle state for home page preview
+    default: defaultPuzzles[key],
+    // Instructions components
     instructions: defineAsyncComponent({ loader: () => import(`@/features/games/${key}/instructions.vue`) }),
     compact_instructions: defineAsyncComponent({ loader: () => import(`@/features/games/${key}/InstructionsCompact.vue`) }),
-    default: defaultPuzzles[key],
-    defaultBehaviors,
   };
 }
 

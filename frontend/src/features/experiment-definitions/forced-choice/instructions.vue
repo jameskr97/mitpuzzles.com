@@ -1,18 +1,21 @@
 <script setup lang="ts">
 import Container from "@/components/ui/Container.vue";
 import InstructionHeader from "@/features/experiment-core/components/InstructionHeader.vue";
-import type { PuzzleDefinition } from "@/services/game/engines/types.ts";
+import type { PuzzleDefinition, PuzzleState } from "@/services/game/engines/types.ts";
 import { computed, inject, type Ref, ref } from "vue";
 import ExperimentQuiz from "@/features/experiment-core/components/ExperimentQuiz.vue";
 import { GraphExecutor } from "@/features/experiment-core";
 import PuzzleSelector from "@/features/experiment-definitions/forced-choice/PuzzleSelector.vue";
 import PuzzleRenderer from "@/components/PuzzleRenderer.vue";
 import { Button } from "@/components/ui/button";
+import { PuzzleConverter } from "@/services/game/engines/translator.ts";
 
 const executor = inject<Ref<GraphExecutor>>("experiment-executor");
 
 // detect visitor type from data collection
-const is_prolific_visitor = computed(() => executor?.value?.data_collection?.participant_data?.recruitment_platform === "prolific");
+const is_prolific_visitor = computed(
+  () => executor?.value?.data_collection?.participant_data?.recruitment_platform === "prolific",
+);
 
 const is_direct_visitor = computed(() => !is_prolific_visitor.value);
 
@@ -37,6 +40,16 @@ const definition2: PuzzleDefinition = {
     [2, -1, 1],
   ],
 };
+
+const gameState2: PuzzleState = {
+  definition: definition1,
+  board: PuzzleConverter.fromResearch([
+    [-1, -1, 1],
+    [-1, 3, 2],
+    [2, -1, 1],
+  ], "minesweeper"),
+};
+
 const selected_puzzle_index = ref<number | null>(null);
 const can_proceed_to_solving = computed(() => selected_puzzle_index.value !== null);
 
@@ -67,7 +80,7 @@ let quiz: { answer: boolean; question: string }[] = [
     <InstructionHeader>Game Overview</InstructionHeader>
     <div class="flex flex-col gap-5">
       <p>Here is an example of a 3x3 board.</p>
-      <PuzzleRenderer :definition="definition2" class="mx-auto" />
+      <PuzzleRenderer :definition="definition2" class="mx-auto max-w-35 border border-[#767676]" />
       <p>
         The middle cell is marked <i class="md-cell minesweeper-cell-3"></i>. This means that three of the four adjacent
         squares have mines.
@@ -94,9 +107,9 @@ let quiz: { answer: boolean; question: string }[] = [
     <InstructionHeader>Your Task</InstructionHeader>
     <div class="flex flex-col gap-2">
       <p>
-        There are <span class="font-bold">{{ executor?.total_trial_count }} trials</span> in this experiment.
-        In each trial, you will be presented with a choice of two 3x3 minesweeper boards.
-        Consider the two boards, and select the one you believe you can
+        There are <span class="font-bold">{{ executor?.total_trial_count }} trials</span> in this experiment. In each
+        trial, you will be presented with a choice of two 3x3 minesweeper boards. Consider the two boards, and select
+        the one you believe you can
         <span class="font-bold">solve the quickest.</span>
         Once you click the "Solve Selected Board" button, you will have to solve whichever board is currently selected.
       </p>
@@ -112,14 +125,15 @@ let quiz: { answer: boolean; question: string }[] = [
       </div>
 
       <Container class="my-4 py-4 border-5 border-caution-tape">
-        <PuzzleSelector :puzzles="[definition1, definition2]" @selection-changed="(_from_index, to_index) => selected_puzzle_index = to_index" />
+        <PuzzleSelector
+          :puzzles="[definition1, definition2]"
+          @selection-changed="(_from_index, to_index) => (selected_puzzle_index = to_index)"
+        />
         <div class="text-center">
           <Button :disabled="!can_proceed_to_solving" class="mt-5" variant="default"> Solve Selected Puzzle </Button>
         </div>
       </Container>
     </div>
-
-
 
     <!-- For Prolific visitors: show comprehension quiz -->
     <div v-if="is_prolific_visitor">
@@ -131,32 +145,36 @@ let quiz: { answer: boolean; question: string }[] = [
     <div v-if="is_direct_visitor">
       <InstructionHeader>We need your consent to proceed</InstructionHeader>
       <div class="flex flex-col gap-4 p-4 border rounded-lg bg-gray-50">
-        <p>By completing this study, you are participating in a study being performed by
-        cognitive scientists in the MIT Department of Brain and Cognitive Science.
-        The purpose of this research is to understand how people reason and solve problems.</p>
+        <p>
+          By completing this study, you are participating in a study being performed by cognitive scientists in the MIT
+          Department of Brain and Cognitive Science. The purpose of this research is to understand how people reason and
+          solve problems.
+        </p>
 
-        <p>You must be at least 18 years old to participate. There are neither specific benefits nor
-        anticipated risks associated with participation in this study. Your participation in this
-        study is completely voluntary, and you can withdraw at any time by simply exiting the study.
-        You may decline to answer any or all of the following questions. Choosing not to participate
-        or withdrawing will result in no penalty. Your anonymity is assured; the researchers who have
-        requested your participation will not receive any personal information about you, and any
-        information you provide will not be shared in association with any personally identifying information.</p>
+        <p>
+          You must be at least 18 years old to participate. There are neither specific benefits nor anticipated risks
+          associated with participation in this study. Your participation in this study is completely voluntary, and you
+          can withdraw at any time by simply exiting the study. You may decline to answer any or all of the following
+          questions. Choosing not to participate or withdrawing will result in no penalty. Your anonymity is assured;
+          the researchers who have requested your participation will not receive any personal information about you, and
+          any information you provide will not be shared in association with any personally identifying information.
+        </p>
 
-        <p>If you have questions about this research, please contact the researchers by sending an email to
-        <a href="mailto:cheyette@mit.edu" class="text-blue-600 underline">cheyette@mit.edu</a>. These researchers will do their best to communicate with you in a timely,
-        professional, and courteous manner. If you have questions regarding your rights as a research subject,
-        or if problems arise which you do not feel you can discuss with the researchers, please contact the
-        MIT Institutional Review Board.</p>
+        <p>
+          If you have questions about this research, please contact the researchers by sending an email to
+          <a href="mailto:support@mitpuzzles.com" class="text-blue-600 underline">support@mitpuzzles.com</a>. These
+          researchers will do their best to communicate with you in a timely, professional, and courteous manner. If you
+          have questions regarding your rights as a research subject, or if problems arise which you do not feel you can
+          discuss with the researchers, please contact the MIT Institutional Review Board.
+        </p>
 
-        <p>Your participation in this research is voluntary.
-        You may discontinue participation at any time during the research activity.
-        You may print a copy of this consent form for your records.</p>
+        <p>
+          Your participation in this research is voluntary. You may discontinue participation at any time during the
+          research activity. You may print a copy of this consent form for your records.
+        </p>
 
         <div class="text-center mt-6">
-          <Button @click="$emit('complete')" variant="default" class="px-8 py-2">
-            Continue
-          </Button>
+          <Button @click="$emit('complete')" variant="default" class="px-8 py-2"> Continue </Button>
         </div>
       </div>
     </div>

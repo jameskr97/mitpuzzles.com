@@ -1,0 +1,37 @@
+{
+  "control": {
+    "difficulty": "Difficulty",
+    "new_puzzle": "New Puzzle"
+  },
+  "status": {
+    "solved": "You got it!",
+    "not_solved": "Not Quite!"
+  },
+  "instructions": {
+    "game_rules": "Game Rules",
+    "show_detailed": "Show detailed instructions",
+    "game_controls": "Game Controls",
+    "submit_hint": "Click <span class=\"text-green-600\">submit</span> when you think you have solved the puzzle.",
+    "misc_info": "Misc Information",
+    "info_circle_hint": "You can click in the information circle to review these rules at any time."
+  },
+  "settings": {
+    "tutorial_mode": "Tutorial Mode",
+    "show_leaderboard": "Show Leaderboard",
+    "show_centiseconds": "Show Centiseconds"
+  },
+  "violations": {
+    "title": "Rule Violations",
+    "violation_label": "Violation:",
+    "none": "No Violations."
+  },
+  "leaderboard": {
+    "title": "Leaderboard",
+    "no_entries": "No entries yet for the {{size}} {{puzzle_type}} with difficulty {{difficulty}}.",
+    "tutorial_active_title": "Tutorial Mode Active",
+    "tutorial_active_used_desc": "You've received tutorial feedback on this puzzle. You will be eligible for the leaderboard on the next puzzle.",
+    "tutorial_active_unused_desc": "You cannot enter the leaderboard while tutorial mode is enabled. Turn off tutorial mode to remain eligible, or continue using tutorial to receive feedback.",
+    "tutorial_used_title": "Tutorial Used",
+    "tutorial_used_desc": "You used tutorial mode on this puzzle. You will be eligible for the leaderboard on the next puzzle."
+  }
+}

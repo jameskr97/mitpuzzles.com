@@ -1,0 +1,26 @@
+{
+  "title": "Kakurasu",
+  "intro": "Kakurasu is a logic puzzle where some cells must be marked black (<span class=\"inline-block h-3 w-3 bg-black rounded\"></span>) to meet specific requirements.",
+  "weights_explanation": "Columns are numbered <span class=\"text-gray-500\">1, 2, 3,</span> … at the top; rows are numbered <span class=\"text-gray-500\">1, 2, 3,</span> … on the left. These numbers serve as <span class=\"text-gray-500\">weights</span>.",
+  "board_example": "Below is an empty example board:",
+  "rule_row_sum": "To the right of each <span class=\"font-bold\">row</span> is a <span class=\"text-blue-500\">target sum</span>: when you add the <span class=\"text-gray-500\">weights <span class=\"italic\">(column numbers)</span></span>  of the black cells in that row, the result must equal the target.",
+  "rule_col_sum": "Beneath each <span class=\"font-bold\">column</span> is a <span class=\"text-blue-500\">target sum</span>: when you add the <span class=\"text-gray-500\">weights <span class=\"italic\">(row numbers)</span></span> of the black cells in that column, the result must equal the target.",
+  "goal": "Your <span class=\"font-bold\">goal</span> is to mark <span class=\"italic\">some</span> cells black, so that all row and column sums are matched.",
+  "multiple_solutions_note": "Some targets can be achieved in multiple ways but only one arrangement satisfies <span class=\"italic\">all</span> row and column sums together.",
+  "example_row": "For example, row 2 with <span class=\"font-bold text-blue-500\">target 5</span> could be <span class=\"font-bold text-gray-500\">1+4</span> or <span class=\"font-bold text-gray-500\">2+3</span>, as in the example shown below.",
+  "example_row_calc1": "1 + 4 = 5",
+  "example_row_calc2": "2 + 3 = 5",
+  "example_col": "Similarly, column 1 in the board with <span class=\"font-bold text-blue-500\">target 6</span> below, would be <span class=\"font-bold text-gray-500\">3 + 2 + 1</span> or <span class=\"font-bold text-gray-500\">4 + 2</span>",
+  "example_col_calc1": "3 + 2 + 1 = 6",
+  "example_col_calc2": "4 + 2 = 6",
+  "solved": "The puzzle is solved when all the row and column sums are satisfied together, as in the example board shown below.",
+  "control_cycle": "Left click to cycle forward, right click to cycle backward between:",
+  "control_place_box": "Placing a box <i class=\"md-cell bg-black\"></i>",
+  "control_place_cross": "Placing a cross <i class=\"md-cell md-cell-kakurasu-cross\"></i>",
+  "control_clear": "Clearing the cell",
+  "compact": {
+    "intro": "Mark cells black (<span class=\"inline-block h-3 w-3 bg-black\"></span>) so that",
+    "rule_row": "Each <span class=\"font-bold\">row's</span> black cells, multiplied by their column values (on top), equals the number to the right of that row.",
+    "rule_col": "Each <span class=\"font-bold\">column's</span> black cells, multiplied by their row values (on the left), equals the number at the bottom of that column."
+  }
+}

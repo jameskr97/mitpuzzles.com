@@ -32,6 +32,7 @@ export interface RenderEvents {
   getCellClasses?: (row: number, col: number) => string[];
   getCellContent?: (row: number, col: number) => string | number | null;
   isCellActive?: (row: number, col: number) => boolean;
+  shouldHighlightCell?: (row: number, col: number) => boolean;
 
   // Gutter content rendering (for labels, sums, etc.)
   getTopGutterClasses?: (row: number, col: number) => string[];

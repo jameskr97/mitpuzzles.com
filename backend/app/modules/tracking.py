@@ -4,9 +4,10 @@ from typing import Dict
 from typing import List
 
 import uuid6
-from fastapi import APIRouter, Response
+from fastapi import APIRouter, Response, Query
 from fastapi.responses import JSONResponse
 from fastapi import Request, HTTPException
+from typing import Optional
 from pydantic import BaseModel, Field
 from sqlalchemy import String, DateTime, ForeignKey, Integer, Boolean, Index, func, cast, Date, text
 from sqlalchemy import select
@@ -249,11 +250,12 @@ async def create_device(http_request: Request, device: DevicePut, db: AsyncDatab
         status_code=200,
         content={"device_id": str(device.id)}
     )
+    from app.config import settings, DeploymentEnvironment
     response.set_cookie(
         DEVICE_COOKIE_NAME,
         value=str(device.id),
         httponly=True,
-        secure=True,
+        secure=settings.ENVIRONMENT != DeploymentEnvironment.LOCAL,
         max_age=ONE_YEAR_IN_SECONDS,
     )
     return response
@@ -285,5 +287,141 @@ async def session_heartbeat(http_request: Request, heartbeat: HeartbeatRequest, 
     }
 
 
+@router.get("/api/admin/devices", tags=["Admin"])
+async def list_devices(
+    db: AsyncDatabase,
+    search: Optional[str] = Query(None, description="Search by device ID or user agent"),
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+):
+    """
+    List all devices with metadata for admin use.
+    Returns device ID, user agent, first/last seen, and session count.
+    """
+    from sqlalchemy import select, func, desc
+
+    # Build query
+    query = (
+        select(
+            Device.id,
+            Device.user_agent,
+            Device.first_seen,
+            Device.last_seen,
+            func.count(SessionActivity.id).label('session_count')
+        )
+        .outerjoin(SessionActivity, Device.id == SessionActivity.device_id)
+        .group_by(Device.id)
+        .order_by(desc(Device.last_seen))
+    )
+
+    # Apply search filter
+    if search:
+        search_pattern = f"%{search}%"
+        query = query.where(
+            Device.user_agent.ilike(search_pattern) |
+            Device.id.cast(String).ilike(search_pattern)
+        )
+
+    # Get total count
+    count_query = select(func.count(Device.id))
+    if search:
+        search_pattern = f"%{search}%"
+        count_query = count_query.where(
+            Device.user_agent.ilike(search_pattern) |
+            Device.id.cast(String).ilike(search_pattern)
+        )
+    total_count = await db.scalar(count_query)
+
+    # Apply pagination
+    query = query.limit(limit).offset(offset)
+
+    result = await db.execute(query)
+    devices = result.all()
+
+    return {
+        "devices": [
+            {
+                "id": str(d.id),
+                "user_agent": d.user_agent,
+                "first_seen": d.first_seen.isoformat() if d.first_seen else None,
+                "last_seen": d.last_seen.isoformat() if d.last_seen else None,
+                "session_count": d.session_count,
+                "label": f"{d.user_agent[:50]}..." if d.user_agent and len(d.user_agent) > 50 else d.user_agent
+            }
+            for d in devices
+        ],
+        "total_count": total_count,
+        "limit": limit,
+        "offset": offset
+    }
 
 
+@router.get("/api/admin/users", tags=["Admin"])
+async def list_users(
+    db: AsyncDatabase,
+    search: Optional[str] = Query(None, description="Search by username or email"),
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+):
+    """
+    List all users with metadata for admin use.
+    Returns user ID, username, email, and attempt count.
+    """
+    from sqlalchemy import select, func, desc
+    from app.modules.authentication import User
+    from app.modules.puzzle import FreeplayPuzzleAttempt
+
+    # Build query
+    query = (
+        select(
+            User.id,
+            User.username,
+            User.email,
+            User.date_created,
+            func.count(FreeplayPuzzleAttempt.id).label('attempt_count')
+        )
+        .outerjoin(FreeplayPuzzleAttempt, User.id == FreeplayPuzzleAttempt.user_id)
+        .group_by(User.id)
+        .order_by(User.date_created.asc())
+    )
+
+    # Apply search filter
+    if search:
+        search_pattern = f"%{search}%"
+        query = query.where(
+            User.username.ilike(search_pattern) |
+            User.email.ilike(search_pattern)
+        )
+
+    # Get total count
+    count_query = select(func.count(User.id))
+    if search:
+        search_pattern = f"%{search}%"
+        count_query = count_query.where(
+            User.username.ilike(search_pattern) |
+            User.email.ilike(search_pattern)
+        )
+    total_count = await db.scalar(count_query)
+
+    # Apply pagination
+    query = query.limit(limit).offset(offset)
+
+    result = await db.execute(query)
+    users = result.all()
+
+    return {
+        "users": [
+            {
+                "id": str(u.id),
+                "username": u.username,
+                "email": u.email,
+                "date_created": u.date_created.isoformat() if u.date_created else None,
+                "attempt_count": u.attempt_count,
+                "label": u.username or u.email or str(u.id)[:8]
+            }
+            for u in users
+        ],
+        "total_count": total_count,
+        "limit": limit,
+        "offset": offset
+    }

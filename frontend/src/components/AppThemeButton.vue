@@ -25,9 +25,9 @@ const props = defineProps({
       <slot></slot>
     </DropdownMenuTrigger>
     <DropdownMenuContent :align="props.mode ?? 'end'">
-      <DropdownMenuItem @click="colorMode = 'light'"> Light </DropdownMenuItem>
-      <DropdownMenuItem @click="colorMode = 'dark'"> Dark </DropdownMenuItem>
-      <DropdownMenuItem @click="colorMode = 'auto'"> System </DropdownMenuItem>
+      <DropdownMenuItem @click="colorMode = 'light'">{{ $t('ui:theme.light') }}</DropdownMenuItem>
+      <DropdownMenuItem @click="colorMode = 'dark'">{{ $t('ui:theme.dark') }}</DropdownMenuItem>
+      <DropdownMenuItem @click="colorMode = 'auto'">{{ $t('ui:theme.system') }}</DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>
 </template>

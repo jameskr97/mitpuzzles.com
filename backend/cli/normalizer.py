@@ -60,7 +60,6 @@ class PuzzleNormalizer:
 
     def normalize_puzzle(self, puzzle: Dict[str, Any], filename: str) -> Dict[str, Any]:
         puzzle_type, size, difficulty = self.extract_puzzle_metadata(filename)
-
         # prepare universal normalized structure
         normalized = {
             "puzzle_type": puzzle_type,
@@ -77,6 +76,7 @@ class PuzzleNormalizer:
         # Handle size/rows/cols normalization
         has_rows_cols = "rows" in puzzle and "cols" in puzzle
         has_size = "size" in puzzle
+        has_puzzle_size = "puzzle_size" in puzzle
 
         if has_rows_cols and has_size:
             if puzzle["rows"] != puzzle["size"] or puzzle["cols"] != puzzle["size"]:
@@ -90,6 +90,15 @@ class PuzzleNormalizer:
         elif has_rows_cols:
             normalized["rows"] = puzzle["rows"]
             normalized["cols"] = puzzle["cols"]
+        else:
+            # use puzzle size from filename
+            psize = str(size).split('x')
+            if len(psize) == 2:
+                normalized["rows"] = int(psize[0])
+                normalized["cols"] = int(psize[1])
+            else:
+                raise ValueError(f"Missing size/rows/cols information in {puzzle_type} puzzle")
+
 
         ##################################################################
         # add puzzle specific fields

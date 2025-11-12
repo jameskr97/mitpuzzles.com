@@ -1,0 +1,22 @@
+{
+  "title": "Norinori",
+  "intro": "Norinori is a logic puzzle played on a grid divided into regions.",
+  "goal": "Your goal is to shade exactly <span class=\"font-bold\">two cells in each region</span> so that every shaded cell forms part of a <span class=\"font-bold\">1x2 domino</span>.",
+  "board_example": "An example board is shown below. Each outlined area is a region.",
+  "rule_two_per_region": "Each region must contain <span class=\"font-bold\">exactly 2 shaded cells</span>.",
+  "rule_domino": "Every shaded cell must be <span class=\"font-bold\">orthogonally adjacent to exactly one other shaded cell</span>, forming a 1x2 domino (horizontal or vertical pair).",
+  "rule_cross_region": "Dominoes <span class=\"font-bold\">can span across region boundaries</span> - the two cells of a domino don't need to be in the same region.",
+  "rule_no_2x2": "No 2x2 square of shaded cells is allowed (this is automatically satisfied when all shaded cells form valid dominoes).",
+  "solved": "The puzzle is solved when every region has exactly 2 shaded cells and all shaded cells form valid dominoes.",
+  "solved_board": "Below is a fully solved board:",
+  "control_cycle": "Left click to cycle forward, right click to cycle backward between:",
+  "control_shade": "Shading a cell",
+  "control_cross": "Marking the cell with an X (to indicate it won't be shaded)",
+  "control_clear": "Clearing the cell",
+  "compact": {
+    "intro": "Shade cells so that:",
+    "rule_two_per_region": "Each region contains exactly 2 shaded cells.",
+    "rule_domino": "Every shaded cell is adjacent to exactly one other shaded cell (forming dominoes).",
+    "rule_cross_region": "Dominoes can cross region boundaries."
+  }
+}

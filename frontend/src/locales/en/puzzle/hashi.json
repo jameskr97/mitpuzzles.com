@@ -1,0 +1,22 @@
+{
+  "title": "Hashi",
+  "intro": "Hashi (Bridges) is a logic puzzle where you connect islands with bridges.",
+  "goal": "Your goal is to connect all islands with bridges so that <span class=\"font-bold\">all islands are connected</span> and each island has the correct number of bridges.",
+  "board_example": "An example board is shown below. Numbers indicate how many bridges must connect to each island.",
+  "rule_bridges": "Each island (circle with a number) must have <span class=\"font-bold\">exactly as many bridges</span> connecting to it as the number shown.",
+  "rule_direction": "Bridges can only run <span class=\"font-bold\">horizontally or vertically</span> between islands.",
+  "rule_double": "Up to <span class=\"font-bold\">two bridges</span> can connect the same pair of islands.",
+  "rule_no_cross": "Bridges <span class=\"font-bold\">cannot cross</span> each other or pass through other islands.",
+  "rule_connected": "All islands must be <span class=\"font-bold\">connected together</span> - you should be able to travel from any island to any other island via bridges.",
+  "solved": "The puzzle is solved when every island has exactly the number of bridges shown, no bridges cross, and all islands are connected.",
+  "solved_board": "Below is a fully solved board:",
+  "control_drag": "Drag from one island to another to create bridges:",
+  "control_add": "Left-drag: Add a bridge (cycles 0 to 1 to 2 to 0)",
+  "control_remove": "Right-drag: Remove a bridge (cycles 2 to 1 to 0)",
+  "compact": {
+    "intro": "Connect islands with bridges so that:",
+    "rule_count": "Each island has exactly the number of bridges shown.",
+    "rule_no_cross": "Bridges run horizontally or vertically and cannot cross.",
+    "rule_connected": "All islands are connected together."
+  }
+}

@@ -12,6 +12,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ref, watch } from "vue";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useTranslation } from "i18next-vue";
+
+const { t } = useTranslation();
 
 const props = defineProps<{
   show: boolean;
@@ -39,7 +42,7 @@ watch(
 
 async function onSubmit() {
   if (!username.value.trim()) {
-    error.value = "Username is required";
+    error.value = t("auth:username_modal.error_required");
     return;
   }
 
@@ -62,21 +65,21 @@ async function onSubmit() {
   <Dialog :open="show">
     <DialogContent class="sm:max-w-[425px] [&>button]:hidden" @interact-outside.prevent>
       <DialogHeader>
-        <DialogTitle>Choose Username</DialogTitle>
-        <DialogDescription> Please choose a username to complete your account setup. </DialogDescription>
+        <DialogTitle>{{ $t('auth:username_modal.title') }}</DialogTitle>
+        <DialogDescription>{{ $t('auth:username_modal.description') }}</DialogDescription>
       </DialogHeader>
 
       <form @submit.prevent="onSubmit" class="space-y-4">
         <div class="space-y-2">
-          <Label for="username">Username</Label>
-          <Input id="username" v-model="username" type="text" placeholder="Enter your username" :disabled="loading" />
+          <Label for="username">{{ $t('ui:form.username') }}</Label>
+          <Input id="username" v-model="username" type="text" :placeholder="$t('ui:form.username')" :disabled="loading" />
           <p v-if="error" class="text-sm text-red-500">{{ error }}</p>
-          <p class="text-sm text-muted-foreground">This is your public display name.</p>
+          <p class="text-sm text-muted-foreground">{{ $t('auth:username_modal.display_name_hint') }}</p>
         </div>
 
         <DialogFooter>
           <Button type="submit" :disabled="loading || !username.trim()">
-            {{ loading ? "Saving..." : "Save Username" }}
+            {{ loading ? $t('ui:action.saving') : $t('auth:username_modal.save_username') }}
           </Button>
         </DialogFooter>
       </form>

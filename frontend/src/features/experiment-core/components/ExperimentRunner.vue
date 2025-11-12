@@ -91,7 +91,7 @@ const loaded_custom_component = computed(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 flex flex-col p-2">
+  <div class="min-h-screen bg-gray-50 flex flex-col">
     <ProgressBar
       v-if="executor?.current_node?.type === node_type.TRIAL"
       :current_step="executor.global_progress.current + 1"
@@ -104,7 +104,7 @@ const loaded_custom_component = computed(() => {
     />
 
     <!-- main content -->
-    <div class="flex-1 flex justify-center p-4">
+    <div class="flex-1 flex justify-center">
       <!-- loading state -->
       <div v-if="loading" class="text-center">
         <div class="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>

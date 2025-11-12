@@ -58,20 +58,20 @@ async function submit() {
     </DialogTrigger>
     <DialogContent>
       <DialogHeader>
-        <DialogTitle>Send us your feedback!</DialogTitle>
+        <DialogTitle>{{ $t('ui:feedback.title') }}</DialogTitle>
         <DialogDescription class="text-md">
-          Thanks for trying our website. How do you like it? Did something not work right? Let us know here!
+          {{ $t('ui:feedback.description') }}
         </DialogDescription>
       </DialogHeader>
 
       <Textarea
         v-model="feedback"
         class="h-40 placeholder:italic resize-none shadow"
-        placeholder="Share your thoughts here!"
+        :placeholder="$t('ui:feedback.placeholder')"
       ></Textarea>
 
       <DialogFooter>
-        <Button @click.prevent="submit"> Submit </Button>
+        <Button @click.prevent="submit">{{ $t('ui:action.submit') }}</Button>
       </DialogFooter>
     </DialogContent>
   </Dialog>

@@ -3,7 +3,11 @@ import { inject, ref } from "vue";
 import type { PuzzleController } from "@/services/game/engines/types.ts";
 import { usePuzzleProgressStore } from "@/store/puzzle/usePuzzleProgressStore.ts";
 
-const puzzle = inject<PuzzleController>("puzzle")!;
+const props = defineProps<{
+  puzzle?: PuzzleController
+}>();
+
+const puzzle = inject<PuzzleController>("puzzle") || props.puzzle!;
 const progressStore = usePuzzleProgressStore();
 </script>
 

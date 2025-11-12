@@ -11,13 +11,11 @@ const word = computed(() => (sqrt.value === 3 ? "nine" : "four"));
 
 <template>
   <div>
-    <div class="mb-2">
-      Fill every empty cell in the {{ def?.rows }}×{{ def?.rows }} grid with a digit 1–{{ def?.rows }} so that:
-    </div>
+    <div class="mb-2" v-html="$t('puzzle:sudoku:compact.intro', { rows: def?.rows })"></div>
     <ul class="list-disc ml-4">
-      <li>Each row contains each digit 1–{{ def?.rows }} exactly once.</li>
-      <li>Each column contains each digit 1–{{ def?.rows }} exactly once.</li>
-      <li>Each of the {{ word }} {{ sqrt }}×{{ sqrt }} boxes contains each digit 1–{{ def?.rows }} exactly once.</li>
+      <li v-html="$t('puzzle:sudoku:compact.rule_row', { rows: def?.rows })"></li>
+      <li v-html="$t('puzzle:sudoku:compact.rule_col', { rows: def?.rows })"></li>
+      <li v-html="$t('puzzle:sudoku:compact.rule_box', { word, sqrt, rows: def?.rows })"></li>
     </ul>
   </div>
 </template>

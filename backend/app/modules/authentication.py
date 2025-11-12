@@ -14,7 +14,7 @@ from fastapi.responses import JSONResponse
 from app.dependencies import get_async_session, AsyncSession
 from app.service.email import send_verification_email
 from app.models import Base
-from app.config import settings
+from app.config import settings, DeploymentEnvironment
 
 from typing import Optional, Dict, Union
 import datetime
@@ -22,6 +22,7 @@ import uuid
 import uuid6
 from collections import defaultdict
 from datetime import datetime, timedelta
+from better_profanity import profanity
 
 AUTH_SESSION_TIME = 3600 * 24 * 30 # stay logged in for 30 days
 
@@ -37,6 +38,8 @@ class UserRead(schemas.BaseUser[uuid.UUID]):
 
 class UserUpdate(schemas.BaseUserUpdate):
     username: Optional[str] = None
+    password: Optional[str] = None
+    current_password: Optional[str] = None
 
 
 class UserCreate(schemas.BaseUserCreate):
@@ -69,6 +72,7 @@ class User(Base):
 
     # relationships
     oauth_accounts: Mapped[list[OAuthAccount]] = relationship("OAuthAccount", lazy="joined")
+    # profile: Mapped[Optional["UserProfile"]] = relationship("UserProfile", back_populates="user", uselist=False, lazy="joined")
 
 
 # Services
@@ -90,7 +94,9 @@ def get_database_strategy(access_token_db: AccessTokenDatabase[AccessToken] = De
 
 cookie_transport = CookieTransport(
     cookie_name="access_token",
-    cookie_max_age=AUTH_SESSION_TIME, # stay logged in for one year
+    cookie_max_age=AUTH_SESSION_TIME,  # stay logged in for 30 days
+    cookie_secure=settings.ENVIRONMENT != DeploymentEnvironment.LOCAL,  # Only require HTTPS in non-local
+    cookie_samesite="lax",
 )
 auth_backend = AuthenticationBackend(name="cookie", transport=cookie_transport, get_strategy=get_database_strategy)
 
@@ -110,6 +116,11 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
         # check if username already exists (only during registration)
         if isinstance(user, UserCreate) and hasattr(user, "username") and user.username is not None:
             from sqlalchemy import select
+
+            # check for profanity in username
+            if profanity.contains_profanity(user.username):
+                raise HTTPException(status_code=400, detail="Username contains inappropriate language")
+
             statement = select(User).where(User.username == user.username)
             result = await self.user_db.session.execute(statement)
             existing_user = result.unique().scalar_one_or_none()
@@ -127,6 +138,10 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
 
     async def on_after_request_verify(self, user: User, token: str, request: Optional[Request] = None):
         await send_verification_email(user.email, token)
+
+    async def on_after_forgot_password(self, user: User, token: str, request: Optional[Request] = None):
+        from app.service.email import send_password_reset_email
+        await send_password_reset_email(user.email, token)
 
     async def on_after_login(
         self,
@@ -151,6 +166,10 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
             from sqlalchemy import select
             from fastapi import HTTPException
 
+            # check for profanity in username
+            if profanity.contains_profanity(user_update.username):
+                raise HTTPException(status_code=400, detail="Username contains inappropriate language")
+
             # check if username belongs to another user
             statement = select(User).where(User.username == user_update.username, User.id != user.id)
             result = await self.user_db.session.execute(statement)
@@ -158,6 +177,24 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
 
             if existing_user:
                 raise HTTPException(status_code=400, detail="Username already exists")
+
+        # handle password update with current password verification
+        if hasattr(user_update, "password") and user_update.password is not None:
+            from fastapi import HTTPException
+
+            # require current password for password changes
+            if not hasattr(user_update, "current_password") or not user_update.current_password:
+                raise HTTPException(status_code=400, detail="Current password is required to change password")
+
+            # verify current password
+            valid_password = self.password_helper.verify_and_update(
+                user_update.current_password, user.hashed_password
+            )
+            if not valid_password[0]:
+                raise HTTPException(status_code=400, detail="Current password is incorrect")
+
+            # validate new password
+            await self.validate_password(user_update.password, user)
 
         return await super().update(user_update, user, safe=safe, request=request)
 
@@ -175,6 +212,7 @@ verify_router = fastapi_users.get_verify_router(UserRead)
 verify_router.routes = [route for route in verify_router.routes if not (hasattr(route, 'path') and route.path == '/request-verify-token')]
 
 router_auth.include_router(prefix="/api/auth", router=verify_router)
+router_auth.include_router(prefix="/api/auth", router=fastapi_users.get_reset_password_router())
 router_auth.include_router(
     prefix="/api/oauth/google",
     router=fastapi_users.get_oauth_router(

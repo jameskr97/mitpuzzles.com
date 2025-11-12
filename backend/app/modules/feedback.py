@@ -8,9 +8,10 @@ from datetime import datetime
 from typing import Optional, Dict, Any
 
 import uuid6
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field, ConfigDict
-from sqlalchemy import String, DateTime, ForeignKey
+from sqlalchemy import String, DateTime, ForeignKey, select, asc, desc
+from sqlalchemy.orm import selectinload
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -72,6 +73,20 @@ class FeedbackResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class FeedbackListItem(BaseModel):
+    """Schema for feedback list responses with user email."""
+
+    id: uuid.UUID
+    created_at: datetime
+    message: str
+    feedback_metadata: Optional[Dict[str, Any]]
+    user_id: Optional[uuid.UUID]
+    user_email: Optional[str]
+    is_authenticated: bool
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 ### Service
 class FeedbackService:
     """Service for managing feedback operations."""
@@ -91,6 +106,31 @@ class FeedbackService:
         await self.db.commit()
         await self.db.refresh(feedback)
         return feedback
+
+    async def list_feedback(self, sort_by: str = "created_at", sort_order: str = "desc") -> list[FeedbackListItem]:
+        """
+        List all feedback entries with user email.
+        """
+        # Build the order clause
+        sort_column = Feedback.created_at if sort_by == "created_at" else Feedback.user_id
+        order_func = desc if sort_order == "desc" else asc
+
+        query = select(Feedback).options(selectinload(Feedback.user)).order_by(order_func(sort_column))
+        result = await self.db.execute(query)
+        feedback_items = result.scalars().all()
+
+        return [
+            FeedbackListItem(
+                id=item.id,
+                created_at=item.created_at,
+                message=item.message,
+                feedback_metadata=item.feedback_metadata,
+                user_id=item.user_id,
+                user_email=item.user.email if item.user else None,
+                is_authenticated=item.is_authenticated,
+            )
+            for item in feedback_items
+        ]
 
 
 ### Routes
@@ -126,3 +166,20 @@ async def create_feedback(
     feedback = await service.create_feedback(feedback_data=feedback_data, device_id=device_id, user=user)
 
     return FeedbackResponse.model_validate(feedback)
+
+
+@router.get("/admin/list", response_model=list[FeedbackListItem])
+async def list_feedback(
+    db: AsyncDatabase,
+    user: User = Depends(fastapi_users.current_user(active=True, superuser=True)),
+    sort_by: str = Query("created_at", pattern="^(created_at|user)$"),
+    sort_order: str = Query("desc", pattern="^(asc|desc)$"),
+):
+    """
+    List all feedback entries. Admin only.
+
+    - sort_by: "created_at" or "user"
+    - sort_order: "asc" or "desc"
+    """
+    service = FeedbackService(db)
+    return await service.list_feedback(sort_by=sort_by, sort_order=sort_order)

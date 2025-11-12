@@ -3,10 +3,10 @@
 
 <template>
   <div>
-    <div>Mark cells black (<span class="inline-block h-3 w-3 bg-black"></span>) so that</div>
+    <div v-html="$t('puzzle:kakurasu:compact.intro')"></div>
     <ul class="list-disc ml-4">
-      <li>Each <span class="font-bold">row's</span> black cells, multiplied by their column values (on top), equals the number to the right of that row.</li>
-      <li>Each <span class="font-bold">column's</span> black cells, multiplied by their row values (on the left), equals the number at the bottom of that column.</li>
+      <li v-html="$t('puzzle:kakurasu:compact.rule_row')"></li>
+      <li v-html="$t('puzzle:kakurasu:compact.rule_col')"></li>
     </ul>
   </div>
 </template>

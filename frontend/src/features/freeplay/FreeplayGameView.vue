@@ -6,20 +6,14 @@ import { useGameLayout } from "@/composables/useGameLayout";
 
 // Components
 import Container from "@/components/ui/Container.vue";
-import { Badge } from "@/components/ui/badge";
-import { getPuzzleDisplayName } from "@/utils";
 import { ACTIVE_GAMES, type PUZZLE_TYPES } from "@/constants.ts";
 import FreeplayGameViewControlbar from "@/features/freeplay/FreeplayGameViewControlbar.vue";
-import FreeplayGameViewViolations from "@/features/freeplay/FreeplayGameViewViolations.vue";
 import FreeplayGameViewLeaderboard from "@/features/freeplay/FreeplayGameViewLeaderboard.vue";
 import type { PuzzleController } from "@/services/game/engines/types.ts";
 import { usePuzzleMetadataStore } from "@/store/puzzle/usePuzzleMetadataStore.ts";
 import { usePuzzleScaleStore } from "@/store/puzzle/usePuzzleScaleStore.ts";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import FreeplayGameViewInstructionModal from "@/features/freeplay/FreeplayGameViewInstructionModal.vue";
-import { Separator } from "@/components/ui/separator";
 import CompactInstructions from "@/features/freeplay/CompactInstructions.vue";
+import FreeplayStatusBar from "@/features/freeplay/FreeplayStatusBar.vue";
 
 const props = defineProps({
   puzzle: { type: Object as PropType<PuzzleController>, required: true },
@@ -92,27 +86,7 @@ provide("layout", layout);
     <FreeplayGameViewControlbar />
 
     <!-- Game header with tutorial mode indicator and puzzle name -->
-    <Container class="mt-2 w-full md:max-w-prose mx-auto h-12">
-      <div class="m-0 p-0 grid grid-cols-3 text-xl">
-        <!-- Tutorial Mode Toggle -->
-        <div class="flex items-center gap-2">
-          <Switch v-model="puzzle.state_ui.value.tutorial_mode" id="tutorial-toggle" />
-          <Label for="tutorial-toggle" class="cursor-pointer font-normal">Tutorial Mode</Label>
-        </div>
-        <span class="col-start-2 text-center items-center">
-          {{ getPuzzleDisplayName(puzzle.current_puzzle_variant.value) }}
-        </span>
-        <Badge
-          v-if="puzzle.state_ui.value.show_solved_state"
-          :variant="puzzle.state_puzzle.value.solved ? 'blue' : 'destructive'"
-          class="justify-self-end text-nowrap text-base"
-        >
-          <span v-if="puzzle.state_puzzle.value.solved">You got it!</span>
-          <span v-else>Not Quite!</span>
-        </Badge>
-      </div>
-    </Container>
-
+    <FreeplayStatusBar />
     <!-- Main game area -->
     <div class="grid grid-cols-2 gap-2">
       <!-- Game board slot -->
@@ -123,7 +97,7 @@ provide("layout", layout);
         </div>
 
         <!-- Game board - always centered, never moves -->
-        <div class="flex flex-col gap-2 items-center col-start-2">
+        <div class="flex flex-row gap-2 items-center col-start-2">
           <div class="select-none origin-center transform-gpu">
             <Container
               :class="{
@@ -131,9 +105,9 @@ provide("layout", layout);
                 'heartbeat-once': puzzle.state_ui.value.animate_success,
                 'pointer-events-none': puzzle.state_puzzle.value.solved === true,
               }"
-              class="max-w-fit mx-auto"
+              class="max-w-full mx-auto"
             >
-              <slot name="default" :scale="scale_remapped" class="max-w-fit"></slot>
+              <slot name="default" class="max-w-fit"></slot>
             </Container>
           </div>
           <slot name="game-below"></slot>

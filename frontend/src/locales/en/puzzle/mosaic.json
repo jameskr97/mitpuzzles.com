@@ -1,0 +1,19 @@
+{
+  "title": "Mosaic",
+  "intro": "Mosaic is a logic puzzle in which your goal is to determine which cells should be shaded by marking them <span class=\"font-black\">black</span> (<span class=\"inline-block h-3 w-3 bg-black\"></span>), using the numbers shown on some cells as clues.",
+  "board_example": "An example board is shown below.",
+  "rule_adjacent": "The numbers show how many of the adjacent cells should be shaded (horizontally, vertically and diagonally), <span class=\"font-bold italic\">including the numbered cell itself</span>.",
+  "example_adjacent": "For instance, the \"2\" in the example board means 2 of the 9 surrounding cells (including the 2 itself) should be shaded.",
+  "control_mark": "Mark cells black which you believe should be shaded. You can also mark cells white to indicate that they should not be shaded.",
+  "example_marked": "In the example below, several cells have been marked black and white, satisfying both 3s in the first column.",
+  "solved": "A puzzle is solved when all cells that should be shaded are marked black and the remaining cells are unmarked or marked white.",
+  "solved_board": "Below is an example of a solved board.",
+  "control_cycle": "Left click to cycle forward, right click to cycle backward between:",
+  "control_mark_black": "Marking a cell black <span class=\"inline-block h-3 w-3 bg-black\"></span> (shaded)",
+  "control_mark_white": "Marking a cell white <span class=\"inline-block h-3 w-3 bg-white border border-gray-400\"></span> (not shaded)",
+  "control_clear": "Clearing the cell",
+  "compact": {
+    "rule_number": "For any cell that contains a number, that number indicates how many cells in the 3×3 block centered on that cell must be marked black (<span class=\"inline-block h-3 w-3 bg-black\"></span>).",
+    "rule_remaining": "Remaining cells may be marked white or left grey."
+  }
+}

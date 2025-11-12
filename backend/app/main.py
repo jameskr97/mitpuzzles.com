@@ -9,7 +9,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from app.modules import authentication, tracking, feedback, experiments, puzzle, tracking_analytics
+from app.modules import authentication, tracking, feedback, experiments, puzzle, tracking_analytics, user_profile, push_notifications
 from app.config import settings, DeploymentEnvironment
 from app.dependencies import async_session_maker
 
@@ -109,7 +109,7 @@ app = FastAPI(
     title="mitpuzzles.com",
     contact={
         "name": "James",
-        "email": "jameskr@mit.edu",
+        "email": "support@mitpuzzles.com",
     },
     docs_url="/api/docs" if settings.ENVIRONMENT != DeploymentEnvironment.PRODUCTION else None,
     redoc_url="/api/redoc" if settings.ENVIRONMENT != DeploymentEnvironment.PRODUCTION else None,
@@ -118,6 +118,8 @@ app = FastAPI(
 app.include_router(tracking.router)
 app.include_router(authentication.router_auth)
 app.include_router(authentication.router_user)
+app.include_router(user_profile.router_profile)
+app.include_router(push_notifications.router)
 app.include_router(feedback.router)
 app.include_router(experiments.router)
 app.include_router(puzzle.router)
@@ -164,6 +166,12 @@ async def oauth2_authorize_callback_error_handler(request: Request, exc: OAuth2A
 @app.get("/health", tags=["Health"])
 async def health_check():
     return {"status": "ok"}
+
+
+# Test-only endpoints (only available when TESTING=true)
+if settings.TESTING:
+    from app.routers import testing
+    app.include_router(testing.router)
 
 
 def main() -> None:

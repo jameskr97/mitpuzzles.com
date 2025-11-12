@@ -4,6 +4,9 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useRoute } from "vue-router";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "i18next-vue";
+
+const { t } = useTranslation();
 
 const authStore = useAuthStore();
 const route = useRoute();
@@ -31,9 +34,9 @@ const resend_verification_email = async () => {
     }, 5000);
   } catch (error: any) {
     if (error.response?.status === 429) {
-      resendError.value = "Please wait before requesting another verification email.";
+      resendError.value = t("auth:verification.error_rate_limit");
     } else {
-      resendError.value = "Failed to send verification email. Please try again.";
+      resendError.value = t("auth:verification.error_failed");
     }
     setTimeout(() => {
       resendError.value = "";
@@ -47,9 +50,9 @@ const resend_verification_email = async () => {
 <template>
   <Alert v-if="should_show_banner" variant="warning" class="mb-0">
     <AlertDescription class="flex items-center justify-between">
-      <span>Please check your inbox and verify your email.</span>
+      <span>{{ $t('auth:verification.check_inbox') }}</span>
       <div class="flex items-center gap-2">
-        <span v-if="resendSuccess" class="text-green-700 text-sm">Verification email sent!</span>
+        <span v-if="resendSuccess" class="text-green-700 text-sm">{{ $t('auth:verification.sent_success') }}</span>
         <span v-if="resendError" class="text-red-700 font-bold text-sm">{{ resendError }}</span>
         <Button variant="outline" size="sm"
           :disabled="isResending || resendSuccess"
@@ -58,9 +61,9 @@ const resend_verification_email = async () => {
         >
           <div v-if="isResending" class="flex items-center gap-2">
             <div class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
-            Sending...
+            {{ $t('ui:action.sending') }}
           </div>
-          <span v-else>Resend Verification Email</span>
+          <span v-else>{{ $t('auth:verification.resend') }}</span>
         </Button>
       </div>
     </AlertDescription>

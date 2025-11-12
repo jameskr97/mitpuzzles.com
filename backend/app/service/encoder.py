@@ -1,4 +1,200 @@
-from typing import List
+from typing import List, Dict, Any, Optional
+
+
+class ResearchFormatTranslator:
+    """
+    Translates puzzle data between developer format (enums) and research format (numbers).
+
+    Developer format uses sequential enums (0, 1, 2, 3...)
+    Research format uses semantic numbers (-1 for empty, -3 for positive action, -4 for negative action, etc.)
+    """
+
+    # Mapping from developer enum values to research format numbers
+    # Format: { developer_enum_value: research_number }
+    ENUM_TO_RESEARCH = {
+        "tents": {
+            0: -1,   # EMPTY
+            1: 1,    # TREE
+            2: -3,   # TENT
+            3: -4,   # GREEN
+        },
+        "kakurasu": {
+            0: -1,   # EMPTY
+            1: 1,    # BLACK
+            2: 0,    # CROSS
+        },
+        "nonograms": {
+            0: -1,   # EMPTY
+            1: 1,    # BLACK
+            2: 0,    # CROSS
+        },
+        "battleships": {
+            0: -1,   # EMPTY
+            1: -4,   # WATER
+            2: -3,   # SHIP
+        },
+        "sudoku": {
+            0: -1,   # EMPTY
+            1: 1,    # ONE
+            2: 2,    # TWO
+            3: 3,    # THREE
+            4: 4,    # FOUR
+            5: 5,    # FIVE
+            6: 6,    # SIX
+            7: 7,    # SEVEN
+            8: 8,    # EIGHT
+            9: 9,    # NINE
+        },
+        "lightup": {
+            0: 0,    # WALL_0
+            1: 1,    # WALL_1
+            2: 2,    # WALL_2
+            3: 3,    # WALL_3
+            4: 4,    # WALL_4
+            5: -2,   # WALL_NO_CONSTRAINT
+            6: -1,   # EMPTY
+            7: -3,   # BULB
+            8: -4,   # CROSS
+        },
+        "minesweeper": {
+            0: -1,   # UNMARKED
+            1: 1,    # ONE
+            2: 2,    # TWO
+            3: 3,    # THREE
+            4: 4,    # FOUR
+            5: 5,    # FIVE
+            6: 6,    # SIX
+            7: 7,    # SEVEN
+            8: 8,    # EIGHT
+            9: -3,   # FLAG
+            10: -4,  # SAFE
+            11: 0,   # EMPTY (revealed empty)
+            12: -5,  # QUESTION_MARK
+            13: -1,  # UNMARKED_HIGHLIGHTED (treat as unmarked)
+        },
+        "mosaic": {
+            0: 0,    # ZERO
+            1: 1,    # ONE
+            2: 2,    # TWO
+            3: 3,    # THREE
+            4: 4,    # FOUR
+            5: 5,    # FIVE
+            6: 6,    # SIX
+            7: 7,    # SEVEN
+            8: 8,    # EIGHT
+            9: 9,    # NINE
+            10: -1,  # UNMARKED
+            11: -3,  # SHADED
+            12: -4,  # CROSS
+        },
+        "norinori": {
+            0: -1,   # EMPTY
+            1: -3,   # SHADED
+            2: -4,   # CROSS
+        },
+        "aquarium": {
+            0: -1,   # EMPTY
+            1: -3,   # WATER
+            2: -4,   # CROSS
+        },
+    }
+
+    def __init__(self, puzzle_type: str):
+        self.puzzle_type = puzzle_type
+        if puzzle_type not in self.ENUM_TO_RESEARCH:
+            raise ValueError(f"Unknown puzzle type: {puzzle_type}")
+        self.mapping = self.ENUM_TO_RESEARCH[puzzle_type]
+
+    def translate_cell(self, cell_value: int) -> int:
+        """Translate a single cell value from developer format to research format."""
+        if cell_value in self.mapping:
+            return self.mapping[cell_value]
+        # If not in mapping, return as-is (might be a clue number or special value)
+        return cell_value
+
+    def translate_grid(self, grid: List[List[int]]) -> List[List[int]]:
+        """Translate a 2D grid from developer format to research format."""
+        if not grid:
+            return grid
+        return [
+            [self.translate_cell(cell) for cell in row]
+            for row in grid
+        ]
+
+    def translate_action_history(self, action_history: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Translate action history, converting any board states and values within actions.
+
+        Actions may contain 'state', 'board_state', 'old_value', 'new_value' fields that need translation.
+        """
+        if not action_history:
+            return action_history
+
+        translated = []
+        for action in action_history:
+            action_copy = action.copy()
+
+            # Translate 'state' field if present and is a grid
+            if 'state' in action_copy and isinstance(action_copy['state'], list):
+                if action_copy['state'] and isinstance(action_copy['state'][0], list):
+                    action_copy['state'] = self.translate_grid(action_copy['state'])
+
+            # Translate 'board_state' field if present and is a grid
+            if 'board_state' in action_copy and isinstance(action_copy['board_state'], list):
+                if action_copy['board_state'] and isinstance(action_copy['board_state'][0], list):
+                    action_copy['board_state'] = self.translate_grid(action_copy['board_state'])
+
+            # Translate 'old_value' and 'new_value' fields if present
+            if 'old_value' in action_copy and isinstance(action_copy['old_value'], int):
+                action_copy['old_value'] = self.translate_cell(action_copy['old_value'])
+            if 'new_value' in action_copy and isinstance(action_copy['new_value'], int):
+                action_copy['new_value'] = self.translate_cell(action_copy['new_value'])
+
+            # Translate 'board_before' and 'board_after' in custom_data if present
+            if 'custom_data' in action_copy and isinstance(action_copy['custom_data'], dict):
+                custom_data = action_copy['custom_data'].copy()
+                if 'board_before' in custom_data and isinstance(custom_data['board_before'], list):
+                    if custom_data['board_before'] and isinstance(custom_data['board_before'][0], list):
+                        custom_data['board_before'] = self.translate_grid(custom_data['board_before'])
+                if 'board_after' in custom_data and isinstance(custom_data['board_after'], list):
+                    if custom_data['board_after'] and isinstance(custom_data['board_after'][0], list):
+                        custom_data['board_after'] = self.translate_grid(custom_data['board_after'])
+                action_copy['custom_data'] = custom_data
+
+            translated.append(action_copy)
+
+        return translated
+
+    @classmethod
+    def translate_attempt(cls, attempt_data: Dict[str, Any], puzzle_type: str) -> Dict[str, Any]:
+        """
+        Translate an entire attempt record to research format.
+
+        Args:
+            attempt_data: Dictionary containing board_state and action_history
+            puzzle_type: The puzzle type for translation
+
+        Returns:
+            New dictionary with translated board_state and action_history
+        """
+        try:
+            translator = cls(puzzle_type)
+        except ValueError:
+            # Unknown puzzle type, return as-is
+            return attempt_data
+
+        result = attempt_data.copy()
+
+        # Translate board_state
+        if 'board_state' in result and isinstance(result['board_state'], list):
+            if result['board_state'] and isinstance(result['board_state'][0], list):
+                result['board_state'] = translator.translate_grid(result['board_state'])
+
+        # Translate action_history
+        if 'action_history' in result and isinstance(result['action_history'], list):
+            result['action_history'] = translator.translate_action_history(result['action_history'])
+
+        return result
 
 
 class PrecisePuzzleEncoder:
@@ -55,6 +251,27 @@ class PrecisePuzzleEncoder:
             "negative_values": [-4],  # CROSS (pertinent negative for strict mode)
             "immutable_values": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],  # Number clues 0-9 (immutable)
             "empty_values": [-1],  # UNMARKED
+        },
+        "hashi": {
+            # Hashi uses bridge-based encoding, not cell-based
+            # This config is a placeholder - actual encoding is handled specially
+            "positive_values": [],
+            "negative_values": [],
+            "immutable_values": [],
+            "empty_values": [],
+            "bridge_based": True,  # Flag for special handling
+        },
+        "norinori": {
+            "positive_values": [-3],  # SHADED (filled cells forming dominoes)
+            "negative_values": [-4],  # CROSS (pertinent negative for strict mode)
+            "immutable_values": [],  # None
+            "empty_values": [-1],  # EMPTY
+        },
+        "aquarium": {
+            "positive_values": [-3],  # WATER (filled cells)
+            "negative_values": [-4],  # CROSS (pertinent negative for strict mode)
+            "immutable_values": [],  # None
+            "empty_values": [-1],  # EMPTY
         },
     }
 
@@ -113,6 +330,10 @@ class PrecisePuzzleEncoder:
             board: 2D array with your numeric values
             puzzle_id: Unique puzzle identifier
         """
+        # Special handling for Hashi (bridge-based puzzles)
+        if self.config.get("bridge_based"):
+            return self._create_hashi_encoding(board)
+
         encoding_parts = []
         positive_positions = []
 
@@ -159,3 +380,47 @@ class PrecisePuzzleEncoder:
         # hash = hashlib.sha256(hash_input.encode('utf-8')).hexdigest()
         return encoding
         # return hashlib.sha256(hash_input.encode('utf-8')).hexdigest()
+
+    def _create_hashi_encoding(self, bridges_or_board) -> str:
+        """
+        Create encoding for Hashi puzzles.
+
+        Hashi solutions are bridge-based, not cell-based.
+        The solution is a list of bridges, each with:
+        - island1: [row, col]
+        - island2: [row, col]
+        - count: 1 or 2
+
+        We encode bridges in a deterministic order:
+        sorted by (min_row, min_col, max_row, max_col)
+        Then each bridge as: r1c1r2c2n where n is the count
+        """
+        # Handle case where bridges_or_board might be a list of bridge dicts
+        if isinstance(bridges_or_board, list) and len(bridges_or_board) > 0:
+            # Check if it's a list of bridges (dicts with island1, island2, count)
+            if isinstance(bridges_or_board[0], dict) and "island1" in bridges_or_board[0]:
+                bridges = bridges_or_board
+            else:
+                # It's a 2D grid - Hashi might store solution differently
+                # Return empty encoding as we can't process this format
+                return "0"
+        else:
+            return "0"
+
+        if not bridges:
+            return "0"
+
+        # Normalize each bridge so island1 < island2 (lexicographic on [row, col])
+        normalized = []
+        for b in bridges:
+            i1, i2, count = b["island1"], b["island2"], b["count"]
+            if (i1[0], i1[1]) > (i2[0], i2[1]):
+                i1, i2 = i2, i1
+            normalized.append((i1[0], i1[1], i2[0], i2[1], count))
+
+        # Sort for deterministic order
+        normalized.sort()
+
+        # Encode as string: each bridge is "r1,c1-r2,c2:n"
+        parts = [f"{r1},{c1}-{r2},{c2}:{n}" for r1, c1, r2, c2, n in normalized]
+        return ";".join(parts)

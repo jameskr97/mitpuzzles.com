@@ -4,3 +4,4 @@ node_modules/
 *.pyc
 .docker/.env
 backend/.env
+frontend/dev-dist

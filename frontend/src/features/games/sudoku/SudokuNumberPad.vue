@@ -8,16 +8,14 @@ const props = defineProps<{
   interact?: ReturnType<typeof createPuzzleInteractionBridge>;
 }>();
 
+const emit = defineEmits<{
+  (e: 'keyPress', key: string): void;
+}>()
+
 // array of buttons to make numbers with
 const number_buttons = computed(() => {
   return Array.from({ length: props.state.definition.rows }, (_, i) => i + 1);
 });
-
-const handle_button_click = (value: number | null) => {
-  if (!props.interact) return;
-  const key = value === null ? 'Backspace' : value.toString();
-  props.interact.dispatchKeyboardEvent(key);
-};
 </script>
 
 <template>
@@ -28,7 +26,7 @@ const handle_button_click = (value: number | null) => {
         v-for="num in number_buttons"
         :key="num"
         class="box-border min-w-12 min-h-12 flex items-center justify-center text-lg font-semibold rounded-lg border-2 border-gray-500 bg-white hover:bg-gray-50 hover:border-gray-400 active:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white outline-none cursor-pointer"
-        @click="handle_button_click(num)"
+        @click="$emit('keyPress', num.toString())"
       >
         {{ num }}
       </button>
@@ -37,7 +35,7 @@ const handle_button_click = (value: number | null) => {
       <button
         type="button"
         class="min-w-12 min-h-12 flex items-center justify-center text-lg font-bold rounded-lg border-2 border-red-300 bg-white text-red-600 hover:bg-red-50 hover:border-red-400 active:bg-red-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white outline-none cursor-pointer"
-        @click="handle_button_click(null)"
+        @click="$emit('keyPress', 'Backspace')"
       >
         X
       </button>

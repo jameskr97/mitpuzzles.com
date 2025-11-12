@@ -4,7 +4,7 @@ import { usePuzzleMetadataStore } from "@/store/puzzle/usePuzzleMetadataStore";
 import Container from "@/components/ui/Container.vue";
 import { api } from "@/services/axios";
 import PuzzleRenderer from "@/components/PuzzleRenderer.vue";
-import PuzzleGridItem from "@/components/PuzzleGridItem.vue";
+import PuzzleBrowserItem from "@/features/analysis/components/PuzzleBrowserItem.vue";
 import { PuzzleConverter } from "@/services/game/engines/translator.ts";
 import type { PuzzleDefinition } from "@/services/game/engines/types.ts";
 
@@ -525,7 +525,7 @@ onMounted(async () => {
         <div v-else>
           <!-- Grid -->
           <div class="grid gap-2 mb-8" :class="gridConfig.cols">
-            <PuzzleGridItem
+            <PuzzleBrowserItem
               v-for="puzzle in displayed_puzzles"
               :key="puzzle.id"
               :puzzle="puzzle"

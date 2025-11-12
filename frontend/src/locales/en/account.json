@@ -1,0 +1,31 @@
+{
+  "title": "Account Settings",
+  "profile": {
+    "title": "Profile",
+    "description": "Update your username and profile information",
+    "username_placeholder": "Enter your username",
+    "success": "Username updated successfully!",
+    "update_username": "Update Username"
+  },
+  "push": {
+    "title": "Push Notifications",
+    "description": "Receive notifications about new puzzles and updates. These notifications are not automated. We only send them manually when we want to share an update.",
+    "not_supported": "Push notifications are not supported in this browser"
+  },
+  "password": {
+    "title": "Password",
+    "description": "Change your password to keep your account secure",
+    "current": "Current Password",
+    "new": "New Password",
+    "confirm": "Confirm New Password",
+    "success": "Password updated successfully!",
+    "change": "Change Password"
+  },
+  "profile_info": {
+    "title": "Profile Information",
+    "game_experience": "Game Experience",
+    "experience_prompt": "How much experience did you have with each game type before signing up?",
+    "success": "Profile updated successfully!",
+    "save": "Save Profile"
+  }
+}

@@ -8,11 +8,13 @@ from sqlalchemy.ext.asyncio import create_async_engine
 
 # model imports TODO(james): replace noqa lines with a * import (move models to one module?)
 from app.models import Base
-from app.modules.authentication import User, OAuthAccount, AccessToken  # noqa: F401
+from app.modules.authentication import User, OAuthAccount, AccessToken # noqa: F401
 from app.modules.tracking import Device, DeviceThumbmark  # noqa: F401
 from app.modules.experiments import ExperimentRun, ExperimentProlificData  # noqa: F401
 from app.modules.feedback import Feedback  # noqa: F401
 from app.modules.puzzle import Puzzle, FreeplayPuzzleAttempt  # noqa: F401
+from app.modules.user_profile import UserProfile  # noqa: F401
+from app.modules.push_notifications import PushSubscription  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

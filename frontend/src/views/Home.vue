@@ -7,39 +7,40 @@ import { ACTIVE_GAMES } from "@/constants.ts";
 import { useAppStore } from "@/store/useAppStore.ts";
 import { useAuthStore } from "@/store/useAuthStore.ts";
 import EmailVerificationBanner from "@/components/EmailVerificationBanner.vue";
+import DemographicBanner from "@/components/DemographicBanner.vue";
+import { Button } from "@/components/ui/button";
 
 const appStore = useAppStore();
 const authStore = useAuthStore();
 </script>
 
 <template>
-
-  <div class="m-2 gap-2 flex flex-col">
-    <EmailVerificationBanner />
-    <AlertEmailAlreadyVerified v-if="$route.query.alreadyVerified" />
-    <AlertEmailVerifiySuccess v-if="$route.query.verified" />
+  <div class="flex flex-col gap-2 ">
+    <EmailVerificationBanner data-testid="banner-email-verify" />
+    <DemographicBanner />
+    <AlertEmailAlreadyVerified v-if="$route.query.alreadyVerified" data-testid="banner-email-already-verified" />
+    <AlertEmailVerifiySuccess v-if="$route.query.verified" data-testid="banner-email-successfully-verified" />
     <Container class="grid grid-cols-1">
       <div class="flex flex-col">
         <div class="text-lg">
-          <p class="text-center">
-            MIT's Computational Cogitive Science Lab wants to
-            <span class="font-bold italic text-red-700">understand human reasoning and cognition </span>
-            through logic puzzles. Help science and have fun!
-          </p>
+          <p class="text-center" v-html="$t('home:welcome_message')"></p>
         </div>
       </div>
     </Container>
 
-    <Container v-if="!authStore.isAuthenticated" class="text-center">
-      <p class="text-lg font-semibold text-gray-700 text-center">
-          <span class="underline cursor-pointer hover:text-blue-600" @click="appStore.open_login_modal()">Login</span>
-          or
-          <router-link class="underline cursor-pointer hover:text-blue-600" :to="{ name: 'signup' }">create an account</router-link>
-          to track your progress over time!
-        </p>
+    <Container v-if="!authStore.isAuthenticated" class="w-full justify-center text-lg font-semibold text-gray-700 mb-2 flex flex-col md:flex-row mx-auto items-center">
+        <span>{{ $t('home:track_progress_prompt') }}</span>
+        <div class="flex gap-2 ml-2">
+          <Button @click="appStore.open_login_modal()">
+            {{ $t('home:login_action') }}
+          </Button>
+          <router-link :to="{ name: 'signup' }">
+            <Button>
+              {{ $t('home:signup_action') }}
+            </Button>
+          </router-link>
+        </div>
     </Container>
-<!--    <HomeUserStatsBar />-->
-
       <!-- Game Grid -->
       <div class="w-full max-w-4xl mx-auto">
         <div class="grid grid-cols-2 md:grid-cols-3 gap-2 rounded-xl">

@@ -18,9 +18,9 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
         d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
       />
     </svg>
-    <AlertTitle class="text-blue-800">Already Verified</AlertTitle>
+    <AlertTitle class="text-blue-800">{{ $t('auth:verification.already_verified_title') }}</AlertTitle>
     <AlertDescription class="text-blue-700">
-      Your email was already verified. You may now login.
+      {{ $t('auth:verification.already_verified_message') }}
     </AlertDescription>
   </Alert>
 </template>

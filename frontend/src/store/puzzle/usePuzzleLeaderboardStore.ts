@@ -1,13 +1,14 @@
 import { defineStore } from "pinia";
-import { shared_http_cache } from "@/store/database/HTTPCache.ts";
+import { api } from "@/services/axios.ts";
 
 interface LeaderboardEntry {
   rank: number;
   duration_display: string;
   username: string;
+  is_current_user: boolean;
 }
 
-type LeaderboardKey = `${string}:${string}:${string}`;
+type LeaderboardKey = `${string}:${string}:${string}:${string}`;
 
 export const usePuzzleLeaderboardStore = defineStore("mitlogic.freeplay.leaderboard", {
   state: () => ({
@@ -17,8 +18,8 @@ export const usePuzzleLeaderboardStore = defineStore("mitlogic.freeplay.leaderbo
   getters: {
     leaderboardEntryCount:
       (state) =>
-      (puzzle_type: string, size: string, difficulty: string): number => {
-        const key: LeaderboardKey = `${puzzle_type}:${size}:${difficulty}`;
+      (puzzle_type: string, size: string, difficulty: string, time_period: string = "all_time"): number => {
+        const key: LeaderboardKey = `${puzzle_type}:${size}:${difficulty}:${time_period}`;
         if (!state.leaderboard.has(key)) return 0;
         const board: any = state.leaderboard.get(key);
         return board.count;
@@ -26,8 +27,8 @@ export const usePuzzleLeaderboardStore = defineStore("mitlogic.freeplay.leaderbo
 
     getLeaderboard:
       (state) =>
-      (puzzle_type: string, size: string, difficulty: string): LeaderboardEntry[] => {
-        const key: LeaderboardKey = `${puzzle_type}:${size}:${difficulty}`;
+      (puzzle_type: string, size: string, difficulty: string, time_period: string = "all_time"): LeaderboardEntry[] => {
+        const key: LeaderboardKey = `${puzzle_type}:${size}:${difficulty}:${time_period}`;
         const board: any = state.leaderboard.get(key);
 
         return board?.leaderboard || [];
@@ -35,12 +36,13 @@ export const usePuzzleLeaderboardStore = defineStore("mitlogic.freeplay.leaderbo
   },
 
   actions: {
-    /** not really caching, because we only call .refresh, but that's fine for now */
-    async refreshLeaderboard(puzzle_type: string, size: string, difficulty: string) {
+    /** fetch latest leaderboard (Workbox uses NetworkFirst with fallback to cache) */
+    async refreshLeaderboard(puzzle_type: string, size: string, difficulty: string, time_period: string = "all_time") {
       try {
-        const endpoint = `/api/puzzle/freeplay/leaderboard?puzzle_type=${puzzle_type}&puzzle_size=${size}&puzzle_difficulty=${difficulty}&limit=10`;
-        const data = await shared_http_cache.refresh(endpoint)
-        const key: LeaderboardKey = `${puzzle_type}:${size}:${difficulty}`;
+        const endpoint = `/api/puzzle/freeplay/leaderboard?puzzle_type=${puzzle_type}&puzzle_size=${size}&puzzle_difficulty=${difficulty}&limit=10&time_period=${time_period}`;
+        const response = await api.get(endpoint);
+        const data = response.data;
+        const key: LeaderboardKey = `${puzzle_type}:${size}:${difficulty}:${time_period}`;
         this.leaderboard.set(key, data);
       } catch (error) {
         return [];

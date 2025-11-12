@@ -13,6 +13,7 @@ class DeploymentEnvironment(str, Enum):
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env")
     ENVIRONMENT: DeploymentEnvironment = DeploymentEnvironment.LOCAL
+    TESTING: bool = False  # Enable test mode (skips emails, exposes test endpoints)
 
     # domains
     APP_DOMAIN: set[str] = {"mitpuzzles.com"}
@@ -26,6 +27,11 @@ class Settings(BaseSettings):
     RESEND_API_KEY: str = None
     OAUTH_GOOGLE_CLIENT_ID: str = None
     OAUTH_GOOGLE_CLIENT_SECRET: str = None
+
+    # web push notifications
+    VAPID_PUBLIC_KEY: str = None
+    VAPID_PRIVATE_KEY: str = None
+    VAPID_CLAIM_EMAIL: str = None
 
     # celery
     CELERY_BROKER_URL: str = "redis://localhost:6379/0"
@@ -48,6 +54,8 @@ class Settings(BaseSettings):
             self._configure_staging()
         elif self.ENVIRONMENT == DeploymentEnvironment.PRODUCTION:
             self._configure_production()
+        print(f"FRONTEND_HOST: {self.FRONTEND_HOST}")
+
 
     def _configure_local(self):
         """local development configuration"""

@@ -1,0 +1,23 @@
+{
+  "title": "Tents",
+  "intro": "Tents is a logic puzzle in which the goal is to place tents <i class=\"md-cell md-cell-tent\"></i> next to trees <i class=\"md-cell md-cell-tree\"></i> subject to a number of constraints.",
+  "board_example": "Below is a 4x4 example board with 4 trees:",
+  "rule_pairing": "Each tree must be paired with exactly one tent, placed <span class=\"font-bold\">horizontally or vertically adjacent.</span> A tree may have multiple tents next to it, but in the final solution only one of them forms its unique pair.",
+  "example_pairing": "For example, the middle tree in the second row touches two tents, but each actually belongs to the tree below it.",
+  "rule_no_touch": "Tents must not touch each other, including diagonally. Once you place a tent, cells horizontally, vertically, and diagonally adjacent to it must be tent-free.",
+  "example_invalid": "For instance, the configuration of tents below is <span class=\"font-bold\">invalid</span> because the two tents touch each other diagonally:",
+  "rule_counts": "The numbers on the edges indicate exactly how many tents are in that row or column.",
+  "example_row": "For instance, the first row has a 2, requiring two tents, while the second row has 0, so it contains no tents.",
+  "example_col": "The first column has 1, so there will be exactly one tent in that column.",
+  "solved": "The game is solved when you've placed tents equal to the number of trees, following the rules above.",
+  "solved_board": "Below is an example of a solved board:",
+  "control_cycle": "Left click to cycle forward, right click to cycle backward between:",
+  "control_place_tent": "Placing a tent <i class=\"md-cell md-cell-tent\"></i>",
+  "control_mark_free": "Marking the cell as tent-free <i class=\"md-cell bg-green-300 rounded\"></i>",
+  "control_clear": "Clearing the cell",
+  "compact": {
+    "rule_pairing": "Each tree must be paired with exactly one tent (<i class=\"md-cell md-cell-tent\"></i>), placed next to it horizontally or vertically.",
+    "rule_no_touch": "Tents never touch each other (including diagonally).",
+    "rule_counts": "Numbers indicate exactly how many tents go into that row/column."
+  }
+}

@@ -1,0 +1,101 @@
+{
+  "nav": {
+    "games": "Games",
+    "experiments": "Experiments",
+    "about_us": "About Us",
+    "feedback": "Feedback",
+    "privacy_policy": "Privacy Policy",
+    "account_settings": "Account Settings",
+    "logout": "Log out"
+  },
+  "theme": {
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "maintenance": {
+    "title": "mitpuzzles.com under maintenance.",
+    "message": "Please check back shortly. Thank you for your patience."
+  },
+  "banner": {
+    "demographic_title": "Help us improve our research!",
+    "demographic_message": "Complete your profile to help us understand how different people solve puzzles.",
+    "complete_profile": "Complete Profile",
+    "dismiss": "Dismiss banner"
+  },
+  "action": {
+    "save": "Save",
+    "close": "Close",
+    "submit": "Submit",
+    "clear": "Clear",
+    "cancel": "Cancel",
+    "update": "Update",
+    "load_more": "Load More",
+    "signin": "Sign in",
+    "signup": "Sign up",
+    "login": "Login",
+    "done": "Done",
+    "sending": "Sending...",
+    "saving": "Saving...",
+    "updating": "Updating..."
+  },
+  "feedback": {
+    "title": "Send us your feedback!",
+    "description": "Thanks for trying our website. How do you like it? Did something not work right? Let us know here!",
+    "placeholder": "Share your thoughts here!"
+  },
+  "error": {
+    "404_message": "Click here to see our puzzles!"
+  },
+  "validation": {
+    "invalid_email": "Please enter a valid email address",
+    "password_mismatch": "Passwords do not match"
+  },
+  "time_period": {
+    "today": "Today",
+    "weekly": "Weekly",
+    "monthly": "Monthly",
+    "all_time": "All-time"
+  },
+  "table": {
+    "rank": "Rank",
+    "time": "Time",
+    "username": "Username"
+  },
+  "form": {
+    "username": "Username",
+    "email": "Email",
+    "password": "Password",
+    "age": "Age",
+    "gender": "Gender",
+    "education_level": "Education Level"
+  },
+  "placeholder": {
+    "select_gender": "Select gender",
+    "select_education": "Select education level",
+    "prior_games": "Prior games"
+  },
+  "option": {
+    "gender": {
+      "male": "Male",
+      "female": "Female",
+      "non_binary": "Non-binary",
+      "prefer_not_to_say": "Prefer not to say",
+      "other": "Other"
+    },
+    "education": {
+      "high_school": "High School",
+      "some_college": "Some College",
+      "bachelors": "Bachelor's Degree",
+      "masters": "Master's Degree",
+      "phd": "Ph.D.",
+      "other": "Other"
+    },
+    "experience": {
+      "zero": "0 games",
+      "one_to_five": "1-5 games",
+      "five_to_fifty": "5-50 games",
+      "fifty_plus": "50+ games"
+    }
+  }
+}

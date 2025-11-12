@@ -18,9 +18,9 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
         d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
       />
     </svg>
-    <AlertTitle class="text-green-800">Email Verified Successfully!</AlertTitle>
+    <AlertTitle class="text-green-800">{{ $t('auth:verification.success_title') }}</AlertTitle>
     <AlertDescription class="text-green-700">
-      Your email has been verified. You can now login. Welcome to MIT Puzzles!
+      {{ $t('auth:verification.success_message') }}
     </AlertDescription>
   </Alert>
 </template>

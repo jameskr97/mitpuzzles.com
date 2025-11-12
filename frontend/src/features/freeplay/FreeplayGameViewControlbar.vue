@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useGameLayout } from "@/composables/useGameLayout.ts";
-import { computed, inject, onMounted, onUnmounted } from "vue";
+import { computed, inject, onMounted, onUnmounted, type PropType } from "vue";
 import Container from "@/components/ui/Container.vue";
 import FreeplayGameViewTimer from "@/features/freeplay/FreeplayGameViewTimer.vue";
 import GameViewControlBarSettings from "@/features/freeplay/FreeplayGameViewSettings.vue";
@@ -14,7 +14,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import FreeplayGameViewInstructionModal from "@/features/freeplay/FreeplayGameViewInstructionModal.vue";
 import { getPuzzleDisplayName } from "@/utils.ts";
 import { useRoute } from "vue-router";
 import type { PUZZLE_TYPES } from "@/constants.ts";
@@ -22,9 +21,21 @@ import type { PuzzleController } from "@/services/game/engines/types.ts";
 import { usePuzzleMetadataStore } from "@/store/puzzle/usePuzzleMetadataStore.ts";
 import { usePuzzleScaleStore } from "@/store/puzzle/usePuzzleScaleStore.ts";
 
+////////////////////////////////////////////////////////////////////////
+//// props
+const props = defineProps({
+  puzzle: { type: Object as PropType<PuzzleController>, required: false},
+  showInstructionButton: { type: Boolean, default: true },
+  showButtons: { type: Boolean, default: true },
+  showVariant: { type: Boolean, default: true },
+  showTimer: { type: Boolean, default: true },
+  showSettings: { type: Boolean, default: true },
+});
+
 const route = useRoute();
-const gt = route.meta.game_type as PUZZLE_TYPES;
-const puzzle = inject<PuzzleController>("puzzle")!;
+const puzzle = inject<PuzzleController>("puzzle") || props.puzzle!;
+const gt = puzzle.state_puzzle.value.definition.puzzle_type as PUZZLE_TYPES;
+
 const scaleStore = usePuzzleScaleStore();
 const puzzle_metadata = usePuzzleMetadataStore();
 
@@ -41,15 +52,6 @@ const currentScale = computed({
   set: (value: number[]) => scaleStore.setScale(gt, value[0]),
 });
 
-////////////////////////////////////////////////////////////////////////
-//// props
-defineProps({
-  showInstructionButton: { type: Boolean, default: true },
-  showButtons: { type: Boolean, default: true },
-  showVariant: { type: Boolean, default: true },
-  showTimer: { type: Boolean, default: true },
-  showSettings: { type: Boolean, default: true },
-});
 
 onMounted(() => {
   function handle_keydown(e: KeyboardEvent) {
@@ -72,7 +74,7 @@ onMounted(() => {
       <div class="flex flex-row w-full items-center">
         <v-icon name="co-magnifying-glass" :scale="1.5" />
         <Slider :min="0" :max="100" :step="1" class="mx-2" v-model="currentScale" />
-        <FreeplayGameViewTimer />
+        <FreeplayGameViewTimer :puzzle="puzzle" />
       </div>
 
       <!-- Buttons -->
@@ -80,7 +82,7 @@ onMounted(() => {
         <DropdownMenu>
           <DropdownMenuTrigger>
             <Button class="w-full" variant="outline">
-              <span>Difficulty</span>
+              <span>{{ $t('freeplay:control.difficulty') }}</span>
               <v-icon name="md-arrowdropdown" />
             </Button>
           </DropdownMenuTrigger>
@@ -95,16 +97,16 @@ onMounted(() => {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-        <Button @click="puzzle.request_new_puzzle">New Puzzle</Button>
+        <Button @click="puzzle.request_new_puzzle">{{ $t('freeplay:control.new_puzzle') }}</Button>
         <Button
           variant="destructive"
           :disabled="puzzle.state_puzzle.value.solved === true"
           @click="puzzle.clear_puzzle"
         >
-          Clear
+          {{ $t('ui:action.clear') }}
         </Button>
         <Button variant="success" :disabled="puzzle.state_puzzle.value.solved === true" @click="puzzle.check_solution">
-          Submit
+          {{ $t('ui:action.submit') }}
         </Button>
       </div>
     </div>

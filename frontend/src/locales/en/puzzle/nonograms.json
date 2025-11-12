@@ -1,0 +1,21 @@
+{
+  "title": "Nonograms",
+  "intro": "Nonograms is a logic puzzle in which the goal is to place black cells <span class=\"inline-block h-5 w-5 bg-black rounded\"></span> such that number constraints found on the edges of the board are satisfied.",
+  "board_example": "Below is an example board:",
+  "rule_hints": "To the left of each row and on top of each column are numbers that show the lengths of <span class=\"font-bold\">runs of consecutive black squares</span> for that row/column.",
+  "goal": "Your goal is to mark cells black <span class=\"inline-block h-5 w-5 bg-black rounded\"></span> to create runs that match these numbers.",
+  "example_column": "For instance, in the example below, looking at the right column with hint \"3\", each of the 2 shown placements satisfies the number clue since each consists of 3 consecutive black squares.",
+  "example_row": "Similarly, the bottom row with hints \"1\" and \"2\" can be satisfied in multiple ways - a single black cell, then at least one empty cell, then 2 consecutive black cells.",
+  "rule_multiple_runs": "Note that when there are <span class=\"font-bold\"> multiple runs</span> in the same row/column, they must be separated by at least one empty cell.",
+  "solved": "The correct solution will uniquely satisfy the runs specified by all rows and column hints simultaneously",
+  "solved_board": "Below is a full solved game board:",
+  "control_cycle": "Left click to cycle forward, right click to cycle backward between:",
+  "control_place_box": "Placing a box <i class=\"md-cell bg-black\"></i>",
+  "control_place_cross": "Placing a cross <i class=\"md-cell md-cell-kakurasu-cross\"></i>",
+  "control_clear": "Clearing the cell",
+  "compact": {
+    "rule_runs": "Each row and column has numbers showing the lengths of runs of consecutive black cells.",
+    "rule_mark": "Mark cells <span class=\"font-bold\">black (<span class=\"inline-block h-3 w-3 bg-black\"></span>)</span> to create runs matching those lengths, in the given order.",
+    "rule_separation": "Runs must be separated with at least one white/empty cell (<i class=\"md-cell md-cell-kakurasu-cross\"></i>)."
+  }
+}

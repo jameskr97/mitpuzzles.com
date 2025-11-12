@@ -18,7 +18,7 @@ const consent_content = `
   requested your participation will not receive any personal information about you, and any
   information you provide will not be shared in association with any personally identifying information.</p>
   <p>If you have questions about this research, please contact the researchers by sending an email to
-  <a href="mailto:cheyette@mit.edu">cheyette@mit.edu</a>. These researchers will do their best to communicate with you in a timely,
+  <a href="mailto:support@mitpuzzles.com">support@mitpuzzles.com</a>. These researchers will do their best to communicate with you in a timely,
   professional, and courteous manner. If you have questions regarding your rights as a research subject,
   or if problems arise which you do not feel you can discuss with the researchers, please contact the
   MIT Institutional Review Board.</p>

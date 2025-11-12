@@ -8,8 +8,8 @@ import { usePuzzleScaleStore } from "@/store/puzzle/usePuzzleScaleStore.ts";
 import Container from "@/components/ui/Container.vue";
 import type { BattleshipsMeta } from "@/services/game/engines/types.ts";
 import SudokuNumberPad from "@/features/games/sudoku/SudokuNumberPad.vue";
-import { ref } from "vue";
 import { useGameLayout } from "@/composables/useGameLayout.ts";
+import CanvasKakurasu from "@/features/gameboard/canvas-kakurasu.vue";
 
 const route = useRoute();
 const gt = route.meta.game_type as string;
@@ -40,11 +40,11 @@ if (game_entry["defaultBehaviors"].length !== 0) {
 
     <template #game-below>
       <Container class="min-w-fit" v-if="puzzle.state_puzzle.value.definition.puzzle_type === 'sudoku'">
-        <SudokuNumberPad
-          :state="puzzle.state_puzzle.value"
-          :interact="bridge"
-        />
+        <SudokuNumberPad :state="puzzle.state_puzzle.value" :interact="bridge" />
       </Container>
+      <!--      <Container class="w-full" v-if="puzzle.state_puzzle.value.definition.puzzle_type === 'kakurasu'">-->
+      <!--        <CanvasKakurasu :state="puzzle.state_puzzle.value" :interact="bridge" />-->
+      <!--      </Container>-->
     </template>
 
     <template #game-right>
@@ -64,7 +64,7 @@ if (game_entry["defaultBehaviors"].length !== 0) {
         </div>
         <div>{{ (puzzle.state_puzzle.value.definition.meta as BattleshipsMeta).ships_dict["2"] }}</div>
         <div class="flex gap-0.5">
-          <div class="w-5 h-5 bg-black rounded-full "></div>
+          <div class="w-5 h-5 bg-black rounded-full"></div>
         </div>
         <div>{{ (puzzle.state_puzzle.value.definition.meta as BattleshipsMeta).ships_dict["1"] }}</div>
       </Container>

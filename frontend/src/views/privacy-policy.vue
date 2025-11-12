@@ -1,10 +1,18 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import Container from "@/components/ui/Container.vue";
+</script>
 
 <template>
-  <div class="container mx-auto px-4 py-8">
-    <article class="prose prose-lg max-w-4xl mx-auto">
+  <div class="container mx-auto max-w-prose">
+    <Container class="prose prose-sm prose-tight mx-auto
+      [&_h1]:mb-1 [&_h1]:mt-2
+      [&_h2]:mt-4 [&_h2]:mb-1
+      [&_h3]:mt-2 [&_h3]:mb-1
+      [&_p]:my-1
+      [&_ul]:my-1 [&_ul]:space-y-0
+      [&_li]:my-0">
       <h1>Privacy Policy</h1>
-      <p>Last Updated: November 4th, 2025</p>
+      <p class="text-gray-500">Last Updated: November 4th, 2025</p>
       <h2>1. Who We Are</h2>
       <p>
         We are researchers at the Massachusetts Institute of Technology (MIT) studying how people solve puzzles and develop problem-solving skills. This website is operated by the Computational Cognitive Science Lab in MIT's Department of Brain and Cognitive Sciences.
@@ -88,7 +96,7 @@
         We may retain anonymized behavioral data for research integrity even after account deletion, but we will remove all personally identifiable information (email, IP addresses).
       </p>
 
-      <p>To exercise these rights or for questions about them, contact: cheyette@mit.edu</p>
+      <p>To exercise these rights or for questions about them, contact: support@mitpuzzles.com</p>
 
       <h2>7. Cookies</h2>
       <p>We use cookies to:</p>
@@ -112,7 +120,7 @@
         You must be 18+ to create an account. We don't knowingly collect from children under 18. If we learn we have collected data from a child under 18, we will delete it immediately.
       </p>
       <p>
-        If you believe a child under 13 has provided us with personal information, contact us at cheyette@mit.edu.
+        If you believe a child under 13 has provided us with personal information, contact us at support@mitpuzzles.com.
       </p>
 
       <h2>9. International Users</h2>
@@ -129,12 +137,12 @@
       </p>
 
       <h2>11. Contact Us</h2>
-      <p>For questions about this privacy policy, your data, or about the research: cheyette@mit.edu</p>
+      <p>For questions about this privacy policy, your data, or about the research: support@mitpuzzles.com</p>
       <p>
         46 Vassar Street<br>
         Massachusetts Institute of Technology<br>
         Cambridge, MA 02139
       </p>
-    </article>
+    </Container>
   </div>
 </template>

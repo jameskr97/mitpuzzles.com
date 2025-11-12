@@ -1,8 +1,8 @@
 import { defineStore } from "pinia";
 import type { PuzzleDefinition } from "@/services/game/engines/types.ts";
-import { shared_http_cache } from "@/store/database/HTTPCache.ts";
 import { getNextPuzzleID } from "@/services/app.ts";
 import { useSessionTrackingStore } from "@/store/useSessionTrackingStore";
+import { api } from "@/services/axios.ts";
 
 // localStorage helpers
 export function getCurrentPuzzleID(puzzle_type: string): string | null {
@@ -27,10 +27,11 @@ export const usePuzzleDefinitionStore = defineStore("puzzle-definitions", {
       return await this.getDefinitionByID(puzzle_id);
     },
 
-    /** get puzzle definition by specific puzzle ID (uses HTTPCache) */
+    /** get puzzle definition by specific puzzle ID (Workbox handles caching) */
     async getDefinitionByID(puzzle_id: number): Promise<PuzzleDefinition | null> {
       try {
-        return await shared_http_cache.get<PuzzleDefinition>(`/api/puzzle/definition/${puzzle_id}`);
+        const response = await api.get<PuzzleDefinition>(`/api/puzzle/definition/${puzzle_id}`);
+        return response.data;
       } catch (error) {
         console.warn(`Failed to get puzzle definition for ID ${puzzle_id}:`, error);
         return null;
@@ -51,7 +52,7 @@ export const usePuzzleDefinitionStore = defineStore("puzzle-definitions", {
       if (!puzzle_id) throw new Error("Puzzle ID missing from response");
       this.setCurrentPuzzle(puzzle_type, puzzle_id);
 
-      // request 2: get puzzle definition by id through http cache
+      // request 2: get puzzle definition by id (Workbox caches it)
       const definition = await this.getDefinitionByID(puzzle_id);
       if (!definition) throw new Error("Failed to fetch puzzle definition");
 

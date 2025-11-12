@@ -33,13 +33,13 @@ const show_centiseconds = computed({
       <DropdownMenuLabel>
         <div class="flex items-center space-x-2">
           <Switch v-model="puzzle.state_ui.value.tutorial_mode" id="tutorial-mode" />
-          <Label for="tutorial-mode">Tutorial Mode</Label>
+          <Label for="tutorial-mode">{{ $t('freeplay:settings.tutorial_mode') }}</Label>
         </div>
       </DropdownMenuLabel>
       <DropdownMenuLabel>
         <div class="flex items-center space-x-2">
           <Switch v-model="layout.leaderboard_visible.value" id="leaderboard-visible" />
-          <Label for="leaderboard-visible">Show Leaderboard</Label>
+          <Label for="leaderboard-visible">{{ $t('freeplay:settings.show_leaderboard') }}</Label>
         </div>
       </DropdownMenuLabel>
 <!--      <DropdownMenuLabel>-->

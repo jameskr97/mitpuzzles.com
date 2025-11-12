@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { shared_http_cache } from "@/store/database/HTTPCache.ts";
+import { api } from "@/services/axios.ts";
 
 const LOCAL_STORAGE_SELECTED_VARIANT_KEY = (puzzle_type: string) => `mitlogic.${puzzle_type}.selected_variant`;
 
@@ -28,8 +28,9 @@ export const usePuzzleMetadataStore = defineStore("mitlogic.puzzle.metadata", {
       if (this.initialized) return;
       this.initialized = true;
 
-      // load from cache to memory store
-      const loaded = await shared_http_cache.get('/api/puzzle/definition/types');
+      // load from API (Workbox handles caching)
+      const response = await api.get('/api/puzzle/definition/types');
+      const loaded = response.data;
       Object.keys(loaded).forEach((key) => {
         this.variants[key] = loaded[key].available_difficulties;
         // set default if no selection exists

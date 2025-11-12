@@ -4,7 +4,7 @@ Stores pre-generated puzzles and tracks user/device attempts at solving them.
 """
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List
 
 from fastapi import APIRouter, HTTPException, Query, Request, Response, Depends
@@ -18,8 +18,9 @@ from sqlalchemy.types import JSON
 from app.dependencies import AsyncDatabase, get_device_id
 from app.models import Base
 from app.modules.authentication import User, fastapi_users
-from app.service.encoder import PrecisePuzzleEncoder
+from app.service.encoder import PrecisePuzzleEncoder, ResearchFormatTranslator
 from app.modules.tracking import Device
+from app.modules.user_profile import UserProfile
 from app.utils import get_device_type_from_thumbmark
 
 
@@ -240,6 +241,7 @@ class LeaderboardEntryResponse(BaseModel):
     rank: int
     duration_display: str
     username: str
+    is_current_user: bool = False
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -549,6 +551,48 @@ class PuzzleService:
         puzzle_data = puzzle.puzzle_data
         return res
 
+    async def get_puzzle_stats(self, puzzle_id: uuid.UUID) -> Dict[str, Any]:
+        """Get statistics for a specific puzzle."""
+        from sqlalchemy import select, func, case
+
+        # Duration in seconds (timestamps are in milliseconds)
+        duration_expr = (FreeplayPuzzleAttempt.timestamp_finish - FreeplayPuzzleAttempt.timestamp_start) / 1000.0
+
+        # Get attempt stats
+        stats_query = select(
+            func.count(FreeplayPuzzleAttempt.id).label('total_attempts'),
+            func.sum(case((FreeplayPuzzleAttempt.is_solved == True, 1), else_=0)).label('solved_attempts'),
+            func.sum(case((FreeplayPuzzleAttempt.user_id.is_not(None), 1), else_=0)).label('authenticated_attempts'),
+            func.sum(case((FreeplayPuzzleAttempt.user_id.is_(None), 1), else_=0)).label('anonymous_attempts'),
+            func.avg(duration_expr).label('avg_duration_seconds'),
+            func.min(duration_expr).label('min_duration_seconds'),
+            func.max(duration_expr).label('max_duration_seconds'),
+            func.count(func.distinct(FreeplayPuzzleAttempt.device_id)).label('unique_devices'),
+            func.count(func.distinct(FreeplayPuzzleAttempt.user_id)).label('unique_users'),
+        ).where(
+            FreeplayPuzzleAttempt.puzzle_id == puzzle_id,
+            FreeplayPuzzleAttempt.timestamp_finish.is_not(None),
+        )
+
+        result = await self.db.execute(stats_query)
+        row = result.one()
+
+        total_attempts = row.total_attempts or 0
+        solved_attempts = row.solved_attempts or 0
+
+        return {
+            "puzzle_id": str(puzzle_id),
+            "total_attempts": total_attempts,
+            "solved_attempts": solved_attempts,
+            "solve_rate": round(solved_attempts / total_attempts * 100, 1) if total_attempts > 0 else 0,
+            "authenticated_attempts": row.authenticated_attempts or 0,
+            "anonymous_attempts": row.anonymous_attempts or 0,
+            "avg_duration_seconds": round(row.avg_duration_seconds, 1) if row.avg_duration_seconds else None,
+            "min_duration_seconds": round(row.min_duration_seconds, 1) if row.min_duration_seconds else None,
+            "max_duration_seconds": round(row.max_duration_seconds, 1) if row.max_duration_seconds else None,
+            "unique_devices": row.unique_devices or 0,
+            "unique_users": row.unique_users or 0,
+        }
 
     async def create_freeplay_attempt(self, attempt_data: FreeplayAttemptCreate, device_id: uuid.UUID, user: Optional[User] = None) -> FreeplayPuzzleAttempt:
         """Create new freeplay puzzle attempt with required device tracking and optional user."""
@@ -585,9 +629,38 @@ class PuzzleService:
 
         return attempt
 
-    async def get_freeplay_leaderboard(self, puzzle_type: str, puzzle_size: str, puzzle_difficulty: str, limit: int = 10) -> Dict[str, Any]:
-        """get leaderboard for freeplay puzzles by type, size, and difficulty. only includes authenticated users"""
+    async def get_freeplay_leaderboard(self, puzzle_type: str, puzzle_size: str, puzzle_difficulty: str, limit: int = 10, user: Optional[User] = None, time_period: str = "all_time") -> Dict[str, Any]:
+        """get leaderboard for freeplay puzzles by type, size, and difficulty. only includes authenticated users.
+        if user is logged in, they will always appear in the leaderboard with their position.
+
+        time_period options: 'all_time', 'today' (last 24 hours), 'weekly' (last 7 days), 'monthly' (last 30 days)"""
         from sqlalchemy import select, func, and_
+
+        # calculate cutoff datetime based on time_period (rolling windows)
+        cutoff = None
+        if time_period == "today":
+            cutoff = datetime.utcnow() - timedelta(hours=24)
+        elif time_period == "weekly":
+            cutoff = datetime.utcnow() - timedelta(days=7)
+        elif time_period == "monthly":
+            cutoff = datetime.utcnow() - timedelta(days=30)
+        # all_time has no cutoff
+
+        # build base where conditions
+        base_conditions = [
+            FreeplayPuzzleAttempt.is_solved == True,  # noqa: E712, == True is intentional here
+            FreeplayPuzzleAttempt.user_id.is_not(None),  # only authenticated users
+            Puzzle.puzzle_type == puzzle_type,
+            Puzzle.puzzle_size == puzzle_size,
+            Puzzle.puzzle_difficulty == puzzle_difficulty,
+            FreeplayPuzzleAttempt.timestamp_finish.is_not(None),
+            FreeplayPuzzleAttempt.timestamp_start.is_not(None),
+            FreeplayPuzzleAttempt.used_tutorial == False,
+        ]
+
+        # add time filter if applicable
+        if cutoff:
+            base_conditions.append(FreeplayPuzzleAttempt.created_at >= cutoff)
 
         # create subquery to get best time per user for each (type X size X difficulty)
         # timestamps are stored as milliseconds, so convert to seconds for readability
@@ -597,25 +670,30 @@ class PuzzleService:
                 func.min((FreeplayPuzzleAttempt.timestamp_finish - FreeplayPuzzleAttempt.timestamp_start) / 1000.0).label("best_time_seconds"),
             )
             .join(Puzzle, FreeplayPuzzleAttempt.puzzle_id == Puzzle.id)
-            .where(
-                and_(
-                    FreeplayPuzzleAttempt.is_solved == True,  # noqa: E712, == True is intentional here
-                    FreeplayPuzzleAttempt.user_id.is_not(None),  # only authenticated users
-                    Puzzle.puzzle_type == puzzle_type,
-                    Puzzle.puzzle_size == puzzle_size,
-                    Puzzle.puzzle_difficulty == puzzle_difficulty,
-                    FreeplayPuzzleAttempt.timestamp_finish.is_not(None),
-                    FreeplayPuzzleAttempt.timestamp_start.is_not(None),
-                    FreeplayPuzzleAttempt.used_tutorial == False,
-                )
-            )
+            .where(and_(*base_conditions))
             .group_by(FreeplayPuzzleAttempt.user_id)
             .subquery()
         )
 
+        # build main query where conditions (slightly different - no timestamp_finish/start checks)
+        main_query_conditions = [
+            FreeplayPuzzleAttempt.is_solved == True,  # noqa: E712, == True is intentional here
+            FreeplayPuzzleAttempt.user_id.is_not(None),
+            Puzzle.puzzle_type == puzzle_type,
+            Puzzle.puzzle_size == puzzle_size,
+            Puzzle.puzzle_difficulty == puzzle_difficulty,
+        ]
+
+        if cutoff:
+            main_query_conditions.append(FreeplayPuzzleAttempt.created_at >= cutoff)
+
         # main query to get leaderboard with user info
         query = (
-            select(((FreeplayPuzzleAttempt.timestamp_finish - FreeplayPuzzleAttempt.timestamp_start) / 1000.0).label("completion_time_seconds"), User.username)
+            select(
+                FreeplayPuzzleAttempt.user_id,
+                ((FreeplayPuzzleAttempt.timestamp_finish - FreeplayPuzzleAttempt.timestamp_start) / 1000.0).label("completion_time_seconds"),
+                User.username
+            )
             .join(Puzzle, FreeplayPuzzleAttempt.puzzle_id == Puzzle.id)
             .join(User, FreeplayPuzzleAttempt.user_id == User.id)
             .join(
@@ -625,35 +703,72 @@ class PuzzleService:
                     ((FreeplayPuzzleAttempt.timestamp_finish - FreeplayPuzzleAttempt.timestamp_start) / 1000.0) == best_times_subquery.c.best_time_seconds,
                 ),
             )
-            .where(
-                and_(
-                    FreeplayPuzzleAttempt.is_solved == True,  # noqa: E712, == True is intentional here
-                    FreeplayPuzzleAttempt.user_id.is_not(None),
-                    Puzzle.puzzle_type == puzzle_type,
-                    Puzzle.puzzle_size == puzzle_size,
-                    Puzzle.puzzle_difficulty == puzzle_difficulty,
-                )
-            )
+            .where(and_(*main_query_conditions))
             .order_by(((FreeplayPuzzleAttempt.timestamp_finish - FreeplayPuzzleAttempt.timestamp_start) / 1000.0).asc())
-            .limit(limit)
         )
 
         result = await self.db.execute(query)
-        rows = result.all()
+        all_rows = result.all()
 
-        # Format leaderboard entries
+        # get current user's position if logged in
+        current_user_entry = None
+        current_user_rank = None
+        if user:
+            for idx, row in enumerate(all_rows, 1):
+                if row.user_id == user.id:
+                    current_user_rank = idx
+                    current_user_entry = row
+                    break
+
+        # get top N entries
+        top_entries = all_rows[:limit]
+
+        # helper function to format duration
+        def format_duration(time_seconds: float) -> str:
+            parts = []
+            remaining = int(time_seconds)
+
+            days = remaining // 86400
+            remaining %= 86400
+            hours = remaining // 3600
+            remaining %= 3600
+            minutes = remaining // 60
+            seconds = time_seconds % 60
+
+            if days > 0:
+                parts.append(f"{days}d")
+            if hours > 0 or days > 0:
+                parts.append(f"{hours}h")
+            if minutes > 0 or hours > 0 or days > 0:
+                parts.append(f"{minutes}m")
+            parts.append(f"{seconds:.2f}s")
+
+            return ":".join(parts)
+
+        # format leaderboard entries
         leaderboard_entries = []
-        for rank, row in enumerate(rows, 1):
-            # format duration (time_seconds is already in seconds from database)
-            time_seconds = row.completion_time_seconds
-            if time_seconds >= 60:  # more than 1 minute
-                minutes = int(time_seconds // 60)
-                seconds = time_seconds % 60
-                duration_display = f"{minutes}:{seconds:05.2f}"
-            else:
-                duration_display = f"{time_seconds:.2f}s"
+        current_user_in_top = False
 
-            leaderboard_entries.append({"rank": rank, "duration_display": duration_display, "username": row.username})
+        for rank, row in enumerate(top_entries, 1):
+            is_current = user and row.user_id == user.id
+            if is_current:
+                current_user_in_top = True
+
+            leaderboard_entries.append({
+                "rank": rank,
+                "duration_display": format_duration(row.completion_time_seconds),
+                "username": row.username,
+                "is_current_user": is_current
+            })
+
+        # if current user is not in top N but has a score, add them at the end
+        if user and current_user_entry and not current_user_in_top:
+            leaderboard_entries.append({
+                "rank": current_user_rank,
+                "duration_display": format_duration(current_user_entry.completion_time_seconds),
+                "username": current_user_entry.username,
+                "is_current_user": True
+            })
 
         return {"leaderboard": leaderboard_entries, "count": len(leaderboard_entries)}
 
@@ -663,6 +778,7 @@ class PuzzleService:
         puzzle_sizes: Optional[List[str]] = None,
         puzzle_difficulties: Optional[List[str]] = None,
         has_attempts: Optional[str] = None,
+        include_solution: bool = False,
         limit: int = 36,
         offset: int = 0
     ) -> Dict[str, Any]:
@@ -690,10 +806,12 @@ class PuzzleService:
         # Handle attempts filter
         if has_attempts == 'with_attempts':
             # Only puzzles that have attempts
-            filter_conditions.append(exists().where(FreeplayPuzzleAttempt.puzzle_id == Puzzle.id))
+            attempts_subquery = select(FreeplayPuzzleAttempt.id).where(FreeplayPuzzleAttempt.puzzle_id == Puzzle.id)
+            filter_conditions.append(exists(attempts_subquery))
         elif has_attempts == 'without_attempts':
             # Only puzzles that have no attempts
-            filter_conditions.append(~exists().where(FreeplayPuzzleAttempt.puzzle_id == Puzzle.id))
+            attempts_subquery = select(FreeplayPuzzleAttempt.id).where(FreeplayPuzzleAttempt.puzzle_id == Puzzle.id)
+            filter_conditions.append(~exists(attempts_subquery))
 
         # Start with base query and apply all filters
         query = select(Puzzle)
@@ -725,7 +843,8 @@ class PuzzleService:
         puzzles = result.scalars().all()
 
         # Format puzzles for frontend
-        formatted_puzzles = [self.format_puzzle_for_frontend(puzzle) for puzzle in puzzles]
+        format_fn = self.format_puzzle_with_solution_for_admin if include_solution else self.format_puzzle_for_frontend
+        formatted_puzzles = [format_fn(puzzle) for puzzle in puzzles]
 
         return {
             "puzzles": formatted_puzzles,
@@ -831,23 +950,34 @@ class PuzzleService:
 
         export_data = []
         for attempt in attempts:
+            # Translate board_state and action_history to research format
+            try:
+                translator = ResearchFormatTranslator(puzzle_type)
+                translated_board_state = translator.translate_grid(attempt.board_state) if attempt.board_state else attempt.board_state
+                translated_action_history = translator.translate_action_history(attempt.action_history) if attempt.action_history else attempt.action_history
+            except ValueError:
+                # Unknown puzzle type, use original data
+                translated_board_state = attempt.board_state
+                translated_action_history = attempt.action_history
+
+            # Extract initial board from puzzle_data (already in research format)
+            initial_board = None
+            if attempt.puzzle.puzzle_data:
+                initial_board = attempt.puzzle.puzzle_data.get('initial_state')
+
             attempt_data = {
                 'id': str(attempt.id),
                 'created_at': attempt.created_at.isoformat(),
                 'timestamp_start': attempt.timestamp_start,
                 'timestamp_finish': attempt.timestamp_finish,
-                'action_history': attempt.action_history,
-                'board_state': attempt.board_state,
+                'action_history': translated_action_history,
+                'board_state': translated_board_state,
                 'used_tutorial': attempt.used_tutorial,
                 'is_solved': attempt.is_solved,
                 'device_id': str(attempt.device_id) if attempt.device_id else None,
-                'user_id': str(attempt.user_id) if attempt.user_id else None,
                 'puzzle': {
                     'id': str(attempt.puzzle.id),
-                    'puzzle_type': attempt.puzzle.puzzle_type,
-                    'puzzle_size': attempt.puzzle.puzzle_size,
-                    'puzzle_difficulty': attempt.puzzle.puzzle_difficulty,
-                    'complete_id': attempt.puzzle.complete_id
+                    **attempt.puzzle.puzzle_data,
                 }
             }
 
@@ -872,16 +1002,153 @@ class PuzzleService:
 
         return export_data
 
+    async def export_freeplay_data(
+        self,
+        puzzle_types: Optional[List[str]] = None,
+        puzzle_sizes: Optional[List[str]] = None,
+        puzzle_difficulties: Optional[List[str]] = None,
+        user_type: Optional[str] = None,
+        filter_user_id: Optional[uuid.UUID] = None,
+        filter_device_id: Optional[uuid.UUID] = None,
+        solved_filter: Optional[str] = None
+    ):
+        """Export freeplay data with flexible filtering for multiple types/sizes/difficulties."""
+        from sqlalchemy import select
+        from sqlalchemy.orm import selectinload
+
+        # Build query with filters
+        stmt = (
+            select(FreeplayPuzzleAttempt)
+            .options(
+                selectinload(FreeplayPuzzleAttempt.puzzle),
+                selectinload(FreeplayPuzzleAttempt.user),
+                selectinload(FreeplayPuzzleAttempt.device).selectinload(Device.thumbmarks)
+            )
+            .join(Puzzle, FreeplayPuzzleAttempt.puzzle_id == Puzzle.id)
+        )
+
+        # Apply filters
+        if puzzle_types and len(puzzle_types) > 0:
+            stmt = stmt.where(Puzzle.puzzle_type.in_(puzzle_types))
+        if puzzle_sizes and len(puzzle_sizes) > 0:
+            stmt = stmt.where(Puzzle.puzzle_size.in_(puzzle_sizes))
+        if puzzle_difficulties and len(puzzle_difficulties) > 0:
+            stmt = stmt.where(Puzzle.puzzle_difficulty.in_(puzzle_difficulties))
+
+        # Filter by specific user or device
+        if filter_user_id:
+            stmt = stmt.where(FreeplayPuzzleAttempt.user_id == filter_user_id)
+        if filter_device_id:
+            stmt = stmt.where(FreeplayPuzzleAttempt.device_id == filter_device_id)
+
+        # Filter by solved status
+        if solved_filter == 'solved':
+            stmt = stmt.where(FreeplayPuzzleAttempt.is_solved == True)
+        elif solved_filter == 'unsolved':
+            stmt = stmt.where(FreeplayPuzzleAttempt.is_solved == False)
+
+        # Filter by user type if specified
+        if user_type == 'authenticated':
+            stmt = stmt.where(FreeplayPuzzleAttempt.user_id.is_not(None))
+        elif user_type == 'anonymous':
+            stmt = stmt.where(FreeplayPuzzleAttempt.user_id.is_(None))
+
+        stmt = stmt.order_by(FreeplayPuzzleAttempt.created_at.desc())
+
+        result = await self.db.execute(stmt)
+        attempts = result.scalars().all()
+
+        if not attempts:
+            raise HTTPException(status_code=404, detail="No attempts found matching the specified filters")
+
+        # Fetch user profiles for all users with attempts
+        user_ids = [a.user_id for a in attempts if a.user_id]
+        user_profiles = {}
+        if user_ids:
+            profile_stmt = select(UserProfile).where(UserProfile.user_id.in_(user_ids))
+            profile_result = await self.db.execute(profile_stmt)
+            for profile in profile_result.scalars().all():
+                user_profiles[profile.user_id] = profile
+
+        export_data = []
+        for attempt in attempts:
+            puzzle_type = attempt.puzzle.puzzle_type
+
+            # Translate board_state and action_history to research format
+            try:
+                translator = ResearchFormatTranslator(puzzle_type)
+                translated_board_state = translator.translate_grid(attempt.board_state) if attempt.board_state else attempt.board_state
+                translated_action_history = translator.translate_action_history(attempt.action_history) if attempt.action_history else attempt.action_history
+            except ValueError:
+                # Unknown puzzle type, use original data
+                translated_board_state = attempt.board_state
+                translated_action_history = attempt.action_history
+
+            # Extract initial board from puzzle_data (already in research format)
+            initial_board = None
+            if attempt.puzzle.puzzle_data:
+                initial_board = attempt.puzzle.puzzle_data.get('initial_state')
+
+            attempt_data = {
+                'id': str(attempt.id),
+                'created_at': attempt.created_at.isoformat(),
+                'timestamp_start': attempt.timestamp_start,
+                'timestamp_finish': attempt.timestamp_finish,
+                'action_history': translated_action_history,
+                'board_state': translated_board_state,
+                'used_tutorial': attempt.used_tutorial,
+                'is_solved': attempt.is_solved,
+                'device_id': str(attempt.device_id) if attempt.device_id else None,
+                'puzzle': {
+                    'id': str(attempt.puzzle.id),
+                    **attempt.puzzle.puzzle_data,
+                }
+            }
+
+            # Add user info if available
+            if attempt.user:
+                user_data = {
+                    'id': str(attempt.user.id),
+                    'username': attempt.user.username,
+                    'email': attempt.user.email
+                }
+                # Add profile data if available
+                profile = user_profiles.get(attempt.user_id)
+                if profile:
+                    user_data['profile'] = {
+                        'age': profile.age,
+                        'gender': profile.gender,
+                        'education_level': profile.education_level,
+                        'game_experience': profile.game_experience
+                    }
+                attempt_data['user'] = user_data
+
+            # Add device type from latest thumbmark
+            if attempt.device and attempt.device.thumbmarks:
+                latest_thumbmark = attempt.device.thumbmarks[-1]
+                device_type = get_device_type_from_thumbmark(latest_thumbmark.thumbmark_data)
+                attempt_data['device_type'] = device_type
+            else:
+                attempt_data['device_type'] = 'desktop'
+
+            export_data.append(attempt_data)
+
+        return export_data
+
     async def get_dynamic_filter_options(
         self,
         puzzle_types: Optional[List[str]] = None,
         puzzle_sizes: Optional[List[str]] = None,
         puzzle_difficulties: Optional[List[str]] = None,
         has_attempts: Optional[str] = None,
+        filter_user_id: Optional[uuid.UUID] = None,
+        filter_device_id: Optional[uuid.UUID] = None,
     ) -> Dict[str, Any]:
         """
         Get available filter options with counts based on current selections.
         Returns what filter values are possible given the current filter state.
+        When filter_user_id or filter_device_id is specified, only shows puzzles
+        that have been attempted by that user/device.
         """
         from sqlalchemy import select, func, distinct, exists
 
@@ -903,10 +1170,25 @@ class PuzzleService:
 
             # Handle attempts filter
             if exclude_dimension != 'has_attempts' and has_attempts:
+                attempts_subq = select(FreeplayPuzzleAttempt.id).where(FreeplayPuzzleAttempt.puzzle_id == Puzzle.id)
                 if has_attempts == 'with_attempts':
-                    conditions.append(exists().where(FreeplayPuzzleAttempt.puzzle_id == Puzzle.id))
+                    conditions.append(exists(attempts_subq))
                 elif has_attempts == 'without_attempts':
-                    conditions.append(~exists().where(FreeplayPuzzleAttempt.puzzle_id == Puzzle.id))
+                    conditions.append(~exists(attempts_subq))
+
+            # Filter to only puzzles attempted by specific user/device
+            if filter_user_id:
+                user_attempts_subq = select(FreeplayPuzzleAttempt.id).where(
+                    FreeplayPuzzleAttempt.puzzle_id == Puzzle.id,
+                    FreeplayPuzzleAttempt.user_id == filter_user_id
+                )
+                conditions.append(exists(user_attempts_subq))
+            if filter_device_id:
+                device_attempts_subq = select(FreeplayPuzzleAttempt.id).where(
+                    FreeplayPuzzleAttempt.puzzle_id == Puzzle.id,
+                    FreeplayPuzzleAttempt.device_id == filter_device_id
+                )
+                conditions.append(exists(device_attempts_subq))
 
             return conditions
 
@@ -964,9 +1246,8 @@ class PuzzleService:
         total_count = await self.db.scalar(total_query)
 
         # With attempts count
-        with_attempts_query = select(func.count(Puzzle.id)).where(
-            exists().where(FreeplayPuzzleAttempt.puzzle_id == Puzzle.id)
-        )
+        with_attempts_subq = select(FreeplayPuzzleAttempt.id).where(FreeplayPuzzleAttempt.puzzle_id == Puzzle.id)
+        with_attempts_query = select(func.count(Puzzle.id)).where(exists(with_attempts_subq))
         for condition in base_conditions:
             with_attempts_query = with_attempts_query.where(condition)
         with_attempts_count = await self.db.scalar(with_attempts_query)
@@ -1084,6 +1365,8 @@ async def get_filter_options(
     puzzle_size: Optional[List[str]] = Query(default=None, description="Current puzzle size selections"),
     puzzle_difficulty: Optional[List[str]] = Query(default=None, description="Current difficulty selections"),
     has_attempts: Optional[str] = Query(default=None, description="Current attempts filter"),
+    filter_user_id: Optional[uuid.UUID] = Query(default=None, description="Filter to puzzles attempted by specific user"),
+    filter_device_id: Optional[uuid.UUID] = Query(default=None, description="Filter to puzzles attempted by specific device"),
 ):
     """
     Get available filter options with counts based on current filter selections.
@@ -1100,7 +1383,9 @@ async def get_filter_options(
         puzzle_types=puzzle_type,
         puzzle_sizes=puzzle_size,
         puzzle_difficulties=puzzle_difficulty,
-        has_attempts=has_attempts
+        has_attempts=has_attempts,
+        filter_user_id=filter_user_id,
+        filter_device_id=filter_device_id
     )
 
 
@@ -1111,6 +1396,7 @@ async def browse_puzzles(
     puzzle_size: Optional[List[str]] = Query(default=None, description="Filter by puzzle sizes (can specify multiple)"),
     puzzle_difficulty: Optional[List[str]] = Query(default=None, description="Filter by difficulty levels (can specify multiple)"),
     has_attempts: Optional[str] = Query(default=None, description="Filter by attempt status: 'with_attempts', 'without_attempts', or null for all"),
+    include_solution: bool = Query(default=False, description="Include puzzle solutions in response"),
     limit: int = Query(64, description="Number of puzzles to return", ge=1, le=100),
     offset: int = Query(0, description="Number of puzzles to skip", ge=0),
 ):
@@ -1132,6 +1418,7 @@ async def browse_puzzles(
         puzzle_sizes=puzzle_size,
         puzzle_difficulties=puzzle_difficulty,
         has_attempts=has_attempts,
+        include_solution=include_solution,
         limit=limit,
         offset=offset
     )
@@ -1165,6 +1452,36 @@ async def get_puzzle(
 
     formatted = service.format_puzzle_for_frontend(puzzle)
     return PuzzleDefinitionResponse.model_validate(formatted)
+
+
+@router.get("/stats/{puzzle_id}")
+async def get_puzzle_stats(
+    db: AsyncDatabase,
+    puzzle_id: uuid.UUID,
+):
+    """
+    Get statistics for a specific puzzle.
+
+    Returns:
+    - total_attempts: Total number of attempts on this puzzle
+    - solved_attempts: Number of successful solves
+    - solve_rate: Percentage of attempts that were solved
+    - authenticated_attempts: Attempts by logged-in users
+    - anonymous_attempts: Attempts by anonymous users
+    - avg_duration_seconds: Average solve time in seconds
+    - min_duration_seconds: Fastest solve time
+    - max_duration_seconds: Slowest solve time
+    - unique_devices: Number of distinct devices that attempted
+    - unique_users: Number of distinct users that attempted
+    """
+    service = PuzzleService(db)
+
+    # Verify puzzle exists
+    puzzle = await service.get_puzzle_by_id(puzzle_id)
+    if not puzzle:
+        raise HTTPException(status_code=404, detail=f"No puzzle found with id {puzzle_id}")
+
+    return await service.get_puzzle_stats(puzzle_id)
 
 
 @router.post("/freeplay/submit", status_code=201)
@@ -1206,17 +1523,31 @@ async def get_freeplay_leaderboard(
     puzzle_size: str = Query(..., description="Size of puzzle"),
     puzzle_difficulty: str = Query(..., description="Difficulty level"),
     limit: int = Query(10, description="Maximum number of entries to return", ge=1, le=100),
+    time_period: str = Query("all_time", description="Time period for leaderboard: all_time, today (24h), weekly (7d), monthly (30d)"),
+    user: Optional[User] = Depends(fastapi_users.current_user(optional=True)),
 ) -> LeaderboardResponse:
     """
     Get leaderboard for freeplay puzzles by type, size, and difficulty.
 
     Only includes entries from authenticated users with their best completion times.
+    If user is logged in, they will always appear in the leaderboard with their position.
 
-    Example: GET /api/puzzle/freeplay/leaderboard/?puzzle_type=sudoku&puzzle_size=9x9&puzzle_difficulty=easy&limit=10
+    Time periods (rolling windows):
+    - all_time: All attempts ever recorded
+    - today: Last 24 hours
+    - weekly: Last 7 days
+    - monthly: Last 30 days
+
+    Example: GET /api/puzzle/freeplay/leaderboard/?puzzle_type=sudoku&puzzle_size=9x9&puzzle_difficulty=easy&limit=10&time_period=weekly
     """
+    # validate time_period
+    valid_periods = ["all_time", "today", "weekly", "monthly"]
+    if time_period not in valid_periods:
+        raise HTTPException(status_code=400, detail=f"Invalid time_period. Must be one of: {', '.join(valid_periods)}")
+
     service = PuzzleService(db)
     leaderboard_data = await service.get_freeplay_leaderboard(
-        puzzle_type=puzzle_type, puzzle_size=puzzle_size, puzzle_difficulty=puzzle_difficulty, limit=limit
+        puzzle_type=puzzle_type, puzzle_size=puzzle_size, puzzle_difficulty=puzzle_difficulty, limit=limit, user=user, time_period=time_period
     )
 
     return LeaderboardResponse.model_validate(leaderboard_data)
@@ -1238,6 +1569,125 @@ async def get_game_data_summary(
 
     service = PuzzleService(db)
     return await service.get_game_data_summary()
+
+
+@router.get("/admin/freeplay/preview")
+async def preview_freeplay_export(
+    db: AsyncDatabase,
+    user: User = Depends(fastapi_users.current_user()),
+    puzzle_type: Optional[List[str]] = Query(default=None, description="Filter by puzzle types"),
+    puzzle_size: Optional[List[str]] = Query(default=None, description="Filter by puzzle sizes"),
+    puzzle_difficulty: Optional[List[str]] = Query(default=None, description="Filter by difficulties"),
+    filter_user_id: Optional[uuid.UUID] = Query(default=None, description="Filter by specific user ID"),
+    filter_device_id: Optional[uuid.UUID] = Query(default=None, description="Filter by specific device ID"),
+    solved_filter: Optional[str] = Query(default=None, description="Filter by solved status: solved, unsolved, or all"),
+):
+    """
+    Preview freeplay export counts without downloading.
+    Returns counts for authenticated, anonymous, and total attempts matching filters.
+    """
+    if not user.is_superuser:
+        raise HTTPException(status_code=403, detail="admin access required")
+
+    from sqlalchemy import select, func, case
+
+    # Build base query conditions
+    conditions = []
+    if puzzle_type and len(puzzle_type) > 0:
+        conditions.append(Puzzle.puzzle_type.in_(puzzle_type))
+    if puzzle_size and len(puzzle_size) > 0:
+        conditions.append(Puzzle.puzzle_size.in_(puzzle_size))
+    if puzzle_difficulty and len(puzzle_difficulty) > 0:
+        conditions.append(Puzzle.puzzle_difficulty.in_(puzzle_difficulty))
+
+    # Filter by user or device
+    if filter_user_id:
+        conditions.append(FreeplayPuzzleAttempt.user_id == filter_user_id)
+    if filter_device_id:
+        conditions.append(FreeplayPuzzleAttempt.device_id == filter_device_id)
+
+    # Filter by solved status
+    if solved_filter == 'solved':
+        conditions.append(FreeplayPuzzleAttempt.is_solved == True)
+    elif solved_filter == 'unsolved':
+        conditions.append(FreeplayPuzzleAttempt.is_solved == False)
+
+    # Count query
+    query = (
+        select(
+            func.count(FreeplayPuzzleAttempt.id).label('total'),
+            func.sum(case((FreeplayPuzzleAttempt.user_id.is_not(None), 1), else_=0)).label('authenticated'),
+            func.sum(case((FreeplayPuzzleAttempt.user_id.is_(None), 1), else_=0)).label('anonymous'),
+        )
+        .join(Puzzle, FreeplayPuzzleAttempt.puzzle_id == Puzzle.id)
+    )
+
+    for condition in conditions:
+        query = query.where(condition)
+
+    result = await db.execute(query)
+    row = result.one()
+
+    return {
+        "total": row.total or 0,
+        "authenticated": row.authenticated or 0,
+        "anonymous": row.anonymous or 0,
+    }
+
+
+@router.get("/admin/freeplay/export")
+async def export_freeplay_data(
+    db: AsyncDatabase,
+    user: User = Depends(fastapi_users.current_user()),
+    puzzle_type: Optional[List[str]] = Query(default=None, description="Filter by puzzle types"),
+    puzzle_size: Optional[List[str]] = Query(default=None, description="Filter by puzzle sizes"),
+    puzzle_difficulty: Optional[List[str]] = Query(default=None, description="Filter by difficulties"),
+    user_type: Optional[str] = Query(None, description="Filter by user type: authenticated or anonymous"),
+    filter_user_id: Optional[uuid.UUID] = Query(default=None, description="Filter by specific user ID"),
+    filter_device_id: Optional[uuid.UUID] = Query(default=None, description="Filter by specific device ID"),
+    solved_filter: Optional[str] = Query(default=None, description="Filter by solved status: solved, unsolved, or all"),
+):
+    """
+    Export freeplay game data as json download with flexible filtering.
+
+    Supports multiple puzzle types, sizes, and difficulties.
+    Optionally filter by user_type (authenticated, anonymous).
+    Optionally filter by specific user_id or device_id.
+    Optionally filter by solved status (solved, unsolved).
+    Returns json file download with all matching freeplay attempt data.
+    Requires admin authentication.
+    """
+    if not user.is_superuser:
+        raise HTTPException(status_code=403, detail="admin access required")
+
+    service = PuzzleService(db)
+    data = await service.export_freeplay_data(
+        puzzle_types=puzzle_type,
+        puzzle_sizes=puzzle_size,
+        puzzle_difficulties=puzzle_difficulty,
+        user_type=user_type,
+        filter_user_id=filter_user_id,
+        filter_device_id=filter_device_id,
+        solved_filter=solved_filter
+    )
+
+    # create filename
+    parts = ["freeplay"]
+    if puzzle_type and len(puzzle_type) == 1:
+        parts.append(puzzle_type[0])
+    if user_type:
+        parts.append(user_type)
+    parts.append("export.json")
+    filename = "_".join(parts)
+
+    from fastapi.responses import JSONResponse
+    return JSONResponse(
+        content=data,
+        headers={
+            "Content-Disposition": f"attachment; filename={filename}",
+            "Content-Type": "application/json"
+        }
+    )
 
 
 @router.get("/admin/{puzzle_type}/export")

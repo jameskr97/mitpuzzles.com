@@ -196,5 +196,33 @@ def download_experiment_data(eid: str = typer.Argument(..., help="The id of the 
     asyncio.run(_do_experiment_download(eid))
 
 
+async def _do_send_notification(title: str, body: str, admin_only: bool):
+    """send push notification to subscribed users"""
+    from app.modules.push_notifications import send_push_to_all
+
+    async with async_session_maker() as session:
+        result = await send_push_to_all(session, title, body, admin_only=admin_only)
+
+        if admin_only:
+            console.print(f"[cyan]Sending to superusers only[/cyan]")
+        else:
+            console.print(f"[cyan]Sending to all subscribed users[/cyan]")
+
+        console.print(f"[green]Successfully sent: {result['sent']}[/green]")
+        if result['failed'] > 0:
+            console.print(f"[yellow]Failed to send: {result['failed']}[/yellow]")
+        console.print(f"[blue]Total subscriptions: {result['total']}[/blue]")
+
+
+@app.command()
+def notify(
+    title: str = typer.Argument(..., help="The notification title"),
+    body: str = typer.Argument(..., help="The notification body"),
+    admin_only: bool = typer.Option(False, "--admin-only", help="Send only to superusers (for testing)"),
+):
+    """Send push notification to subscribed users"""
+    asyncio.run(_do_send_notification(title, body, admin_only))
+
+
 if __name__ == "__main__":
     app()

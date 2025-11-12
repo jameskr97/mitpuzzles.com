@@ -4,6 +4,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import AppMobileNavbar from "@/components/AppMobileNavbar.vue";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import UserUsernameModal from "@/components/UserUsernameModal.vue";
+import UserLoginModal from "@/components/UserLoginModal.vue";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useRoute } from "vue-router";
 import { computed } from "vue";
@@ -27,16 +28,17 @@ const shouldShowSidebar = computed(() => {
     <TooltipProvider>
       <SidebarProvider>
         <AppSidebar v-if="shouldShowSidebar" />
-        <main class="h-[100dvh] w-full box-content">
-          <AppMobileNavbar v-if="shouldShowSidebar" />
-          <router-view v-slot="{ Component, route }">
-            <component :is="Component" :key="route.path" />
-          </router-view>
+        <main class="m-2 w-full box-content">
+            <AppMobileNavbar v-if="shouldShowSidebar" class="mb-2" />
+            <router-view v-slot="{ Component, route }">
+              <component :is="Component" :key="route.path" />
+            </router-view>
         </main>
       </SidebarProvider>
 
-      <!-- show username mode if the user doesn't have a username -->
+      <!-- Global modals -->
       <UserUsernameModal :show="showUsernameModal" />
+      <UserLoginModal />
     </TooltipProvider>
   </Suspense>
 </template>

@@ -9,10 +9,8 @@ import { useAppStore } from "@/store/useAppStore.ts";
 import App from "./App.vue";
 import MarkdownPage from "@/views/MarkdownPage.vue";
 import ExperimentRunner from "@/features/experiment-core/components/ExperimentRunner.vue";
-import Freeplay from "@/components/Freeplay.vue";
+
 import { OhVueIcon } from "@/icons";
-// Markdown content
-import mdAbout from "./views/aboutus.md?raw";
 // Utility
 import { StorageVersionManager } from "@/utils.ts";
 // Style
@@ -26,8 +24,9 @@ import { usePuzzleMetadataStore } from "@/store/puzzle/usePuzzleMetadataStore.ts
 import { usePuzzleProgressStore } from "@/store/puzzle/usePuzzleProgressStore.ts";
 import { usePuzzleHistoryStore } from "@/store/puzzle/usePuzzleHistoryStore.ts";
 import { usePuzzleScaleStore } from "@/store/puzzle/usePuzzleScaleStore.ts";
-import { init_cached_endpoints } from "@/store/database/HTTPCache.ts";
 import { useSessionTrackingStore } from "@/store/useSessionTrackingStore.ts";
+import { registerSW } from "virtual:pwa-register";
+import { I18NextVue, i18next } from "@/i18n.ts";
 
 if (import.meta.hot) {
   import.meta.hot.accept(["./constants.ts"], () => {
@@ -37,12 +36,22 @@ if (import.meta.hot) {
 
 StorageVersionManager.clearOldStorage(); // clear old storage if needed
 
+// Register service worker for PWA
+const update_sw = registerSW({
+  onNeedRefresh() {
+    logger.debug("Service worker needs refresh");
+  },
+  onOfflineReady() {
+    logger.debug("App ready to work offline");
+  },
+});
+
 const route = {
-  view: (path: string, name: string, view: string, sidebar: boolean = true) => ({
+  view: (path: string, name: string, view: string, sidebar: boolean = true, requireLoggedIn: boolean = false) => ({
     path,
     name,
     component: () => import(`@/views/${view}.vue`),
-    meta: { showSidebar: sidebar },
+    meta: { showSidebar: sidebar, requireLoggedIn },
   }),
   admin: (path: string, name: string, view: string, sidebar: boolean = true) => ({
     path,
@@ -60,7 +69,7 @@ const route = {
   game: (name: string) => ({
     path: `/${name}`,
     name: `game-${name}`,
-    component: Freeplay,
+    component: ACTIVE_GAMES[name].freeplay,
     meta: { game_type: name },
   }),
   dev: (key: string, meta: Object) => ({
@@ -79,8 +88,11 @@ const routerConfig: RouterOptions = {
     ...Object.values(ADMIN_TOOLS).map((tool) => route.admin(tool.route_path, tool.key, tool.key)),
     route.view("/signup", "signup", "Signup", false),
     route.view("/verify-email", "verify-email", "SignupVerifyEmail", false),
-    route.markdown("/about-us", "about-us", mdAbout),
+    route.view("/reset-password", "reset-password", "ResetPassword", false),
+    route.view("/account", "account", "AccountSettings", true, true),
+    route.view("/about-us", "about-us", "AboutUs"),
     route.view("/privacy-policy", "privacy-policy", "privacy-policy"),
+    route.view("/board2", "board2", "board2"),
     ...Object.values(DEV_TOOLS).map(({ key, meta }) => route.dev(key, meta)),
     ...Object.keys(ACTIVE_GAMES).map(route.game),
     {
@@ -108,7 +120,8 @@ const routerConfig: RouterOptions = {
       const { default: MaintenanceMode } = await import("@/components/MaintenanceMode.vue");
       const maintenanceApp = createApp(MaintenanceMode, {
         reason: maintenanceData.reason || null,
-      });
+      })
+      .use(I18NextVue,  { i18next });
       maintenanceApp.mount("#app");
       return;
     }
@@ -117,7 +130,11 @@ const routerConfig: RouterOptions = {
   }
   logger.debug("Bootstrapping app...");
   const router = createRouter(routerConfig);
-  const app = createApp(App).use(createPinia()).use(router).component("v-icon", OhVueIcon);
+  const app = createApp(App)
+    .use(createPinia())
+    .use(router)
+    .use(I18NextVue,  { i18next })
+    .component("v-icon", OhVueIcon);
 
   // get local device id
   // every user has a device fingerprint. this is used for anonymous tracking and analytics.
@@ -157,22 +174,29 @@ const routerConfig: RouterOptions = {
     console.log('Initial route requires admin, redirecting to Home');
     await router.replace({ name: "Home" });
   }
+  if (currentRoute.meta.requireLoggedIn && !authStore.isAuthenticated) {
+    console.log('Initial route requires login, redirecting to Home');
+    await router.replace({ name: "Home" });
+  }
 
   // set up router guard after auth initialization
   router.beforeEach(async (to, from, next) => {
     console.log(`Navigating to ${to.fullPath} from ${from.fullPath}`);
     const isAdmin = authStore.isAdmin;
+    const isAuthenticated = authStore.isAuthenticated;
     const requiresAdmin = to.meta.requiresAdmin || false;
+    const requireLoggedIn = to.meta.requireLoggedIn || false;
 
     if (requiresAdmin && !isAdmin) {
       console.log('Access denied: Admins only');
+      next({ name: "Home" });
+    } else if (requireLoggedIn && !isAuthenticated) {
+      console.log('Access denied: Login required');
       next({ name: "Home" });
     } else {
       next();
     }
   });
-
-  init_cached_endpoints();
 
   // initialize indexeddb + pinia stores
   await Promise.all([

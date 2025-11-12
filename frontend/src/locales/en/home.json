@@ -1,0 +1,6 @@
+{
+  "welcome_message": "MIT's Computational Cogitive Science Lab wants to <span class=\"font-bold italic text-red-700\">understand human reasoning and cognition </span>through logic puzzles. Help science and have fun!",
+  "track_progress_prompt": "Login or signup to track your progress over time",
+  "login_action": "Login",
+  "signup_action": "Sign Up"
+}

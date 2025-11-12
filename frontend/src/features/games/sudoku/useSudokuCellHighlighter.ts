@@ -79,6 +79,7 @@ export function useSudokuCellHighlighter(ctrl: PuzzleController) {
   // Render behavior
   const renderBehavior: Partial<RenderEvents> = {
     isCellActive,
+    shouldHighlightCell,
     isCellVisible(_row: number, _col: number): boolean {
       return true;
     },

@@ -1,7 +1,6 @@
 import { defineStore } from "pinia";
 import { Thumbmark } from "@thumbmarkjs/thumbmarkjs";
 import { api } from "@/services/axios.ts";
-import { shared_http_cache } from "@/store/database/HTTPCache.ts";
 
 const CACHE_VERSION = 1;
 const CACHE_STORAGE_KEY = 'mitlogic.cache.version';
@@ -28,9 +27,16 @@ export const useAppStore = defineStore("mitlogic.appconfig", {
       } catch (error: any) {}
     },
 
-    invalidateAllCaches() {
-      caches.delete(shared_http_cache.CACHE_NAME); // clear http cache
-      localStorage.removeItem('mitlogic.puzzle.scales'); // clear scales cache
+    async invalidateAllCaches() {
+      // Clear Workbox-managed caches
+      await Promise.all([
+        caches.delete('puzzle-catalog'),
+        caches.delete('puzzle-definitions'),
+        caches.delete('leaderboards'),
+      ]);
+
+      // Clear localStorage caches
+      localStorage.removeItem('mitlogic.puzzle.scales');
 
       this.lastCacheVersion = CACHE_VERSION;
       localStorage.setItem(CACHE_STORAGE_KEY, CACHE_VERSION.toString());

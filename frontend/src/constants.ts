@@ -5,19 +5,18 @@
  */
 /* prettier-ignore */
 import { create_admin_tool, create_dev_tool, create_game_entry } from "@/utils.ts";
-import { withSudokuBehaviors } from "@/features/games/sudoku/useSudokuCellHighlighter.ts";
-import { useSudokuViolationHighlighter } from "@/features/games/sudoku/useSudokuViolationHighlighter.ts";
-import { withNonogramGutterMarking } from "@/features/games/nonograms/useNonogramGutterMarking.ts";
 
 export const ACTIVE_GAMES: Record<string, ReturnType<typeof create_game_entry>> = {
-  kakurasu: create_game_entry("⬛", "Kakurasu", "kakurasu"),
-  lightup: create_game_entry("💡", "Light Up", "lightup"),
-  minesweeper: create_game_entry("💣", "Minesweeper", "minesweeper"),
-  mosaic: create_game_entry("🧩", "Mosaic", "mosaic"),
-  nonograms: create_game_entry("🏁", "Nonograms", "nonograms", [withNonogramGutterMarking]),
-  sudoku: create_game_entry("🔢", "Sudoku", "sudoku", [withSudokuBehaviors]),
-  tents: create_game_entry("⛺", "Tents", "tents"),
-  // battleships: create_game_entry("🚢", "Battleships", "battleships"),
+  kakurasu: create_game_entry("⬛", "kakurasu"),
+  lightup: create_game_entry("💡", "lightup"),
+  minesweeper: create_game_entry("💣", "minesweeper"),
+  mosaic: create_game_entry("🧩", "mosaic"),
+  nonograms: create_game_entry("🏁", "nonograms"),
+  sudoku: create_game_entry("🔢", "sudoku"),
+  tents: create_game_entry("⛺", "tents"),
+  // hashi: create_game_entry("🌉", "hashi"),
+  // norinori: create_game_entry("🀄", "norinori"),
+  // aquarium: create_game_entry("🐠", "aquarium"),
 };
 export type PUZZLE_TYPES = keyof typeof ACTIVE_GAMES;
 
@@ -26,14 +25,16 @@ export const DEV_TOOLS: Record<string, ReturnType<typeof create_dev_tool>> = {
 };
 
 export const ACTIVE_EXPERIMENTS: Record<string, any> = {
-  "forced-choice": { key: "forced-choice", title: "Preview & Play", icon: "👀", description: "Compete to solve this expeirment in the fastest time!" },
-  "metacognition": { key: "metacognition", title: "Confidence Check", icon: "🤔", description: "A game that tests your awareness of your own knowledge." },
-  "blind-sudoku": { key: "blind-sudoku", title: "Spotlight Sudoku", icon: "🔍", description: "A variant of Sudoku where some numbers are hidden."},
+  "forced-choice": { key: "forced-choice", title: "Preview & Play", icon: "👀" },
+  "metacognition": { key: "metacognition", title: "Confidence Check", icon: "🤔", },
+  "blind-sudoku": { key: "blind-sudoku", title: "Spotlight Sudoku", icon: "🔍" },
 }
 
 export const ADMIN_TOOLS: Record<string, ReturnType<typeof create_admin_tool>> = {
-  "data-download": create_admin_tool("data-download", "🧮", "Data Download"),
-  "puzzle-browser": create_admin_tool("puzzle-browser", "🔍", "Puzzle Browser"),
+  // "data-download": create_admin_tool("data-download", "🧮", "Data Download"),
+  "analysis": create_admin_tool("analysis", "🔬", "Analysis"),
+  // "puzzle-browser": create_admin_tool("puzzle-browser", "🔍", "Puzzle Browser"),
+  "feedback-viewer": create_admin_tool("feedback-viewer", "💬", "Feedback"),
   // "analytics-dashboard": create_admin_tool("analytics-dashboard", "📊", "Analytics Dashboard"),
 };
 

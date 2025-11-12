@@ -1,0 +1,19 @@
+{
+  "title": "Sudoku",
+  "intro": "Sudoku is a logic puzzle played on a square grid. The grid is divided into several <span class=\"font-bold\">smaller square sub-grids</span>.",
+  "goal": "In order to solve a sudoku board, every square must be <span class=\"font-bold\">filled in with a number</span> from 1 to 9. Your job is figuring out which numbers go into the empty squares by looking at numbers that are already filled in.",
+  "rule_row": "First, each <strong>row</strong> must include every number from 1 to 9, and each number must appear exactly <strong>once</strong>.",
+  "rule_row_example": "The highlighted row has the numbers 3, 4, 2, 6, 5, and 1. It needs the numbers 7, 8, and 9 for the row to be complete.",
+  "rule_col": "Second, each <strong>column</strong> must include every number from 1 to 9, and each number must appear exactly <strong>once</strong>.",
+  "rule_col_example": "The highlighted column has the numbers 6, 8, 3, 4, and 1. It needs the numbers 2, 5, 7, and 9 for the column to be complete.",
+  "rule_box": "Third, each <strong>3x3 sub-grid</strong> must include every number from 1 to 9, and each number must appear exactly <strong>once</strong>.",
+  "rule_box_example": "The highlighted box has the numbers 8, 1, 2, 6, and 5. It needs the numbers 3, 4, 7 and 9 for the box to be complete.",
+  "control_select": "Click on a cell to select it.",
+  "control_input": "Enter a number in the selected cell (dark blue) by pressing number keys 1 to 9 on your keyboard. Numbers you entered will appear in <span class=\"text-sky-600 font-bold\">blue</span>, and can be changed again later.",
+  "compact": {
+    "intro": "Fill every empty cell in the {{rows}}×{{rows}} grid with a digit 1–{{rows}} so that:",
+    "rule_row": "Each row contains each digit 1–{{rows}} exactly once.",
+    "rule_col": "Each column contains each digit 1–{{rows}} exactly once.",
+    "rule_box": "Each of the {{word}} {{sqrt}}×{{sqrt}} boxes contains each digit 1–{{rows}} exactly once."
+  }
+}

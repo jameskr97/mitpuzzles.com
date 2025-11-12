@@ -1,0 +1,20 @@
+{
+  "title": "Minesweeper",
+  "intro": "Minesweeper is a logic puzzle played on a grid. Some squares are revealed and show numbers, while others remain unrevealed. Your goal is to identify <span class=\"font-bold\">which unrevealed cells contain mines.</span>",
+  "board_example": "Below is an example board:",
+  "rule_numbered": "Each <span class=\"font-bold\">numbered cell</span> tells you how many mines are in its neighboring cells (horizontal, vertical, and diagonal).",
+  "example_numbered": "In the example below, the cell with a <span class=\"font-bold text-red-600\">3</span> has four neighbors, highlighted in yellow, three of which contain mines.",
+  "control_flag_safe": "You can flag <i class=\"md-cell md-cell-flag\"></i> a cell to mark it as a suspected mine, or place a cross <i class=\"md-cell md-cell-empty\"></i> to mark the cell as safe.",
+  "example_flags": "In the example below, several flags have been placed to mark suspected mines, satisfying the number clues <span class=\"font-bold text-green-600\">2</span>, <span class=\"font-bold text-red-600\">3</span>, <span class=\"font-bold text-green-600\">2</span>, and <span class=\"font-bold text-blue-600\">1</span> in the second to last row:",
+  "solved": "A puzzle is solved when <span class=\"font-bold\">all mines are flagged</span>, the remaining cells are unmarked or marked safe, and <span class=\"font-bold\">all number clues are satisfied</span> (i.e., the number of adjacent flags matches the number on the clue cell).",
+  "solved_board": "Below is an example of a solved board:",
+  "control_cycle": "Left click to cycle forward, right click to cycle backward between:",
+  "control_place_flag": "Placing a flag <i class=\"md-cell md-cell-flag\"></i>",
+  "control_place_safe": "Placing a safe mark <i class=\"md-cell md-cell-empty\"></i>",
+  "control_clear": "Clearing the cell <i class=\"md-cell md-cell-unrevealed\"></i>",
+  "compact": {
+    "rule_unrevealed": "<span class=\"font-bold\">Unrevealed</span> squares (<i class=\"md-cell md-cell-unrevealed\"></i>) might hide a mine.",
+    "rule_numbers": "<span class=\"font-bold\">Numbers</span> indicate how many <span class=\"font-bold\">mines</span> are in the (up to) eight surrounding squares.",
+    "rule_flags": "Use flags (<i class=\"md-cell md-cell-flag\"></i>) to mark suspected mines and crosses (<i class=\"md-cell md-cell-empty\"></i>) to mark squares safe."
+  }
+}
