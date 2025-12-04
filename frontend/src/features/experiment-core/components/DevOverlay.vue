@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, inject, onUnmounted, ref, watch, type Ref } from "vue";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+import { Button } from "@/core/components/ui/button";
+import { Separator } from "@/core/components/ui/separator";
 import { GraphExecutor } from "@/features/experiment-core"; ///////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////

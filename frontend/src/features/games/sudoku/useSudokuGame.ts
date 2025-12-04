@@ -4,42 +4,17 @@
  * Mode-agnostic: works in both freeplay and experiment contexts.
  */
 import { computed, type ComputedRef, type Ref } from "vue";
-import { useBoardState } from "@/composables/game-primitives";
-import { useSolutionChecker } from "@/composables/game-primitives";
-import type { RuleViolation } from "@/types/game-types";
-import type { PuzzleDefinition } from "@/services/game/engines/types";
+import { useBoardState } from "@/core/games/composables";
+import { useSolutionChecker } from "@/core/games/composables";
+import type { PuzzleDefinition, RuleViolation } from "@/core/games/types/puzzle-types.ts";
 
 /**
- * Sudoku cell values - 0 is empty, 1-9 are numbers
+ * Sudoku cell values (research format)
+ * -1 is empty, 1-9 are numbers
  */
 export const SudokuCell = {
-  EMPTY: 0,
+  EMPTY: -1,
 } as const;
-
-/**
- * Research format to game format mapping
- */
-const RESEARCH_TO_GAME: Record<number, number> = {
-  [-1]: SudokuCell.EMPTY,
-  [1]: 1,
-  [2]: 2,
-  [3]: 3,
-  [4]: 4,
-  [5]: 5,
-  [6]: 6,
-  [7]: 7,
-  [8]: 8,
-  [9]: 9,
-};
-
-/**
- * Convert research format board to game format
- */
-export function convert_research_board(research_board: number[][]): number[][] {
-  return research_board.map((row) =>
-    row.map((cell) => RESEARCH_TO_GAME[cell] ?? cell)
-  );
-}
 
 export interface SudokuGameReturn {
   board: Ref<number[][]>;
@@ -68,9 +43,8 @@ export function useSudokuGame(
   definition: PuzzleDefinition,
   saved_board?: number[][] | null
 ): SudokuGameReturn {
-  const converted_initial = convert_research_board(definition.initial_state);
-  const converted_saved = saved_board ? saved_board : null;
-
+  // Board state management
+  // Uses research format directly (no conversion needed)
   const {
     board,
     initial_state,
@@ -81,7 +55,7 @@ export function useSudokuGame(
     clear,
     is_cell_editable,
     immutable_cells,
-  } = useBoardState(converted_initial, converted_saved, {
+  } = useBoardState(definition.initial_state, saved_board ?? null, {
     is_editable: (initial_value) => initial_value === SudokuCell.EMPTY,
   });
 
@@ -121,7 +95,7 @@ export function useSudokuGame(
   }
 
   function is_prefilled(row: number, col: number): boolean {
-    return converted_initial[row][col] !== SudokuCell.EMPTY;
+    return definition.initial_state[row][col] !== SudokuCell.EMPTY;
   }
 
   function get_violations(): RuleViolation[] {

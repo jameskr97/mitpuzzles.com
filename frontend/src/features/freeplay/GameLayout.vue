@@ -8,12 +8,12 @@
  * Games provide their own rendering via the default slot.
  */
 import { computed, provide } from "vue";
-import type { GameController, GameDefinition } from "@/types/game-controller";
-import Container from "@/components/ui/Container.vue";
-import { usePuzzleScaleStore } from "@/store/puzzle/usePuzzleScaleStore";
+import type { GameController, GameDefinition } from "@/core/games/types/game-controller";
+import Container from "@/core/components/ui/Container.vue";
+import { usePuzzleScaleStore } from "@/core/store/puzzle/usePuzzleScaleStore";
 import { ACTIVE_GAMES } from "@/constants";
-import { useGameLayout } from "@/composables/useGameLayout";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useGameLayout } from "@/core/composables/useGameLayout";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/core/components/ui/dialog";
 import GameLayoutControlbar from "./GameLayoutControlbar.vue";
 import GameLayoutStatusbar from "./GameLayoutStatusbar.vue";
 import GameLayoutInstructions from "./GameLayoutInstructions.vue";
@@ -107,44 +107,3 @@ const container_width = computed(() => {
     </div>
   </div>
 </template>
-
-<style>
-.shake-once {
-  animation: shake 0.15s ease-in-out 2.5;
-}
-
-@keyframes shake {
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-  25% {
-    transform: translateX(10px);
-  }
-  75% {
-    transform: translateX(-10px);
-  }
-}
-
-.heartbeat-once {
-  animation: heartbeat 1s ease-in-out 1;
-}
-
-@keyframes heartbeat {
-  0% {
-    transform: scale(1);
-  }
-  14% {
-    transform: scale(1.05);
-  }
-  28% {
-    transform: scale(1);
-  }
-  42% {
-    transform: scale(1.05);
-  }
-  70% {
-    transform: scale(1);
-  }
-}
-</style>

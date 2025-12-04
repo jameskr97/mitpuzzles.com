@@ -10,7 +10,7 @@ import { useCanvasTheme } from "@/features/gameboard/canvas-theme";
 import type { CellRenderer } from "@/features/gameboard/canvas-types";
 import { draw_region_borders } from "@/features/gameboard/canvas-utils";
 import { NorinoriCell } from "./useNorinoriGame";
-import type { RuleViolation } from "@/types/game-types";
+import type { RuleViolation } from "@/core/games/types/puzzle-types";
 
 const props = defineProps<{
   state: {

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, useSlots } from "vue";
-import { useGameLayout } from "@/composables/useGameLayout.ts";
-import { Button } from "@/components/ui/button";
-import ProgressBar from "@/components/ProgressBar.vue";
+import { useGameLayout } from "@/core/composables/useGameLayout.ts";
+import { Button } from "@/core/components/ui/button";
+import ProgressBar from "@/core/components/ProgressBar.vue";
 import InstructionPage from "./InstructionPage.vue";
 
 const layout = useGameLayout();

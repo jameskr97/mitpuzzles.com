@@ -4,12 +4,12 @@
  */
 import { computed, ref, watch, shallowRef } from "vue";
 import { useTentsGame, type TentsGameReturn } from "./useTentsGame";
-import { useFreeplayServices } from "@/composables/freeplay";
-import { useDataRecorder } from "@/composables/game-primitives";
-import type { GameController, GameUIState } from "@/types/game-controller";
+import { useFreeplayServices } from "@/features/freeplay/composables";
+import { useDataRecorder } from "@/core/games/composables";
+import type { GameController, GameUIState } from "@/core/games/types/game-controller";
 import GameLayout from "@/features/freeplay/GameLayout.vue";
 import TentsCanvas from "./TentsCanvas.vue";
-import type { TentsMeta } from "@/services/game/engines/types";
+import type { TentsMeta } from "@/core/games/types/puzzle-types.ts";
 
 const puzzle_type = "tents";
 const services = await useFreeplayServices<TentsMeta>(puzzle_type);

@@ -13,38 +13,19 @@ import {
   weighted_sum_col,
   all_cells_in_row,
   all_cells_in_col,
-} from "@/composables/game-primitives";
-import type { RuleViolation } from "@/types/game-types";
-import type { PuzzleDefinition, KakurasuMeta } from "@/services/game/engines/types";
+} from "@/core/games/composables";
+import type { PuzzleDefinition, KakurasuMeta, RuleViolation } from "@/core/games/types/puzzle-types.ts";
 
 /**
- * Kakurasu cell values
+ * Kakurasu cell values (research format)
  */
 export const KakurasuCell = {
-  EMPTY: 0,
+  EMPTY: -1,
   BLACK: 1,
-  CROSS: 2,
+  CROSS: 0,
 } as const;
 
 export type KakurasuCellValue = (typeof KakurasuCell)[keyof typeof KakurasuCell];
-
-/**
- * Research format to game format mapping
- */
-const RESEARCH_TO_GAME: Record<number, number> = {
-  [-1]: KakurasuCell.EMPTY,
-  [0]: KakurasuCell.CROSS,
-  [1]: KakurasuCell.BLACK,
-};
-
-/**
- * Convert research format board to game format
- */
-export function convert_research_board(research_board: number[][]): number[][] {
-  return research_board.map((row) =>
-    row.map((cell) => RESEARCH_TO_GAME[cell] ?? cell)
-  );
-}
 
 export interface KakurasuGameReturn {
   /** Current board state */
@@ -96,11 +77,8 @@ export function useKakurasuGame(
   definition: PuzzleDefinition<KakurasuMeta>,
   saved_board?: number[][] | null
 ): KakurasuGameReturn {
-  // Convert initial state from research format
-  const converted_initial = convert_research_board(definition.initial_state);
-  const converted_saved = saved_board ? saved_board : null;
-
   // Board state management - all cells are editable in Kakurasu
+  // Uses research format directly (no conversion needed)
   const {
     board,
     initial_state,
@@ -111,7 +89,7 @@ export function useKakurasuGame(
     clear,
     is_cell_editable,
     immutable_cells,
-  } = useBoardState(converted_initial, converted_saved, {
+  } = useBoardState(definition.initial_state, saved_board ?? null, {
     is_editable: () => true, // All cells are editable
   });
 

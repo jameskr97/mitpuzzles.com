@@ -5,20 +5,20 @@
  * Works with the GameController interface.
  */
 import { computed, onMounted, onUnmounted } from "vue";
-import type { GameController } from "@/types/game-controller";
-import Container from "@/components/ui/Container.vue";
-import { Slider } from "@/components/ui/slider";
-import { Button } from "@/components/ui/button";
+import type { GameController } from "@/core/games/types/game-controller";
+import Container from "@/core/components/ui/Container.vue";
+import { Slider } from "@/core/components/ui/slider";
+import { Button } from "@/core/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@/core/components/ui/dropdown-menu";
 import { getPuzzleDisplayName } from "@/utils";
-import { usePuzzleMetadataStore } from "@/store/puzzle/usePuzzleMetadataStore";
-import { usePuzzleScaleStore } from "@/store/puzzle/usePuzzleScaleStore";
-import { usePuzzleProgressStore } from "@/store/puzzle/usePuzzleProgressStore";
+import { usePuzzleMetadataStore } from "@/core/store/puzzle/usePuzzleMetadataStore";
+import { usePuzzleScaleStore } from "@/core/store/puzzle/usePuzzleScaleStore";
+import { usePuzzleProgressStore } from "@/core/store/puzzle/usePuzzleProgressStore";
 
 const props = defineProps<{
   controller: GameController;

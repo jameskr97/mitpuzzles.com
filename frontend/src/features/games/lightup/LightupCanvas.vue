@@ -10,7 +10,7 @@ import CanvasBoard from "@/features/gameboard/canvas-board.vue";
 import { useCanvasTheme } from "@/features/gameboard/canvas-theme";
 import type { CellRenderer } from "@/features/gameboard/canvas-types";
 import { LightupCell, WALL_STATES, NUMBERED_WALLS, compute_lit_cells } from "./useLightupGame";
-import type { RuleViolation } from "@/types/game-types";
+import type { RuleViolation } from "@/core/games/types/puzzle-types.ts";
 
 // Props
 const props = defineProps<{

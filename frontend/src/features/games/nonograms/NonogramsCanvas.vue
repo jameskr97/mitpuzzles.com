@@ -7,8 +7,7 @@ import CanvasBoard from "@/features/gameboard/canvas-board.vue";
 import { useCanvasTheme } from "@/features/gameboard/canvas-theme";
 import type { CellRenderer } from "@/features/gameboard/canvas-types";
 import { NonogramsCell } from "./useNonogramsGame";
-import type { RuleViolation } from "@/types/game-types";
-import type { NonogramMeta } from "@/services/game/engines/types";
+import type { NonogramMeta, RuleViolation } from "@/core/games/types/puzzle-types.ts";
 
 const props = defineProps<{
   state: {

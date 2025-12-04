@@ -4,40 +4,21 @@
  * Mode-agnostic: works in both freeplay and experiment contexts.
  */
 import { computed, type ComputedRef, type Ref } from "vue";
-import { useBoardState } from "@/composables/game-primitives";
-import { useStateCycler } from "@/composables/game-primitives";
-import { useSolutionChecker } from "@/composables/game-primitives";
-import type { RuleViolation } from "@/types/game-types";
-import type { PuzzleDefinition, NonogramMeta } from "@/services/game/engines/types";
+import { useBoardState } from "@/core/games/composables";
+import { useStateCycler } from "@/core/games/composables";
+import { useSolutionChecker } from "@/core/games/composables";
+import type { PuzzleDefinition, NonogramMeta, RuleViolation } from "@/core/games/types/puzzle-types.ts";
 
 /**
- * Nonograms cell values
+ * Nonograms cell values (research format)
  */
 export const NonogramsCell = {
-  EMPTY: 0,
+  EMPTY: -1,
   BLACK: 1,
-  CROSS: 2,
+  CROSS: 0,
 } as const;
 
 export type NonogramsCellValue = (typeof NonogramsCell)[keyof typeof NonogramsCell];
-
-/**
- * Research format to game format mapping
- */
-const RESEARCH_TO_GAME: Record<number, number> = {
-  [-1]: NonogramsCell.EMPTY,
-  [0]: NonogramsCell.CROSS,
-  [1]: NonogramsCell.BLACK,
-};
-
-/**
- * Convert research format board to game format
- */
-export function convert_research_board(research_board: number[][]): number[][] {
-  return research_board.map((row) =>
-    row.map((cell) => RESEARCH_TO_GAME[cell] ?? cell)
-  );
-}
 
 export interface NonogramsGameReturn {
   board: Ref<number[][]>;
@@ -60,9 +41,8 @@ export function useNonogramsGame(
   definition: PuzzleDefinition<NonogramMeta>,
   saved_board?: number[][] | null
 ): NonogramsGameReturn {
-  const converted_initial = convert_research_board(definition.initial_state);
-  const converted_saved = saved_board ? saved_board : null;
-
+  // Board state management
+  // Uses research format directly (no conversion needed)
   const {
     board,
     initial_state,
@@ -73,7 +53,7 @@ export function useNonogramsGame(
     clear,
     is_cell_editable,
     immutable_cells,
-  } = useBoardState(converted_initial, converted_saved, {
+  } = useBoardState(definition.initial_state, saved_board ?? null, {
     is_editable: () => true, // All cells editable
   });
 

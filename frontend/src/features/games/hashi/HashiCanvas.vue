@@ -10,7 +10,7 @@ import { ref, computed, reactive, onMounted, onUnmounted, watch } from "vue";
 import CanvasBoard from "@/features/gameboard/canvas-board.vue";
 import { useCanvasTheme } from "@/features/gameboard/canvas-theme";
 import type { CellRenderer } from "@/features/gameboard/canvas-types";
-import type { HashiBridge } from "@/services/game/engines/types";
+import type { HashiBridge } from "@/core/games/types/puzzle-types.ts";
 
 const props = defineProps<{
   state: {

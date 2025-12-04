@@ -1,4 +1,4 @@
-import type { PuzzleDefinition } from "@/services/game/engines/types";
+import type { PuzzleDefinition } from "@/core/games/types/puzzle-types.ts";
 
 /**
  * stimuli presentation modes

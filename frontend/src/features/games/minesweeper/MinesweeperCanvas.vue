@@ -9,7 +9,7 @@ import { ref, computed, onMounted, onUnmounted } from "vue";
 import CanvasBoard from "@/features/gameboard/canvas-board.vue";
 import type { CellRenderer } from "@/features/gameboard/canvas-types";
 import { MinesweeperCell } from "./useMinesweeperGame";
-import type { RuleViolation } from "@/types/game-types";
+import type { RuleViolation } from "@/core/games/types/puzzle-types.ts";
 
 // Props
 const props = defineProps<{
@@ -143,7 +143,6 @@ const cell_renderer = computed((): CellRenderer => {
     const needs_unopened_bg = [
       MinesweeperCell.SAFE,
       MinesweeperCell.FLAG,
-      MinesweeperCell.QUESTION_MARK,
     ].includes(value);
 
     if (needs_unopened_bg) {
@@ -201,10 +200,6 @@ const cell_renderer = computed((): CellRenderer => {
     } else if (value === MinesweeperCell.FLAG) {
       if (current_images.flag) {
         ctx.drawImage(current_images.flag, x, y, size, size);
-      }
-    } else if (value === MinesweeperCell.QUESTION_MARK) {
-      if (current_images.question_mark) {
-        ctx.drawImage(current_images.question_mark, x, y, size, size);
       }
     } else if (value === MinesweeperCell.SAFE) {
       if (current_images.safe) {

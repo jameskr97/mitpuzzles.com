@@ -4,14 +4,14 @@
  * Mode-agnostic: works in both freeplay and experiment contexts.
  */
 import { computed, type ComputedRef, type Ref } from "vue";
-import { useBoardState } from "@/composables/game-primitives";
-import { useStateCycler } from "@/composables/game-primitives";
-import { useSolutionChecker } from "@/composables/game-primitives";
-import type { RuleViolation } from "@/types/game-types";
-import type { PuzzleDefinition } from "@/services/game/engines/types";
+import { useBoardState } from "@/core/games/composables";
+import { useStateCycler } from "@/core/games/composables";
+import { useSolutionChecker } from "@/core/games/composables";
+import type { PuzzleDefinition, RuleViolation } from "@/core/games/types/puzzle-types.ts";
 
 /**
- * Mosaic cell values
+ * Mosaic cell values (research format)
+ * Numbers 0-9 are clues, -1 is unmarked, -3 is shaded, -4 is cross
  */
 export const MosaicCell = {
   ZERO: 0,
@@ -24,40 +24,12 @@ export const MosaicCell = {
   SEVEN: 7,
   EIGHT: 8,
   NINE: 9,
-  UNMARKED: 10,
-  SHADED: 11,
-  CROSS: 12,
+  UNMARKED: -1,
+  SHADED: -3,
+  CROSS: -4,
 } as const;
 
 export type MosaicCellValue = (typeof MosaicCell)[keyof typeof MosaicCell];
-
-/**
- * Research format to game format mapping
- */
-const RESEARCH_TO_GAME: Record<number, number> = {
-  [0]: MosaicCell.ZERO,
-  [1]: MosaicCell.ONE,
-  [2]: MosaicCell.TWO,
-  [3]: MosaicCell.THREE,
-  [4]: MosaicCell.FOUR,
-  [5]: MosaicCell.FIVE,
-  [6]: MosaicCell.SIX,
-  [7]: MosaicCell.SEVEN,
-  [8]: MosaicCell.EIGHT,
-  [9]: MosaicCell.NINE,
-  [-1]: MosaicCell.UNMARKED,
-  [-3]: MosaicCell.SHADED,
-  [-4]: MosaicCell.CROSS,
-};
-
-/**
- * Convert research format board to game format
- */
-export function convert_research_board(research_board: number[][]): number[][] {
-  return research_board.map((row) =>
-    row.map((cell) => RESEARCH_TO_GAME[cell] ?? cell)
-  );
-}
 
 /**
  * Convert board for play - numbered cells become UNMARKED
@@ -91,10 +63,9 @@ export function useMosaicGame(
   definition: PuzzleDefinition,
   saved_board?: number[][] | null
 ): MosaicGameReturn {
-  const converted_initial = convert_research_board(definition.initial_state);
   // For play, numbered cells become UNMARKED (but we keep initial_state for reference)
-  const play_initial = convert_board_for_play(converted_initial);
-  const converted_saved = saved_board ? saved_board : null;
+  // Uses research format directly (no conversion needed)
+  const play_initial = convert_board_for_play(definition.initial_state);
 
   const {
     board,
@@ -106,7 +77,7 @@ export function useMosaicGame(
     clear,
     is_cell_editable,
     immutable_cells,
-  } = useBoardState(play_initial, converted_saved, {
+  } = useBoardState(play_initial, saved_board ?? null, {
     is_editable: () => true, // All cells editable in Mosaic
   });
 
@@ -139,7 +110,7 @@ export function useMosaicGame(
   }
 
   function get_number_clue(row: number, col: number): number | null {
-    const value = converted_initial[row]?.[col];
+    const value = definition.initial_state[row]?.[col];
     if (value !== undefined && value >= MosaicCell.ZERO && value <= MosaicCell.NINE) {
       return value;
     }

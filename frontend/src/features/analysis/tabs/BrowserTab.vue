@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useAnalysisStore } from '@/features/analysis/stores/useAnalysisStore'
-import { api } from '@/services/axios'
-import Container from '@/components/ui/Container.vue'
+import { api } from '@/core/services/axios'
+import Container from '@/core/components/ui/Container.vue'
 import PuzzleBrowserItem from '@/features/analysis/components/PuzzleBrowserItem.vue'
 import PuzzleDefinitionModal from '@/features/analysis/components/PuzzleDefinitionModal.vue'
-import type { PuzzleDefinition } from '@/services/game/engines/types'
+import type { PuzzleDefinition } from '@/core/games/types/puzzle-types.ts'
 
 const store = useAnalysisStore()
 

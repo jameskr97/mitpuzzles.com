@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import Container from "@/components/ui/Container.vue"
-import { Button } from "@/components/ui/button"
+import Container from "@/core/components/ui/Container.vue"
+import { Button } from "@/core/components/ui/button"
 import FilterSidebarBrowser from "@/features/analysis/components/FilterSidebarBrowser.vue"
 import FilterSidebarDownload from "@/features/analysis/components/FilterSidebarDownload.vue"
 import { useAnalysisStore } from '@/features/analysis/stores/useAnalysisStore'

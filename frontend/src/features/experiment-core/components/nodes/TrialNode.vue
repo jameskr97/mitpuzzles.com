@@ -3,11 +3,11 @@ import { computed, inject, onMounted, ref, type Ref } from "vue";
 import type { graph_node, trial_meta } from "@/features/experiment-core/graph/types";
 import type { processed_stimuli } from "@/features/experiment-core/stimuli/types";
 import { StimuliLoader } from "@/features/experiment-core/stimuli/StimuliLoader";
-import Container from "@/components/ui/Container.vue";
+import Container from "@/core/components/ui/Container.vue";
 import { ComponentRegistry } from "@/features/experiment-core/ComponentRegistry";
 import type { GraphExecutor } from "@/features/experiment-core/graph/GraphExecutor";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+import { Button } from "@/core/components/ui/button";
+import { Separator } from "@/core/components/ui/separator";
 
 const props = defineProps<{ node: graph_node }>();
 const emit = defineEmits(["complete", "trialStart"]);

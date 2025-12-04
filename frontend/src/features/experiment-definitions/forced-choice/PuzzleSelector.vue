@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, useTemplateRef } from "vue";
-import type { PuzzleDefinition } from "@/services/game/engines/types.ts";
-import PuzzleRenderer from "@/components/PuzzleRenderer.vue";
+import type { PuzzleDefinition } from "@/core/games/types/puzzle-types.ts";
+import PuzzleRenderer from "@/core/components/PuzzleRenderer.vue";
 import { useElementSize } from "@vueuse/core";
 
 const props = withDefaults(

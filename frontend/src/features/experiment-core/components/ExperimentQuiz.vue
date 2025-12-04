@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { inject, type PropType, ref } from "vue";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Button } from "@/components/ui/button";
-import { Alert, AlertTitle } from "@/components/ui/alert";
+import { Checkbox } from "@/core/components/ui/checkbox";
+import { Button } from "@/core/components/ui/button";
+import { Alert, AlertTitle } from "@/core/components/ui/alert";
 import { shuffle } from "@/utils.ts";
 
 interface QuizQuestion {

@@ -1,4 +1,4 @@
-import type { Cell } from "@/features/games.components/board.interaction.ts";
+import type { Cell } from "@/core/games/types/puzzle-types.ts";
 
 export function isCellMatch(cell: Cell | null, row: number, col: number, subgridSize: number) {
   if (!cell) return { row: false, col: false, box: false };

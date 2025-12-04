@@ -2,16 +2,16 @@
 <script setup lang="ts">
 import { type PropType, provide, ref } from "vue";
 import { useRoute } from "vue-router";
-import { useGameLayout } from "@/composables/useGameLayout";
+import { useGameLayout } from "@/core/composables/useGameLayout";
 
 // Components
-import Container from "@/components/ui/Container.vue";
+import Container from "@/core/components/ui/Container.vue";
 import { ACTIVE_GAMES, type PUZZLE_TYPES } from "@/constants.ts";
 import FreeplayGameViewControlbar from "@/features/freeplay/FreeplayGameViewControlbar.vue";
 import FreeplayGameViewLeaderboard from "@/features/freeplay/FreeplayGameViewLeaderboard.vue";
-import type { PuzzleController } from "@/services/game/engines/types.ts";
-import { usePuzzleMetadataStore } from "@/store/puzzle/usePuzzleMetadataStore.ts";
-import { usePuzzleScaleStore } from "@/store/puzzle/usePuzzleScaleStore.ts";
+import type { PuzzleController } from "@/core/games/types/puzzle-types.ts";
+import { usePuzzleMetadataStore } from "@/core/store/puzzle/usePuzzleMetadataStore.ts";
+import { usePuzzleScaleStore } from "@/core/store/puzzle/usePuzzleScaleStore.ts";
 import CompactInstructions from "@/features/freeplay/CompactInstructions.vue";
 import FreeplayStatusBar from "@/features/freeplay/FreeplayStatusBar.vue";
 

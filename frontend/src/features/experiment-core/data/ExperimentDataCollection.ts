@@ -3,7 +3,7 @@
  * captures trial data, node navigation, and user interactions
  */
 import { GraphExecutor, node_type } from "@/features/experiment-core";
-import type { PuzzleDefinition } from "@/services/game/engines/types.ts";
+import type { PuzzleDefinition } from "@/core/games/types/puzzle-types.ts";
 
 export interface trial_data {
   trial_id: string;

@@ -22,6 +22,7 @@ class PuzzleNormalizer:
             "minesweeper": ["initial_state"],
             "lightup": ["initial_state"],
             "mosaic": ["initial_state"],
+            "aquarium": ["initial_state", "row_clues", "col_clues", "regions"],
         }
 
         self.PUZZLE_NAMESPACE = uuid.UUID("ebf9c570-3a85-4898-b471-e0d4224952fc")
@@ -69,7 +70,7 @@ class PuzzleNormalizer:
 
         ##################################################################
         # hashi is special and has a different solution key
-        solution_key = "solution_bridges" if puzzle_type == "hashi" else "game_board"
+        solution_key = "solution_bridges" if puzzle_type == "hashi" else ("solution_state" if puzzle_type == "aquarium" else "game_board")
         normalized["solution"] = puzzle[solution_key]
 
         ##################################################################
@@ -125,6 +126,10 @@ class PuzzleNormalizer:
         elif puzzle_type == "minesweeper":
             normalized["n_mines"] = puzzle.get("n_mines")
         elif puzzle_type == "norinori":
+            normalized["regions"] = puzzle.get("regions")
+        elif puzzle_type == "aquarium":
+            normalized["row_hints"] = puzzle.get("row_clues")
+            normalized["col_hints"] = puzzle.get("col_clues")
             normalized["regions"] = puzzle.get("regions")
         return normalized
 

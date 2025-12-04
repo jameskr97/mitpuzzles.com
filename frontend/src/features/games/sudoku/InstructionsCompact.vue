@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { PuzzleDefinition } from "@/services/game/engines/types.ts";
+import type { PuzzleDefinition } from "@/core/games/types/puzzle-types.ts";
 import { computed } from "vue";
 
 const props = defineProps<{

@@ -7,6 +7,7 @@
 import { create_admin_tool, create_dev_tool, create_game_entry } from "@/utils.ts";
 
 export const ACTIVE_GAMES: Record<string, ReturnType<typeof create_game_entry>> = {
+  aquarium: create_game_entry("🐠", "aquarium"),
   kakurasu: create_game_entry("⬛", "kakurasu"),
   lightup: create_game_entry("💡", "lightup"),
   minesweeper: create_game_entry("💣", "minesweeper"),
@@ -16,13 +17,10 @@ export const ACTIVE_GAMES: Record<string, ReturnType<typeof create_game_entry>> 
   tents: create_game_entry("⛺", "tents"),
   // hashi: create_game_entry("🌉", "hashi"),
   // norinori: create_game_entry("🀄", "norinori"),
-  // aquarium: create_game_entry("🐠", "aquarium"),
 };
 export type PUZZLE_TYPES = keyof typeof ACTIVE_GAMES;
 
-export const DEV_TOOLS: Record<string, ReturnType<typeof create_dev_tool>> = {
-  "test-board": create_dev_tool("test-board", "🎯", "Test Board"),
-};
+export const DEV_TOOLS: Record<string, ReturnType<typeof create_dev_tool>> = {};
 
 export const ACTIVE_EXPERIMENTS: Record<string, any> = {
   "forced-choice": { key: "forced-choice", title: "Preview & Play", icon: "👀" },
@@ -31,10 +29,7 @@ export const ACTIVE_EXPERIMENTS: Record<string, any> = {
 }
 
 export const ADMIN_TOOLS: Record<string, ReturnType<typeof create_admin_tool>> = {
-  // "data-download": create_admin_tool("data-download", "🧮", "Data Download"),
   "analysis": create_admin_tool("analysis", "🔬", "Analysis"),
-  // "puzzle-browser": create_admin_tool("puzzle-browser", "🔍", "Puzzle Browser"),
   "feedback-viewer": create_admin_tool("feedback-viewer", "💬", "Feedback"),
-  // "analytics-dashboard": create_admin_tool("analytics-dashboard", "📊", "Analytics Dashboard"),
 };
 

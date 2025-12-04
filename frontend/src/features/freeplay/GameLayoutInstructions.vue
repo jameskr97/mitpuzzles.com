@@ -5,11 +5,11 @@
  * Works with the new GameController interface.
  */
 import { ref } from "vue";
-import type { GameDefinition } from "@/types/game-controller";
+import type { GameDefinition } from "@/core/games/types/game-controller";
 import { ACTIVE_GAMES } from "@/constants";
-import Container from "@/components/ui/Container.vue";
-import { Separator } from "@/components/ui/separator";
-import { useGameLayout } from "@/composables/useGameLayout";
+import Container from "@/core/components/ui/Container.vue";
+import { Separator } from "@/core/components/ui/separator";
+import { useGameLayout } from "@/core/composables/useGameLayout";
 
 const props = defineProps<{
   puzzle_type: string;

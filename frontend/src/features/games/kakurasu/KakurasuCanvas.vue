@@ -10,8 +10,7 @@ import CanvasBoard from "@/features/gameboard/canvas-board.vue";
 import { useCanvasTheme } from "@/features/gameboard/canvas-theme";
 import type { CellRenderer } from "@/features/gameboard/canvas-types";
 import { KakurasuCell } from "./useKakurasuGame";
-import type { RuleViolation } from "@/types/game-types";
-import type { KakurasuMeta } from "@/services/game/engines/types";
+import type { KakurasuMeta, RuleViolation } from "@/core/games/types/puzzle-types.ts";
 
 // Props
 const props = defineProps<{

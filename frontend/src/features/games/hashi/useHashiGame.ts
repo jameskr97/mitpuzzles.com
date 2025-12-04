@@ -5,7 +5,7 @@
  * Islands are numbered cells in the initial_state grid.
  */
 import { ref, computed, type ComputedRef, type Ref } from "vue";
-import type { PuzzleDefinition, HashiMeta, HashiBridge } from "@/services/game/engines/types";
+import type { PuzzleDefinition, HashiMeta, HashiBridge } from "@/core/games/types/puzzle-types.ts";
 
 export interface HashiGameReturn {
   /** Current bridges */

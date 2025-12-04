@@ -5,11 +5,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from "@/core/components/ui/dialog";
 import { computed, type PropType } from "vue";
-import { useGameLayout } from "@/composables/useGameLayout.ts";
+import { useGameLayout } from "@/core/composables/useGameLayout.ts";
 import { ACTIVE_GAMES } from "@/constants.ts";
-import type { PuzzleController } from "@/services/game/engines/types.ts";
+import type { PuzzleController } from "@/core/games/types/puzzle-types.ts";
 
 const layout = useGameLayout();
 const props = defineProps({

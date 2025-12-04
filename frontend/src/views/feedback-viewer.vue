@@ -11,10 +11,10 @@ import { ArrowUpDown } from "lucide-vue-next";
 import { h, onMounted, ref } from "vue";
 import axios from "axios";
 
-import { valueUpdater } from "@/components/ui/table/utils";
-import Container from "@/components/ui/Container.vue";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { valueUpdater } from "@/core/components/ui/table/utils";
+import Container from "@/core/components/ui/Container.vue";
+import { Badge } from "@/core/components/ui/badge";
+import { Button } from "@/core/components/ui/button";
 import {
   Table,
   TableBody,
@@ -22,14 +22,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "@/core/components/ui/table";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from "@/components/ui/dialog";
+} from "@/core/components/ui/dialog";
 
 interface FeedbackItem {
   id: string;

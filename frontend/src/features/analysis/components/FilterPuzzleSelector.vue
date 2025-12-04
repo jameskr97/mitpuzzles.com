@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { FilterMultiSelect, type MultiSelectOption } from '@/components/ui/filters'
+import { FilterMultiSelect, type MultiSelectOption } from '@/core/components/ui/filters'
 
 const props = defineProps<{
   label?: string

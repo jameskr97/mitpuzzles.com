@@ -1,4 +1,4 @@
-import type { PuzzleDefinition } from "@/services/game/engines/types";
+import type { PuzzleDefinition } from "@/core/games/types/puzzle-types.ts";
 import type { processed_stimuli, raw_stimuli, stimuli_config, stimuli_format } from "./types";
 import { shuffle } from "@/utils";
 

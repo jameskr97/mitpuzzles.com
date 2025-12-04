@@ -24,6 +24,23 @@ from app.modules.user_profile import UserProfile
 from app.utils import get_device_type_from_thumbmark
 
 
+def is_research_format(board_state, action_history):
+    """Check if data is already in research format by looking for -1 (empty cell marker)."""
+    # Check board_state for -1
+    if board_state:
+        for row in board_state:
+            if isinstance(row, list) and -1 in row:
+                return True
+
+    # Check action_history old_value/new_value for -1
+    if action_history:
+        for action in action_history:
+            if action.get('old_value') == -1 or action.get('new_value') == -1:
+                return True
+
+    return False
+
+
 # Models
 class Puzzle(Base):
     """
@@ -950,15 +967,19 @@ class PuzzleService:
 
         export_data = []
         for attempt in attempts:
-            # Translate board_state and action_history to research format
-            try:
-                translator = ResearchFormatTranslator(puzzle_type)
-                translated_board_state = translator.translate_grid(attempt.board_state) if attempt.board_state else attempt.board_state
-                translated_action_history = translator.translate_action_history(attempt.action_history) if attempt.action_history else attempt.action_history
-            except ValueError:
-                # Unknown puzzle type, use original data
+            # Only translate if data is in old enum format (no -1 values found)
+            if is_research_format(attempt.board_state, attempt.action_history):
                 translated_board_state = attempt.board_state
                 translated_action_history = attempt.action_history
+            else:
+                try:
+                    translator = ResearchFormatTranslator(puzzle_type)
+                    translated_board_state = translator.translate_grid(attempt.board_state) if attempt.board_state else attempt.board_state
+                    translated_action_history = translator.translate_action_history(attempt.action_history) if attempt.action_history else attempt.action_history
+                except ValueError:
+                    # Unknown puzzle type, use original data
+                    translated_board_state = attempt.board_state
+                    translated_action_history = attempt.action_history
 
             # Extract initial board from puzzle_data (already in research format)
             initial_board = None
@@ -1074,15 +1095,19 @@ class PuzzleService:
         for attempt in attempts:
             puzzle_type = attempt.puzzle.puzzle_type
 
-            # Translate board_state and action_history to research format
-            try:
-                translator = ResearchFormatTranslator(puzzle_type)
-                translated_board_state = translator.translate_grid(attempt.board_state) if attempt.board_state else attempt.board_state
-                translated_action_history = translator.translate_action_history(attempt.action_history) if attempt.action_history else attempt.action_history
-            except ValueError:
-                # Unknown puzzle type, use original data
+            # Only translate if data is in old enum format (no -1 values found)
+            if is_research_format(attempt.board_state, attempt.action_history):
                 translated_board_state = attempt.board_state
                 translated_action_history = attempt.action_history
+            else:
+                try:
+                    translator = ResearchFormatTranslator(puzzle_type)
+                    translated_board_state = translator.translate_grid(attempt.board_state) if attempt.board_state else attempt.board_state
+                    translated_action_history = translator.translate_action_history(attempt.action_history) if attempt.action_history else attempt.action_history
+                except ValueError:
+                    # Unknown puzzle type, use original data
+                    translated_board_state = attempt.board_state
+                    translated_action_history = attempt.action_history
 
             # Extract initial board from puzzle_data (already in research format)
             initial_board = None

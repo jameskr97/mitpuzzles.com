@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import PuzzleRenderer from "@/components/PuzzleRenderer.vue";
-import type { PuzzleDefinition } from "@/services/game/engines/types.ts";
-import { PuzzleConverter } from "@/services/game/engines/translator.ts";
+import PuzzleRenderer from "@/core/components/PuzzleRenderer.vue";
+import type { PuzzleDefinition } from "@/core/games/types/puzzle-types.ts";
 
 const props = defineProps<{ puzzle: PuzzleDefinition }>();
 defineEmits<{ click: [puzzle: PuzzleDefinition] }>();
@@ -12,10 +11,7 @@ const state_solved = computed(() => {
   if (!props.puzzle?.solution) return null
   return {
     definition: props.puzzle,
-    board: PuzzleConverter.fromResearch(
-      props.puzzle.solution,
-      props.puzzle.puzzle_type!
-    ) || null,
+    board: props.puzzle.solution,
   }
 })
 </script>

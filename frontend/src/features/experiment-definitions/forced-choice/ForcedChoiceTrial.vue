@@ -1,18 +1,16 @@
 <script setup lang="ts">
 import { computed, inject, onMounted, ref, type Ref, toRef } from "vue";
-import Container from "@/components/ui/Container.vue";
-import { Button } from "@/components/ui/button";
+import Container from "@/core/components/ui/Container.vue";
+import { Button } from "@/core/components/ui/button";
 import { useStateMachine } from "@/features/experiment-core/composables/useStateMachine.ts";
 import { useTimer } from "@/features/experiment-core/composables/useTimer.ts";
-import { createPuzzleInteractionBridge } from "@/features/games.composables/setupPuzzleInteractionBridge.ts";
-import type { PuzzleDefinition } from "@/services/game/engines/types.ts";
+import type { PuzzleDefinition } from "@/core/games/types/puzzle-types.ts";
 import PuzzleSelector from "./PuzzleSelector.vue";
 import { useExperimentPuzzle } from "@/features/experiment-core/composables/useExperimentPuzzle.ts";
-import PuzzleRenderer from "@/components/PuzzleRenderer.vue";
-import { remap } from "@/services/util.ts";
+import { remap } from "@/core/services/util.ts";
 import { GraphExecutor } from "@/features/experiment-core";
-import { computedAsync } from "@vueuse/core";
 import { shuffle } from "@/utils";
+import MinesweeperCanvas from "@/features/games/minesweeper/MinesweeperCanvas.vue";
 
 // props from experiment-core trial system
 const props = defineProps<{
@@ -60,7 +58,6 @@ interface trial_data {
 const executor = inject<Ref<GraphExecutor>>("experiment-executor");
 const current_puzzle_for_solving = ref<PuzzleDefinition>(props.stimulus_item[0]);
 const pc = ref(useExperimentPuzzle(current_puzzle_for_solving, executor!));
-const bridge = ref<ReturnType<typeof createPuzzleInteractionBridge> | null>(null);
 
 // randomize puzzle display order once per trial
 const shuffled_puzzles = shuffle([...props.stimulus_item]);
@@ -93,7 +90,7 @@ const trial_result = ref<Partial<trial_data>>({
   timestamps: {} as any,
 });
 
-const game_scale_remapped = computed(() => remap([1, 100], [0.5, 3], game_scale.value));
+const game_scale_remapped = computed(() => remap([1, 100], [1, 4], game_scale.value));
 
 // state machine
 const state_machine = useStateMachine<trial_state>({
@@ -209,7 +206,6 @@ function update_puzzle_for_solving() {
   // update the reactive puzzle definition - this will trigger the engine to recreate
   current_puzzle_for_solving.value = selected_puzzle;
   pc.value = useExperimentPuzzle(toRef(selected_puzzle), executor!);
-  bridge.value = createPuzzleInteractionBridge(pc.value);
 }
 
 function p2_select_puzzle(shuffled_index: number) {
@@ -246,6 +242,16 @@ function p2_select_puzzle(shuffled_index: number) {
 
 // computed properties
 const can_proceed_to_solving = computed(() => selected_puzzle_index.value !== null);
+
+async function handle_submit() {
+  console.log('handle_submit called');
+  const result = await pc.value.check_solution();
+  console.log('check_solution result:', result);
+  if (result) {
+    trial_result.value.solving_phase_data!.completed = true;
+    state_machine.transitionTo(trial_state.complete);
+  }
+}
 
 onMounted(() => {
   state_machine.reset();
@@ -305,38 +311,22 @@ onMounted(() => {
         <input v-model="game_scale" type="range" min="1" max="100" step="1" class="mx-2 w-full" />
       </div>
 
-      <!-- PuzzleRenderer -->
+      <!-- Minesweeper Canvas -->
       <div class="flex flex-col items-center">
-        <div class="p-2 flex flex-col mt-4 border rounded-5 shadow">
           <div :class="{ 'shake-once': pc.state_ui.animate_failure, 'heartbeat-once': pc.state_ui.animate_success }">
-            <PuzzleRenderer
-              v-if="pc && bridge"
-              :definition="pc.state_puzzle.definition"
-              :state="pc.state_puzzle"
-              :scale="game_scale_remapped"
-              :interact="bridge"
-            />
+            <Container v-if="pc" :style="{ width: `${pc.state_puzzle.definition.cols * 32 * game_scale_remapped}px`, height: `${pc.state_puzzle.definition.rows * 32 * game_scale_remapped}px` }">
+              <MinesweeperCanvas
+                :state="pc.state_puzzle"
+                @cell-click="(row, col, button) => pc.handle_cell_click({ row, col }, { button } as MouseEvent)"
+              />
+            </Container>
             <div v-else class="p-4 text-red-500">puzzle state not properly initialized</div>
-            </div>
         </div>
       </div>
 
       <!-- Continue Button -->
       <div class="text-center">
-        <Button
-          variant="default"
-          @click="
-            () => {
-              pc.check_solution().then((res) => {
-                console.log(res)
-                if (res) {
-                  trial_result.solving_phase_data!.completed = true;
-                  state_machine.transitionTo(trial_state.complete);
-                }
-              })
-            }
-          "
-        >
+        <Button variant="default" @click="handle_submit">
           Submit
         </Button>
       </div>
@@ -345,12 +335,11 @@ onMounted(() => {
     <!-- phase 4 - intermission -->
     <div v-else-if="state_machine.current_state.value === trial_state.complete" class="flex flex-col gap-5">
       <div class="text-3xl text-center mt-2">Trial Complete!</div>
-      <PuzzleRenderer
-        v-if="pc && bridge"
-        :definition="pc.state_puzzle.definition"
-        :state="pc.state_puzzle"
-        :scale="game_scale_remapped"
-      />
+      <div v-if="pc" class="flex justify-center">
+        <div :style="{ width: `${pc.state_puzzle.definition.cols * 32 * game_scale_remapped}px`, height: `${pc.state_puzzle.definition.rows * 32 * game_scale_remapped}px` }">
+          <MinesweeperCanvas :state="pc.state_puzzle" />
+        </div>
+      </div>
       <Button
         variant="default"
         @click="$emit('trial-complete', trial_result)"

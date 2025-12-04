@@ -4,42 +4,22 @@
  * Mode-agnostic: works in both freeplay and experiment contexts.
  */
 import { computed, type ComputedRef, type Ref } from "vue";
-import { useBoardState } from "@/composables/game-primitives";
-import { useStateCycler } from "@/composables/game-primitives";
-import { useSolutionChecker } from "@/composables/game-primitives";
-import type { RuleViolation } from "@/types/game-types";
-import type { PuzzleDefinition, TentsMeta } from "@/services/game/engines/types";
+import { useBoardState } from "@/core/games/composables";
+import { useStateCycler } from "@/core/games/composables";
+import { useSolutionChecker } from "@/core/games/composables";
+import type { PuzzleDefinition, TentsMeta, RuleViolation } from "@/core/games/types/puzzle-types.ts";
 
 /**
- * Tents cell values
+ * Tents cell values (research format)
  */
 export const TentsCell = {
-  EMPTY: 0,
+  EMPTY: -1,
   TREE: 1,
-  TENT: 2,
-  GREEN: 3,
+  TENT: -3,
+  GREEN: -4,
 } as const;
 
 export type TentsCellValue = (typeof TentsCell)[keyof typeof TentsCell];
-
-/**
- * Research format to game format mapping
- */
-const RESEARCH_TO_GAME: Record<number, number> = {
-  [-1]: TentsCell.EMPTY,
-  [1]: TentsCell.TREE,
-  [-3]: TentsCell.TENT,
-  [-4]: TentsCell.GREEN,
-};
-
-/**
- * Convert research format board to game format
- */
-export function convert_research_board(research_board: number[][]): number[][] {
-  return research_board.map((row) =>
-    row.map((cell) => RESEARCH_TO_GAME[cell] ?? cell)
-  );
-}
 
 export interface TentsGameReturn {
   board: Ref<number[][]>;
@@ -62,9 +42,8 @@ export function useTentsGame(
   definition: PuzzleDefinition<TentsMeta>,
   saved_board?: number[][] | null
 ): TentsGameReturn {
-  const converted_initial = convert_research_board(definition.initial_state);
-  const converted_saved = saved_board ? saved_board : null;
-
+  // Board state management
+  // Uses research format directly (no conversion needed)
   const {
     board,
     initial_state,
@@ -75,7 +54,7 @@ export function useTentsGame(
     clear,
     is_cell_editable,
     immutable_cells,
-  } = useBoardState(converted_initial, converted_saved, {
+  } = useBoardState(definition.initial_state, saved_board ?? null, {
     is_editable: (initial_value) => initial_value !== TentsCell.TREE,
   });
 

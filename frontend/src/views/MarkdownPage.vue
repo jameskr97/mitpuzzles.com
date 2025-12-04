@@ -5,7 +5,7 @@
  * function inside main.ts.
  */
 import MarkdownIt from "markdown-it";
-import Container from "@/components/ui/Container.vue";
+import Container from "@/core/components/ui/Container.vue";
 const props = defineProps<{
   content: string;
   proseClass?: string;

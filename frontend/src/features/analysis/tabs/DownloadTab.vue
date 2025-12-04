@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { onMounted, ref, computed, watch } from 'vue'
 import axios from 'axios'
-import Container from '@/components/ui/Container.vue'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import Container from '@/core/components/ui/Container.vue'
+import { Badge } from '@/core/components/ui/badge'
+import { Button } from '@/core/components/ui/button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/core/components/ui/tabs'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/core/components/ui/table'
 import { download_blob } from '@/utils'
 import { useAnalysisStore } from '@/features/analysis/stores/useAnalysisStore'
-import { api } from '@/services/axios'
+import { api } from '@/core/services/axios'
 
 interface ExperimentSummary {
   experiment_id: string

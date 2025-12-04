@@ -2,7 +2,7 @@
  * Instruction page layout - stacked with text above, board(s) below.
  * Board area is a grid - multiple boards get equal column widths.
  */
-import Container from "@/components/ui/Container.vue";
+import Container from "@/core/components/ui/Container.vue";
 
 defineProps({
   board_columns: {

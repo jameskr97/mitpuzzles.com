@@ -4,9 +4,9 @@
  */
 import { computed, ref, watch, shallowRef } from "vue";
 import { useMosaicGame, type MosaicGameReturn } from "./useMosaicGame";
-import { useFreeplayServices } from "@/composables/freeplay";
-import { useDataRecorder } from "@/composables/game-primitives";
-import type { GameController, GameUIState } from "@/types/game-controller";
+import { useFreeplayServices } from "@/features/freeplay/composables";
+import { useDataRecorder } from "@/core/games/composables";
+import type { GameController, GameUIState } from "@/core/games/types/game-controller";
 import GameLayout from "@/features/freeplay/GameLayout.vue";
 import MosaicCanvas from "./MosaicCanvas.vue";
 

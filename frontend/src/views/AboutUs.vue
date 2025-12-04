@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import Container from "@/components/ui/Container.vue";
-import { Separator } from "@/components/ui/separator";
+import Container from "@/core/components/ui/Container.vue";
+import { Separator } from "@/core/components/ui/separator";
 </script>
 
 <template>

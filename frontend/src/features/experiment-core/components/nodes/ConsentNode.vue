@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import type { graph_node } from "@/features/experiment-core/graph/types";
-import Container from "@/components/ui/Container.vue";
-import { Button } from "@/components/ui/button";
+import Container from "@/core/components/ui/Container.vue";
+import { Button } from "@/core/components/ui/button";
 
 // use content from config or fallback to default
 const consent_content = `

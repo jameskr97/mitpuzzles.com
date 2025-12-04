@@ -6,11 +6,11 @@
  * Works with the GameController interface.
  */
 import { computed } from "vue";
-import type { GameController } from "@/types/game-controller";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import Container from "@/components/ui/Container.vue";
-import { Switch } from "@/components/ui/switch";
+import type { GameController } from "@/core/games/types/game-controller";
+import { Label } from "@/core/components/ui/label";
+import { Badge } from "@/core/components/ui/badge";
+import Container from "@/core/components/ui/Container.vue";
+import { Switch } from "@/core/components/ui/switch";
 import { getPuzzleDisplayName } from "@/utils";
 
 const props = defineProps<{

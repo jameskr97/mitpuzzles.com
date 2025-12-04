@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import Container from '@/components/ui/Container.vue'
-import { Button } from '@/components/ui/button'
-import PuzzleRenderer from '@/components/PuzzleRenderer.vue'
-import { PuzzleConverter } from '@/services/game/engines/translator'
-import type { PuzzleDefinition } from '@/services/game/engines/types'
-import JSONContainer from "@/components/ui/JSONContainer.vue"
-import { api } from '@/services/axios'
+import Container from '@/core/components/ui/Container.vue'
+import { Button } from '@/core/components/ui/button'
+import PuzzleRenderer from '@/core/components/PuzzleRenderer.vue'
+import type { PuzzleDefinition } from '@/core/games/types/puzzle-types.ts'
+import JSONContainer from "@/core/components/ui/JSONContainer.vue"
+import { api } from '@/core/services/axios'
 
 interface PuzzleStats {
   puzzle_id: string
@@ -40,10 +39,7 @@ const state_solved = computed(() => {
   if (!props.puzzle) return null
   return {
     definition: props.puzzle,
-    board: PuzzleConverter.fromResearch(
-      props.puzzle.solution!,
-      props.puzzle.puzzle_type!
-    ) || null,
+    board: props.puzzle.solution,
   }
 })
 

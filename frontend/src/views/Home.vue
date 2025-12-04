@@ -1,14 +1,14 @@
 <script setup lang="tsx">
-import Container from "@/components/ui/Container.vue";
-import AlertEmailAlreadyVerified from "@/components/alert/AlertEmailAlreadyVerified.vue";
-import AlertEmailVerifiySuccess from "@/components/alert/AlertEmailVerifiySuccess.vue";
-import HomePuzzlePreview from "@/components/HomePuzzlePreview.vue";
+import Container from "@/core/components/ui/Container.vue";
+import AlertEmailAlreadyVerified from "@/core/components/alert/AlertEmailAlreadyVerified.vue";
+import AlertEmailVerifiySuccess from "@/core/components/alert/AlertEmailVerifiySuccess.vue";
+import HomePuzzlePreview from "@/core/components/HomePuzzlePreview.vue";
 import { ACTIVE_GAMES } from "@/constants.ts";
-import { useAppStore } from "@/store/useAppStore.ts";
-import { useAuthStore } from "@/store/useAuthStore.ts";
-import EmailVerificationBanner from "@/components/EmailVerificationBanner.vue";
-import DemographicBanner from "@/components/DemographicBanner.vue";
-import { Button } from "@/components/ui/button";
+import { useAppStore } from "@/core/store/useAppStore.ts";
+import { useAuthStore } from "@/core/store/useAuthStore.ts";
+import EmailVerificationBanner from "@/core/components/EmailVerificationBanner.vue";
+import DemographicBanner from "@/core/components/DemographicBanner.vue";
+import { Button } from "@/core/components/ui/button";
 
 const appStore = useAppStore();
 const authStore = useAuthStore();

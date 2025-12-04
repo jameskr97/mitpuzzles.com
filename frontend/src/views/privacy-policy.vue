@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Container from "@/components/ui/Container.vue";
+import Container from "@/core/components/ui/Container.vue";
 </script>
 
 <template>

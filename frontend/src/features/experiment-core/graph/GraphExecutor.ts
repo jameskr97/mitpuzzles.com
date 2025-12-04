@@ -1,7 +1,7 @@
 import type { experiment_definition, graph_node } from "./types";
 import { ExperimentGraph } from "@/features/experiment-core";
 import { StimuliLoader } from "@/features/experiment-core/stimuli/StimuliLoader";
-import { usePuzzleHistoryStore } from "@/store/puzzle/usePuzzleHistoryStore";
+import { usePuzzleHistoryStore } from "@/core/store/puzzle/usePuzzleHistoryStore";
 import { ExperimentDataCollection } from "@/features/experiment-core/data/ExperimentDataCollection.ts";
 
 /** simple execution state* */

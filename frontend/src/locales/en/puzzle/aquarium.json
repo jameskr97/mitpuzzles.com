@@ -1,21 +1,30 @@
 {
   "title": "Aquarium",
   "name": "Aquarium",
-  "intro": "Aquarium is a water-filling logic puzzle played on a grid divided into irregular regions called <strong>aquariums</strong> or <strong>tanks</strong>.",
-  "goal": "Your goal is to <strong>fill cells with water</strong> to match the numbers along the edges.",
-  "board_example": "Below is an empty Aquarium puzzle. Numbers show how many cells in each row/column should contain water:",
+  "intro": "Aquarium is a water-filling logic puzzle played on a grid divided into blocks called <strong>aquariums</strong>. The below puzzle has 6 regions.",
+  "goal": "Your goal is to <strong>fill with <span class=\"text-blue-500\">water</span></strong> the aquariums up to a certain level, or leave it empty.",
+  "board_example": "Below is an empty Aquarium puzzle:",
+  "rule_gravity": "<strong><span class=\"text-blue-500\">Water</span> obeys gravity:</strong> Within each aquarium, if a cell contains water, all cells <em>below it in the same aquarium</em> must also contain water.",
+  "rule_gravity_invalid": "The left board is <strong class=\"text-red-500\">incorrect</strong> because water does not obey gravity within the aquarium.",
+  "rule_gravity_valid": "The right board is <strong class=\"text-green-500\">correct</strong> because all water cells below the highest level are filled.",
+
+  "rule_independent": "<strong>Aquariums are independent:</strong> Different aquariums can have different water levels.",
+  "rule_independent_example": "Below, the left aquarium is filled 2 water cells high, while the aquarium adjacent is filled completely. This is valid placement.",
+
   "rule_hints": "<strong>Row & Column hints:</strong> The numbers along the top and left edges indicate how many cells in that row or column must be filled with water.",
-  "rule_gravity": "<strong>Water obeys gravity:</strong> Within each aquarium, if a cell contains water, all cells <em>below it in the same column within that aquarium</em> must also contain water.",
-  "rule_independent": "<strong>Aquariums are independent:</strong> Different aquariums can have different water levels - water doesn't flow between tanks.",
+  "rule_hints_example": "In the example below, both the left and right boards are considered valid bottom row placements.",
+
   "solved": "A puzzle is <strong>solved</strong> when all row and column counts are satisfied and water obeys gravity within each aquarium.",
   "solved_board": "A completed puzzle:",
+
+
   "control_cycle": "Click a cell to cycle through states:",
-  "control_water": "<strong>Water</strong> (blue) - cell is filled with water",
-  "control_cross": "<strong>X mark</strong> - cell is definitely empty",
-  "control_clear": "<strong>Empty</strong> - cell is unmarked",
+  "control_water": "Placing <strong class=\"text-blue-500\">water</strong> <i class=\"md-cell bg-blue-500\"></i>",
+  "control_cross": "Placing a <strong class=\"text-red-500\">cross</strong> <i class=\"md-cell md-cell-kakurasu-cross\"></i>",
+  "control_clear": "Clearing the cell",
   "compact": {
+    "intro": "Fill some cells with <strong class=\"text-blue-500\">water</strong> so that:",
     "rule_hints": "Numbers show how many water cells per row/column",
-    "rule_gravity": "Water fills from bottom up within each aquarium",
-    "rule_independent": "Different aquariums have independent water levels"
+    "rule_gravity": "Water fills from bottom up within each aquarium"
   }
 }

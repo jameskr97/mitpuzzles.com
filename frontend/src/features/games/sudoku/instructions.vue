@@ -1,10 +1,8 @@
 <script setup lang="ts">
-import { getPersistentHighlightSudokuBoard } from "@/features/games/sudoku/getPersistentHighlightSudokuBoard.ts";
-import type { PuzzleDefinition, PuzzleState } from "@/services/game/engines/types.ts";
+import type { PuzzleDefinition, PuzzleState } from "@/core/games/types/puzzle-types.ts";
 import { InstructionSlider, InstructionPage } from "@/features/freeplay/components";
-import PuzzleSudoku from "@/features/games/sudoku/sudoku.puzzle.vue";
+import SudokuCanvas from "@/features/games/sudoku/SudokuCanvas.vue";
 
-const BOARD_SCALE = 0.7;
 const def: Partial<PuzzleDefinition> = {
   rows: 9,
   cols: 9,
@@ -37,10 +35,6 @@ const gameState0: PuzzleState = {
     [8, 3, 1, 0, 4, 0, 0, 0, 7]
   ]
 };
-
-const RowHighlighted = getPersistentHighlightSudokuBoard({ row: 2 });
-const ColHighlighted = getPersistentHighlightSudokuBoard({ col: 6 });
-const BoxHighlighted = getPersistentHighlightSudokuBoard({ box: 1 });
 </script>
 
 <template>
@@ -52,7 +46,7 @@ const BoxHighlighted = getPersistentHighlightSudokuBoard({ box: 1 });
           <div v-html="$t('puzzle:sudoku:goal')"></div>
         </template>
         <template #board>
-          <PuzzleSudoku :state="gameState0" :scale="BOARD_SCALE" />
+          <SudokuCanvas :state="gameState0" :interactive="false" />
         </template>
       </InstructionPage>
     </template>
@@ -64,7 +58,7 @@ const BoxHighlighted = getPersistentHighlightSudokuBoard({ box: 1 });
           <div class="italic" v-html="$t('puzzle:sudoku:rule_row_example')"></div>
         </template>
         <template #board>
-          <RowHighlighted :state="gameState0" :scale="BOARD_SCALE" />
+          <SudokuCanvas :state="gameState0" :highlight_row="2" :interactive="false" />
         </template>
       </InstructionPage>
     </template>
@@ -76,7 +70,7 @@ const BoxHighlighted = getPersistentHighlightSudokuBoard({ box: 1 });
           <div class="italic" v-html="$t('puzzle:sudoku:rule_col_example')"></div>
         </template>
         <template #board>
-          <ColHighlighted :state="gameState0" :scale="BOARD_SCALE" />
+          <SudokuCanvas :state="gameState0" :highlight_col="6" :interactive="false" />
         </template>
       </InstructionPage>
     </template>
@@ -88,7 +82,7 @@ const BoxHighlighted = getPersistentHighlightSudokuBoard({ box: 1 });
           <div class="italic" v-html="$t('puzzle:sudoku:rule_box_example')"></div>
         </template>
         <template #board>
-          <BoxHighlighted :state="gameState0" :scale="BOARD_SCALE" />
+          <SudokuCanvas :state="gameState0" :highlight_box="1" :interactive="false" />
         </template>
       </InstructionPage>
     </template>

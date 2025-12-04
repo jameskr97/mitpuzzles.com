@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
-import { api } from '@/services/axios'
+import { api } from '@/core/services/axios'
 
 export interface FilterOption {
   value: string

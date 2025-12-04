@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import AppSidebar from "@/components/AppSidebar.vue";
-import { SidebarProvider } from "@/components/ui/sidebar";
-import AppMobileNavbar from "@/components/AppMobileNavbar.vue";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import UserUsernameModal from "@/components/UserUsernameModal.vue";
-import UserLoginModal from "@/components/UserLoginModal.vue";
-import { useAuthStore } from "@/store/useAuthStore";
+import AppSidebar from "@/core/components/AppSidebar.vue";
+import { SidebarProvider } from "@/core/components/ui/sidebar";
+import AppMobileNavbar from "@/core/components/AppMobileNavbar.vue";
+import { TooltipProvider } from "@/core/components/ui/tooltip";
+import UserUsernameModal from "@/features/auth/components/UserUsernameModal.vue";
+import UserLoginModal from "@/features/auth/components/UserLoginModal.vue";
+import { useAuthStore } from "@/core/store/useAuthStore";
 import { useRoute } from "vue-router";
 import { computed } from "vue";
 

@@ -10,10 +10,10 @@
     "prefix": ""
   },
   "aliases": {
-    "components": "@/components",
-    "composables": "@/composables",
+    "components": "@/core/components",
+    "composables": "@/core/composables",
     "utils": "@/lib/utils",
-    "ui": "@/components/ui",
+    "ui": "@/core/components/ui",
     "lib": "@/lib"
   },
   "iconLibrary": "lucide"

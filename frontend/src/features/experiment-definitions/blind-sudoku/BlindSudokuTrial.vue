@@ -1,15 +1,11 @@
 <script setup lang="ts">
 import { computed, inject, onMounted, type Ref, ref, toRef } from "vue";
-import { Button } from "@/components/ui/button";
-import Container from "@/components/ui/Container.vue";
+import { Button } from "@/core/components/ui/button";
+import Container from "@/core/components/ui/Container.vue";
 import { useExperimentPuzzle } from "@/features/experiment-core/composables/useExperimentPuzzle";
-import type { PuzzleDefinition } from "@/services/game/engines/types.ts";
+import type { PuzzleDefinition } from "@/core/games/types/puzzle-types.ts";
 import type { GraphExecutor } from "@/features/experiment-core/graph/GraphExecutor";
-import PuzzleRenderer from "@/components/PuzzleRenderer.vue";
-import { createPuzzleInteractionBridge } from "@/features/games.composables/setupPuzzleInteractionBridge.ts";
-import { withSudokuBehaviors } from "@/features/games/sudoku/useSudokuCellHighlighter.ts";
-import { withSudokuFocusBehavior } from "@/features/games/sudoku/useSudokuFocusHighlighter.ts";
-import { withSudokuValidationBehavior } from "@/features/games/sudoku/useSudokuValidationHighlighter.ts";
+import SudokuCanvas from "@/features/games/sudoku/SudokuCanvas.vue";
 
 const props = defineProps<{
   stimulus_item: PuzzleDefinition[];
@@ -36,11 +32,11 @@ const points = ref<number>(0);
 const all_cells_filled = computed(() => {
   const board = pc.state_puzzle.value.board;
   const initial_state = pc.state_puzzle.value.definition.initial_state;
-  
+
   for (let row = 0; row < board.length; row++) {
     for (let col = 0; col < board[row].length; col++) {
-      // if this cell was initially empty (-1) and is still empty (0), puzzle is incomplete
-      if (initial_state[row][col] === -1 && board[row][col] === 0) {
+      // if this cell was initially empty (-1) and is still empty (-1), puzzle is incomplete
+      if (initial_state[row][col] === -1 && board[row][col] === -1) {
         return false;
       }
     }
@@ -50,15 +46,12 @@ const all_cells_filled = computed(() => {
 
 // Finish trial - calculate performance and show feedback
 function finish_trial() {
-  // update puzzle state
-  bSudokuFocus.setEnabled(false); // disable focus
-  bSudoku.setEnabled(false); // disable interaction
-  bSudoku.clearActiveCell(); // remove box/col/row highlight
-
   const incorrect = pc.get_incorrect_cells?.() || [];
   const correct = pc.get_correct_cells?.() || [];
-  bSudokuValidation.setMultipleCorrect(correct);
-  bSudokuValidation.setMultipleIncorrect(incorrect);
+
+  // set validation state for canvas rendering
+  correct_cells_list.value = correct;
+  incorrect_cells_list.value = incorrect;
 
   correct_cells.value = correct.length;
   incorrect_cells.value = incorrect.length;
@@ -93,10 +86,15 @@ const puzzle = computed(
 
 // use new experiment-aware puzzle controller
 const pc = useExperimentPuzzle(toRef(puzzle), executor);
-const bridge = createPuzzleInteractionBridge(pc, false); // false == don't include default behaviours
-const bSudoku = withSudokuBehaviors(pc, bridge);
-const bSudokuFocus = withSudokuFocusBehavior(pc, bridge);
-const bSudokuValidation = withSudokuValidationBehavior(pc, bridge);
+
+// validation state for feedback phase
+const correct_cells_list = ref<Array<{ row: number; col: number }>>([]);
+const incorrect_cells_list = ref<Array<{ row: number; col: number }>>([]);
+
+function handle_cell_key(row: number, col: number, key: string) {
+  if (phase.value !== "playing") return;
+  pc.handle_cell_key_down({ row, col }, { key } as KeyboardEvent);
+}
 
 onMounted(() => {
   executor!.value.data_collection.record_trial_start(props.trial_index, props.stimulus_item);
@@ -106,14 +104,20 @@ onMounted(() => {
 <template>
   <div class="blind-sudoku-trial">
     <div v-if="phase === 'playing'" class="trial-content">
-      <Container class="mb-4">
+      <div class="mb-4 mt-2">
         <div v-if="puzzle" class="puzzle-container flex justify-center">
-          <PuzzleRenderer :definition="puzzle" :state="pc.state_puzzle.value" :scale="1" :interact="bridge" />
+          <SudokuCanvas
+            class="max-w-100"
+            :state="pc.state_puzzle.value"
+            :blur_mode="true"
+            :hover_highlight="true"
+            @cell-key="handle_cell_key"
+          />
         </div>
         <div v-else class="text-center text-gray-500">
           <p>puzzle component not found for type: {{ pc.state_puzzle.value.definition.puzzle_type }}</p>
         </div>
-      </Container>
+      </div>
 
       <Button variant="blue" @click="finish_trial" :disabled="!all_cells_filled" class="w-full">
         Check Answers
@@ -121,7 +125,7 @@ onMounted(() => {
     </div>
 
     <!-- Feedback Phase -->
-    <div v-else-if="phase === 'feedback'" class="feedback-content">
+    <div v-else-if="phase === 'feedback'" class="feedback-content mt-2">
       <Container class="mb-4 text-center">
         <h3 class="text-xl font-bold mb-4">Trial Complete!</h3>
 
@@ -141,7 +145,13 @@ onMounted(() => {
         </div>
 
         <div v-if="puzzle" class="puzzle-feedback flex justify-center mb-4">
-          <PuzzleRenderer :definition="puzzle" :state="pc.state_puzzle.value" :scale="1" :interact="bridge" />
+          <SudokuCanvas
+            class="max-w-100"
+            :state="pc.state_puzzle.value"
+            :correct_cells="correct_cells_list"
+            :incorrect_cells="incorrect_cells_list"
+            :interactive="false"
+          />
         </div>
       </Container>
 

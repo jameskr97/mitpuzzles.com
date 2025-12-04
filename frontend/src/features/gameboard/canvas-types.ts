@@ -1,4 +1,4 @@
-import type { PuzzleState } from "@/services/game/engines/types";
+import type { PuzzleState } from "@/core/games/types/puzzle-types.ts";
 
 /**
  * function type for rendering individual cells on the canvas.

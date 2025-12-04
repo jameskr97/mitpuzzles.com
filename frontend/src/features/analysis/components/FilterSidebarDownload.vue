@@ -2,7 +2,7 @@
 import { onMounted } from 'vue'
 import { useAnalysisStore } from '@/features/analysis/stores/useAnalysisStore'
 import FilterPuzzleSelector from '@/features/analysis/components/FilterPuzzleSelector.vue'
-import { FilterMultiSelect, FilterRadioGroup } from '@/components/ui/filters'
+import { FilterMultiSelect, FilterRadioGroup } from '@/core/components/ui/filters'
 
 const store = useAnalysisStore()
 

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { inject, onMounted, ref, type Ref } from "vue";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/core/components/ui/card";
 import { Upload, CheckCircle, AlertCircle } from "lucide-vue-next";
 import type { GraphExecutor } from "@/features/experiment-core";
-import { submitExperimentData } from "@/services/app.ts";
+import { submitExperimentData } from "@/core/services/app.ts";
 
 const emit = defineEmits(["complete"]);
 const executor = inject<Ref<GraphExecutor>>("experiment-executor");

@@ -1,20 +1,19 @@
 <script setup lang="ts">
-import { computed, inject, onMounted, onUnmounted, type Ref, ref, watch } from "vue";
-import { Button } from "@/components/ui/button";
-import Container from "@/components/ui/Container.vue";
+import { computed, inject, onMounted, onUnmounted, type Ref, ref } from "vue";
+import { Button } from "@/core/components/ui/button";
+import Container from "@/core/components/ui/Container.vue";
 import {
   NumberField,
   NumberFieldContent,
   NumberFieldDecrement,
   NumberFieldIncrement,
   NumberFieldInput,
-} from "@/components/ui/number-field";
+} from "@/core/components/ui/number-field";
 import { useExperimentPuzzle } from "@/features/experiment-core/composables/useExperimentPuzzle";
-import type { PuzzleDefinition } from "@/services/game/engines/types";
+import type { PuzzleDefinition } from "@/core/games/types/puzzle-types.ts";
 import type { GraphExecutor } from "@/features/experiment-core/graph/GraphExecutor";
-import PuzzleRenderer from "@/components/PuzzleRenderer.vue";
-import { createPuzzleInteractionBridge } from "@/features/games.composables/setupPuzzleInteractionBridge";
-import { MinesweeperCell, PuzzleConverter } from "@/services/game/engines/translator";
+import MinesweeperCanvas from "@/features/games/minesweeper/MinesweeperCanvas.vue";
+import { MinesweeperCell } from "@/features/games/minesweeper/useMinesweeperGame";
 import ExperimentInputSlider from "@/features/experiment-core/components/input/ExperimentInputSlider.vue";
 import { useStateMachine } from "@/features/experiment-core/composables/useStateMachine.ts";
 import { useTimer } from "@/features/experiment-core/composables/useTimer.ts";
@@ -40,7 +39,10 @@ enum trial_state {
 // trial state and timers
 const puzzle = computed((): PuzzleDefinition => props.stimulus_item[0]);
 const pc = useExperimentPuzzle(ref(puzzle), executor);
-const bridge = createPuzzleInteractionBridge(pc);
+
+function handle_cell_click(row: number, col: number, button: number) {
+  pc.handle_cell_click({ row, col }, { button } as MouseEvent);
+}
 
 const preview_timer = useTimer({ duration_seconds: 5 });
 const solving_timer = useTimer({ duration_seconds: 30 });
@@ -76,10 +78,7 @@ const trial_timestamps = ref({
 });
 
 // computed puzzle metrics
-const number_of_initial_unmarked_cells = PuzzleConverter.fromResearch(
-  puzzle.value.initial_state,
-  puzzle.value.puzzle_type,
-)
+const number_of_initial_unmarked_cells = puzzle.value.initial_state
   .flat()
   .filter((c) => c === MinesweeperCell.UNMARKED).length;
 
@@ -92,7 +91,7 @@ const currently_marked_cells = computed(() => {
 // validation
 const current_correctly_marked_cells = computed(() => {
   if (!puzzle.value.solution) return 0;
-  const solution = PuzzleConverter.fromResearch(puzzle.value.solution, puzzle.value.puzzle_type);
+  const solution = puzzle.value.solution;
   const user_board = pc.state_puzzle.value.board;
   const matching = [MinesweeperCell.FLAG, MinesweeperCell.SAFE];
 
@@ -261,7 +260,11 @@ onMounted(() => {
 
       <div class="flex flex-col items-center">
         <div class="p-2 flex flex-col mt-4 border rounded-lg shadow">
-          <PuzzleRenderer :definition="puzzle" :state="pc.state_puzzle.value" :scale="1" :interact="bridge" />
+          <MinesweeperCanvas
+            class="max-w-50"
+            :state="pc.state_puzzle.value"
+            @cell-click="handle_cell_click"
+          />
         </div>
       </div>
     </div>
@@ -361,7 +364,11 @@ onMounted(() => {
 
       <div class="flex flex-col items-center">
         <div class="p-2 flex flex-col mt-4 border rounded-lg shadow">
-          <PuzzleRenderer :definition="puzzle" :state="pc.state_puzzle.value" :scale="1" :interact="bridge" />
+          <MinesweeperCanvas
+            class="max-w-50"
+            :state="pc.state_puzzle.value"
+            @cell-click="handle_cell_click"
+          />
         </div>
       </div>
 

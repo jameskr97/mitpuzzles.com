@@ -1,15 +1,13 @@
 <script setup lang="ts">
-import { inject, type Ref, ref, computed } from "vue";
-import type { PuzzleDefinition, PuzzleState } from "@/services/game/engines/types";
-import { getPersistentHighlightSudokuBoard } from "@/features/games/sudoku/getPersistentHighlightSudokuBoard.ts";
-import PuzzleSudoku from "@/features/games/sudoku/sudoku.puzzle.vue";
-import { useDemoSudokuController } from "@/features/games/sudoku/useDemoSudokuController.ts";
-import { Alert, AlertTitle } from "@/components/ui/alert";
+import { inject, type Ref, ref, computed, reactive } from "vue";
+import type { PuzzleDefinition, PuzzleState } from "@/core/games/types/puzzle-types.ts";
+import SudokuCanvas from "@/features/games/sudoku/SudokuCanvas.vue";
+import { Alert, AlertTitle } from "@/core/components/ui/alert";
 import ExperimentQuiz from "@/features/experiment-core/components/ExperimentQuiz.vue";
-import Container from "@/components/ui/Container.vue";
+import Container from "@/core/components/ui/Container.vue";
 import { shuffle } from "@/utils.ts";
 import { GraphExecutor } from "@/features/experiment-core";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/core/components/ui/button";
 import InstructionHeader from "@/features/experiment-core/components/InstructionHeader.vue";
 
 const executor = inject<Ref<GraphExecutor>>("experiment-executor");
@@ -25,15 +23,15 @@ const def: Partial<PuzzleDefinition> = {
   rows: 9,
   cols: 9,
   initial_state: [
-    [1, 5, 6, 0, 8, 0, 0, 2, 0],
-    [0, 0, 0, 1, 2, 0, 6, 5, 0],
-    [3, 4, 2, 6, 0, 5, 0, 0, 1],
-    [0, 8, 5, 0, 0, 3, 0, 4, 0],
-    [4, 0, 0, 2, 0, 0, 8, 7, 5],
-    [0, 7, 9, 4, 0, 8, 3, 1, 0],
-    [0, 0, 0, 0, 3, 1, 4, 0, 2],
-    [9, 2, 4, 5, 0, 6, 1, 3, 8],
-    [8, 3, 1, 0, 4, 0, 0, 0, 7],
+    [1, 5, 6, -1, 8, -1, -1, 2, -1],
+    [-1, -1, -1, 1, 2, -1, 6, 5, -1],
+    [3, 4, 2, 6, -1, 5, -1, -1, 1],
+    [-1, 8, 5, -1, -1, 3, -1, 4, -1],
+    [4, -1, -1, 2, -1, -1, 8, 7, 5],
+    [-1, 7, 9, 4, -1, 8, 3, 1, -1],
+    [-1, -1, -1, -1, 3, 1, 4, -1, 2],
+    [9, 2, 4, 5, -1, 6, 1, 3, 8],
+    [8, 3, 1, -1, 4, -1, -1, -1, 7],
   ],
 };
 
@@ -42,78 +40,56 @@ const gameState0: PuzzleState = {
   // @ts-expect-error partial definition
   definition: def,
   board: [
-    [1, 5, 6, 0, 8, 0, 0, 2, 0],
-    [0, 0, 0, 1, 2, 0, 6, 5, 0],
-    [3, 4, 2, 6, 0, 5, 0, 0, 1],
-    [0, 8, 5, 0, 0, 3, 0, 4, 0],
-    [4, 0, 0, 2, 0, 0, 8, 7, 5],
-    [0, 7, 9, 4, 0, 8, 3, 1, 0],
-    [0, 0, 0, 0, 3, 1, 4, 0, 2],
-    [9, 2, 4, 5, 0, 6, 1, 3, 8],
-    [8, 3, 1, 0, 4, 0, 0, 0, 7]
+    [1, 5, 6, -1, 8, -1, -1, 2, -1],
+    [-1, -1, -1, 1, 2, -1, 6, 5, -1],
+    [3, 4, 2, 6, -1, 5, -1, -1, 1],
+    [-1, 8, 5, -1, -1, 3, -1, 4, -1],
+    [4, -1, -1, 2, -1, -1, 8, 7, 5],
+    [-1, 7, 9, 4, -1, 8, 3, 1, -1],
+    [-1, -1, -1, -1, 3, 1, 4, -1, 2],
+    [9, 2, 4, 5, -1, 6, 1, 3, 8],
+    [8, 3, 1, -1, 4, -1, -1, -1, 7]
   ]
 };
 const gameState0With8: PuzzleState = {
   // @ts-expect-error partial definition
   definition: def,
   board: [
-    [1, 5, 6, 0, 8, 0, 0, 2, 0],
-    [0, 0, 0, 1, 2, 0, 6, 5, 0],
-    [3, 4, 2, 6, 0, 5, 0, 8, 1],
-    [0, 8, 5, 0, 0, 3, 0, 4, 0],
-    [4, 0, 0, 2, 0, 0, 8, 7, 5],
-    [0, 7, 9, 4, 0, 8, 3, 1, 0],
-    [0, 0, 0, 0, 3, 1, 4, 0, 2],
-    [9, 2, 4, 5, 0, 6, 1, 3, 8],
-    [8, 3, 1, 0, 4, 0, 0, 0, 7],
+    [1, 5, 6, -1, 8, -1, -1, 2, -1],
+    [-1, -1, -1, 1, 2, -1, 6, 5, -1],
+    [3, 4, 2, 6, -1, 5, -1, 8, 1],
+    [-1, 8, 5, -1, -1, 3, -1, 4, -1],
+    [4, -1, -1, 2, -1, -1, 8, 7, 5],
+    [-1, 7, 9, 4, -1, 8, 3, 1, -1],
+    [-1, -1, -1, -1, 3, 1, 4, -1, 2],
+    [9, 2, 4, 5, -1, 6, 1, 3, 8],
+    [8, 3, 1, -1, 4, -1, -1, -1, 7],
   ],
 };
 
-const { puzzle_state: demo_puzzle_state, interact: demo_interact } = useDemoSudokuController(def, {
-  cycle_mode: false,
-  allow_prefilled_modification: false,
+// Simple demo state for interactive practice board
+const demo_puzzle_state = reactive<PuzzleState>({
+  // @ts-expect-error partial definition
+  definition: def,
+  board: JSON.parse(JSON.stringify(def.initial_state)),
 });
 
-const CANDIDATE_CLASS = "border-3! border-amber-500!";
-const RowHighlighted = getPersistentHighlightSudokuBoard({
-  row: 2,
-  cells: [
-    { row: 2, col: 4 },
-    { row: 2, col: 6 },
-    { row: 2, col: 7 },
-  ],
-  highlight_cells: [
-    { row: 2, col: 4, classStyle: CANDIDATE_CLASS },
-    { row: 2, col: 6, classStyle: CANDIDATE_CLASS },
-    { row: 2, col: 7, classStyle: CANDIDATE_CLASS },
-  ],
-});
-const ColHighlighted = getPersistentHighlightSudokuBoard({
-  col: 6,
-  cells: [
-    { row: 0, col: 6 },
-    { row: 2, col: 6 },
-    { row: 3, col: 6 },
-    { row: 3, col: 6 },
-    { row: 8, col: 6 },
-  ],
-  highlight_cells: [
-    { row: 2, col: 4, classStyle: CANDIDATE_CLASS },
-    { row: 2, col: 7, classStyle: CANDIDATE_CLASS },
-  ],
-});
-const BoxHighlighted = getPersistentHighlightSudokuBoard({
-  box: 1,
-  cells: [
-    { row: 6, col: 0 },
-    { row: 6, col: 1 },
-    { row: 6, col: 2 },
-  ],
-  highlight_cells: [{ row: 2, col: 7, classStyle: CANDIDATE_CLASS }],
-  specific_cell_class: [{ row: 2, col: 7, classStyle: "text-amber-500!" }],
-});
+function handle_demo_key(row: number, col: number, key: string) {
+  const is_prefilled = def.initial_state![row][col] !== -1;
+  if (is_prefilled) return;
+
+  const num = Number(key);
+  if (num >= 1 && num <= 9) {
+    demo_puzzle_state.board[row][col] = num;
+  } else if (key === "0" || key === "Backspace" || key === "Delete") {
+    demo_puzzle_state.board[row][col] = -1;
+  }
+}
 
 const showQuizWarning = ref(false);
+
+// Test highlight color for new SudokuCanvas
+const CANDIDATE_COLOR = "#f59e0b"; // amber-500
 let quiz: { answer: boolean; question: string }[] = shuffle([
   { answer: true, question: "Each row must have the numbers 1 to 9, with no repeats." },
   { answer: true, question: "Each column must include every number from 1 to 9 exactly once." },
@@ -144,7 +120,7 @@ let quiz: { answer: boolean; question: string }[] = shuffle([
 
     <InstructionHeader>Sudoku Rules</InstructionHeader>
 
-    <div class="grid grid-cols-[auto_min-content] gap-x-5 gap-y-10 w-full">
+    <div class="grid grid-cols-[1.5fr_1fr] gap-x-5 gap-y-10 w-full">
       <div class="grid col-span-2 grid-cols-subgrid">
         <div class="flex flex-col gap-1">
           <div>
@@ -162,7 +138,16 @@ let quiz: { answer: boolean; question: string }[] = shuffle([
             </div>
           </Container>
         </div>
-        <RowHighlighted :state="gameState0" :scale="0.75"></RowHighlighted>
+        <SudokuCanvas
+          :state="gameState0"
+          :highlight_row="2"
+          :highlight_cells="[
+            { row: 2, col: 4, color: CANDIDATE_COLOR },
+            { row: 2, col: 6, color: CANDIDATE_COLOR },
+            { row: 2, col: 7, color: CANDIDATE_COLOR },
+          ]"
+          :interactive="false"
+        />
       </div>
 
       <div class="grid col-span-2 grid-cols-subgrid">
@@ -183,7 +168,15 @@ let quiz: { answer: boolean; question: string }[] = shuffle([
             </div>
           </Container>
         </div>
-        <ColHighlighted :state="gameState0" :scale="0.75"></ColHighlighted>
+        <SudokuCanvas
+          :state="gameState0"
+          :highlight_col="6"
+          :highlight_cells="[
+            { row: 2, col: 4, color: CANDIDATE_COLOR },
+            { row: 2, col: 7, color: CANDIDATE_COLOR },
+          ]"
+          :interactive="false"
+        />
       </div>
 
       <div class="grid col-span-2 grid-cols-subgrid">
@@ -203,7 +196,14 @@ let quiz: { answer: boolean; question: string }[] = shuffle([
             </div>
           </Container>
         </div>
-        <BoxHighlighted :state="gameState0With8" :scale="0.75"></BoxHighlighted>
+        <SudokuCanvas
+          :state="gameState0With8"
+          :highlight_box="1"
+          :highlight_cells="[
+            { row: 2, col: 7, color: CANDIDATE_COLOR, text_color: CANDIDATE_COLOR },
+          ]"
+          :interactive="false"
+        />
       </div>
     </div>
 
@@ -234,7 +234,7 @@ let quiz: { answer: boolean; question: string }[] = shuffle([
     </ul>
     <Container class="flex flex-col items-center max-w-fit mx-auto my-4">
       <div class="alert alert-info mb-4">Try using the board below to see how it will work!</div>
-      <PuzzleSudoku :state="demo_puzzle_state" :scale="1" :interact="demo_interact" />
+      <SudokuCanvas class="max-w-100" :state="demo_puzzle_state" :blur_mode="true" :hover_highlight="true" @cell-key="handle_demo_key" />
     </Container>
 
     <!-- scoring section only for prolific users -->

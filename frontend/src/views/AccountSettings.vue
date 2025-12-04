@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
+import { Button } from "@/core/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/core/components/ui/card";
+import { Input } from "@/core/components/ui/input";
+import { Label } from "@/core/components/ui/label";
+import { Separator } from "@/core/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/core/components/ui/select";
+import { Switch } from "@/core/components/ui/switch";
 import { computed, onMounted, ref } from "vue";
-import { useAuthStore } from "@/store/useAuthStore.ts";
-import { usePushStore } from "@/store/usePushStore.ts";
+import { useAuthStore } from "@/core/store/useAuthStore.ts";
+import { usePushStore } from "@/core/store/usePushStore.ts";
 import { ACTIVE_GAMES } from "@/constants.ts";
 import axios from "axios";
 import { useTranslation } from "i18next-vue";

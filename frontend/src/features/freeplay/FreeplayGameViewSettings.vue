@@ -4,13 +4,13 @@ import {
   DropdownMenuContent,
   DropdownMenuLabel,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Switch } from "@/components/ui/switch";
+} from "@/core/components/ui/dropdown-menu";
+import { Switch } from "@/core/components/ui/switch";
 import { Label } from "reka-ui";
 import { inject, computed } from "vue";
-import type { PuzzleController } from "@/services/game/engines/types.ts";
-import { useGameLayout } from "@/composables/useGameLayout.ts";
-import { usePuzzleProgressStore } from "@/store/puzzle/usePuzzleProgressStore.ts";
+import type { PuzzleController } from "@/core/games/types/puzzle-types.ts";
+import { useGameLayout } from "@/core/composables/useGameLayout.ts";
+import { usePuzzleProgressStore } from "@/core/store/puzzle/usePuzzleProgressStore.ts";
 
 const puzzle = inject<PuzzleController>("puzzle")!;
 const layout = inject<ReturnType<typeof useGameLayout>>("layout")!;

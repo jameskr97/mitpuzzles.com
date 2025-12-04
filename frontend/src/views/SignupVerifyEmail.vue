@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { useAuthStore } from "@/store/useAuthStore.ts";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuthStore } from "@/core/store/useAuthStore.ts";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/core/components/ui/card";
 import posthog from "posthog-js";
 import { useTranslation } from "i18next-vue";
 

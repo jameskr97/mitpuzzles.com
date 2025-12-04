@@ -2,7 +2,7 @@
 import { computed, inject, reactive, watch } from "vue";
 import type { Ref } from "vue";
 import { gsap } from "gsap";
-import Container from "@/components/ui/Container.vue";
+import Container from "@/core/components/ui/Container.vue";
 import { GraphExecutor } from "@/features/experiment-core";
 
 // props + inject

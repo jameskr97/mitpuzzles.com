@@ -5,7 +5,7 @@
  * Works with the new GameController interface.
  */
 import { inject, watch, computed, ref } from "vue";
-import type { GameController } from "@/types/game-controller";
+import type { GameController } from "@/core/games/types/game-controller";
 import {
   Table,
   TableBody,
@@ -13,11 +13,11 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import Container from "@/components/ui/Container.vue";
-import { Separator } from "@/components/ui/separator";
-import { Button } from "@/components/ui/button";
-import { usePuzzleLeaderboardStore } from "@/store/puzzle/usePuzzleLeaderboardStore";
+} from "@/core/components/ui/table";
+import Container from "@/core/components/ui/Container.vue";
+import { Separator } from "@/core/components/ui/separator";
+import { Button } from "@/core/components/ui/button";
+import { usePuzzleLeaderboardStore } from "@/core/store/puzzle/usePuzzleLeaderboardStore";
 import { useTranslation } from "i18next-vue";
 
 const { t } = useTranslation();

@@ -4,12 +4,12 @@
  */
 import { computed, ref, watch, shallowRef } from "vue";
 import { useNonogramsGame, type NonogramsGameReturn } from "./useNonogramsGame";
-import { useFreeplayServices } from "@/composables/freeplay";
-import { useDataRecorder } from "@/composables/game-primitives";
-import type { GameController, GameUIState } from "@/types/game-controller";
+import { useFreeplayServices } from "@/features/freeplay/composables";
+import { useDataRecorder } from "@/core/games/composables";
+import type { GameController, GameUIState } from "@/core/games/types/game-controller";
 import GameLayout from "@/features/freeplay/GameLayout.vue";
 import NonogramsCanvas from "./NonogramsCanvas.vue";
-import type { NonogramMeta } from "@/services/game/engines/types";
+import type { NonogramMeta } from "@/core/games/types/puzzle-types.ts";
 
 const puzzle_type = "nonograms";
 const services = await useFreeplayServices<NonogramMeta>(puzzle_type);

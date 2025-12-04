@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { inject, watch, computed, ref } from "vue";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import Container from "@/components/ui/Container.vue";
-import type { PuzzleController } from "@/services/game/engines/types.ts";
-import { usePuzzleMetadataStore } from "@/store/puzzle/usePuzzleMetadataStore.ts";
-import { usePuzzleLeaderboardStore } from "@/store/puzzle/usePuzzleLeaderboardStore.ts";
-import { Separator } from "@/components/ui/separator";
-import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/core/components/ui/table";
+import Container from "@/core/components/ui/Container.vue";
+import type { PuzzleController } from "@/core/games/types/puzzle-types.ts";
+import { usePuzzleMetadataStore } from "@/core/store/puzzle/usePuzzleMetadataStore.ts";
+import { usePuzzleLeaderboardStore } from "@/core/store/puzzle/usePuzzleLeaderboardStore.ts";
+import { Separator } from "@/core/components/ui/separator";
+import { Button } from "@/core/components/ui/button";
 import { useTranslation } from "i18next-vue";
 
 const { t } = useTranslation();

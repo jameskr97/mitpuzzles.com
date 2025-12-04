@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import Container from "@/components/ui/Container.vue";
-import { Switch } from "@/components/ui/switch";
+import { Label } from "@/core/components/ui/label";
+import { Badge } from "@/core/components/ui/badge";
+import Container from "@/core/components/ui/Container.vue";
+import { Switch } from "@/core/components/ui/switch";
 import { inject, type PropType } from "vue";
-import type { PuzzleController } from "@/services/game/engines/types.ts";
+import type { PuzzleController } from "@/core/games/types/puzzle-types.ts";
 import { getPuzzleDisplayName } from "@/utils.ts";
 
 const props = defineProps({

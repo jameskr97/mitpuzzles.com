@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import { CheckIcon, ChevronsUpDownIcon, LoaderIcon } from 'lucide-vue-next'
-import { Button } from '@/components/ui/button'
+import { Button } from '@/core/components/ui/button'
 import {
   Command,
   CommandEmpty,
@@ -9,13 +9,13 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from '@/components/ui/command'
+} from '@/core/components/ui/command'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover'
-import { api } from '@/services/axios'
+} from '@/core/components/ui/popover'
+import { api } from '@/core/services/axios'
 import { cn } from '@/lib/utils'
 
 interface Entity {

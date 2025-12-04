@@ -4,13 +4,13 @@
  */
 import { computed, ref, watch, shallowRef } from "vue";
 import { useAquariumGame, type AquariumGameReturn, type AquariumMeta } from "./useAquariumGame";
-import { useFreeplayServices } from "@/composables/freeplay";
-import { useDataRecorder } from "@/composables/game-primitives";
-import type { GameController, GameUIState } from "@/types/game-controller";
-import type { PuzzleDefinition } from "@/services/game/engines/types";
+import { useFreeplayServices } from "@/features/freeplay/composables";
+import { useDataRecorder } from "@/core/games/composables";
+import type { GameController, GameUIState } from "@/core/games/types/game-controller";
+import type { PuzzleDefinition } from "@/core/games/types/puzzle-types.ts";
 import GameLayout from "@/features/freeplay/GameLayout.vue";
 import AquariumCanvas from "./AquariumCanvas.vue";
-import { defaultPuzzles } from "@/services/puzzle.defaults";
+import { defaultPuzzles } from "@/core/games/puzzle.defaults.ts";
 
 const puzzle_type = "aquarium";
 const services = await useFreeplayServices<AquariumMeta>(puzzle_type);

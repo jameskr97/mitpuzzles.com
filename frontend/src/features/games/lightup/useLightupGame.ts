@@ -5,14 +5,13 @@
  * Uses the new game primitives architecture.
  */
 import { computed, type ComputedRef, type Ref } from "vue";
-import { useBoardState } from "@/composables/game-primitives";
-import { useStateCycler } from "@/composables/game-primitives";
-import { useSolutionChecker } from "@/composables/game-primitives";
-import type { RuleViolation } from "@/types/game-types";
-import type { PuzzleDefinition } from "@/services/game/engines/types";
+import { useBoardState } from "@/core/games/composables";
+import { useStateCycler } from "@/core/games/composables";
+import { useSolutionChecker } from "@/core/games/composables";
+import type { PuzzleDefinition, RuleViolation } from "@/core/games/types/puzzle-types.ts";
 
 /**
- * Lightup cell values
+ * Lightup cell values (research format)
  */
 export const LightupCell = {
   WALL_0: 0,
@@ -20,10 +19,10 @@ export const LightupCell = {
   WALL_2: 2,
   WALL_3: 3,
   WALL_4: 4,
-  WALL_NO_CONSTRAINT: 5,
-  EMPTY: 6,
-  BULB: 7,
-  CROSS: 8,
+  WALL_NO_CONSTRAINT: -2,
+  EMPTY: -1,
+  BULB: -3,
+  CROSS: -4,
 } as const;
 
 export type LightupCellValue = (typeof LightupCell)[keyof typeof LightupCell];
@@ -87,30 +86,6 @@ export function compute_lit_cells(board: number[][], rows: number, cols: number)
   return lit;
 }
 
-/**
- * Research format to game format mapping
- */
-const RESEARCH_TO_GAME: Record<number, number> = {
-  [0]: LightupCell.WALL_0,
-  [1]: LightupCell.WALL_1,
-  [2]: LightupCell.WALL_2,
-  [3]: LightupCell.WALL_3,
-  [4]: LightupCell.WALL_4,
-  [-2]: LightupCell.WALL_NO_CONSTRAINT,
-  [-1]: LightupCell.EMPTY,
-  [-3]: LightupCell.BULB,
-  [-4]: LightupCell.CROSS,
-};
-
-/**
- * Convert research format board to game format
- */
-export function convert_research_board(research_board: number[][]): number[][] {
-  return research_board.map((row) =>
-    row.map((cell) => RESEARCH_TO_GAME[cell] ?? cell)
-  );
-}
-
 export interface LightupGameReturn {
   /** Current board state */
   board: Ref<number[][]>;
@@ -164,11 +139,8 @@ export function useLightupGame(
   definition: PuzzleDefinition,
   saved_board?: number[][] | null
 ): LightupGameReturn {
-  // Convert initial state from research format
-  const converted_initial = convert_research_board(definition.initial_state);
-  const converted_saved = saved_board ? saved_board : null;
-
   // Board state management - only EMPTY cells are editable
+  // Uses research format directly (no conversion needed)
   const {
     board,
     initial_state,
@@ -179,7 +151,7 @@ export function useLightupGame(
     clear,
     is_cell_editable,
     immutable_cells,
-  } = useBoardState(converted_initial, converted_saved, {
+  } = useBoardState(definition.initial_state, saved_board ?? null, {
     is_editable: (initial_value) => initial_value === LightupCell.EMPTY,
   });
 

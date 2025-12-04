@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { inject, ref } from "vue";
-import type { PuzzleController } from "@/services/game/engines/types.ts";
-import { usePuzzleProgressStore } from "@/store/puzzle/usePuzzleProgressStore.ts";
+import type { PuzzleController } from "@/core/games/types/puzzle-types.ts";
+import { usePuzzleProgressStore } from "@/core/store/puzzle/usePuzzleProgressStore.ts";
 
 const props = defineProps<{
   puzzle?: PuzzleController

@@ -19,9 +19,8 @@ import {
   get_region_at,
   same_region as same_region_util,
   ORTHOGONAL_DIRECTIONS,
-} from "@/composables/game-primitives";
-import type { RuleViolation } from "@/types/game-types";
-import type { PuzzleDefinition } from "@/services/game/engines/types";
+} from "@/core/games/composables";
+import type { PuzzleDefinition, RuleViolation } from "@/core/games/types/puzzle-types.ts";
 
 /**
  * Norinori cell values

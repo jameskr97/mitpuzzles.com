@@ -5,18 +5,17 @@
  * Uses the new game primitives architecture.
  */
 import { computed, type ComputedRef, type Ref } from "vue";
-import { useBoardState } from "@/composables/game-primitives";
-import { useStateCycler } from "@/composables/game-primitives";
-import { useSolutionChecker } from "@/composables/game-primitives";
-import type { Cell, RuleViolation } from "@/types/game-types";
-import type { PuzzleDefinition } from "@/services/game/engines/types";
+import { useBoardState } from "@/core/games/composables";
+import { useStateCycler } from "@/core/games/composables";
+import { useSolutionChecker } from "@/core/games/composables";
+import type { Cell, RuleViolation } from "@/core/games/types/puzzle-types";
+import type { PuzzleDefinition } from "@/core/games/types/puzzle-types.ts";
 
 /**
- * Minesweeper cell values
- * Defined locally - no dependency on translator.ts
+ * Minesweeper cell values (research format)
  */
 export const MinesweeperCell = {
-  UNMARKED: 0,
+  UNMARKED: -1,
   ONE: 1,
   TWO: 2,
   THREE: 3,
@@ -25,41 +24,12 @@ export const MinesweeperCell = {
   SIX: 6,
   SEVEN: 7,
   EIGHT: 8,
-  FLAG: 9,
-  SAFE: 10,
-  EMPTY: 11,
-  QUESTION_MARK: 12,
-  UNMARKED_HIGHLIGHTED: 13,
+  FLAG: -3,
+  SAFE: -4,
+  EMPTY: 0,
 } as const;
 
 export type MinesweeperCellValue = (typeof MinesweeperCell)[keyof typeof MinesweeperCell];
-
-/**
- * Research format to game format mapping
- */
-const RESEARCH_TO_GAME: Record<number, number> = {
-  0: MinesweeperCell.EMPTY,
-  1: MinesweeperCell.ONE,
-  2: MinesweeperCell.TWO,
-  3: MinesweeperCell.THREE,
-  4: MinesweeperCell.FOUR,
-  5: MinesweeperCell.FIVE,
-  6: MinesweeperCell.SIX,
-  7: MinesweeperCell.SEVEN,
-  8: MinesweeperCell.EIGHT,
-  [-1]: MinesweeperCell.UNMARKED,
-  [-3]: MinesweeperCell.FLAG,
-  [-4]: MinesweeperCell.SAFE,
-};
-
-/**
- * Convert research format board to game format
- */
-export function convert_research_board(research_board: number[][]): number[][] {
-  return research_board.map((row) =>
-    row.map((cell) => RESEARCH_TO_GAME[cell] ?? cell)
-  );
-}
 
 export interface MinesweeperGameReturn {
   /** Current board state */
@@ -114,11 +84,8 @@ export function useMinesweeperGame(
   definition: PuzzleDefinition,
   saved_board?: number[][] | null
 ): MinesweeperGameReturn {
-  // Convert initial state from research format
-  const converted_initial = convert_research_board(definition.initial_state);
-  const converted_saved = saved_board ? saved_board : null;
-
   // Board state management
+  // Uses research format directly (no conversion needed)
   const {
     board,
     initial_state,
@@ -129,7 +96,7 @@ export function useMinesweeperGame(
     clear,
     is_cell_editable,
     immutable_cells,
-  } = useBoardState(converted_initial, converted_saved, {
+  } = useBoardState(definition.initial_state, saved_board ?? null, {
     is_editable: (initial_value) => initial_value === MinesweeperCell.UNMARKED,
   });
 

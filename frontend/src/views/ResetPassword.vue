@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
+import { Button } from "@/core/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/core/components/ui/card";
+import { Input } from "@/core/components/ui/input";
+import { Label } from "@/core/components/ui/label";
+import { Separator } from "@/core/components/ui/separator";
 import { computed, ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import AppLogo from "@/components/AppLogo.vue";
+import AppLogo from "@/core/components/AppLogo.vue";
 import axios from "axios";
 import { useTranslation } from "i18next-vue";
-import { useAppStore } from "@/store/useAppStore.ts";
+import { useAppStore } from "@/core/store/useAppStore.ts";
 
 const { t } = useTranslation();
 

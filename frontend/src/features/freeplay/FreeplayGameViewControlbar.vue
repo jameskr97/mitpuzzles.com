@@ -1,25 +1,25 @@
 <script setup lang="ts">
-import { useGameLayout } from "@/composables/useGameLayout.ts";
+import { useGameLayout } from "@/core/composables/useGameLayout.ts";
 import { computed, inject, onMounted, onUnmounted, type PropType } from "vue";
-import Container from "@/components/ui/Container.vue";
+import Container from "@/core/components/ui/Container.vue";
 import FreeplayGameViewTimer from "@/features/freeplay/FreeplayGameViewTimer.vue";
 import GameViewControlBarSettings from "@/features/freeplay/FreeplayGameViewSettings.vue";
-import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
+import { Slider } from "@/core/components/ui/slider";
+import { Switch } from "@/core/components/ui/switch";
+import { Label } from "@/core/components/ui/label";
+import { Button } from "@/core/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@/core/components/ui/dropdown-menu";
 import { getPuzzleDisplayName } from "@/utils.ts";
 import { useRoute } from "vue-router";
 import type { PUZZLE_TYPES } from "@/constants.ts";
-import type { PuzzleController } from "@/services/game/engines/types.ts";
-import { usePuzzleMetadataStore } from "@/store/puzzle/usePuzzleMetadataStore.ts";
-import { usePuzzleScaleStore } from "@/store/puzzle/usePuzzleScaleStore.ts";
+import type { PuzzleController } from "@/core/games/types/puzzle-types.ts";
+import { usePuzzleMetadataStore } from "@/core/store/puzzle/usePuzzleMetadataStore.ts";
+import { usePuzzleScaleStore } from "@/core/store/puzzle/usePuzzleScaleStore.ts";
 
 ////////////////////////////////////////////////////////////////////////
 //// props

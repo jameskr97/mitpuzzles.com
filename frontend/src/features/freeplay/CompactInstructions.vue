@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ACTIVE_GAMES } from "@/constants.ts";
 import { type PropType, ref } from "vue";
-import type { PuzzleController } from "@/services/game/engines/types.ts";
-import Container from "@/components/ui/Container.vue";
-import { Separator } from "@/components/ui/separator";
+import type { PuzzleController } from "@/core/games/types/puzzle-types.ts";
+import Container from "@/core/components/ui/Container.vue";
+import { Separator } from "@/core/components/ui/separator";
 import { InstructionModal } from "@/features/freeplay/components";
-import { useGameLayout } from "@/composables/useGameLayout.ts";
+import { useGameLayout } from "@/core/composables/useGameLayout.ts";
 
 
 const is_game_rules_open = ref(true);

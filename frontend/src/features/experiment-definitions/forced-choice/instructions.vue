@@ -1,14 +1,13 @@
 <script setup lang="ts">
-import Container from "@/components/ui/Container.vue";
+import Container from "@/core/components/ui/Container.vue";
 import InstructionHeader from "@/features/experiment-core/components/InstructionHeader.vue";
-import type { PuzzleDefinition, PuzzleState } from "@/services/game/engines/types.ts";
+import type { PuzzleDefinition } from "@/core/games/types/puzzle-types.ts";
 import { computed, inject, type Ref, ref } from "vue";
 import ExperimentQuiz from "@/features/experiment-core/components/ExperimentQuiz.vue";
 import { GraphExecutor } from "@/features/experiment-core";
 import PuzzleSelector from "@/features/experiment-definitions/forced-choice/PuzzleSelector.vue";
-import PuzzleRenderer from "@/components/PuzzleRenderer.vue";
-import { Button } from "@/components/ui/button";
-import { PuzzleConverter } from "@/services/game/engines/translator.ts";
+import PuzzleRenderer from "@/core/components/PuzzleRenderer.vue";
+import { Button } from "@/core/components/ui/button";
 
 const executor = inject<Ref<GraphExecutor>>("experiment-executor");
 
@@ -39,15 +38,6 @@ const definition2: PuzzleDefinition = {
     [-1, 3, 2],
     [2, -1, 1],
   ],
-};
-
-const gameState2: PuzzleState = {
-  definition: definition1,
-  board: PuzzleConverter.fromResearch([
-    [-1, -1, 1],
-    [-1, 3, 2],
-    [2, -1, 1],
-  ], "minesweeper"),
 };
 
 const selected_puzzle_index = ref<number | null>(null);

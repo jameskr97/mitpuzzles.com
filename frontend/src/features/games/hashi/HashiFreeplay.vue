@@ -7,12 +7,12 @@
  */
 import { computed, ref, shallowRef } from "vue";
 import { useHashiGame, type HashiGameReturn } from "./useHashiGame";
-import { useFreeplayServices } from "@/composables/freeplay";
-import { useDataRecorder } from "@/composables/game-primitives";
-import type { GameController, GameUIState } from "@/types/game-controller";
+import { useFreeplayServices } from "@/features/freeplay/composables";
+import { useDataRecorder } from "@/core/games/composables";
+import type { GameController, GameUIState } from "@/core/games/types/game-controller";
 import GameLayout from "@/features/freeplay/GameLayout.vue";
 import HashiCanvas from "./HashiCanvas.vue";
-import type { HashiMeta, HashiBridge } from "@/services/game/engines/types";
+import type { HashiMeta, HashiBridge } from "@/core/games/types/puzzle-types.ts";
 
 const puzzle_type = "hashi";
 const services = await useFreeplayServices<HashiMeta>(puzzle_type);

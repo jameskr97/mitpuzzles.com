@@ -10,21 +10,11 @@ import { useCanvasTheme } from "@/features/gameboard/canvas-theme";
 import type { CellRenderer } from "@/features/gameboard/canvas-types";
 import { draw_region_borders } from "@/features/gameboard/canvas-utils";
 import { AquariumCell } from "./useAquariumGame";
-import type { RuleViolation } from "@/types/game-types";
 import type { AquariumMeta } from "./useAquariumGame";
+import type { PuzzleState, RuleViolation } from "@/core/games/types/puzzle-types.ts";
 
 const props = defineProps<{
-  state: {
-    definition: {
-      rows: number;
-      cols: number;
-      meta?: AquariumMeta;
-    };
-    board: number[][];
-    violations?: RuleViolation[];
-  };
-  get_region: (row: number, col: number) => number;
-  same_region: (r1: number, c1: number, r2: number, c2: number) => boolean;
+  state: PuzzleState<AquariumMeta>;
 }>();
 
 const emit = defineEmits<{

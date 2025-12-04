@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, inject, onMounted, onUnmounted, ref, type Ref } from "vue";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/core/components/ui/card";
+import { Button } from "@/core/components/ui/button";
 import { CheckCircle, Copy } from "lucide-vue-next";
 import type { prolific_redirect_meta } from "@/features/experiment-core/graph/types";
 import type { GraphExecutor } from "@/features/experiment-core";

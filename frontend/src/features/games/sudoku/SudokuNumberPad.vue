@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { PuzzleState } from "@/services/game/engines/types";
-import type { createPuzzleInteractionBridge } from "@/features/games.composables/setupPuzzleInteractionBridge.ts";
+import type { PuzzleState } from "@/core/games/types/puzzle-types.ts";
 
 const props = defineProps<{
   state: PuzzleState;
-  interact?: ReturnType<typeof createPuzzleInteractionBridge>;
 }>();
 
 const emit = defineEmits<{

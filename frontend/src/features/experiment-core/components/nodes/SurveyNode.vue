@@ -5,12 +5,12 @@ import type { graph_node } from "@/features/experiment-core/graph/types";
 import type { GraphExecutor } from "@/features/experiment-core/graph/GraphExecutor";
 import type { survey_meta, survey_question, survey_response_data } from "@/features/experiment-core/survey/types";
 import { DEFAULT_SURVEY_QUESTIONS } from "@/features/experiment-core/survey/defaults";
-import Container from "@/components/ui/Container.vue";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
+import Container from "@/core/components/ui/Container.vue";
+import { Input } from "@/core/components/ui/input";
+import { Button } from "@/core/components/ui/button";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/core/components/ui/select";
+import { Textarea } from "@/core/components/ui/textarea";
+import { Checkbox } from "@/core/components/ui/checkbox";
 
 const props = defineProps<{ node: graph_node }>();
 const emit = defineEmits(["complete"]);

@@ -2,13 +2,13 @@
 /** SudokuFreeplay - Freeplay mode wrapper for Sudoku */
 import { computed, ref, watch, shallowRef } from "vue";
 import { useSudokuGame, type SudokuGameReturn } from "./useSudokuGame";
-import { useFreeplayServices } from "@/composables/freeplay";
-import { useDataRecorder } from "@/composables/game-primitives";
-import type { GameController, GameUIState } from "@/types/game-controller";
+import { useFreeplayServices } from "@/features/freeplay/composables";
+import { useDataRecorder } from "@/core/games/composables";
+import type { GameController, GameUIState } from "@/core/games/types/game-controller";
 import GameLayout from "@/features/freeplay/GameLayout.vue";
 import SudokuCanvas from "./SudokuCanvas.vue";
 import SudokuNumberPad from "@/features/games/sudoku/SudokuNumberPad.vue";
-import Container from "@/components/ui/Container.vue";
+import Container from "@/core/components/ui/Container.vue";
 
 const puzzle_type = "sudoku";
 const services = await useFreeplayServices(puzzle_type);

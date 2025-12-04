@@ -1,24 +1,24 @@
 <script setup lang="ts">
-import Container from "@/components/ui/Container.vue";
+import Container from "@/core/components/ui/Container.vue";
 import InstructionHeader from "@/features/experiment-core/components/InstructionHeader.vue";
-import PuzzleMinesweeper from "@/features/games/minesweeper/minesweeper.puzzle.vue";
-import type { PuzzleDefinition, PuzzleState } from "@/services/game/engines/types.ts";
-import { fromResearchFormat, MinesweeperCell } from "@/services/game/engines/translator.ts";
+import type { PuzzleDefinition, PuzzleState } from "@/core/games/types/puzzle-types.ts";
 import ExperimentQuiz from "@/features/experiment-core/components/ExperimentQuiz.vue";
 import { shuffle } from "@/utils.ts";
 import { GraphExecutor } from "@/features/experiment-core";
-import { type Ref, inject, computed } from "vue";
-import { Button } from "@/components/ui/button";
+import { computed, inject, type Ref } from "vue";
+import { Button } from "@/core/components/ui/button";
+import MinesweeperCanvas from "@/features/games/minesweeper/MinesweeperCanvas.vue";
 
-const executor = inject<Ref<GraphExecutor>>('experiment-executor');
-const emits = defineEmits(['complete'])
+const executor = inject<Ref<GraphExecutor>>("experiment-executor");
+const emits = defineEmits(["complete"]);
 
 // detect visitor type from data collection
-const is_prolific_visitor = computed(() =>
-  executor?.value?.data_collection?.participant_data?.recruitment_platform === "prolific"
+const is_prolific_visitor = computed(
+  () => executor?.value?.data_collection?.participant_data?.recruitment_platform === "prolific",
 );
 
 const is_direct_visitor = computed(() => !is_prolific_visitor.value);
+// @ts-expect-error ignored
 const definition: PuzzleDefinition = {
   puzzle_type: "minesweeper",
   rows: 3,
@@ -30,35 +30,32 @@ const definition: PuzzleDefinition = {
   ],
 };
 
+// @ts-expect-error ignored
 const gameState1: PuzzleState = {
   definition,
-  board: fromResearchFormat(
-    [
-      [-1, -1, 1],
-      [-1, 3, 2],
-      [2, -1, 1],
-    ],
-    "minesweeper",
-  ),
+  board: [
+    [-1, -1, 1],
+    [-1, 3, 2],
+    [2, -1, 1],
+  ],
 };
 
+// @ts-expect-error ignored
 const gameState2: PuzzleState = {
   definition,
-  board: fromResearchFormat(
-    [
-      [1, -1, 2],
-      [2, -1, -1],
-      [-1, -1, 1],
-    ],
-    "minesweeper",
-  ),
+  board: [
+    [1, -1, 2],
+    [2, -1, -1],
+    [-1, -1, 1],
+  ],
 };
+
 const gameState3 = JSON.parse(JSON.stringify(gameState2));
-gameState3.board[0][1] = MinesweeperCell.FLAG;
-gameState3.board[1][2] = MinesweeperCell.FLAG;
-gameState3.board[2][0] = MinesweeperCell.FLAG;
-gameState3.board[1][1] = MinesweeperCell.SAFE;
-gameState3.board[2][1] = MinesweeperCell.SAFE;
+gameState3.board[0][1] = -3;
+gameState3.board[1][2] = -3;
+gameState3.board[2][0] = -3;
+gameState3.board[1][1] = -4;
+gameState3.board[2][1] = -4;
 
 let quiz: { answer: boolean; question: string }[] = shuffle([
   { answer: true, question: "Each board contains a different number of mines that I need to deduce." },
@@ -86,7 +83,9 @@ let quiz: { answer: boolean; question: string }[] = shuffle([
     <InstructionHeader>Game Overview</InstructionHeader>
     <div class="flex flex-col gap-5">
       <p>Here is an example of a 3x3 board.</p>
-      <PuzzleMinesweeper :state="gameState1" class="mx-auto" />
+      <Container class="max-w-fit mx-auto">
+        <MinesweeperCanvas :state="gameState1" class="max-w-40" />
+      </Container>
       <p>
         The middle cell is marked <i class="md-cell minesweeper-cell-3"></i>. This means that three of the four adjacent
         squares have mines.
@@ -144,16 +143,18 @@ let quiz: { answer: boolean; question: string }[] = shuffle([
     </div>
 
     <p>For instance, you might place flags and safe marks so that the board looks like the one shown below:</p>
-    <PuzzleMinesweeper :state="gameState3" class="mx-auto" />
+    <Container class="max-w-fit mx-auto">
+      <MinesweeperCanvas :state="gameState3" class="max-w-40" />
+    </Container>
 
     <!-- scoring section only for prolific users -->
     <div v-if="is_prolific_visitor">
       <InstructionHeader>Scoring</InstructionHeader>
       <p>
-        <span class="font-bold">You will be asked to solve {{ executor?.total_trial_count }} boards.</span> You will be able
-        to earn a bonus depending on your performance. Each correct square
-        <span class="font-bold">will earn you 1 point.</span> You cannot lose points for incorrect squares. Each point is
-        worth $0.01 (e.g. 100 points would earn you $1.00)
+        <span class="font-bold">You will be asked to solve {{ executor?.total_trial_count }} boards.</span> You will be
+        able to earn a bonus depending on your performance. Each correct square
+        <span class="font-bold">will earn you 1 point.</span> You cannot lose points for incorrect squares. Each point
+        is worth $0.01 (e.g. 100 points would earn you $1.00)
       </p>
     </div>
 
@@ -167,32 +168,36 @@ let quiz: { answer: boolean; question: string }[] = shuffle([
     <div v-if="is_direct_visitor">
       <InstructionHeader>We need your consent to proceed</InstructionHeader>
       <div class="flex flex-col gap-4 p-4 border rounded-lg bg-gray-50">
-        <p>By completing this study, you are participating in a study being performed by
-        cognitive scientists in the MIT Department of Brain and Cognitive Science.
-        The purpose of this research is to understand how people reason and solve problems.</p>
+        <p>
+          By completing this study, you are participating in a study being performed by cognitive scientists in the MIT
+          Department of Brain and Cognitive Science. The purpose of this research is to understand how people reason and
+          solve problems.
+        </p>
 
-        <p>You must be at least 18 years old to participate. There are neither specific benefits nor
-        anticipated risks associated with participation in this study. Your participation in this
-        study is completely voluntary, and you can withdraw at any time by simply exiting the study.
-        You may decline to answer any or all of the following questions. Choosing not to participate
-        or withdrawing will result in no penalty. Your anonymity is assured; the researchers who have
-        requested your participation will not receive any personal information about you, and any
-        information you provide will not be shared in association with any personally identifying information.</p>
+        <p>
+          You must be at least 18 years old to participate. There are neither specific benefits nor anticipated risks
+          associated with participation in this study. Your participation in this study is completely voluntary, and you
+          can withdraw at any time by simply exiting the study. You may decline to answer any or all of the following
+          questions. Choosing not to participate or withdrawing will result in no penalty. Your anonymity is assured;
+          the researchers who have requested your participation will not receive any personal information about you, and
+          any information you provide will not be shared in association with any personally identifying information.
+        </p>
 
-        <p>If you have questions about this research, please contact the researchers by sending an email to
-        <a href="mailto:support@mitpuzzles.com" class="text-blue-600 underline">support@mitpuzzles.com</a>. These researchers will do their best to communicate with you in a timely,
-        professional, and courteous manner. If you have questions regarding your rights as a research subject,
-        or if problems arise which you do not feel you can discuss with the researchers, please contact the
-        MIT Institutional Review Board.</p>
+        <p>
+          If you have questions about this research, please contact the researchers by sending an email to
+          <a href="mailto:support@mitpuzzles.com" class="text-blue-600 underline">support@mitpuzzles.com</a>. These
+          researchers will do their best to communicate with you in a timely, professional, and courteous manner. If you
+          have questions regarding your rights as a research subject, or if problems arise which you do not feel you can
+          discuss with the researchers, please contact the MIT Institutional Review Board.
+        </p>
 
-        <p>Your participation in this research is voluntary.
-        You may discontinue participation at any time during the research activity.
-        You may print a copy of this consent form for your records.</p>
+        <p>
+          Your participation in this research is voluntary. You may discontinue participation at any time during the
+          research activity. You may print a copy of this consent form for your records.
+        </p>
 
         <div class="text-center mt-6">
-          <Button @click="$emit('complete')" variant="default" class="px-8 py-2">
-            Continue
-          </Button>
+          <Button @click="$emit('complete')" variant="default" class="px-8 py-2"> Continue </Button>
         </div>
       </div>
     </div>

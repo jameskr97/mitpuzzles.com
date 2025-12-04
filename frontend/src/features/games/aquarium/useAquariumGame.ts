@@ -19,9 +19,8 @@ import {
   count_in_col,
   get_region_at,
   same_region as same_region_util,
-} from "@/composables/game-primitives";
-import type { RuleViolation } from "@/types/game-types";
-import type { PuzzleDefinition } from "@/services/game/engines/types";
+} from "@/core/games/composables";
+import type { PuzzleDefinition, RuleViolation } from "@/core/games/types/puzzle-types.ts";
 
 /**
  * Aquarium cell values
