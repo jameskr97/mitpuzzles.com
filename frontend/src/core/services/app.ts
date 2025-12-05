@@ -139,3 +139,86 @@ export async function get_analytics_registrations_over_time(params?: { start_dat
 export async function get_analytics_average_session_time(params?: { start_date?: string; end_date?: string }): Promise<any> {
   return await request("get", "/api/analytics/average-session-time", params);
 }
+
+// Priority Puzzle API functions
+export interface PriorityPuzzle {
+  id: string;
+  puzzle_id: string;
+  puzzle_type: string;
+  puzzle_size: string;
+  puzzle_difficulty: string | null;
+  added_at: string;
+  is_active: boolean;
+  times_shown: number;
+  times_solved: number;
+}
+
+export interface PriorityPuzzleSummary {
+  id: string;
+  puzzle_id: string;
+  added_at: string;
+  is_active: boolean;
+  times_shown: number;
+  times_solved: number;
+}
+
+export interface PriorityGroup {
+  puzzle_type: string;
+  puzzle_size: string;
+  puzzle_difficulty: string | null;
+  total_puzzles: number;
+  total_shown: number;
+  total_solved: number;
+  puzzles: PriorityPuzzleSummary[];
+}
+
+export interface PriorityGroupedResponse {
+  groups: PriorityGroup[];
+  total_groups: number;
+  total_puzzles: number;
+}
+
+export interface PriorityPuzzlesResponse {
+  priorities: PriorityPuzzle[];
+  total_count: number;
+}
+
+export interface GetPriorityPuzzlesParams {
+  include_inactive?: boolean;
+  puzzle_type?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export async function get_priority_puzzles(params?: GetPriorityPuzzlesParams): Promise<any> {
+  return await request("get", "/api/puzzle/admin/priority", params);
+}
+
+export async function get_priority_puzzles_grouped(include_inactive: boolean = false): Promise<any> {
+  return await request("get", "/api/puzzle/admin/priority/grouped", { include_inactive });
+}
+
+export async function add_priority_puzzle(puzzle_id: string): Promise<any> {
+  return await request("post", "/api/puzzle/admin/priority", { puzzle_id });
+}
+
+export async function remove_priority_puzzle(priority_id: string): Promise<any> {
+  return await request("delete", `/api/puzzle/admin/priority/${priority_id}`);
+}
+
+export function get_priority_puzzle_export_url(priority_id: string, solved_only: boolean = true): string {
+  return `/api/puzzle/admin/priority/${priority_id}/export?solved_only=${solved_only}`;
+}
+
+export function get_priority_group_export_url(
+  puzzle_type: string,
+  puzzle_size: string,
+  puzzle_difficulty: string | null,
+  solved_only: boolean = true
+): string {
+  let url = `/api/puzzle/admin/priority/group/export?puzzle_type=${encodeURIComponent(puzzle_type)}&puzzle_size=${encodeURIComponent(puzzle_size)}&solved_only=${solved_only}`;
+  if (puzzle_difficulty) {
+    url += `&puzzle_difficulty=${encodeURIComponent(puzzle_difficulty)}`;
+  }
+  return url;
+}

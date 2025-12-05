@@ -16,7 +16,7 @@ from sqlalchemy import select, func
 from sqlalchemy.exc import IntegrityError
 
 from app.dependencies import async_session_maker
-from app.modules.puzzle import Puzzle
+from app.modules.puzzle import Puzzle, PuzzlePriority
 from cli.normalizer import PuzzleNormalizer
 
 app = typer.Typer(name="puzzle-import", help="Puzzle import and update commands")
@@ -298,6 +298,181 @@ async def _export_async(output: Path, puzzle_type: Optional[str], include_ids: b
 
         total = sum(len(v) for v in export_data.values())
         console.print(f"[green]Exported {total} puzzles to {output}[/green]")
+
+
+@app.command()
+def check_priority_coverage(
+    fix: bool = typer.Option(False, "--fix", help="Add a random puzzle as priority for each missing combination"),
+    count: int = typer.Option(50, "--count", "-n", help="Number of priority puzzles to add per missing combination (with --fix)"),
+):
+    """
+    Check if every puzzle type+size+difficulty combination has priority puzzles.
+
+    Reports:
+    - Combinations with no priority puzzles (missing)
+    - Combinations with priority puzzles (covered)
+    - Summary statistics
+
+    Use --fix to automatically add priority puzzles for missing combinations.
+    """
+    asyncio.run(_check_priority_coverage_async(fix=fix, count=count))
+
+
+async def _check_priority_coverage_async(fix: bool = False, count: int = 1):
+    """Async implementation of check_priority_coverage."""
+    from sqlalchemy import and_
+    from datetime import datetime
+
+    async with async_session_maker() as session:
+        # Get all unique puzzle combinations
+        combinations_query = (
+            select(
+                Puzzle.puzzle_type,
+                Puzzle.puzzle_size,
+                Puzzle.puzzle_difficulty,
+                func.count(Puzzle.id).label("total_puzzles")
+            )
+            .group_by(Puzzle.puzzle_type, Puzzle.puzzle_size, Puzzle.puzzle_difficulty)
+            .order_by(Puzzle.puzzle_type, Puzzle.puzzle_size, Puzzle.puzzle_difficulty)
+        )
+        result = await session.execute(combinations_query)
+        all_combinations = result.all()
+
+        # Get combinations that have active priority puzzles
+        priority_combinations_query = (
+            select(
+                Puzzle.puzzle_type,
+                Puzzle.puzzle_size,
+                Puzzle.puzzle_difficulty,
+                func.count(PuzzlePriority.id).label("priority_count")
+            )
+            .join(PuzzlePriority, PuzzlePriority.puzzle_id == Puzzle.id)
+            .where(PuzzlePriority.removed_at == None)
+            .group_by(Puzzle.puzzle_type, Puzzle.puzzle_size, Puzzle.puzzle_difficulty)
+        )
+        priority_result = await session.execute(priority_combinations_query)
+        priority_combinations = {
+            (row.puzzle_type, row.puzzle_size, row.puzzle_difficulty): row.priority_count
+            for row in priority_result.all()
+        }
+
+        # Build results
+        missing = []
+        covered = []
+
+        for row in all_combinations:
+            key = (row.puzzle_type, row.puzzle_size, row.puzzle_difficulty)
+            priority_count = priority_combinations.get(key, 0)
+
+            entry = {
+                "puzzle_type": row.puzzle_type,
+                "puzzle_size": row.puzzle_size,
+                "puzzle_difficulty": row.puzzle_difficulty,
+                "puzzle_difficulty_display": row.puzzle_difficulty or "(none)",
+                "total_puzzles": row.total_puzzles,
+                "priority_count": priority_count,
+            }
+
+            if priority_count == 0:
+                missing.append(entry)
+            else:
+                covered.append(entry)
+
+        # Print missing combinations
+        if missing:
+            console.print("\n[red bold]Missing Priority Puzzles:[/red bold]")
+            missing_table = Table(show_header=True, header_style="bold red")
+            missing_table.add_column("Type", style="cyan")
+            missing_table.add_column("Size", justify="center")
+            missing_table.add_column("Difficulty", justify="center")
+            missing_table.add_column("Total Puzzles", justify="right")
+
+            for entry in missing:
+                missing_table.add_row(
+                    entry["puzzle_type"],
+                    entry["puzzle_size"],
+                    entry["puzzle_difficulty_display"],
+                    str(entry["total_puzzles"]),
+                )
+            console.print(missing_table)
+        else:
+            console.print("\n[green]All combinations have priority puzzles.[/green]")
+
+        # Print covered combinations
+        if covered:
+            console.print("\n[green bold]Covered Combinations:[/green bold]")
+            covered_table = Table(show_header=True, header_style="bold green")
+            covered_table.add_column("Type", style="cyan")
+            covered_table.add_column("Size", justify="center")
+            covered_table.add_column("Difficulty", justify="center")
+            covered_table.add_column("Total Puzzles", justify="right")
+            covered_table.add_column("Priority Count", justify="right", style="green")
+
+            for entry in covered:
+                covered_table.add_row(
+                    entry["puzzle_type"],
+                    entry["puzzle_size"],
+                    entry["puzzle_difficulty_display"],
+                    str(entry["total_puzzles"]),
+                    str(entry["priority_count"]),
+                )
+            console.print(covered_table)
+
+        # Print summary
+        console.print("\n" + "=" * 60)
+        console.print("[bold]SUMMARY[/bold]")
+        console.print("=" * 60)
+        console.print(f"Total combinations: {len(all_combinations)}")
+        console.print(f"[green]Covered: {len(covered)}[/green]")
+        console.print(f"[red]Missing: {len(missing)}[/red]")
+
+        # Handle --fix option
+        if missing and not fix:
+            console.print(f"\n[yellow]Run with --fix to add priority puzzles for missing combinations[/yellow]")
+        elif missing and fix:
+            console.print(f"\n[cyan]Adding {count} priority puzzle(s) per missing combination...[/cyan]")
+
+            added_count = 0
+            for entry in missing:
+                # Get random puzzles for this combination
+                puzzle_query = (
+                    select(Puzzle)
+                    .where(Puzzle.puzzle_type == entry["puzzle_type"])
+                    .where(Puzzle.puzzle_size == entry["puzzle_size"])
+                )
+                if entry["puzzle_difficulty"] is not None:
+                    puzzle_query = puzzle_query.where(Puzzle.puzzle_difficulty == entry["puzzle_difficulty"])
+                else:
+                    puzzle_query = puzzle_query.where(Puzzle.puzzle_difficulty == None)
+
+                puzzle_query = puzzle_query.order_by(func.random()).limit(count)
+                puzzles_result = await session.execute(puzzle_query)
+                puzzles = puzzles_result.scalars().all()
+
+                for puzzle in puzzles:
+                    # Check if already has active priority (shouldn't happen but safety check)
+                    existing_query = select(PuzzlePriority).where(
+                        and_(
+                            PuzzlePriority.puzzle_id == puzzle.id,
+                            PuzzlePriority.removed_at == None
+                        )
+                    )
+                    existing = await session.scalar(existing_query)
+                    if existing:
+                        continue
+
+                    # Add to priority
+                    priority = PuzzlePriority(
+                        puzzle_id=puzzle.id,
+                        added_at=datetime.utcnow()
+                    )
+                    session.add(priority)
+                    added_count += 1
+
+                    console.print(f"  [green]Added priority:[/green] {entry['puzzle_type']} {entry['puzzle_size']} {entry['puzzle_difficulty_display']} - puzzle {puzzle.id}")
+
+            await session.commit()
+            console.print(f"\n[green]Successfully added {added_count} priority puzzle(s)[/green]")
 
 
 if __name__ == "__main__":

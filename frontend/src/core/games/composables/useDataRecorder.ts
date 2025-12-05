@@ -75,6 +75,17 @@ export interface DataRecorderReturn {
   record_focus: (cell: Cell) => void;
 
   /**
+   * Record hover start on a cell (call when mouse enters cell)
+   */
+  record_hover_start: (cell: Cell, zone: string) => void;
+
+  /**
+   * Record hover end on a cell (call when mouse leaves cell)
+   * Records the hover event with duration if threshold exceeded
+   */
+  record_hover_end: (cell: Cell, zone: string) => void;
+
+  /**
    * Record board clear action
    */
   record_clear: (old_board: number[][], new_board: number[][]) => void;
@@ -112,6 +123,11 @@ export function useDataRecorder(config: DataRecorderConfig): DataRecorderReturn 
     progress_store = usePuzzleProgressStore();
     history_store = usePuzzleHistoryStore();
   }
+
+  // Hover tracking state
+  let hover_start_time: number | null = null;
+  let hover_cell: Cell | null = null;
+  let hover_zone: string | null = null;
 
   /**
    * Record to experiment data collection
@@ -211,6 +227,53 @@ export function useDataRecorder(config: DataRecorderConfig): DataRecorderReturn 
   }
 
   /**
+   * Record hover start on a cell
+   */
+  function record_hover_start(cell: Cell, zone: string): void {
+    hover_start_time = Date.now();
+    hover_cell = cell;
+    hover_zone = zone;
+  }
+
+  /**
+   * Record hover end on a cell
+   * Only records if hover duration exceeds threshold
+   */
+  function record_hover_end(cell: Cell, zone: string): void {
+    if (hover_start_time === null || hover_cell === null || hover_zone === null) return;
+
+    // Only record if leaving the same cell we started hovering
+    if (hover_cell.row !== cell.row || hover_cell.col !== cell.col || hover_zone !== zone) {
+      hover_start_time = null;
+      hover_cell = null;
+      hover_zone = null;
+      return;
+    }
+
+    const hover_end_time = Date.now();
+    const hover_duration_ms = hover_end_time - hover_start_time;
+
+    const data = {
+      cell: { row: cell.row, col: cell.col, zone },
+      custom_data: {
+        hover_enter_timestamp: hover_start_time,
+        hover_exit_timestamp: hover_end_time,
+        hover_duration_ms,
+      },
+    };
+
+    if (mode === "experiment") {
+      record_to_experiment("hover", data);
+    } else {
+      record_to_freeplay("hover", data);
+    }
+
+    hover_start_time = null;
+    hover_cell = null;
+    hover_zone = null;
+  }
+
+  /**
    * Record board clear action
    */
   function record_clear(old_board: number[][], new_board: number[][]): void {
@@ -258,6 +321,8 @@ export function useDataRecorder(config: DataRecorderConfig): DataRecorderReturn 
     record_click,
     record_keypress,
     record_focus,
+    record_hover_start,
+    record_hover_end,
     record_clear,
     record_attempt_solve,
     save_board_state,

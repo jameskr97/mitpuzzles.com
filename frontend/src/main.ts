@@ -6,6 +6,7 @@ import { I18NextVue, i18next } from "@/i18n.ts";
 import { StorageVersionManager } from "@/utils.ts";
 import logger from "@/core/services/logger.ts";
 import "./style.css";
+import 'overlayscrollbars/overlayscrollbars.css';
 
 // Router
 import { router, setup_auth_guard, check_initial_route } from "@/core/router";
@@ -25,11 +26,11 @@ if (import.meta.hot) {
   });
 }
 
-// Clear old storage if version changed
-StorageVersionManager.clearOldStorage();
-
 // App initialization
 (async () => {
+  // Clear old storage if version changed (must be awaited before store init)
+  await StorageVersionManager.clearOldStorage();
+
   // Check for maintenance mode before initializing
   if (await check_maintenance_mode()) return;
 

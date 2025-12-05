@@ -8,7 +8,7 @@ import { InstructionSlider, InstructionPage } from "@/features/freeplay/componen
       <InstructionPage>
         <template #instruction>
           <div v-html="$t('puzzle:minesweeper:intro')"></div>
-          <div class="text-lg font-semibold">{{ $t('puzzle:minesweeper:board_example') }}</div>
+          <div>{{ $t('puzzle:minesweeper:board_example') }}</div>
         </template>
         <template #board>
           <img src="/assets/instructions/minesweeper.page1.png" alt="Minesweeper board example" />

@@ -38,36 +38,37 @@ export function draw_region_borders(
   ctx.strokeStyle = border_color;
   ctx.lineWidth = border_width;
   const current_region = region_map[row]?.[col];
+  const overlap = border_width / 2;
 
   // Top border - different region above or edge
   if (row === 0 || region_map[row - 1]?.[col] !== current_region) {
     ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.lineTo(x + size, y);
+    ctx.moveTo(x - overlap, y);
+    ctx.lineTo(x + size + overlap, y);
     ctx.stroke();
   }
 
   // Bottom border - different region below or edge
   if (row === rows - 1 || region_map[row + 1]?.[col] !== current_region) {
     ctx.beginPath();
-    ctx.moveTo(x, y + size);
-    ctx.lineTo(x + size, y + size);
+    ctx.moveTo(x - overlap, y + size);
+    ctx.lineTo(x + size + overlap, y + size);
     ctx.stroke();
   }
 
   // Left border - different region to left or edge
   if (col === 0 || region_map[row]?.[col - 1] !== current_region) {
     ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.lineTo(x, y + size);
+    ctx.moveTo(x, y - overlap);
+    ctx.lineTo(x, y + size + overlap);
     ctx.stroke();
   }
 
   // Right border - different region to right or edge
   if (col === cols - 1 || region_map[row]?.[col + 1] !== current_region) {
     ctx.beginPath();
-    ctx.moveTo(x + size, y);
-    ctx.lineTo(x + size, y + size);
+    ctx.moveTo(x + size, y - overlap);
+    ctx.lineTo(x + size, y + size + overlap);
     ctx.stroke();
   }
 }

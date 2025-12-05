@@ -4,7 +4,6 @@ export type GameActionType =
   | "click"
   | "keypress"
   | "hover"
-  | "dwell"
   | "clear"
   | "tutorial_toggle"
   | "custom"

@@ -45,6 +45,8 @@ const box_size = computed(() => (props.box_size ?? Math.sqrt(props.state.definit
 const emit = defineEmits<{
   (e: "cell-click", row: number, col: number): void;
   (e: "cell-key", row: number, col: number, key: string): void;
+  (e: "cell-enter", row: number, col: number, zone: string): void;
+  (e: "cell-leave", row: number, col: number, zone: string): void;
 }>();
 
 const { theme } = useCanvasTheme();
@@ -53,8 +55,8 @@ const canvas_board_ref = ref<InstanceType<typeof CanvasBoard> | null>(null);
 // Track active cell for highlighting (clicked cell)
 const active_cell = ref<{ row: number; col: number } | null>(null);
 
-// Track hovered cell for hover highlighting
-const hovered_cell = ref<{ row: number; col: number } | null>(null);
+// Track hovered cell for hover highlighting (also stores zone for event emission)
+const hovered_cell = ref<{ row: number; col: number; zone: string } | null>(null);
 
 // Track focused cell for blur mode (persists until another cell is focused)
 const focused_cell = ref<{ row: number; col: number } | null>(null);
@@ -115,14 +117,26 @@ function on_keydown(event: KeyboardEvent) {
 }
 
 function on_cell_enter(coord: { row: number; col: number; zone: string }, _event: MouseEvent) {
+  // Emit hover enter for tracking (all zones)
+  emit("cell-enter", coord.row, coord.col, coord.zone);
+
+  // Visual highlighting only for game zone
   if (coord.zone !== "game") {
     hovered_cell.value = null;
     return;
   }
-  hovered_cell.value = { row: coord.row, col: coord.col };
+  hovered_cell.value = { row: coord.row, col: coord.col, zone: coord.zone };
+}
+
+function on_cell_leave(coord: { row: number; col: number; zone: string }, _event: MouseEvent) {
+  emit("cell-leave", coord.row, coord.col, coord.zone);
 }
 
 function on_board_leave(_event: MouseEvent) {
+  // Emit leave for current hovered cell before clearing
+  if (hovered_cell.value) {
+    emit("cell-leave", hovered_cell.value.row, hovered_cell.value.col, hovered_cell.value.zone);
+  }
   hovered_cell.value = null;
 }
 
@@ -298,6 +312,7 @@ const cell_renderer = computed((): CellRenderer => {
     major-grid-color="#6b7280"
     @cell-mousedown="on_cell_mousedown"
     @cell-enter="on_cell_enter"
+    @cell-leave="on_cell_leave"
     @board-leave="on_board_leave"
   />
 </template>

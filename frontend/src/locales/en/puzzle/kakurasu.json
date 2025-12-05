@@ -10,7 +10,7 @@
   "example_row": "For example, row 2 with <span class=\"font-bold text-blue-500\">target 5</span> could be <span class=\"font-bold text-gray-500\">1+4</span> or <span class=\"font-bold text-gray-500\">2+3</span>, as in the example shown below.",
   "example_row_calc1": "1 + 4 = 5",
   "example_row_calc2": "2 + 3 = 5",
-  "example_col": "Similarly, column 1 in the board with <span class=\"font-bold text-blue-500\">target 6</span> below, would be <span class=\"font-bold text-gray-500\">3 + 2 + 1</span> or <span class=\"font-bold text-gray-500\">4 + 2</span>",
+  "example_col": "Similarly, column 1 in the board with <span class=\"font-bold text-blue-500\">target 6</span> below, could be <span class=\"font-bold text-gray-500\">3 + 2 + 1</span> or <span class=\"font-bold text-gray-500\">4 + 2</span>",
   "example_col_calc1": "3 + 2 + 1 = 6",
   "example_col_calc2": "4 + 2 = 6",
   "solved": "The puzzle is solved when all the row and column sums are satisfied together, as in the example board shown below.",

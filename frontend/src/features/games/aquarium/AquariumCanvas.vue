@@ -20,7 +20,12 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: "cell-click", row: number, col: number, button: number): void;
   (e: "cell-drag", row: number, col: number): void;
+  (e: "cell-enter", row: number, col: number, zone: string): void;
+  (e: "cell-leave", row: number, col: number, zone: string): void;
 }>();
+
+// Track hovered cell for hover event recording
+const hovered_cell = ref<{ row: number; col: number; zone: string } | null>(null);
 
 const { theme } = useCanvasTheme();
 
@@ -52,11 +57,27 @@ function on_cell_mousedown(coord: { row: number; col: number; zone: string }, ev
 }
 
 function on_cell_enter(coord: { row: number; col: number; zone: string }, _event: MouseEvent) {
+  // Emit hover enter for tracking (all zones)
+  hovered_cell.value = { row: coord.row, col: coord.col, zone: coord.zone };
+  emit("cell-enter", coord.row, coord.col, coord.zone);
+
+  // Handle drag (game zone only)
   if (coord.zone !== "game" || !is_dragging.value) return;
   const cell_key = `${coord.row},${coord.col}`;
   if (dragged_cells.value.has(cell_key)) return;
   dragged_cells.value.add(cell_key);
   emit("cell-drag", coord.row, coord.col);
+}
+
+function on_cell_leave(coord: { row: number; col: number; zone: string }, _event: MouseEvent) {
+  emit("cell-leave", coord.row, coord.col, coord.zone);
+}
+
+function on_board_leave(_event: MouseEvent) {
+  if (hovered_cell.value) {
+    emit("cell-leave", hovered_cell.value.row, hovered_cell.value.col, hovered_cell.value.zone);
+  }
+  hovered_cell.value = null;
 }
 
 function stop_drag() { is_dragging.value = false; dragged_cells.value.clear(); }
@@ -125,7 +146,7 @@ const cell_renderer = computed((): CellRenderer => {
     }
 
     const value = puzzle_state.board[board_row]?.[board_col] ?? AquariumCell.EMPTY;
-    const region_map = meta?.regions;
+    const region_map = props.state.definition.meta.regions;
 
     // Early return if no region data
     if (!region_map) {
@@ -158,6 +179,11 @@ const cell_renderer = computed((): CellRenderer => {
     ctx.fillStyle = bg_color;
     ctx.fillRect(x, y, size, size);
 
+    // Draw thin grey cell border (under content, but over background)
+    ctx.strokeStyle = "#cfcfcf";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x, y, size, size);
+
     // Draw X mark for CROSS cells (using Kakurasu cross image)
     if (value === AquariumCell.CROSS) {
       if (current_cross) {
@@ -178,12 +204,7 @@ const cell_renderer = computed((): CellRenderer => {
       }
     }
 
-    // Draw thin cell border
-    ctx.strokeStyle = "#797979";
-    ctx.lineWidth = CELL_BORDER_WIDTH;
-    ctx.strokeRect(x, y, size, size);
-
-    // Draw thick region borders
+    // Draw thick region borders on top
     draw_region_borders(ctx, board_row, board_col, x, y, size, rows, cols, region_map, {
       border_width: REGION_BORDER_WIDTH,
     });
@@ -204,11 +225,13 @@ const cell_renderer = computed((): CellRenderer => {
     :gutter-left-inside-borders="'none'"
     :draw-gutter-top-outside-border="false"
     :draw-gutter-left-outside-border="false"
-    grid-color="#000"
-    outside-border-color="#000"
-    :inside-border-thickness="1"
-    :outside-border-thickness="3"
+    grid-color="#cfcfcf"
+    :inside-border-thickness="0"
+    :outside-border-thickness="0"
+    :draw-grid-lines="false"
     @cell-mousedown="on_cell_mousedown"
     @cell-enter="on_cell_enter"
+    @cell-leave="on_cell_leave"
+    @board-leave="on_board_leave"
   />
 </template>

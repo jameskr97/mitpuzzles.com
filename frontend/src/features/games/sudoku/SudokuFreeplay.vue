@@ -37,6 +37,14 @@ function on_cell_click(row: number, col: number) {
   last_selected_cell.value = { row, col };
 }
 
+function on_cell_enter(row: number, col: number, zone: string) {
+  recorder.record_hover_start({ row, col }, zone);
+}
+
+function on_cell_leave(row: number, col: number, zone: string) {
+  recorder.record_hover_end({ row, col }, zone);
+}
+
 function on_cell_key(row: number, col: number, key: string) {
   const result = game.value.handle_key_input(row, col, key);
   if (result) {
@@ -117,6 +125,8 @@ const canvas_key = computed(() => `${game.value.definition.id}-${game.value.defi
       :box_size="game.box_size.value"
       @cell-click="on_cell_click"
       @cell-key="on_cell_key"
+      @cell-enter="on_cell_enter"
+      @cell-leave="on_cell_leave"
     />
 
     <template #controls>

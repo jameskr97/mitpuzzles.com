@@ -138,27 +138,15 @@ export const usePuzzleHistoryStore = defineStore("game.history", {
       delete this.next_sequence[key];
     },
 
-    /** uploads event history to server when puzzle is completed */
-    async upload_attempt_history(puzzle_type: string, mode: "freeplay" | "experiment" = "freeplay"): Promise<void> {
+    /** builds the upload payload for a puzzle attempt */
+    get_upload_payload(puzzle_type: string, mode: "freeplay" | "experiment" = "freeplay"): Record<string, any> | null {
       const events = this.get_events(puzzle_type, mode);
 
       if (events.length === 0) {
-        console.warn(`No events to upload for ${puzzle_type} in mode ${mode}`);
-        return;
-      }
-
-      // check if all events are visibility events - if so, don't submit
-      const has_non_visibility_events = events.some(
-        event => event.action_type !== "puzzle_visible" && event.action_type !== "puzzle_not_visible"
-      );
-
-      if (!has_non_visibility_events) {
-        console.log(`Skipping upload for ${puzzle_type} - only visibility events present (no user interaction)`);
-        return;
+        return null;
       }
 
       const progressStore = usePuzzleProgressStore();
-
 
       // Get puzzle info for the API call
       const puzzle_id = getCurrentPuzzleID(puzzle_type);
@@ -194,7 +182,7 @@ export const usePuzzleHistoryStore = defineStore("game.history", {
         },
       });
 
-      const payload = {
+      return {
         puzzle_id: puzzle_id,
         timestamp_start: start_timestamp,
         timestamp_finish: finish_timestamp,
@@ -203,6 +191,32 @@ export const usePuzzleHistoryStore = defineStore("game.history", {
         is_solved: progressStore.is_puzzle_solved(puzzle_type),
         used_tutorial: progressStore.used_tutorial[puzzle_type] || false
       };
+    },
+
+    /** uploads event history to server when puzzle is completed */
+    async upload_attempt_history(puzzle_type: string, mode: "freeplay" | "experiment" = "freeplay"): Promise<void> {
+      const events = this.get_events(puzzle_type, mode);
+
+      if (events.length === 0) {
+        console.warn(`No events to upload for ${puzzle_type} in mode ${mode}`);
+        return;
+      }
+
+      // check if all events are visibility events - if so, don't submit
+      const has_non_visibility_events = events.some(
+        event => event.action_type !== "puzzle_visible" && event.action_type !== "puzzle_not_visible"
+      );
+
+      if (!has_non_visibility_events) {
+        console.log(`Skipping upload for ${puzzle_type} - only visibility events present (no user interaction)`);
+        return;
+      }
+
+      const payload = this.get_upload_payload(puzzle_type, mode);
+      if (!payload) {
+        console.warn(`No payload to upload for ${puzzle_type} in mode ${mode}`);
+        return;
+      }
 
       try {
         const response = await fetch('/api/puzzle/freeplay/submit', {

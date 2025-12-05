@@ -34,9 +34,7 @@ export class DatabaseConnection {
   private createStores(db: IDBDatabase): void {
     const stores = [
       { name: "puzzle-history", keyPath: "id" },
-      { name: "puzzle-cache", keyPath: "id" },
       { name: "puzzle-progress", keyPath: "id" },
-      { name: "cache-info", keyPath: "id" },
     ];
 
     for (const store of stores) {

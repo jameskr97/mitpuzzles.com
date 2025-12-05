@@ -55,22 +55,46 @@ export function create_admin_tool(
   };
 }
 
-/** Simplifies resetting all of localStorage through a version variable. */
+/** Simplifies resetting all of localStorage and IndexedDB through a version variable. */
 export class StorageVersionManager {
   // Change this to current date when updating the storage version
-  private static readonly VERSION = "2025-06-30";
+  private static readonly VERSION = "2025-12-05";
+  private static readonly INDEXEDDB_NAME = "mitpuzzles";
 
-  static clearOldStorage() {
+  static async clearOldStorage() {
     const saved = localStorage.getItem("mitlogic.storageVersion");
     if (saved !== StorageVersionManager.VERSION) {
+      // Clear localStorage items
       Object.keys(localStorage).forEach((key) => {
         if (key === "mitlogic.storageVersion") return;
         if (key.startsWith("mitlogic")) {
           localStorage.removeItem(key);
         }
       });
+
+      // Clear IndexedDB
+      await StorageVersionManager.clearIndexedDB();
+
       localStorage.setItem("mitlogic.storageVersion", StorageVersionManager.VERSION);
     }
+  }
+
+  private static clearIndexedDB(): Promise<void> {
+    return new Promise((resolve) => {
+      const request = indexedDB.deleteDatabase(StorageVersionManager.INDEXEDDB_NAME);
+      request.onsuccess = () => {
+        console.log("[StorageVersionManager] IndexedDB cleared successfully");
+        resolve();
+      };
+      request.onerror = () => {
+        console.warn("[StorageVersionManager] Failed to clear IndexedDB");
+        resolve(); // Resolve anyway to not block the app
+      };
+      request.onblocked = () => {
+        console.warn("[StorageVersionManager] IndexedDB deletion blocked");
+        resolve(); // Resolve anyway to not block the app
+      };
+    });
   }
 }
 

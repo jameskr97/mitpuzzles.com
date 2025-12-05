@@ -31,5 +31,6 @@ export const ACTIVE_EXPERIMENTS: Record<string, any> = {
 export const ADMIN_TOOLS: Record<string, ReturnType<typeof create_admin_tool>> = {
   "analysis": create_admin_tool("analysis", "🔬", "Analysis"),
   "feedback-viewer": create_admin_tool("feedback-viewer", "💬", "Feedback"),
+  "priority-puzzles": create_admin_tool("priority-puzzles", "⭐", "Priority Puzzles"),
 };
 

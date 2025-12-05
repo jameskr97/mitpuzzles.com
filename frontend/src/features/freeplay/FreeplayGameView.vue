@@ -1,4 +1,3 @@
-<!-- GameView.vue - Main layout component with provide/inject -->
 <script setup lang="ts">
 import { type PropType, provide, ref } from "vue";
 import { useRoute } from "vue-router";
@@ -34,51 +33,6 @@ const is_game_rules_open = ref(true);
 provide("puzzle", props.puzzle);
 provide("layout", layout);
 </script>
-
-<style>
-.shake-once {
-  animation: shake 0.15s ease-in-out 2.5;
-}
-
-@keyframes shake {
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-  25% {
-    transform: translateX(10px);
-  }
-  75% {
-    transform: translateX(-10px);
-  }
-}
-
-.heartbeat-once {
-  animation: heartbeat 1s ease-in-out 1;
-}
-
-@keyframes heartbeat {
-  0% {
-    transform: scale(1);
-  }
-
-  14% {
-    transform: scale(1.05);
-  }
-
-  28% {
-    transform: scale(1);
-  }
-
-  42% {
-    transform: scale(1.05);
-  }
-
-  70% {
-    transform: scale(1);
-  }
-}
-</style>
 
 <template>
   <div class="flex flex-col mx-auto">

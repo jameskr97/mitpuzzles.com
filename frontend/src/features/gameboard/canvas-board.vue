@@ -60,6 +60,8 @@ const props = withDefaults(
     drawGutterBottomOutsideBorder?: boolean;
     /** Enable double-click to export as PNG (dev utility) */
     enableExport?: boolean;
+    /** Whether to draw grid lines (default: true) */
+    drawGridLines?: boolean;
   }>(),
   {
     scale: 1,
@@ -82,7 +84,8 @@ const props = withDefaults(
     drawGutterLeftOutsideBorder: true,
     drawGutterRightOutsideBorder: true,
     drawGutterBottomOutsideBorder: true,
-    enableExport: false
+    enableExport: false,
+    drawGridLines: true
   }
 );
 
@@ -323,7 +326,9 @@ function redraw() {
   }
 
   // Draw grid lines
-  drawGrid(ctx, cellSize);
+  if (props.drawGridLines) {
+    drawGrid(ctx, cellSize);
+  }
 }
 
 /**

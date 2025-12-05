@@ -53,6 +53,14 @@ function on_cell_drag(row: number, col: number) {
   }
 }
 
+function on_cell_enter(row: number, col: number, zone: string) {
+  recorder.record_hover_start({ row, col }, zone);
+}
+
+function on_cell_leave(row: number, col: number, zone: string) {
+  recorder.record_hover_end({ row, col }, zone);
+}
+
 async function check_solution(): Promise<boolean> {
   const is_correct = await game.value.check_solution();
   ui.value.show_solved_state = true;
@@ -113,6 +121,6 @@ const canvas_key = computed(() => `${game.value.definition.id}-${game.value.defi
 
 <template>
   <GameLayout :controller="controller" :definition="controller.state.value.definition">
-    <TentsCanvas :key="canvas_key" :state="puzzle_state" @cell-click="on_cell_click" @cell-drag="on_cell_drag" />
+    <TentsCanvas :key="canvas_key" :state="puzzle_state" @cell-click="on_cell_click" @cell-drag="on_cell_drag" @cell-enter="on_cell_enter" @cell-leave="on_cell_leave" />
   </GameLayout>
 </template>

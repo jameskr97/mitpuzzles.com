@@ -108,8 +108,8 @@ export async function useFreeplayServices<TMeta = any>(
   const tutorial_used = ref(progress_store.used_tutorial[puzzle_type] ?? false);
 
   // Initialize progress if first load
-  if (!progress_store.timestamp_start[puzzle_type] && saved_board.value === null) {
-    // Will be initialized when game calls reset_progress
+  if (!progress_store.timestamp_start[puzzle_type] && saved_board.value === null && definition.value) {
+    await progress_store.reset_puzzle(puzzle_type, definition.value.initial_state);
   }
 
   // Computed state
@@ -216,9 +216,14 @@ export async function useFreeplayServices<TMeta = any>(
     // Upload history
     await history_store.upload_attempt_history(puzzle_type, "freeplay");
 
-    // Refresh leaderboard
+    // Refresh all leaderboard time periods
     const [size, difficulty] = current_variant.value;
-    await leaderboard_store.refreshLeaderboard(puzzle_type, size, difficulty);
+    await Promise.all([
+      leaderboard_store.refreshLeaderboard(puzzle_type, size, difficulty, "today"),
+      leaderboard_store.refreshLeaderboard(puzzle_type, size, difficulty, "weekly"),
+      leaderboard_store.refreshLeaderboard(puzzle_type, size, difficulty, "monthly"),
+      leaderboard_store.refreshLeaderboard(puzzle_type, size, difficulty, "all_time"),
+    ]);
   }
 
   /**

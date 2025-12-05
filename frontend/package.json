@@ -14,7 +14,13 @@
     "watch": "vue-tsc -b && vite build --watch",
     "preview": "vite preview",
     "fmt": "prettier --write src/features/experiment-core",
-    "check": "prettier --check src/"
+    "check": "prettier --check src/",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:ui": "vitest --ui",
+    "test:ct": "playwright test -c playwright-ct.config.ts",
+    "test:ct:ui": "playwright test -c playwright-ct.config.ts --ui",
+    "test-ct": "playwright test -c playwright-ct.config.ts"
   },
   "dependencies": {
     "@msgpack/msgpack": "^3.1.2",
@@ -37,6 +43,7 @@
     "markdown-it": "^14.1.0",
     "mitt": "^3.0.1",
     "oh-vue-icons": "^1.0.0-rc3",
+    "overlayscrollbars-vue": "^0.5.9",
     "pinia": "^3.0.1",
     "pino": "^9.6.0",
     "posthog-js": "^1.245.1",
@@ -50,21 +57,26 @@
     "vue-router": "^4.5.0"
   },
   "devDependencies": {
+    "@playwright/experimental-ct-vue": "^1.57.0",
     "@playwright/test": "^1.57.0",
     "@tailwindcss/typography": "^0.5.16",
     "@types/crypto-js": "^4.2.2",
     "@types/hjson": "^2.4.6",
     "@types/markdown-it": "^14.1.2",
     "@types/node": "^22.13.4",
-    "@vitejs/plugin-vue": "^5.2.1",
+    "@vitejs/plugin-vue": "^5.2.4",
+    "@vitest/ui": "^4.0.15",
     "@vue/language-server": "^2.1.10",
+    "@vue/test-utils": "^2.4.6",
     "@vue/tsconfig": "^0.7.0",
+    "jsdom": "^27.2.0",
     "json-schema-to-typescript": "^15.0.4",
     "prettier": "^3.5.3",
     "typescript": "~5.7.2",
     "vite": "^6.1.1",
     "vite-plugin-pwa": "^1.1.0",
     "vite-plugin-vue-devtools": "^7.7.2",
+    "vitest": "^4.0.15",
     "vue-tsc": "^2.2.0",
     "workbox-window": "^7.3.0"
   }

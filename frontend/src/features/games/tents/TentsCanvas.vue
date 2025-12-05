@@ -20,7 +20,12 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: "cell-click", row: number, col: number, button: number): void;
   (e: "cell-drag", row: number, col: number): void;
+  (e: "cell-enter", row: number, col: number, zone: string): void;
+  (e: "cell-leave", row: number, col: number, zone: string): void;
 }>();
+
+// Track hovered cell for hover event recording
+const hovered_cell = ref<{ row: number; col: number; zone: string } | null>(null);
 
 const { theme } = useCanvasTheme();
 
@@ -52,11 +57,27 @@ function on_cell_mousedown(coord: { row: number; col: number; zone: string }, ev
 }
 
 function on_cell_enter(coord: { row: number; col: number; zone: string }, _event: MouseEvent) {
+  // Emit hover enter for tracking (all zones)
+  hovered_cell.value = { row: coord.row, col: coord.col, zone: coord.zone };
+  emit("cell-enter", coord.row, coord.col, coord.zone);
+
+  // Handle drag (game zone only)
   if (coord.zone !== "game" || !is_dragging.value) return;
   const cell_key = `${coord.row},${coord.col}`;
   if (dragged_cells.value.has(cell_key)) return;
   dragged_cells.value.add(cell_key);
   emit("cell-drag", coord.row, coord.col);
+}
+
+function on_cell_leave(coord: { row: number; col: number; zone: string }, _event: MouseEvent) {
+  emit("cell-leave", coord.row, coord.col, coord.zone);
+}
+
+function on_board_leave(_event: MouseEvent) {
+  if (hovered_cell.value) {
+    emit("cell-leave", hovered_cell.value.row, hovered_cell.value.col, hovered_cell.value.zone);
+  }
+  hovered_cell.value = null;
 }
 
 function stop_drag() { is_dragging.value = false; dragged_cells.value.clear(); }
@@ -143,5 +164,7 @@ const cell_renderer = computed((): CellRenderer => {
     :inside-border-thickness="2"
     @cell-mousedown="on_cell_mousedown"
     @cell-enter="on_cell_enter"
+    @cell-leave="on_cell_leave"
+    @board-leave="on_board_leave"
   />
 </template>

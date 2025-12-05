@@ -19,6 +19,9 @@ import { getPuzzleDisplayName } from "@/utils";
 import { usePuzzleMetadataStore } from "@/core/store/puzzle/usePuzzleMetadataStore";
 import { usePuzzleScaleStore } from "@/core/store/puzzle/usePuzzleScaleStore";
 import { usePuzzleProgressStore } from "@/core/store/puzzle/usePuzzleProgressStore";
+import { usePuzzleHistoryStore } from "@/core/store/puzzle/usePuzzleHistoryStore";
+
+const is_dev = import.meta.env.DEV;
 
 const props = defineProps<{
   controller: GameController;
@@ -28,6 +31,7 @@ const puzzle_type = props.controller.puzzle_type;
 const scale_store = usePuzzleScaleStore();
 const metadata_store = usePuzzleMetadataStore();
 const progress_store = usePuzzleProgressStore();
+const history_store = usePuzzleHistoryStore();
 
 // Scale slider
 const current_scale = computed({
@@ -61,16 +65,39 @@ onMounted(() => {
   window.addEventListener("keydown", handle_keydown);
   onUnmounted(() => window.removeEventListener("keydown", handle_keydown));
 });
+
+// Download payload (dev mode only)
+function download_payload() {
+  const payload = history_store.get_upload_payload(puzzle_type, "freeplay");
+  if (!payload) {
+    console.warn("No payload to download");
+    return;
+  }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${puzzle_type}-${payload.puzzle_id}-payload.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 </script>
 
 <template>
   <Container class="w-full md:max-w-prose mt-2 md:mt-0 mx-auto">
     <div class="flex flex-col">
-      <!-- Zoom + Timer row -->
-      <div class="flex flex-row w-full items-center">
+      <!-- Zoom + Timer row for DESKTOP -->
+      <div class="flex-row w-full items-center hidden md:flex">
         <v-icon name="co-magnifying-glass" :scale="1.5" />
         <Slider :min="0" :max="100" :step="1" class="mx-2" v-model="current_scale" />
         <span class="font-mono text-lg text-right">{{ formatted_time }}</span>
+      </div>
+
+      <!-- Zoom + Timer row for MOBILE -->
+      <div class="flex flex-row w-full items-center md:hidden">
+        <block class="font-mono text-lg text-center w-full">{{ formatted_time }}</block>
       </div>
 
       <!-- Buttons row -->
@@ -112,8 +139,16 @@ onMounted(() => {
           {{ $t("ui:action.clear") }}
         </Button>
 
-        <!-- Submit button -->
+        <!-- Submit button (becomes Download in dev mode when solved) -->
         <Button
+          v-if="is_dev && controller.state.value.solved === true"
+          variant="outline"
+          @click="download_payload"
+        >
+          Download Payload
+        </Button>
+        <Button
+          v-else
           variant="success"
           :disabled="controller.state.value.solved === true"
           @click="controller.check_solution"

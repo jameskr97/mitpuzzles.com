@@ -12,7 +12,7 @@ type LeaderboardKey = `${string}:${string}:${string}:${string}`;
 
 export const usePuzzleLeaderboardStore = defineStore("mitlogic.freeplay.leaderboard", {
   state: () => ({
-    leaderboard: new Map<LeaderboardKey, LeaderboardEntry[]>(),
+    leaderboard: {} as Record<LeaderboardKey, LeaderboardEntry[]>,
   }),
 
   getters: {
@@ -20,8 +20,8 @@ export const usePuzzleLeaderboardStore = defineStore("mitlogic.freeplay.leaderbo
       (state) =>
       (puzzle_type: string, size: string, difficulty: string, time_period: string = "all_time"): number => {
         const key: LeaderboardKey = `${puzzle_type}:${size}:${difficulty}:${time_period}`;
-        if (!state.leaderboard.has(key)) return 0;
-        const board: any = state.leaderboard.get(key);
+        const board: any = state.leaderboard[key];
+        if (!board) return 0;
         return board.count;
       },
 
@@ -29,7 +29,7 @@ export const usePuzzleLeaderboardStore = defineStore("mitlogic.freeplay.leaderbo
       (state) =>
       (puzzle_type: string, size: string, difficulty: string, time_period: string = "all_time"): LeaderboardEntry[] => {
         const key: LeaderboardKey = `${puzzle_type}:${size}:${difficulty}:${time_period}`;
-        const board: any = state.leaderboard.get(key);
+        const board: any = state.leaderboard[key];
 
         return board?.leaderboard || [];
       },
@@ -43,7 +43,7 @@ export const usePuzzleLeaderboardStore = defineStore("mitlogic.freeplay.leaderbo
         const response = await api.get(endpoint);
         const data = response.data;
         const key: LeaderboardKey = `${puzzle_type}:${size}:${difficulty}:${time_period}`;
-        this.leaderboard.set(key, data);
+        this.leaderboard[key] = data;
       } catch (error) {
         return [];
       }

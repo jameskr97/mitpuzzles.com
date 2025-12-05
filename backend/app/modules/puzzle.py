@@ -280,6 +280,68 @@ class PuzzleIdResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class PriorityPuzzleResponse(BaseModel):
+    """Schema for priority puzzle responses"""
+    id: uuid.UUID
+    puzzle_id: uuid.UUID
+    puzzle_type: str
+    puzzle_size: str
+    puzzle_difficulty: Optional[str]
+    added_at: datetime
+    is_active: bool
+    times_shown: int
+    times_solved: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PriorityPuzzleSummary(BaseModel):
+    """Schema for priority puzzle summary (without full definition)"""
+    id: uuid.UUID
+    puzzle_id: uuid.UUID
+    added_at: datetime
+    is_active: bool
+    times_shown: int
+    times_solved: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PriorityGroupResponse(BaseModel):
+    """Schema for a group of priority puzzles by type/size/difficulty"""
+    puzzle_type: str
+    puzzle_size: str
+    puzzle_difficulty: Optional[str]
+    total_puzzles: int
+    total_shown: int
+    total_solved: int
+    puzzles: List[PriorityPuzzleSummary]
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PriorityGroupedListResponse(BaseModel):
+    """Schema for grouped list of priority puzzles"""
+    groups: List[PriorityGroupResponse]
+    total_groups: int
+    total_puzzles: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PriorityPuzzleListResponse(BaseModel):
+    """Schema for list of priority puzzles"""
+    priorities: List[PriorityPuzzleResponse]
+    total_count: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AddPriorityRequest(BaseModel):
+    """Schema for adding a puzzle to priority"""
+    puzzle_id: uuid.UUID
+
+
 # Service
 class PuzzleService:
     """Service for managing puzzle operations"""
@@ -767,7 +829,7 @@ class PuzzleService:
         current_user_in_top = False
 
         for rank, row in enumerate(top_entries, 1):
-            is_current = user and row.user_id == user.id
+            is_current = bool(user and row.user_id == user.id)
             if is_current:
                 current_user_in_top = True
 
@@ -1159,6 +1221,267 @@ class PuzzleService:
             export_data.append(attempt_data)
 
         return export_data
+
+    async def get_priority_puzzles(
+        self,
+        include_inactive: bool = False,
+        puzzle_type: Optional[str] = None,
+        limit: int = 100,
+        offset: int = 0
+    ) -> Dict[str, Any]:
+        """
+        Get list of priority puzzles with their statistics.
+        Returns puzzle info, times shown, and times solved.
+        """
+        from sqlalchemy import select, func, case, and_
+        from sqlalchemy.orm import selectinload
+
+        # Build base query for priority puzzles
+        query = (
+            select(PuzzlePriority)
+            .options(selectinload(PuzzlePriority.puzzle))
+            .join(Puzzle, PuzzlePriority.puzzle_id == Puzzle.id)
+        )
+
+        # Filter by active status
+        if not include_inactive:
+            query = query.where(PuzzlePriority.removed_at == None)
+
+        # Filter by puzzle type
+        if puzzle_type:
+            query = query.where(Puzzle.puzzle_type == puzzle_type)
+
+        # Get total count for pagination
+        count_query = select(func.count(PuzzlePriority.id)).join(Puzzle, PuzzlePriority.puzzle_id == Puzzle.id)
+        if not include_inactive:
+            count_query = count_query.where(PuzzlePriority.removed_at == None)
+        if puzzle_type:
+            count_query = count_query.where(Puzzle.puzzle_type == puzzle_type)
+        total_count = await self.db.scalar(count_query)
+
+        # Apply pagination and ordering
+        query = query.order_by(PuzzlePriority.added_at.desc()).limit(limit).offset(offset)
+
+        result = await self.db.execute(query)
+        priority_records = result.scalars().all()
+
+        # Get statistics for each priority puzzle
+        priorities_data = []
+        for priority in priority_records:
+            puzzle = priority.puzzle
+
+            # Count times shown (where was_priority=True for this puzzle)
+            shown_count_query = select(func.count(PuzzleShown.id)).where(
+                and_(
+                    PuzzleShown.puzzle_id == puzzle.id,
+                    PuzzleShown.was_priority == True
+                )
+            )
+            times_shown = await self.db.scalar(shown_count_query) or 0
+
+            # Count times solved
+            solved_count_query = select(func.count(FreeplayPuzzleAttempt.id)).where(
+                and_(
+                    FreeplayPuzzleAttempt.puzzle_id == puzzle.id,
+                    FreeplayPuzzleAttempt.is_solved == True
+                )
+            )
+            times_solved = await self.db.scalar(solved_count_query) or 0
+
+            priorities_data.append({
+                "id": priority.id,
+                "puzzle_id": puzzle.id,
+                "puzzle_type": puzzle.puzzle_type,
+                "puzzle_size": puzzle.puzzle_size,
+                "puzzle_difficulty": puzzle.puzzle_difficulty,
+                "added_at": priority.added_at,
+                "is_active": priority.is_active,
+                "times_shown": times_shown,
+                "times_solved": times_solved,
+            })
+
+        return {
+            "priorities": priorities_data,
+            "total_count": total_count
+        }
+
+    async def get_priority_puzzles_grouped(
+        self,
+        include_inactive: bool = False,
+    ) -> Dict[str, Any]:
+        """
+        Get priority puzzles grouped by type/size/difficulty with statistics.
+        Returns puzzle IDs only - definitions should be fetched separately.
+        """
+        from sqlalchemy import select, func, and_
+        from sqlalchemy.orm import selectinload
+        from collections import defaultdict
+
+        # Build base query for priority puzzles
+        query = (
+            select(PuzzlePriority)
+            .options(selectinload(PuzzlePriority.puzzle))
+            .join(Puzzle, PuzzlePriority.puzzle_id == Puzzle.id)
+        )
+
+        # Filter by active status
+        if not include_inactive:
+            query = query.where(PuzzlePriority.removed_at == None)
+
+        # Order by puzzle type, size, difficulty, then added_at
+        query = query.order_by(
+            Puzzle.puzzle_type,
+            Puzzle.puzzle_size,
+            Puzzle.puzzle_difficulty,
+            PuzzlePriority.added_at.desc()
+        )
+
+        result = await self.db.execute(query)
+        priority_records = result.scalars().all()
+
+        # Group by type/size/difficulty
+        groups: Dict[tuple, list] = defaultdict(list)
+        for priority in priority_records:
+            puzzle = priority.puzzle
+            key = (puzzle.puzzle_type, puzzle.puzzle_size, puzzle.puzzle_difficulty)
+            groups[key].append(priority)
+
+        # Build response with stats for each group
+        groups_data = []
+        total_puzzles = 0
+
+        for (puzzle_type, puzzle_size, puzzle_difficulty), priorities in groups.items():
+            group_total_shown = 0
+            group_total_solved = 0
+            puzzles_data = []
+
+            for priority in priorities:
+                puzzle = priority.puzzle
+
+                # Count times shown (where was_priority=True for this puzzle)
+                shown_count_query = select(func.count(PuzzleShown.id)).where(
+                    and_(
+                        PuzzleShown.puzzle_id == puzzle.id,
+                        PuzzleShown.was_priority == True
+                    )
+                )
+                times_shown = await self.db.scalar(shown_count_query) or 0
+
+                # Count times solved
+                solved_count_query = select(func.count(FreeplayPuzzleAttempt.id)).where(
+                    and_(
+                        FreeplayPuzzleAttempt.puzzle_id == puzzle.id,
+                        FreeplayPuzzleAttempt.is_solved == True
+                    )
+                )
+                times_solved = await self.db.scalar(solved_count_query) or 0
+
+                group_total_shown += times_shown
+                group_total_solved += times_solved
+
+                puzzles_data.append({
+                    "id": priority.id,
+                    "puzzle_id": puzzle.id,
+                    "added_at": priority.added_at,
+                    "is_active": priority.is_active,
+                    "times_shown": times_shown,
+                    "times_solved": times_solved,
+                })
+
+            groups_data.append({
+                "puzzle_type": puzzle_type,
+                "puzzle_size": puzzle_size,
+                "puzzle_difficulty": puzzle_difficulty,
+                "total_puzzles": len(priorities),
+                "total_shown": group_total_shown,
+                "total_solved": group_total_solved,
+                "puzzles": puzzles_data,
+            })
+            total_puzzles += len(priorities)
+
+        return {
+            "groups": groups_data,
+            "total_groups": len(groups_data),
+            "total_puzzles": total_puzzles
+        }
+
+    async def add_priority_puzzle(self, puzzle_id: uuid.UUID) -> PuzzlePriority:
+        """
+        Add a puzzle to the priority queue.
+        If it was previously removed, creates a new priority record.
+        """
+        from sqlalchemy import select, and_
+
+        # Verify puzzle exists
+        puzzle = await self.get_puzzle_by_id(puzzle_id)
+        if not puzzle:
+            raise HTTPException(status_code=404, detail=f"Puzzle with id {puzzle_id} not found")
+
+        # Check if puzzle is already in active priority
+        existing_query = select(PuzzlePriority).where(
+            and_(
+                PuzzlePriority.puzzle_id == puzzle_id,
+                PuzzlePriority.removed_at == None
+            )
+        )
+        existing = await self.db.scalar(existing_query)
+
+        if existing:
+            raise HTTPException(status_code=400, detail="Puzzle is already in the priority queue")
+
+        # Create new priority record
+        priority = PuzzlePriority(
+            puzzle_id=puzzle_id,
+            added_at=datetime.utcnow()
+        )
+
+        self.db.add(priority)
+        await self.db.commit()
+        await self.db.refresh(priority)
+
+        return priority
+
+    async def remove_priority_puzzle(self, priority_id: uuid.UUID) -> PuzzlePriority:
+        """
+        Remove a puzzle from the priority queue by marking it as removed.
+        """
+        from sqlalchemy import select
+
+        # Find the priority record
+        query = select(PuzzlePriority).where(PuzzlePriority.id == priority_id)
+        priority = await self.db.scalar(query)
+
+        if not priority:
+            raise HTTPException(status_code=404, detail=f"Priority record with id {priority_id} not found")
+
+        if priority.removed_at is not None:
+            raise HTTPException(status_code=400, detail="Priority record is already removed")
+
+        # Mark as removed
+        priority.removed_at = datetime.utcnow()
+        await self.db.commit()
+        await self.db.refresh(priority)
+
+        return priority
+
+    async def get_priority_puzzle_definition(self, priority_id: uuid.UUID) -> Optional[Puzzle]:
+        """
+        Get the puzzle associated with a priority record.
+        """
+        from sqlalchemy import select
+        from sqlalchemy.orm import selectinload
+
+        query = (
+            select(PuzzlePriority)
+            .options(selectinload(PuzzlePriority.puzzle))
+            .where(PuzzlePriority.id == priority_id)
+        )
+        priority = await self.db.scalar(query)
+
+        if not priority:
+            return None
+
+        return priority.puzzle
 
     async def get_dynamic_filter_options(
         self,
@@ -1740,6 +2063,232 @@ async def export_game_data(
     filename = f"{puzzle_type}{user_type_suffix}_game_export.json"
 
     from fastapi.responses import JSONResponse
+    return JSONResponse(
+        content=data,
+        headers={
+            "Content-Disposition": f"attachment; filename={filename}",
+            "Content-Type": "application/json"
+        }
+    )
+
+
+# Priority puzzle management endpoints
+@router.get("/admin/priority", response_model=PriorityPuzzleListResponse)
+async def get_priority_puzzles(
+    db: AsyncDatabase,
+    user: User = Depends(fastapi_users.current_user()),
+    include_inactive: bool = Query(False, description="Include removed priority puzzles"),
+    puzzle_type: Optional[str] = Query(None, description="Filter by puzzle type"),
+    limit: int = Query(100, description="Maximum number of entries to return", ge=1, le=500),
+    offset: int = Query(0, description="Number of entries to skip", ge=0),
+):
+    """
+    Get list of priority puzzles with statistics.
+
+    Returns priority puzzles with:
+    - Puzzle info (type, size, difficulty)
+    - When it was added to priority queue
+    - Times shown as a priority puzzle
+    - Times solved
+
+    Requires admin authentication.
+    """
+    if not user.is_superuser:
+        raise HTTPException(status_code=403, detail="admin access required")
+
+    service = PuzzleService(db)
+    return await service.get_priority_puzzles(
+        include_inactive=include_inactive,
+        puzzle_type=puzzle_type,
+        limit=limit,
+        offset=offset
+    )
+
+
+@router.get("/admin/priority/grouped", response_model=PriorityGroupedListResponse)
+async def get_priority_puzzles_grouped(
+    db: AsyncDatabase,
+    user: User = Depends(fastapi_users.current_user()),
+    include_inactive: bool = Query(False, description="Include removed priority puzzles"),
+):
+    """
+    Get priority puzzles grouped by type/size/difficulty with statistics.
+
+    Returns groups of priority puzzles with:
+    - Group totals (puzzles, shown, solved)
+    - Individual puzzle definitions for rendering
+    - Stats for each puzzle
+
+    Requires admin authentication.
+    """
+    if not user.is_superuser:
+        raise HTTPException(status_code=403, detail="admin access required")
+
+    service = PuzzleService(db)
+    return await service.get_priority_puzzles_grouped(include_inactive=include_inactive)
+
+
+@router.post("/admin/priority", status_code=201)
+async def add_priority_puzzle(
+    request: AddPriorityRequest,
+    db: AsyncDatabase,
+    user: User = Depends(fastapi_users.current_user()),
+):
+    """
+    Add a puzzle to the priority queue.
+
+    Priority puzzles are served first to users who haven't seen them.
+    Requires admin authentication.
+    """
+    if not user.is_superuser:
+        raise HTTPException(status_code=403, detail="admin access required")
+
+    service = PuzzleService(db)
+    priority = await service.add_priority_puzzle(request.puzzle_id)
+
+    return {
+        "status": "success",
+        "message": "Puzzle added to priority queue",
+        "priority_id": str(priority.id),
+        "puzzle_id": str(priority.puzzle_id)
+    }
+
+
+@router.delete("/admin/priority/{priority_id}")
+async def remove_priority_puzzle(
+    priority_id: uuid.UUID,
+    db: AsyncDatabase,
+    user: User = Depends(fastapi_users.current_user()),
+):
+    """
+    Remove a puzzle from the priority queue.
+
+    The puzzle will no longer be prioritized for new users.
+    Requires admin authentication.
+    """
+    if not user.is_superuser:
+        raise HTTPException(status_code=403, detail="admin access required")
+
+    service = PuzzleService(db)
+    priority = await service.remove_priority_puzzle(priority_id)
+
+    return {
+        "status": "success",
+        "message": "Puzzle removed from priority queue",
+        "priority_id": str(priority.id)
+    }
+
+
+@router.get("/admin/priority/group/export")
+async def export_priority_group_attempts(
+    db: AsyncDatabase,
+    user: User = Depends(fastapi_users.current_user()),
+    puzzle_type: str = Query(..., description="Puzzle type"),
+    puzzle_size: str = Query(..., description="Puzzle size"),
+    puzzle_difficulty: Optional[str] = Query(None, description="Puzzle difficulty"),
+    solved_only: bool = Query(True, description="Only include solved attempts"),
+):
+    """
+    Export all attempts for priority puzzles in a group (type+size+difficulty).
+
+    Returns all solved attempts for puzzles in this group as a JSON download.
+    Requires admin authentication.
+    """
+    if not user.is_superuser:
+        raise HTTPException(status_code=403, detail="admin access required")
+
+    from sqlalchemy import select, and_
+
+    service = PuzzleService(db)
+
+    # Find all active priority puzzle IDs for this group
+    query = (
+        select(PuzzlePriority.puzzle_id)
+        .join(Puzzle, PuzzlePriority.puzzle_id == Puzzle.id)
+        .where(
+            and_(
+                PuzzlePriority.removed_at == None,
+                Puzzle.puzzle_type == puzzle_type,
+                Puzzle.puzzle_size == puzzle_size,
+            )
+        )
+    )
+    if puzzle_difficulty:
+        query = query.where(Puzzle.puzzle_difficulty == puzzle_difficulty)
+    else:
+        query = query.where(Puzzle.puzzle_difficulty == None)
+
+    result = await db.execute(query)
+    priority_puzzle_ids = [str(row[0]) for row in result.all()]
+
+    if not priority_puzzle_ids:
+        raise HTTPException(status_code=404, detail="No priority puzzles found for this group")
+
+    # Export attempts for the group
+    difficulties = [puzzle_difficulty] if puzzle_difficulty else None
+    data = await service.export_freeplay_data(
+        puzzle_types=[puzzle_type],
+        puzzle_sizes=[puzzle_size],
+        puzzle_difficulties=difficulties,
+        solved_filter='solved' if solved_only else None,
+    )
+
+    # Filter to only priority puzzles in this group
+    data = [attempt for attempt in data if attempt['puzzle']['id'] in priority_puzzle_ids]
+
+    if not data:
+        raise HTTPException(status_code=404, detail="No attempts found for this priority group")
+
+    from fastapi.responses import JSONResponse
+    difficulty_part = f"_{puzzle_difficulty}" if puzzle_difficulty else ""
+    filename = f"priority_{puzzle_type}_{puzzle_size}{difficulty_part}_group_attempts.json"
+    return JSONResponse(
+        content=data,
+        headers={
+            "Content-Disposition": f"attachment; filename={filename}",
+            "Content-Type": "application/json"
+        }
+    )
+
+
+@router.get("/admin/priority/{priority_id}/export")
+async def export_priority_puzzle_attempts(
+    priority_id: uuid.UUID,
+    db: AsyncDatabase,
+    user: User = Depends(fastapi_users.current_user()),
+    solved_only: bool = Query(True, description="Only include solved attempts"),
+):
+    """
+    Export all attempts for a priority puzzle.
+
+    Returns all solved attempts for this puzzle as a JSON download.
+    Requires admin authentication.
+    """
+    if not user.is_superuser:
+        raise HTTPException(status_code=403, detail="admin access required")
+
+    service = PuzzleService(db)
+    puzzle = await service.get_priority_puzzle_definition(priority_id)
+
+    if not puzzle:
+        raise HTTPException(status_code=404, detail=f"Priority record with id {priority_id} not found")
+
+    # Export attempts for this specific puzzle
+    data = await service.export_freeplay_data(
+        puzzle_types=[puzzle.puzzle_type],
+        puzzle_sizes=[puzzle.puzzle_size],
+        puzzle_difficulties=[puzzle.puzzle_difficulty] if puzzle.puzzle_difficulty else None,
+        solved_filter='solved' if solved_only else None,
+    )
+
+    # Filter to only this specific puzzle
+    data = [attempt for attempt in data if attempt['puzzle']['id'] == str(puzzle.id)]
+
+    if not data:
+        raise HTTPException(status_code=404, detail="No attempts found for this puzzle")
+
+    from fastapi.responses import JSONResponse
+    filename = f"priority_{puzzle.puzzle_type}_{puzzle.puzzle_size}_{puzzle.id}_attempts.json"
     return JSONResponse(
         content=data,
         headers={

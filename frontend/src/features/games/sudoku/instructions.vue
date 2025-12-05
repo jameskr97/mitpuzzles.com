@@ -1,40 +1,5 @@
 <script setup lang="ts">
-import type { PuzzleDefinition, PuzzleState } from "@/core/games/types/puzzle-types.ts";
 import { InstructionSlider, InstructionPage } from "@/features/freeplay/components";
-import SudokuCanvas from "@/features/games/sudoku/SudokuCanvas.vue";
-
-const def: Partial<PuzzleDefinition> = {
-  rows: 9,
-  cols: 9,
-  initial_state: [
-    [1, 5, 6, 0, 8, 0, 0, 2, 0],
-    [0, 0, 0, 1, 2, 0, 6, 5, 0],
-    [3, 4, 2, 6, 0, 5, 0, 0, 1],
-    [0, 8, 5, 0, 0, 3, 0, 4, 0],
-    [4, 0, 0, 2, 0, 0, 8, 7, 5],
-    [0, 7, 9, 4, 0, 8, 3, 1, 0],
-    [0, 0, 0, 0, 3, 1, 4, 0, 2],
-    [9, 2, 4, 5, 0, 6, 1, 3, 8],
-    [8, 3, 1, 0, 4, 0, 0, 0, 7],
-  ],
-};
-
-// prettier-ignore
-const gameState0: PuzzleState = {
-  // @ts-expect-error partial definition
-  definition: def,
-  board: [
-    [1, 5, 6, 0, 8, 0, 0, 2, 0],
-    [0, 0, 0, 1, 2, 0, 6, 5, 0],
-    [3, 4, 2, 6, 0, 5, 0, 0, 1],
-    [0, 8, 5, 0, 0, 3, 0, 4, 0],
-    [4, 0, 0, 2, 0, 0, 8, 7, 5],
-    [0, 7, 9, 4, 0, 8, 3, 1, 0],
-    [0, 0, 0, 0, 3, 1, 4, 0, 2],
-    [9, 2, 4, 5, 0, 6, 1, 3, 8],
-    [8, 3, 1, 0, 4, 0, 0, 0, 7]
-  ]
-};
 </script>
 
 <template>
@@ -46,7 +11,7 @@ const gameState0: PuzzleState = {
           <div v-html="$t('puzzle:sudoku:goal')"></div>
         </template>
         <template #board>
-          <SudokuCanvas :state="gameState0" :interactive="false" />
+          <img src="/assets/instructions/sudoku.page1.png" alt="Sudoku board example" />
         </template>
       </InstructionPage>
     </template>
@@ -58,7 +23,7 @@ const gameState0: PuzzleState = {
           <div class="italic" v-html="$t('puzzle:sudoku:rule_row_example')"></div>
         </template>
         <template #board>
-          <SudokuCanvas :state="gameState0" :highlight_row="2" :interactive="false" />
+          <img src="/assets/instructions/sudoku.page2.png" alt="Sudoku row rule" />
         </template>
       </InstructionPage>
     </template>
@@ -70,7 +35,7 @@ const gameState0: PuzzleState = {
           <div class="italic" v-html="$t('puzzle:sudoku:rule_col_example')"></div>
         </template>
         <template #board>
-          <SudokuCanvas :state="gameState0" :highlight_col="6" :interactive="false" />
+          <img src="/assets/instructions/sudoku.page3.png" alt="Sudoku column rule" />
         </template>
       </InstructionPage>
     </template>
@@ -82,7 +47,7 @@ const gameState0: PuzzleState = {
           <div class="italic" v-html="$t('puzzle:sudoku:rule_box_example')"></div>
         </template>
         <template #board>
-          <SudokuCanvas :state="gameState0" :highlight_box="1" :interactive="false" />
+          <img src="/assets/instructions/sudoku.page4.png" alt="Sudoku box rule" />
         </template>
       </InstructionPage>
     </template>

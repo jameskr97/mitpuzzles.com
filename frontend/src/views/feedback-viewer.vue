@@ -245,12 +245,11 @@ onMounted(() => {
             </div>
           </div>
 
-          <div>
             <div class="text-muted-foreground mb-1">Message:</div>
-            <div class="bg-muted/50 p-3 rounded-md whitespace-pre-wrap">
+            <div class="bg-muted/50 p-3 rounded-md overflow-y-scroll w-120">
               {{ selected_feedback.message }}
+
             </div>
-          </div>
 
           <div v-if="selected_feedback.feedback_metadata">
             <div class="text-muted-foreground mb-1">Metadata:</div>
