@@ -16,7 +16,9 @@ dependencies = [
     "uuid6>=2025.0.1",
     "celery[redis]>=5.5.3",
     "flower>=2.0.1",
-    "better-profanity>=0.7.0"
+    "better-profanity>=0.7.0",
+    "python-sat>=1.8.dev13",
+    "pypblib>=0.0.4",
 ]
 
 [dependency-groups]
