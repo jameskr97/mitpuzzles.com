@@ -7,6 +7,7 @@ interface Props {
   definition: PuzzleDefinition;
   state?: Partial<PuzzleState>;
   scale?: number;
+  show_solution?: boolean;
 }
 const props = defineProps<Props>();
 
@@ -28,13 +29,22 @@ const puzzle_state = computed(() => {
     board: props.definition.initial_state,
   };
 });
+
+const puzzle_state_solution = computed(() => {
+  if (props.state) return props.state;
+  return {
+    definition: props.definition,
+    board: props.definition.solution,
+  };
+});
+
 </script>
 
 <template>
   <component
     v-if="current_puzzle_component"
     :is="current_puzzle_component"
-    :state="puzzle_state"
+    :state="show_solution ? puzzle_state_solution : puzzle_state"
     :scale="scale"
   />
   <div v-else class="p-4 text-red-500">Unknown puzzle type: {{ definition.puzzle_type }}</div>
