@@ -6,7 +6,7 @@
  * Canvas-only rendering.
  */
 import { computed, ref, watch, shallowRef } from "vue";
-import { useKakurasuGame, type KakurasuGameReturn } from "./useKakurasuGame";
+import { useKakurasuGame, type KakurasuGameReturn, KakurasuCell } from "./useKakurasuGame";
 import { useFreeplayServices } from "@/features/freeplay/composables";
 import { useDataRecorder } from "@/core/games/composables";
 import type { GameController, GameUIState } from "@/core/games/types/game-controller";
@@ -84,6 +84,17 @@ function on_cell_enter(row: number, col: number, zone: string) {
 
 function on_cell_leave(row: number, col: number, zone: string) {
   recorder.record_hover_end({ row, col }, zone);
+}
+
+// Handle gutter click (toggle entire row/column)
+function on_gutter_click(is_row: boolean, index: number, _button: number) {
+  const result = game.value.handle_line_toggle(is_row, index, KakurasuCell.EMPTY, KakurasuCell.CROSS);
+  if (result.changes.length > 0) {
+    for (const change of result.changes) {
+      recorder.record_click({ row: change.row, col: change.col }, change.old_value, change.new_value);
+    }
+    recorder.save_board_state(game.value.board.value);
+  }
 }
 
 // Check solution
@@ -176,6 +187,7 @@ const canvas_key = computed(() =>
       @cell-drag="on_cell_drag"
       @cell-enter="on_cell_enter"
       @cell-leave="on_cell_leave"
+      @gutter-click="on_gutter_click"
     />
   </GameLayout>
 </template>

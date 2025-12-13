@@ -71,6 +71,9 @@ class Puzzle(Base):
     puzzle_difficulty: Mapped[str] = mapped_column(String(32), nullable=True)  # easy, medium, hard...
     puzzle_data: Mapped[Dict[str, Any]] = mapped_column(JSON, nullable=False)  # JSON Field for puzzle data
 
+    # Distribution control
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
     def __repr__(self):
         return f"<Puzzle(id={self.id}, type={self.puzzle_type}, difficulty={self.puzzle_difficulty})>"
 
@@ -402,15 +405,15 @@ class PuzzleService:
         """
         from sqlalchemy import select, func, Integer, cast
 
-        # Start with base query
-        query = select(Puzzle).where(Puzzle.puzzle_type == puzzle_type)
+        # Start with base query - only active puzzles
+        query = select(Puzzle).where(Puzzle.puzzle_type == puzzle_type).where(Puzzle.is_active == True)
 
         # Handle size selection
         if puzzle_size:
             query = query.where(Puzzle.puzzle_size == puzzle_size)
         else:
-            # Get all available sizes for this puzzle type
-            size_query = select(Puzzle.puzzle_size).where(Puzzle.puzzle_type == puzzle_type).distinct()
+            # Get all available sizes for this puzzle type (only active puzzles)
+            size_query = select(Puzzle.puzzle_size).where(Puzzle.puzzle_type == puzzle_type).where(Puzzle.is_active == True).distinct()
             sizes_result = await self.db.execute(size_query)
             all_sizes = sizes_result.scalars().all()
 
@@ -453,15 +456,15 @@ class PuzzleService:
         from sqlalchemy import select, func, or_, and_
         from sqlalchemy.orm import aliased
 
-        # Build base query
-        query = select(Puzzle).where(Puzzle.puzzle_type == puzzle_type)
+        # Build base query - only active puzzles
+        query = select(Puzzle).where(Puzzle.puzzle_type == puzzle_type).where(Puzzle.is_active == True)
 
         # Apply size/difficulty filters
         if puzzle_size:
             query = query.where(Puzzle.puzzle_size == puzzle_size)
         else:
-            # Get smallest available size (same logic as get_random_puzzle)
-            size_query = select(Puzzle.puzzle_size).where(Puzzle.puzzle_type == puzzle_type).distinct()
+            # Get smallest available size (same logic as get_random_puzzle, only active puzzles)
+            size_query = select(Puzzle.puzzle_size).where(Puzzle.puzzle_type == puzzle_type).where(Puzzle.is_active == True).distinct()
             sizes_result = await self.db.execute(size_query)
             all_sizes = sizes_result.scalars().all()
 

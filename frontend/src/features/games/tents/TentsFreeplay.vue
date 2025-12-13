@@ -3,7 +3,7 @@
  * TentsFreeplay - Freeplay mode wrapper for Tents
  */
 import { computed, ref, watch, shallowRef } from "vue";
-import { useTentsGame, type TentsGameReturn } from "./useTentsGame";
+import { useTentsGame, type TentsGameReturn, TentsCell } from "./useTentsGame";
 import { useFreeplayServices } from "@/features/freeplay/composables";
 import { useDataRecorder } from "@/core/games/composables";
 import type { GameController, GameUIState } from "@/core/games/types/game-controller";
@@ -59,6 +59,18 @@ function on_cell_enter(row: number, col: number, zone: string) {
 
 function on_cell_leave(row: number, col: number, zone: string) {
   recorder.record_hover_end({ row, col }, zone);
+}
+
+// Handle gutter click (toggle entire row/column)
+function on_gutter_click(is_row: boolean, index: number, _button: number) {
+  console.log("Gutter click", is_row, index);
+  const result = game.value.handle_line_toggle(is_row, index, TentsCell.EMPTY, TentsCell.GREEN);
+  if (result.changes.length > 0) {
+    for (const change of result.changes) {
+      recorder.record_click({ row: change.row, col: change.col }, change.old_value, change.new_value);
+    }
+    recorder.save_board_state(game.value.board.value);
+  }
 }
 
 async function check_solution(): Promise<boolean> {
@@ -121,6 +133,6 @@ const canvas_key = computed(() => `${game.value.definition.id}-${game.value.defi
 
 <template>
   <GameLayout :controller="controller" :definition="controller.state.value.definition">
-    <TentsCanvas :key="canvas_key" :state="puzzle_state" @cell-click="on_cell_click" @cell-drag="on_cell_drag" @cell-enter="on_cell_enter" @cell-leave="on_cell_leave" />
+    <TentsCanvas :key="canvas_key" :state="puzzle_state" @cell-click="on_cell_click" @cell-drag="on_cell_drag" @cell-enter="on_cell_enter" @cell-leave="on_cell_leave" @gutter-click="on_gutter_click" />
   </GameLayout>
 </template>

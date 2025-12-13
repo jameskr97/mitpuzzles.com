@@ -13,6 +13,7 @@ from app.modules.tracking import Device, DeviceThumbmark  # noqa: F401
 from app.modules.experiments import ExperimentRun, ExperimentProlificData  # noqa: F401
 from app.modules.feedback import Feedback  # noqa: F401
 from app.modules.puzzle import Puzzle, FreeplayPuzzleAttempt  # noqa: F401
+from app.modules.puzzle_analysis import BackgroundJob, AnalysisJobPuzzle  # noqa: F401
 from app.modules.user_profile import UserProfile  # noqa: F401
 from app.modules.push_notifications import PushSubscription  # noqa: F401
 

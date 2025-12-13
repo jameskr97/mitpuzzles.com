@@ -6,6 +6,12 @@ ARG BACKEND_IMAGE=docker.io/library/python:3.13-slim
 ##### Backend Builder
 FROM ${BACKEND_IMAGE} AS backend-builder
 WORKDIR /app
+
+# install build dependencies for native extensions (pypblib needs g++)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # set uv environment variables

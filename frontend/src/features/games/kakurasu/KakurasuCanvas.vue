@@ -31,6 +31,7 @@ const emit = defineEmits<{
   (e: "cell-drag", row: number, col: number): void;
   (e: "cell-enter", row: number, col: number, zone: string): void;
   (e: "cell-leave", row: number, col: number, zone: string): void;
+  (e: "gutter-click", is_row: boolean, index: number, button: number): void;
 }>();
 
 // Track hovered cell for hover event recording
@@ -69,6 +70,21 @@ onUnmounted(() => {
 
 // Handle cell mousedown - start drag and emit first click
 function on_cell_mousedown(coord: { row: number; col: number; zone: string }, event: MouseEvent) {
+  // Handle gutter clicks (row numbers on left, column numbers on top)
+  // canvas-board already returns board-relative indices for gutter zones
+  if (coord.zone === "leftGutter") {
+    if (coord.row >= 0 && coord.row < props.state.definition.rows) {
+      emit("gutter-click", true, coord.row, event.button);
+    }
+    return;
+  }
+  if (coord.zone === "topGutter") {
+    if (coord.col >= 0 && coord.col < props.state.definition.cols) {
+      emit("gutter-click", false, coord.col, event.button);
+    }
+    return;
+  }
+
   if (coord.zone !== "game") return;
 
   // Start drag tracking
