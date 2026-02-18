@@ -86,10 +86,11 @@ const fetch_freeplay_preview = async () => {
       }
     }
 
-    // Add solved filter
     if (store.solved_filter !== 'all') {
       params.append('solved_filter', store.solved_filter)
     }
+    if (store.date_start) params.append('date_start', store.date_start)
+    if (store.date_end) params.append('date_end', store.date_end)
 
     const query = params.toString() ? `?${params.toString()}` : ''
     const response = await api.get(`/api/puzzle/admin/freeplay/preview${query}`)
@@ -104,7 +105,7 @@ const fetch_freeplay_preview = async () => {
 const download_experiment = async (experiment_id: string, platform?: string) => {
   const params = platform ? `?platform=${platform}` : ''
   const url = `/api/experiment/admin/${experiment_id}/export${params}`
-  const filename = `${experiment_id}${platform ? `_${platform}` : ''}_export.json`
+  const filename = `${experiment_id}${platform ? `_${platform}` : ''}_export.parquet`
   await download_blob(url, filename)
 }
 
@@ -128,10 +129,11 @@ const download_freeplay = async (user_type?: string) => {
     }
   }
 
-  // Add solved filter
   if (store.solved_filter !== 'all') {
     params.append('solved_filter', store.solved_filter)
   }
+  if (store.date_start) params.append('date_start', store.date_start)
+  if (store.date_end) params.append('date_end', store.date_end)
 
   const query = params.toString() ? `?${params.toString()}` : ''
   const url = `/api/puzzle/admin/freeplay/export${query}`
@@ -141,14 +143,14 @@ const download_freeplay = async (user_type?: string) => {
   if (store.selected_entity_id) filename_parts.push(store.scope)
   if (store.solved_filter !== 'all') filename_parts.push(store.solved_filter)
   if (user_type) filename_parts.push(user_type)
-  filename_parts.push('export.json')
+  filename_parts.push('export.parquet')
 
   await download_blob(url, filename_parts.join('_'))
 }
 
 // Watch for filter changes to update preview
 watch(
-  [() => store.puzzle_types, () => store.puzzle_sizes, () => store.difficulties, () => store.scope, () => store.selected_entity_id, () => store.solved_filter],
+  [() => store.puzzle_types, () => store.puzzle_sizes, () => store.difficulties, () => store.scope, () => store.selected_entity_id, () => store.solved_filter, () => store.date_start, () => store.date_end],
   () => {
     fetch_freeplay_preview()
   },

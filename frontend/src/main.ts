@@ -15,6 +15,7 @@ import { router, setup_auth_guard, check_initial_route } from "@/core/router";
 import { register_pwa } from "@/core/services/pwa.ts";
 import { init_posthog } from "@/core/services/posthog.ts";
 import { check_maintenance_mode } from "@/core/services/maintenance.ts";
+import { watch } from "vue";
 
 // Store initialization
 import { init_app_store, init_session_tracking, init_auth, init_puzzle_stores } from "@/core/store/init.ts";
@@ -46,7 +47,15 @@ if (import.meta.hot) {
   // Initialize stores
   await init_app_store();
   await init_session_tracking();
-  init_posthog(app);
+
+  // Gate PostHog behind privacy consent
+  const { useAppStore } = await import("@/core/store/useAppStore.ts");
+  const appStore = useAppStore();
+  if (appStore.has_consented) {
+    init_posthog(app);
+  } else {
+    watch(() => appStore.has_consented, (v) => { if (v) init_posthog(app); }, { once: true });
+  }
 
   // Initialize auth and set up router guards
   await init_auth();

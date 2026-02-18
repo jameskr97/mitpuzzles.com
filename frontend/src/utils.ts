@@ -130,7 +130,8 @@ export async function download_blob(url: string, filename: string) {
     })
 
     // create download
-    const blob = new Blob([response.data], { type: 'application/json' })
+    const content_type = response.headers['content-type'] || 'application/octet-stream'
+    const blob = new Blob([response.data], { type: content_type })
     const blob_url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = blob_url

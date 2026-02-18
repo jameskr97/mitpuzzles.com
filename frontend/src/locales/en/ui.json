@@ -44,6 +44,13 @@
     "description": "Thanks for trying our website. How do you like it? Did something not work right? Let us know here!",
     "placeholder": "Share your thoughts here!"
   },
+  "consent": {
+    "title": "Research Participation Notice",
+    "description": "This website is part of an MIT research study on how people solve complex problems. If you choose to continue, your gameplay interactions (including clicks and mouse movements) may be recorded and used for research purposes.\n\nParticipation is voluntary. You may stop at any time by leaving the site. Data are analyzed in de-identified form and will not be used to identify you.\n\nBy continuing, you indicate that you are age 18 or older and consent to participate.\n\nIf you have any concerns, you may contact the MIT IRB at couhes@mit.edu.",
+    "privacy_link": "Learn more / Privacy Policy",
+    "accept": "Continue",
+    "leave": "Leave Site"
+  },
   "error": {
     "404_message": "Click here to see our puzzles!"
   },

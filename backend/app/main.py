@@ -9,7 +9,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from app.modules import authentication, tracking, feedback, experiments, puzzle, tracking_analytics, user_profile, push_notifications, puzzle_analysis
+from app.modules import authentication, tracking, feedback, experiments, puzzle, tracking_analytics, user_profile, push_notifications, puzzle_analysis, data_export
 from app.config import settings, DeploymentEnvironment
 from app.dependencies import async_session_maker
 
@@ -125,6 +125,7 @@ app.include_router(experiments.router)
 app.include_router(puzzle.router)
 app.include_router(tracking_analytics.router)
 app.include_router(puzzle_analysis.router)
+app.include_router(data_export.router)
 
 app.add_middleware(
     CORSMiddleware,

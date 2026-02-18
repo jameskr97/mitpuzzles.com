@@ -2,14 +2,14 @@
 name = "app"
 version = "0.1.0"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = "==3.13"
 dependencies = [
     "aiosqlite>=0.21.0",
     "alembic>=1.16.5",
     "asyncpg>=0.30.0",
     "fastapi-users[sqlalchemy,oauth]>=14.0.1",
     "fastapi[all]>=0.116.1",
-    "psycopg2-binary>=2.9.10",
+    "psycopg[binary]>=2.9.10",
     "pywebpush>=2.0.1",
     "resend>=2.13.1",
     "typer>=0.16.1",
@@ -19,6 +19,11 @@ dependencies = [
     "better-profanity>=0.7.0",
     "python-sat>=1.8.dev13",
     "pypblib>=0.0.4",
+    "ipykernel>=7.1.0",
+    "pandas>=3.0.0",
+    "duckdb>=1.4.4",
+    "matplotlib>=3.10.8",
+    "pyarrow>=23.0.1",
 ]
 
 [dependency-groups]

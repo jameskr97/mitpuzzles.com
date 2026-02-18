@@ -6,6 +6,7 @@ import Container from "@/core/components/ui/Container.vue";
 import FilterSidebar from "@/features/analysis/components/FilterSidebar.vue";
 import BrowserTab from "@/features/analysis/tabs/BrowserTab.vue";
 import DownloadTab from "@/features/analysis/tabs/DownloadTab.vue";
+import SqlTab from "@/features/analysis/tabs/SqlTab.vue";
 import EntitySelector from "@/features/analysis/components/EntitySelector.vue";
 import { useAnalysisStore } from "@/features/analysis/stores/useAnalysisStore";
 
@@ -24,10 +25,11 @@ const active_main_tab = ref("download");
         <TabsList class="w-full md:w-auto">
           <TabsTrigger value="download">Download</TabsTrigger>
           <TabsTrigger value="browser">Browser</TabsTrigger>
+          <TabsTrigger value="sql">SQL</TabsTrigger>
         </TabsList>
 
-        <!-- Tab Set 2: Scope (hidden for browser tab) -->
-        <div v-if="active_main_tab !== 'browser'">
+        <!-- Tab Set 2: Scope (shown for download and sql tabs) -->
+        <div v-if="active_main_tab === 'download' || active_main_tab === 'sql'">
           <Tabs v-model="scope" class="w-full">
             <div class="flex flex-col md:flex-row md:items-center gap-2">
               <TabsList class="w-full">
@@ -49,6 +51,10 @@ const active_main_tab = ref("download");
 
       <TabsContent value="browser">
         <BrowserTab class="h-full" />
+      </TabsContent>
+
+      <TabsContent value="sql" class="h-full">
+        <SqlTab />
       </TabsContent>
     </div>
   </Tabs>

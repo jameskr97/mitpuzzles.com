@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     STATIC_FILES_PATH: str = "/app/static"
     SERVE_STATIC_FILES: bool = False
 
+    # data exports
+    EXPORT_DIR: str = "/app/exports"
+
     def model_post_init(self, context: Any, /) -> None:
         self.configure_for_environment()
 
@@ -63,6 +66,7 @@ class Settings(BaseSettings):
         self.APP_DOMAIN = {"localhost:3000", "127.0.0.1:3000"}
         self.FRONTEND_HOST = "http://localhost:3000"
         self.SERVE_STATIC_FILES = False
+        self.EXPORT_DIR = ".exports"
 
     def _configure_staging(self):
         """staging environment configuration"""

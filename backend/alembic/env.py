@@ -16,6 +16,7 @@ from app.modules.puzzle import Puzzle, FreeplayPuzzleAttempt  # noqa: F401
 from app.modules.puzzle_analysis import BackgroundJob, AnalysisJobPuzzle  # noqa: F401
 from app.modules.user_profile import UserProfile  # noqa: F401
 from app.modules.push_notifications import PushSubscription  # noqa: F401
+from app.modules.data_export import GeneratedExport  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

@@ -856,6 +856,7 @@ class PuzzleService:
 
     async def browse_puzzles(
         self,
+        puzzle_id: Optional[str] = None,
         puzzle_types: Optional[List[str]] = None,
         puzzle_sizes: Optional[List[str]] = None,
         puzzle_difficulties: Optional[List[str]] = None,
@@ -878,6 +879,8 @@ class PuzzleService:
             ~Puzzle.puzzle_type.in_(excluded_types)  # Exclude certain puzzle types
         ]
 
+        if puzzle_id:
+            filter_conditions.append(Puzzle.id == uuid.UUID(puzzle_id))
         if puzzle_types and len(puzzle_types) > 0:
             filter_conditions.append(Puzzle.puzzle_type.in_(puzzle_types))
         if puzzle_sizes and len(puzzle_sizes) > 0:
@@ -1096,7 +1099,9 @@ class PuzzleService:
         user_type: Optional[str] = None,
         filter_user_id: Optional[uuid.UUID] = None,
         filter_device_id: Optional[uuid.UUID] = None,
-        solved_filter: Optional[str] = None
+        solved_filter: Optional[str] = None,
+        date_start: Optional[str] = None,
+        date_end: Optional[str] = None,
     ):
         """Export freeplay data with flexible filtering for multiple types/sizes/difficulties."""
         from sqlalchemy import select
@@ -1138,6 +1143,12 @@ class PuzzleService:
             stmt = stmt.where(FreeplayPuzzleAttempt.user_id.is_not(None))
         elif user_type == 'anonymous':
             stmt = stmt.where(FreeplayPuzzleAttempt.user_id.is_(None))
+
+        # Filter by date range
+        if date_start:
+            stmt = stmt.where(FreeplayPuzzleAttempt.created_at >= datetime.strptime(date_start, "%Y-%m-%d"))
+        if date_end:
+            stmt = stmt.where(FreeplayPuzzleAttempt.created_at < datetime.strptime(date_end, "%Y-%m-%d") + timedelta(days=1))
 
         stmt = stmt.order_by(FreeplayPuzzleAttempt.created_at.desc())
 
@@ -1743,6 +1754,7 @@ async def get_filter_options(
 @router.get("/browse")
 async def browse_puzzles(
     db: AsyncDatabase,
+    puzzle_id: Optional[str] = Query(default=None, description="Filter by exact puzzle ID"),
     puzzle_type: Optional[List[str]] = Query(default=None, description="Filter by puzzle types (can specify multiple)"),
     puzzle_size: Optional[List[str]] = Query(default=None, description="Filter by puzzle sizes (can specify multiple)"),
     puzzle_difficulty: Optional[List[str]] = Query(default=None, description="Filter by difficulty levels (can specify multiple)"),
@@ -1765,6 +1777,7 @@ async def browse_puzzles(
     """
     service = PuzzleService(db)
     return await service.browse_puzzles(
+        puzzle_id=puzzle_id,
         puzzle_types=puzzle_type,
         puzzle_sizes=puzzle_size,
         puzzle_difficulties=puzzle_difficulty,
@@ -1932,6 +1945,8 @@ async def preview_freeplay_export(
     filter_user_id: Optional[uuid.UUID] = Query(default=None, description="Filter by specific user ID"),
     filter_device_id: Optional[uuid.UUID] = Query(default=None, description="Filter by specific device ID"),
     solved_filter: Optional[str] = Query(default=None, description="Filter by solved status: solved, unsolved, or all"),
+    date_start: Optional[str] = Query(default=None, description="Start date YYYY-MM-DD (inclusive)"),
+    date_end: Optional[str] = Query(default=None, description="End date YYYY-MM-DD (inclusive)"),
 ):
     """
     Preview freeplay export counts without downloading.
@@ -1962,6 +1977,12 @@ async def preview_freeplay_export(
         conditions.append(FreeplayPuzzleAttempt.is_solved == True)
     elif solved_filter == 'unsolved':
         conditions.append(FreeplayPuzzleAttempt.is_solved == False)
+
+    # Filter by date range
+    if date_start:
+        conditions.append(FreeplayPuzzleAttempt.created_at >= datetime.strptime(date_start, "%Y-%m-%d"))
+    if date_end:
+        conditions.append(FreeplayPuzzleAttempt.created_at < datetime.strptime(date_end, "%Y-%m-%d") + timedelta(days=1))
 
     # Count query
     query = (
@@ -1997,6 +2018,8 @@ async def export_freeplay_data(
     filter_user_id: Optional[uuid.UUID] = Query(default=None, description="Filter by specific user ID"),
     filter_device_id: Optional[uuid.UUID] = Query(default=None, description="Filter by specific device ID"),
     solved_filter: Optional[str] = Query(default=None, description="Filter by solved status: solved, unsolved, or all"),
+    date_start: Optional[str] = Query(default=None, description="Start date YYYY-MM-DD (inclusive)"),
+    date_end: Optional[str] = Query(default=None, description="End date YYYY-MM-DD (inclusive)"),
 ):
     """
     Export freeplay game data as json download with flexible filtering.
@@ -2019,7 +2042,9 @@ async def export_freeplay_data(
         user_type=user_type,
         filter_user_id=filter_user_id,
         filter_device_id=filter_device_id,
-        solved_filter=solved_filter
+        solved_filter=solved_filter,
+        date_start=date_start,
+        date_end=date_end,
     )
 
     # create filename

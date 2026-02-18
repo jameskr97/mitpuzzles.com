@@ -29,6 +29,8 @@ export const useAnalysisStore = defineStore('analysis', () => {
   const difficulties = ref<Set<string>>(new Set())
   const has_attempts = ref<'all' | 'with_attempts' | 'without_attempts'>('all')
   const solved_filter = ref<'all' | 'solved' | 'unsolved'>('all')
+  const date_start = ref<string>('')
+  const date_end = ref<string>('')
 
   // === Dynamic options from API ===
   const options = ref<FilterOptions | null>(null)
@@ -81,6 +83,8 @@ export const useAnalysisStore = defineStore('analysis', () => {
     difficulties.value = new Set()
     has_attempts.value = 'all'
     solved_filter.value = 'all'
+    date_start.value = ''
+    date_end.value = ''
     selected_entity_id.value = null
   }
 
@@ -111,6 +115,8 @@ export const useAnalysisStore = defineStore('analysis', () => {
     difficulties,
     has_attempts,
     solved_filter,
+    date_start,
+    date_end,
     options,
     loading_options,
     // Actions

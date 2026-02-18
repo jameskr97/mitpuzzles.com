@@ -4,6 +4,7 @@ import { api } from "@/core/services/axios.ts";
 
 const CACHE_VERSION = 1;
 const CACHE_STORAGE_KEY = 'mitlogic.cache.version';
+const CONSENT_STORAGE_KEY = 'mitlogic.privacy.consent';
 
 export const useAppStore = defineStore("mitlogic.appconfig", {
   state: () => ({
@@ -11,6 +12,7 @@ export const useAppStore = defineStore("mitlogic.appconfig", {
     device_id: null as string | null,
     lastCacheVersion: 0,
     login_modal_open: false,
+    has_consented: false,
   }),
   getters: {
     needsCacheInvalidation: (state) => state.lastCacheVersion < CACHE_VERSION,
@@ -48,6 +50,15 @@ export const useAppStore = defineStore("mitlogic.appconfig", {
 
       if (this.lastCacheVersion < CACHE_VERSION)
         this.invalidateAllCaches();
+    },
+
+    init_consent() {
+      this.has_consented = localStorage.getItem(CONSENT_STORAGE_KEY) === 'true';
+    },
+
+    accept_consent() {
+      this.has_consented = true;
+      localStorage.setItem(CONSENT_STORAGE_KEY, 'true');
     },
 
   },

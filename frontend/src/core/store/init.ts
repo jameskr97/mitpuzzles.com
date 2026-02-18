@@ -8,6 +8,7 @@ import { usePuzzleScaleStore } from "@/core/store/puzzle/usePuzzleScaleStore.ts"
 
 export async function init_app_store() {
   const app_store = useAppStore();
+  app_store.init_consent();
   await app_store.updateDeviceFingerprint();
   app_store.initCacheVersion();
 }

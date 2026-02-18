@@ -66,6 +66,7 @@ onMounted(() => {
     unopened_highlighted: "/assets/minesweeper/unopened-square-highlighted.svg",
     cell_empty: "/assets/minesweeper/cell-empty.svg",
     cell_violation: "/assets/minesweeper/cell-violation.svg",
+    number_0: "/assets/minesweeper/number-0.svg",
     number_1: "/assets/minesweeper/number-1.svg",
     number_2: "/assets/minesweeper/number-2.svg",
     number_3: "/assets/minesweeper/number-3.svg",
@@ -154,28 +155,20 @@ const cell_renderer = computed((): CellRenderer => {
     const has_violation = props.state.violations?.some(
       (v) =>
         v.rule_name === "minesweeper_surrounding_flag_violation" &&
-        v.locations?.some((loc) => loc.row === row && loc.col === col)
+        v.locations?.some((loc) => loc.row === row && loc.col === col),
     );
 
     // Background based on cell type
-    const needs_unopened_bg = [
-      MinesweeperCell.SAFE,
-      MinesweeperCell.FLAG,
-    ].includes(value);
+    const needs_unopened_bg = [MinesweeperCell.SAFE, MinesweeperCell.FLAG].includes(value);
 
     if (needs_unopened_bg) {
       if (current_images.unopened) {
         ctx.drawImage(current_images.unopened, x, y, size, size);
       }
-    } else if (
-      value === MinesweeperCell.UNMARKED ||
-      value === MinesweeperCell.UNMARKED_HIGHLIGHTED
-    ) {
+    } else if (value === MinesweeperCell.UNMARKED || value === MinesweeperCell.UNMARKED_HIGHLIGHTED) {
       // Will be drawn below
     } else {
-      const bg_img = has_violation
-        ? current_images.cell_violation
-        : current_images.cell_empty;
+      const bg_img = has_violation ? current_images.cell_violation : current_images.cell_empty;
       if (bg_img) {
         ctx.drawImage(bg_img, x, y, size, size);
       }
@@ -190,9 +183,9 @@ const cell_renderer = computed((): CellRenderer => {
       if (current_images.unopened_highlighted) {
         ctx.drawImage(current_images.unopened_highlighted, x, y, size, size);
       }
-    } else if (value >= MinesweeperCell.ONE && value <= MinesweeperCell.EIGHT) {
+    } else if (value >= MinesweeperCell.EMPTY && value <= MinesweeperCell.EIGHT) {
       const number_images = [
-        null,
+        current_images.number_0,
         current_images.number_1,
         current_images.number_2,
         current_images.number_3,
@@ -207,13 +200,7 @@ const cell_renderer = computed((): CellRenderer => {
       if (img) {
         const diff = 1.3;
         const offset = size - size / diff;
-        ctx.drawImage(
-          img,
-          x + offset / 2,
-          y + offset / 2,
-          size / diff,
-          size / diff
-        );
+        ctx.drawImage(img, x + offset / 2, y + offset / 2, size / diff, size / diff);
       }
     } else if (value === MinesweeperCell.FLAG) {
       if (current_images.flag) {
@@ -223,13 +210,7 @@ const cell_renderer = computed((): CellRenderer => {
       if (current_images.safe) {
         const diff = 1.5;
         const offset = size - size / diff;
-        ctx.drawImage(
-          current_images.safe,
-          x + offset / 2,
-          y + offset / 2,
-          size / diff,
-          size / diff
-        );
+        ctx.drawImage(current_images.safe, x + offset / 2, y + offset / 2, size / diff, size / diff);
       }
     }
   };

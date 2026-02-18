@@ -5,6 +5,7 @@ import AppMobileNavbar from "@/core/components/AppMobileNavbar.vue";
 import { TooltipProvider } from "@/core/components/ui/tooltip";
 import UserUsernameModal from "@/features/auth/components/UserUsernameModal.vue";
 import UserLoginModal from "@/features/auth/components/UserLoginModal.vue";
+import ConsentModal from "@/core/components/ConsentModal.vue";
 import { useAuthStore } from "@/core/store/useAuthStore";
 import { useRoute } from "vue-router";
 import { computed } from "vue";
@@ -37,6 +38,7 @@ const shouldShowSidebar = computed(() => {
       </SidebarProvider>
 
       <!-- Global modals -->
+      <ConsentModal />
       <UserUsernameModal :show="showUsernameModal" />
       <UserLoginModal />
     </TooltipProvider>

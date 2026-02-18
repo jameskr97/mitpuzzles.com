@@ -25,8 +25,8 @@ const store = useAnalysisStore()
       </div>
     </template>
 
-    <!-- Download-specific filters -->
-    <FilterSidebarDownload v-else-if="activeTab === 'download'" />
+    <!-- Download/SQL-specific filters -->
+    <FilterSidebarDownload v-else-if="activeTab === 'download' || activeTab === 'sql'" />
 
     <!-- Browser-specific filters -->
     <FilterSidebarBrowser v-else-if="activeTab === 'browser'" />

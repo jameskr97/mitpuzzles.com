@@ -1,10 +1,15 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useAnalysisStore } from '@/features/analysis/stores/useAnalysisStore'
 import FilterPuzzleSelector from '@/features/analysis/components/FilterPuzzleSelector.vue'
-import { FilterMultiSelect, FilterRadioGroup } from '@/core/components/ui/filters'
+import { FilterMultiSelect, FilterRadioGroup, FilterDateRange } from '@/core/components/ui/filters'
 
 const store = useAnalysisStore()
+
+const date_range = computed({
+  get: () => ({ start: store.date_start, end: store.date_end }),
+  set: (val) => { store.date_start = val.start; store.date_end = val.end },
+})
 
 const solved_options = [
   { value: 'all', label: 'All Attempts' },
@@ -47,5 +52,7 @@ onMounted(() => {
       label="Completion Status"
       :options="solved_options"
     />
+
+    <FilterDateRange v-model="date_range" label="Date Played" />
   </div>
 </template>
