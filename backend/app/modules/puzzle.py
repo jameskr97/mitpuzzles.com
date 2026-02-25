@@ -24,6 +24,28 @@ from app.modules.user_profile import UserProfile
 from app.utils import get_device_type_from_thumbmark
 
 
+LEADERBOARD_TOP_N_AVERAGE = 3
+
+
+def format_duration(time_seconds: float) -> str:
+    parts = []
+    remaining = int(time_seconds)
+    days = remaining // 86400
+    remaining %= 86400
+    hours = remaining // 3600
+    remaining %= 3600
+    minutes = remaining // 60
+    seconds = time_seconds % 60
+    if days > 0:
+        parts.append(f"{days}d")
+    if hours > 0 or days > 0:
+        parts.append(f"{hours}h")
+    if minutes > 0 or hours > 0 or days > 0:
+        parts.append(f"{minutes}m")
+    parts.append(f"{seconds:.2f}s")
+    return ":".join(parts)
+
+
 def is_research_format(board_state, action_history):
     """Check if data is already in research format by looking for -1 (empty cell marker)."""
     # Check board_state for -1
@@ -805,28 +827,6 @@ class PuzzleService:
         # get top N entries
         top_entries = all_rows[:limit]
 
-        # helper function to format duration
-        def format_duration(time_seconds: float) -> str:
-            parts = []
-            remaining = int(time_seconds)
-
-            days = remaining // 86400
-            remaining %= 86400
-            hours = remaining // 3600
-            remaining %= 3600
-            minutes = remaining // 60
-            seconds = time_seconds % 60
-
-            if days > 0:
-                parts.append(f"{days}d")
-            if hours > 0 or days > 0:
-                parts.append(f"{hours}h")
-            if minutes > 0 or hours > 0 or days > 0:
-                parts.append(f"{minutes}m")
-            parts.append(f"{seconds:.2f}s")
-
-            return ":".join(parts)
-
         # format leaderboard entries
         leaderboard_entries = []
         current_user_in_top = False
@@ -850,6 +850,115 @@ class PuzzleService:
                 "duration_display": format_duration(current_user_entry.completion_time_seconds),
                 "username": current_user_entry.username,
                 "is_current_user": True
+            })
+
+        return {"leaderboard": leaderboard_entries, "count": len(leaderboard_entries)}
+
+    async def get_freeplay_leaderboard_ao_n(self, puzzle_type: str, puzzle_size: str, puzzle_difficulty: str, limit: int = 10, user: Optional[User] = None, time_period: str = "all_time") -> Dict[str, Any]:
+        """get leaderboard using average of best N times for freeplay puzzles.
+        users must have at least N solves to appear. N is defined by LEADERBOARD_TOP_N_AVERAGE."""
+        from sqlalchemy import select, func, and_
+
+        n = LEADERBOARD_TOP_N_AVERAGE
+
+        # calculate cutoff datetime based on time_period
+        cutoff = None
+        if time_period == "today":
+            cutoff = datetime.utcnow() - timedelta(hours=24)
+        elif time_period == "weekly":
+            cutoff = datetime.utcnow() - timedelta(days=7)
+        elif time_period == "monthly":
+            cutoff = datetime.utcnow() - timedelta(days=30)
+
+        # build base conditions
+        base_conditions = [
+            FreeplayPuzzleAttempt.is_solved == True,  # noqa: E712
+            FreeplayPuzzleAttempt.user_id.is_not(None),
+            Puzzle.puzzle_type == puzzle_type,
+            Puzzle.puzzle_size == puzzle_size,
+            Puzzle.puzzle_difficulty == puzzle_difficulty,
+            FreeplayPuzzleAttempt.timestamp_finish.is_not(None),
+            FreeplayPuzzleAttempt.timestamp_start.is_not(None),
+            FreeplayPuzzleAttempt.used_tutorial == False,
+        ]
+        if cutoff:
+            base_conditions.append(FreeplayPuzzleAttempt.created_at >= cutoff)
+
+        completion_time = (FreeplayPuzzleAttempt.timestamp_finish - FreeplayPuzzleAttempt.timestamp_start) / 1000.0
+
+        # rank each user's solves by time
+        ranked = (
+            select(
+                FreeplayPuzzleAttempt.user_id,
+                completion_time.label("completion_time_seconds"),
+                func.row_number().over(
+                    partition_by=FreeplayPuzzleAttempt.user_id,
+                    order_by=completion_time.asc()
+                ).label("rn"),
+            )
+            .join(Puzzle, FreeplayPuzzleAttempt.puzzle_id == Puzzle.id)
+            .where(and_(*base_conditions))
+            .subquery()
+        )
+
+        # average of top N, only for users with >= N solves
+        avg_subquery = (
+            select(
+                ranked.c.user_id,
+                func.avg(ranked.c.completion_time_seconds).label("avg_time_seconds"),
+            )
+            .where(ranked.c.rn <= n)
+            .group_by(ranked.c.user_id)
+            .having(func.count() >= n)
+            .subquery()
+        )
+
+        # join with User table
+        query = (
+            select(
+                avg_subquery.c.user_id,
+                avg_subquery.c.avg_time_seconds.label("completion_time_seconds"),
+                User.username,
+            )
+            .join(User, avg_subquery.c.user_id == User.id)
+            .order_by(avg_subquery.c.avg_time_seconds.asc())
+        )
+
+        result = await self.db.execute(query)
+        all_rows = result.all()
+
+        # find current user position
+        current_user_entry = None
+        current_user_rank = None
+        if user:
+            for idx, row in enumerate(all_rows, 1):
+                if row.user_id == user.id:
+                    current_user_rank = idx
+                    current_user_entry = row
+                    break
+
+        top_entries = all_rows[:limit]
+
+        leaderboard_entries = []
+        current_user_in_top = False
+
+        for rank, row in enumerate(top_entries, 1):
+            is_current = bool(user and row.user_id == user.id)
+            if is_current:
+                current_user_in_top = True
+            leaderboard_entries.append({
+                "rank": rank,
+                "duration_display": format_duration(row.completion_time_seconds),
+                "username": row.username,
+                "is_current_user": is_current,
+            })
+
+        if user and current_user_entry and not current_user_in_top:
+            leaderboard_entries.append({
+                "rank": current_user_rank,
+                "duration_display": format_duration(current_user_entry.completion_time_seconds),
+                "username": current_user_entry.username,
+                "is_current_user": True,
             })
 
         return {"leaderboard": leaderboard_entries, "count": len(leaderboard_entries)}
@@ -1888,6 +1997,7 @@ async def get_freeplay_leaderboard(
     puzzle_difficulty: str = Query(..., description="Difficulty level"),
     limit: int = Query(10, description="Maximum number of entries to return", ge=1, le=100),
     time_period: str = Query("all_time", description="Time period for leaderboard: all_time, today (24h), weekly (7d), monthly (30d)"),
+    scoring_method: str = Query("best", description="Scoring method: best (single best time) or ao_n (average of best N)"),
     user: Optional[User] = Depends(fastapi_users.current_user(optional=True)),
 ) -> LeaderboardResponse:
     """
@@ -1901,18 +2011,24 @@ async def get_freeplay_leaderboard(
     - today: Last 24 hours
     - weekly: Last 7 days
     - monthly: Last 30 days
-
-    Example: GET /api/puzzle/freeplay/leaderboard/?puzzle_type=sudoku&puzzle_size=9x9&puzzle_difficulty=easy&limit=10&time_period=weekly
     """
-    # validate time_period
     valid_periods = ["all_time", "today", "weekly", "monthly"]
     if time_period not in valid_periods:
         raise HTTPException(status_code=400, detail=f"Invalid time_period. Must be one of: {', '.join(valid_periods)}")
 
+    valid_scoring = ["best", "ao_n"]
+    if scoring_method not in valid_scoring:
+        raise HTTPException(status_code=400, detail=f"Invalid scoring_method. Must be one of: {', '.join(valid_scoring)}")
+
     service = PuzzleService(db)
-    leaderboard_data = await service.get_freeplay_leaderboard(
-        puzzle_type=puzzle_type, puzzle_size=puzzle_size, puzzle_difficulty=puzzle_difficulty, limit=limit, user=user, time_period=time_period
-    )
+    if scoring_method == "ao_n":
+        leaderboard_data = await service.get_freeplay_leaderboard_ao_n(
+            puzzle_type=puzzle_type, puzzle_size=puzzle_size, puzzle_difficulty=puzzle_difficulty, limit=limit, user=user, time_period=time_period
+        )
+    else:
+        leaderboard_data = await service.get_freeplay_leaderboard(
+            puzzle_type=puzzle_type, puzzle_size=puzzle_size, puzzle_difficulty=puzzle_difficulty, limit=limit, user=user, time_period=time_period
+        )
 
     return LeaderboardResponse.model_validate(leaderboard_data)
 

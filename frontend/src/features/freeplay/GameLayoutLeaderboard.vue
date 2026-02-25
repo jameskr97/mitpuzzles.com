@@ -31,6 +31,7 @@ const props = defineProps<{
 const controller = inject<GameController>("game-controller")!;
 
 const is_leaderboard_open = ref(true);
+const scoring_method = ref<string>("ao_n");
 const time_period = ref<string>("weekly");
 
 const size = computed(() => props.current_variant[0]);
@@ -40,13 +41,14 @@ const leaderboard_store = usePuzzleLeaderboardStore();
 
 // Refresh leaderboard when variant or time period changes
 watch(
-  () => [props.current_variant, time_period.value] as const,
-  async ([variant, period]) => {
+  () => [props.current_variant, time_period.value, scoring_method.value] as const,
+  async ([variant, period, method]) => {
     await leaderboard_store.refreshLeaderboard(
       props.puzzle_type,
       variant[0],
       variant[1],
-      period
+      period,
+      method
     );
   },
   { immediate: true }
@@ -90,7 +92,8 @@ const leaderboard_entries = computed(() =>
     props.puzzle_type,
     size.value,
     difficulty.value,
-    time_period.value
+    time_period.value,
+    scoring_method.value
   )
 );
 </script>
@@ -114,6 +117,22 @@ const leaderboard_entries = computed(() =>
 
     <template v-if="is_leaderboard_open">
       <Separator class="mt-2 mb-1" />
+
+      <!-- Scoring method selector -->
+      <div class="flex gap-1 justify-center">
+        <Button
+          class="px-3"
+          v-for="method in [
+            { value: 'best', label: $t('freeplay:leaderboard.scoring_best') },
+            { value: 'ao_n', label: $t('freeplay:leaderboard.scoring_ao3') },
+          ]"
+          :key="method.value"
+          :variant="scoring_method === method.value ? 'outline' : 'link'"
+          @click="scoring_method = method.value"
+        >
+          {{ method.label }}
+        </Button>
+      </div>
 
       <!-- Time period selector -->
       <div class="flex justify-between">
@@ -151,7 +170,7 @@ const leaderboard_entries = computed(() =>
           <TableHeader>
             <TableRow>
               <TableHead class="p-0">{{ $t("ui:table.rank") }}</TableHead>
-              <TableHead>{{ $t("ui:table.time") }}</TableHead>
+              <TableHead>{{ scoring_method === 'ao_n' ? $t("ui:table.avg_time") : $t("ui:table.time") }}</TableHead>
               <TableHead>{{ $t("ui:table.username") }}</TableHead>
             </TableRow>
           </TableHeader>

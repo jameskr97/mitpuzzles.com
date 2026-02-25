@@ -67,6 +67,7 @@
   "table": {
     "rank": "Rank",
     "time": "Time",
+    "avg_time": "Avg. Time",
     "username": "Username"
   },
   "form": {

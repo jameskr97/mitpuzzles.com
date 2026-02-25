@@ -27,6 +27,8 @@
   },
   "leaderboard": {
     "title": "Leaderboard",
+    "scoring_best": "Best",
+    "scoring_ao3": "AO3",
     "no_entries": "No entries yet for the {{size}} {{puzzle_type}} with difficulty {{difficulty}}.",
     "tutorial_active_title": "Tutorial Mode Active",
     "tutorial_active_used_desc": "You've received tutorial feedback on this puzzle. You will be eligible for the leaderboard on the next puzzle.",
