@@ -6,7 +6,8 @@
     "feedback": "Feedback",
     "privacy_policy": "Privacy Policy",
     "account_settings": "Account Settings",
-    "logout": "Log out"
+    "logout": "Log out",
+    "daily_challenge": "Daily Challenge"
   },
   "theme": {
     "light": "Light",

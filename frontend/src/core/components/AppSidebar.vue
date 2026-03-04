@@ -42,6 +42,14 @@ const close_sidebar_on_mobile = () => {
         <SidebarGroupLabel>{{ $t('ui:nav.games') }}</SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip="Daily Challenge">
+                <router-link to="/daily" class="text-xl" @click.capture="close_sidebar_on_mobile">
+                  <span>📅</span>
+                  <span>{{ $t('ui:nav.daily_challenge') }}</span>
+                </router-link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
             <SidebarMenuItem v-for="game in Object.values(ACTIVE_GAMES)" :key="game.key">
               <SidebarMenuButton asChild :tooltip="game.name">
                 <router-link :to="{ name: 'game-' + game.key }" class="text-xl" @click.capture="close_sidebar_on_mobile">

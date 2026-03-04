@@ -35,6 +35,9 @@ export const useAppStore = defineStore("mitlogic.appconfig", {
         caches.delete('puzzle-catalog'),
         caches.delete('puzzle-definitions'),
         caches.delete('leaderboards'),
+        caches.delete('daily-definitions'),
+        caches.delete('daily-status'),
+        caches.delete('daily-leaderboards'),
       ]);
 
       // Clear localStorage caches

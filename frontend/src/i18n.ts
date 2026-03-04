@@ -19,12 +19,13 @@ import en_puzzle_tents from "./locales/en/puzzle/tents.json"
 import en_puzzle_hashi from "./locales/en/puzzle/hashi.json"
 import en_puzzle_norinori from "./locales/en/puzzle/norinori.json"
 import en_puzzle_aquarium from "./locales/en/puzzle/aquarium.json"
+import en_daily from "./locales/en/daily.json"
 
 
 i18next.init({
   lng: "en",
   fallbackLng: "en",
-  ns: ["common", "auth", "home", "dashboard"],
+  ns: ["common", "auth", "home", "dashboard", "daily"],
   defaultNS: "common",
   resources: {
     en: {
@@ -34,6 +35,7 @@ i18next.init({
       freeplay: en_freeplay,
       home: en_home,
       account: en_account,
+      daily: en_daily,
       puzzle: {
         kakurasu: en_puzzle_kakurasu,
         sudoku: en_puzzle_sudoku,

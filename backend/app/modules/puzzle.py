@@ -9,7 +9,7 @@ from typing import Optional, Dict, Any, List
 
 from fastapi import APIRouter, HTTPException, Query, Request, Response, Depends
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import String, DateTime, Index, UUID, ForeignKey, Boolean, BigInteger, text
+from sqlalchemy import String, DateTime, Index, UUID, ForeignKey, Boolean, BigInteger, text, UniqueConstraint
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column, declared_attr, relationship
 from sqlalchemy.sql.functions import count
@@ -224,6 +224,53 @@ class PuzzleShown(Base):
     user: Mapped[Optional["User"]] = relationship("User", backref="puzzles_shown")
     puzzle: Mapped["Puzzle"] = relationship("Puzzle", backref="shown_records")
     attempt: Mapped[Optional["FreeplayPuzzleAttempt"]] = relationship("FreeplayPuzzleAttempt", backref="shown_record")
+
+
+class DailyPuzzle(Base):
+    """
+    Assigns one puzzle per game type per day for the daily challenge.
+    All users see the same puzzles for a given date.
+    """
+    __tablename__ = "daily_puzzle"
+    __table_args__ = (
+        UniqueConstraint("puzzle_date", "puzzle_id", name="uq_daily_puzzle_date_puzzle"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(), primary_key=True, server_default=text("uuidv7()"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=False), default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=False), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    puzzle_date: Mapped[datetime] = mapped_column(DateTime(timezone=False), nullable=False)
+    puzzle_id: Mapped[uuid.UUID] = mapped_column(UUID(), ForeignKey("puzzle.id", ondelete="RESTRICT"), nullable=False)
+
+    # Relationships
+    puzzle: Mapped["Puzzle"] = relationship("Puzzle", backref="daily_records")
+
+
+class DailyPuzzleAttempt(Base):
+    """
+    Records each user/device attempt at a daily puzzle.
+    One attempt per device per daily puzzle.
+    """
+    __tablename__ = "daily_puzzle_attempt"
+    __table_args__ = (
+        UniqueConstraint("device_id", "daily_puzzle_id", name="uq_daily_attempt_device_daily"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(), primary_key=True, server_default=text("uuidv7()"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=False), default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=False), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    user_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(), ForeignKey("user.id", ondelete="SET NULL"), nullable=True)
+    device_id: Mapped[uuid.UUID] = mapped_column(UUID(), ForeignKey("device.id", ondelete="CASCADE"), nullable=False)
+    daily_puzzle_id: Mapped[uuid.UUID] = mapped_column(UUID(), ForeignKey("daily_puzzle.id", ondelete="CASCADE"), nullable=False)
+    attempt_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(), ForeignKey("freeplay_puzzle_attempt.id", ondelete="SET NULL"), nullable=True)
+
+    # Relationships
+    user: Mapped[Optional["User"]] = relationship("User", backref="daily_attempts")
+    device: Mapped["Device"] = relationship("Device", backref="daily_attempts")
+    daily_puzzle: Mapped["DailyPuzzle"] = relationship("DailyPuzzle", backref="attempts")
+    attempt: Mapped[Optional["FreeplayPuzzleAttempt"]] = relationship("FreeplayPuzzleAttempt", backref="daily_attempt_record")
 
 
 # Schemas
@@ -1739,6 +1786,232 @@ class PuzzleService:
             "attempts_options": attempts_options
         }
 
+    # --- Daily Challenge Methods ---
+
+    async def get_or_create_daily_puzzles(self, date: datetime) -> List[DailyPuzzle]:
+        """Get or lazily create daily puzzles for a given date (one per game type)."""
+        from sqlalchemy import select
+        from sqlalchemy.orm import selectinload
+
+        DAILY_GAME_TYPES = ["aquarium", "kakurasu", "lightup", "minesweeper", "mosaic", "nonograms", "sudoku", "tents"]
+
+        # Normalize to midnight
+        puzzle_date = date.replace(hour=0, minute=0, second=0, microsecond=0)
+
+        # Query existing daily puzzles for this date
+        existing_query = (
+            select(DailyPuzzle)
+            .options(selectinload(DailyPuzzle.puzzle))
+            .where(DailyPuzzle.puzzle_date == puzzle_date)
+        )
+        result = await self.db.execute(existing_query)
+        existing = result.scalars().all()
+
+        existing_types = {dp.puzzle.puzzle_type for dp in existing}
+
+        # If all 8 present, return them
+        if len(existing_types) >= len(DAILY_GAME_TYPES):
+            return list(existing)
+
+        # Create missing ones
+        missing_types = [t for t in DAILY_GAME_TYPES if t not in existing_types]
+
+        for game_type in missing_types:
+            # Select a random active puzzle with smallest available size
+            puzzle = await self.get_random_puzzle(puzzle_type=game_type)
+            if not puzzle:
+                continue
+
+            daily = DailyPuzzle(puzzle_date=puzzle_date, puzzle_id=puzzle.id)
+            self.db.add(daily)
+            try:
+                await self.db.flush()
+            except Exception:
+                # Race condition — another request created it; roll back and re-query
+                await self.db.rollback()
+                result = await self.db.execute(existing_query)
+                return list(result.scalars().all())
+
+        await self.db.commit()
+
+        # Re-query with relationships loaded
+        result = await self.db.execute(existing_query)
+        return list(result.scalars().all())
+
+    async def get_daily_puzzle_status(self, date: datetime, user_id: Optional[uuid.UUID], device_id: uuid.UUID) -> List[Dict[str, Any]]:
+        """Get daily puzzle status for a user/device on a given date."""
+        from sqlalchemy import select
+        from sqlalchemy.orm import selectinload
+
+        daily_puzzles = await self.get_or_create_daily_puzzles(date)
+
+        daily_puzzle_ids = [dp.id for dp in daily_puzzles]
+
+        # Query attempts for this device
+        attempt_query = (
+            select(DailyPuzzleAttempt)
+            .options(selectinload(DailyPuzzleAttempt.attempt))
+            .where(
+                DailyPuzzleAttempt.device_id == device_id,
+                DailyPuzzleAttempt.daily_puzzle_id.in_(daily_puzzle_ids),
+            )
+        )
+        result = await self.db.execute(attempt_query)
+        attempts = {a.daily_puzzle_id: a for a in result.scalars().all()}
+
+        statuses = []
+        for dp in daily_puzzles:
+            attempt = attempts.get(dp.id)
+            freeplay_attempt = attempt.attempt if attempt else None
+
+            completion_time = None
+            is_solved = False
+            if freeplay_attempt and freeplay_attempt.is_solved:
+                is_solved = True
+                if freeplay_attempt.timestamp_finish and freeplay_attempt.timestamp_start:
+                    time_seconds = (freeplay_attempt.timestamp_finish - freeplay_attempt.timestamp_start) / 1000.0
+                    completion_time = format_duration(time_seconds)
+
+            statuses.append({
+                "puzzle_type": dp.puzzle.puzzle_type,
+                "puzzle_id": str(dp.puzzle_id),
+                "daily_puzzle_id": str(dp.id),
+                "is_solved": is_solved,
+                "completion_time": completion_time,
+            })
+
+        return statuses
+
+    async def get_daily_leaderboard(self, daily_puzzle_id: uuid.UUID, limit: int = 10, user: Optional[User] = None) -> Dict[str, Any]:
+        """Get leaderboard for a specific daily puzzle."""
+        from sqlalchemy import select, func, and_
+
+        completion_time = (FreeplayPuzzleAttempt.timestamp_finish - FreeplayPuzzleAttempt.timestamp_start) / 1000.0
+
+        # Best time per user for this daily puzzle
+        best_times_subquery = (
+            select(
+                DailyPuzzleAttempt.user_id,
+                func.min(completion_time).label("best_time_seconds"),
+            )
+            .join(FreeplayPuzzleAttempt, DailyPuzzleAttempt.attempt_id == FreeplayPuzzleAttempt.id)
+            .where(
+                DailyPuzzleAttempt.daily_puzzle_id == daily_puzzle_id,
+                DailyPuzzleAttempt.user_id.is_not(None),
+                FreeplayPuzzleAttempt.is_solved == True,
+                FreeplayPuzzleAttempt.timestamp_finish.is_not(None),
+                FreeplayPuzzleAttempt.timestamp_start.is_not(None),
+            )
+            .group_by(DailyPuzzleAttempt.user_id)
+            .subquery()
+        )
+
+        query = (
+            select(
+                best_times_subquery.c.user_id,
+                best_times_subquery.c.best_time_seconds.label("completion_time_seconds"),
+                User.username,
+            )
+            .join(User, best_times_subquery.c.user_id == User.id)
+            .order_by(best_times_subquery.c.best_time_seconds.asc())
+        )
+
+        result = await self.db.execute(query)
+        all_rows = result.all()
+
+        current_user_entry = None
+        current_user_rank = None
+        if user:
+            for idx, row in enumerate(all_rows, 1):
+                if row.user_id == user.id:
+                    current_user_rank = idx
+                    current_user_entry = row
+                    break
+
+        top_entries = all_rows[:limit]
+
+        leaderboard_entries = []
+        current_user_in_top = False
+
+        for rank, row in enumerate(top_entries, 1):
+            is_current = bool(user and row.user_id == user.id)
+            if is_current:
+                current_user_in_top = True
+            leaderboard_entries.append({
+                "rank": rank,
+                "duration_display": format_duration(row.completion_time_seconds),
+                "username": row.username,
+                "is_current_user": is_current,
+            })
+
+        if user and current_user_entry and not current_user_in_top:
+            leaderboard_entries.append({
+                "rank": current_user_rank,
+                "duration_display": format_duration(current_user_entry.completion_time_seconds),
+                "username": current_user_entry.username,
+                "is_current_user": True,
+            })
+
+        return {"leaderboard": leaderboard_entries, "count": len(leaderboard_entries)}
+
+    async def submit_daily_attempt(
+        self,
+        date: datetime,
+        puzzle_type: str,
+        device_id: uuid.UUID,
+        user: Optional[User],
+        attempt_data: FreeplayAttemptCreate,
+    ) -> Dict[str, Any]:
+        """Submit an attempt for a daily puzzle."""
+        from sqlalchemy import select, and_
+
+        puzzle_date = date.replace(hour=0, minute=0, second=0, microsecond=0)
+
+        # Find the daily puzzle for this date + type
+        query = (
+            select(DailyPuzzle)
+            .join(Puzzle, DailyPuzzle.puzzle_id == Puzzle.id)
+            .where(
+                DailyPuzzle.puzzle_date == puzzle_date,
+                Puzzle.puzzle_type == puzzle_type,
+            )
+        )
+        result = await self.db.scalar(query)
+        if not result:
+            raise HTTPException(status_code=404, detail=f"No daily puzzle found for {puzzle_type} on {date.strftime('%Y-%m-%d')}")
+
+        daily_puzzle = result
+
+        # Check for existing attempt
+        existing = await self.db.scalar(
+            select(DailyPuzzleAttempt).where(
+                DailyPuzzleAttempt.device_id == device_id,
+                DailyPuzzleAttempt.daily_puzzle_id == daily_puzzle.id,
+            )
+        )
+
+        # Create the freeplay attempt
+        freeplay_attempt = await self.create_freeplay_attempt(attempt_data, device_id, user)
+
+        if existing:
+            # Update existing attempt with new freeplay attempt
+            existing.attempt_id = freeplay_attempt.id
+            if user:
+                existing.user_id = user.id
+            await self.db.commit()
+        else:
+            # Create new daily attempt
+            daily_attempt = DailyPuzzleAttempt(
+                user_id=user.id if user else None,
+                device_id=device_id,
+                daily_puzzle_id=daily_puzzle.id,
+                attempt_id=freeplay_attempt.id,
+            )
+            self.db.add(daily_attempt)
+            await self.db.commit()
+
+        return {"status": "Daily puzzle submitted.", "id": str(freeplay_attempt.id)}
+
 
 # routes
 router = APIRouter(prefix="/api/puzzle", tags=["Puzzles"])
@@ -2031,6 +2304,100 @@ async def get_freeplay_leaderboard(
         )
 
     return LeaderboardResponse.model_validate(leaderboard_data)
+
+
+# --- Daily Challenge Endpoints ---
+
+@router.get("/daily/today")
+async def get_daily_today(
+    db: AsyncDatabase,
+    device_id: uuid.UUID = Depends(get_device_id),
+    user: Optional[User] = Depends(fastapi_users.current_user(optional=True)),
+):
+    """Get today's daily puzzle status for this user/device."""
+    service = PuzzleService(db)
+    today = datetime.utcnow()
+    user_id = user.id if user else None
+    statuses = await service.get_daily_puzzle_status(today, user_id, device_id)
+    return {
+        "date": today.strftime("%Y-%m-%d"),
+        "puzzles": statuses,
+    }
+
+
+@router.get("/daily/{date}/definition/{puzzle_type}")
+async def get_daily_definition(
+    date: str,
+    puzzle_type: str,
+    db: AsyncDatabase,
+):
+    """Get the puzzle definition for a specific daily puzzle."""
+    try:
+        puzzle_date = datetime.strptime(date, "%Y-%m-%d")
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD.")
+
+    service = PuzzleService(db)
+    daily_puzzles = await service.get_or_create_daily_puzzles(puzzle_date)
+
+    for dp in daily_puzzles:
+        if dp.puzzle.puzzle_type == puzzle_type:
+            formatted = service.format_puzzle_for_frontend(dp.puzzle)
+            return PuzzleDefinitionResponse.model_validate(formatted)
+
+    raise HTTPException(status_code=404, detail=f"No daily puzzle found for {puzzle_type} on {date}")
+
+
+@router.get("/daily/{date}/leaderboard/{puzzle_type}", response_model=LeaderboardResponse)
+async def get_daily_leaderboard(
+    date: str,
+    puzzle_type: str,
+    db: AsyncDatabase,
+    limit: int = Query(10, ge=1, le=100),
+    user: Optional[User] = Depends(fastapi_users.current_user(optional=True)),
+):
+    """Get leaderboard for a specific daily puzzle."""
+    from sqlalchemy import select
+
+    try:
+        puzzle_date = datetime.strptime(date, "%Y-%m-%d")
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD.")
+
+    puzzle_date = puzzle_date.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    # Find the daily puzzle
+    query = (
+        select(DailyPuzzle)
+        .join(Puzzle, DailyPuzzle.puzzle_id == Puzzle.id)
+        .where(DailyPuzzle.puzzle_date == puzzle_date, Puzzle.puzzle_type == puzzle_type)
+    )
+    daily_puzzle = await db.scalar(query)
+    if not daily_puzzle:
+        raise HTTPException(status_code=404, detail=f"No daily puzzle found for {puzzle_type} on {date}")
+
+    service = PuzzleService(db)
+    leaderboard_data = await service.get_daily_leaderboard(daily_puzzle.id, limit, user)
+    return LeaderboardResponse.model_validate(leaderboard_data)
+
+
+@router.post("/daily/{date}/submit/{puzzle_type}", status_code=201)
+async def submit_daily_attempt(
+    date: str,
+    puzzle_type: str,
+    attempt_data: FreeplayAttemptCreate,
+    db: AsyncDatabase,
+    device_id: uuid.UUID = Depends(get_device_id),
+    user: Optional[User] = Depends(fastapi_users.current_user(optional=True)),
+):
+    """Submit an attempt for a daily puzzle."""
+    try:
+        puzzle_date = datetime.strptime(date, "%Y-%m-%d")
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD.")
+
+    service = PuzzleService(db)
+    return await service.submit_daily_attempt(puzzle_date, puzzle_type, device_id, user, attempt_data)
 
 
 @router.get("/admin/summary")

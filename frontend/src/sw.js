@@ -31,6 +31,44 @@ registerRoute(
   })
 );
 
+// Daily puzzle definitions - CacheFirst since they don't change for a given date
+registerRoute(
+  /^https?:\/\/[^\/]+\/api\/puzzle\/daily\/[^\/]+\/definition\/[^\/]+$/,
+  new CacheFirst({
+    cacheName: 'daily-definitions',
+    plugins: [
+      new ExpirationPlugin({ maxAgeSeconds: 60 * 60 * 24 }),
+      new CacheableResponsePlugin({ statuses: [0, 200] }),
+    ],
+  })
+);
+
+// Daily puzzle status
+registerRoute(
+  /^https?:\/\/[^\/]+\/api\/puzzle\/daily\/today$/,
+  new NetworkFirst({
+    cacheName: 'daily-status',
+    plugins: [
+      new ExpirationPlugin({ maxAgeSeconds: 60 * 5 }),
+      new CacheableResponsePlugin({ statuses: [0, 200] }),
+    ],
+    networkTimeoutSeconds: 3,
+  })
+);
+
+// Daily leaderboards
+registerRoute(
+  /^https?:\/\/[^\/]+\/api\/puzzle\/daily\/[^\/]+\/leaderboard\/[^\/]+$/,
+  new NetworkFirst({
+    cacheName: 'daily-leaderboards',
+    plugins: [
+      new ExpirationPlugin({ maxAgeSeconds: 60 * 5 }),
+      new CacheableResponsePlugin({ statuses: [0, 200] }),
+    ],
+    networkTimeoutSeconds: 3,
+  })
+);
+
 registerRoute(
   /^https?:\/\/[^\/]+\/api\/puzzle\/freeplay\/leaderboard/,
   new NetworkFirst({
