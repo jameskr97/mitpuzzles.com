@@ -47,6 +47,7 @@ export interface AquariumGameReturn {
   region_map: number[][];
   handle_cell_click: (row: number, col: number, button: number) => { old_value: number; new_value: number } | null;
   set_cell_value: (row: number, col: number, value: number) => { old_value: number; new_value: number } | null;
+  handle_line_toggle: (is_row: boolean, index: number, from_state: number, to_state: number) => { changes: Array<{ row: number; col: number; old_value: number; new_value: number }> };
   check_solution: () => Promise<boolean>;
   clear: () => void;
   get_violations: () => RuleViolation[];
@@ -184,6 +185,44 @@ export function useAquariumGame(
     return violations;
   }
 
+  function handle_line_toggle(
+    is_row: boolean,
+    index: number,
+    from_state: number,
+    to_state: number
+  ): { changes: Array<{ row: number; col: number; old_value: number; new_value: number }> } {
+    const changes: Array<{ row: number; col: number; old_value: number; new_value: number }> = [];
+    const length = is_row ? cols.value : rows.value;
+
+    const cells: Array<{ row: number; col: number; value: number }> = [];
+    for (let i = 0; i < length; i++) {
+      const row = is_row ? index : i;
+      const col = is_row ? i : index;
+      if (!is_cell_editable(row, col)) continue;
+      cells.push({ row, col, value: get_cell(row, col) });
+    }
+
+    const has_empty = cells.some((c) => c.value === from_state);
+
+    if (has_empty) {
+      for (const { row, col, value } of cells) {
+        if (value === from_state) {
+          set_cell(row, col, to_state);
+          changes.push({ row, col, old_value: value, new_value: to_state });
+        }
+      }
+    } else {
+      for (const { row, col, value } of cells) {
+        if (value === to_state) {
+          set_cell(row, col, from_state);
+          changes.push({ row, col, old_value: value, new_value: from_state });
+        }
+      }
+    }
+
+    return { changes };
+  }
+
   return {
     board,
     initial_state,
@@ -192,6 +231,7 @@ export function useAquariumGame(
     region_map,
     handle_cell_click,
     set_cell_value,
+    handle_line_toggle,
     check_solution: () => solution_checker.check(board.value),
     clear,
     get_violations,

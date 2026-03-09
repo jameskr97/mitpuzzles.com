@@ -3,7 +3,7 @@
  * AquariumFreeplay - Freeplay mode wrapper for Aquarium
  */
 import { computed, ref, watch, shallowRef } from "vue";
-import { useAquariumGame, type AquariumGameReturn, type AquariumMeta } from "./useAquariumGame";
+import { useAquariumGame, AquariumCell, type AquariumGameReturn, type AquariumMeta } from "./useAquariumGame";
 import { useFreeplayServices } from "@/features/freeplay/composables";
 import { useDataRecorder } from "@/core/games/composables";
 import type { GameController, GameUIState } from "@/core/games/types/game-controller";
@@ -57,6 +57,16 @@ function on_cell_drag(row: number, col: number) {
   const result = game.value.set_cell_value(row, col, drag_target_value.value);
   if (result) {
     recorder.record_click({ row, col }, result.old_value, result.new_value);
+    recorder.save_board_state(game.value.board.value);
+  }
+}
+
+function on_gutter_click(is_row: boolean, index: number, _button: number) {
+  const result = game.value.handle_line_toggle(is_row, index, AquariumCell.EMPTY, AquariumCell.CROSS);
+  if (result.changes.length > 0) {
+    for (const change of result.changes) {
+      recorder.record_click({ row: change.row, col: change.col }, change.old_value, change.new_value);
+    }
     recorder.save_board_state(game.value.board.value);
   }
 }
@@ -139,6 +149,7 @@ const canvas_key = computed(() => `${game.value.definition.id}-${game.value.defi
       @cell-drag="on_cell_drag"
       @cell-enter="on_cell_enter"
       @cell-leave="on_cell_leave"
+      @gutter-click="on_gutter_click"
     />
   </GameLayout>
 </template>

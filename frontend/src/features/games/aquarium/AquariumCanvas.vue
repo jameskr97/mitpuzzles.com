@@ -22,6 +22,7 @@ const emit = defineEmits<{
   (e: "cell-drag", row: number, col: number): void;
   (e: "cell-enter", row: number, col: number, zone: string): void;
   (e: "cell-leave", row: number, col: number, zone: string): void;
+  (e: "gutter-click", is_row: boolean, index: number, button: number): void;
 }>();
 
 // Track hovered cell for hover event recording
@@ -49,6 +50,14 @@ onMounted(() => {
 onUnmounted(() => { document.removeEventListener("mouseup", stop_drag); });
 
 function on_cell_mousedown(coord: { row: number; col: number; zone: string }, event: MouseEvent) {
+  if (coord.zone === "leftGutter") {
+    emit("gutter-click", true, coord.row, event.button);
+    return;
+  }
+  if (coord.zone === "topGutter") {
+    emit("gutter-click", false, coord.col, event.button);
+    return;
+  }
   if (coord.zone !== "game") return;
   is_dragging.value = true;
   drag_button.value = event.button;

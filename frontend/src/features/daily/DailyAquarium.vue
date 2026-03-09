@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch, shallowRef } from "vue";
-import { useAquariumGame, type AquariumGameReturn } from "@/features/games/aquarium/useAquariumGame";
+import { useAquariumGame, AquariumCell, type AquariumGameReturn } from "@/features/games/aquarium/useAquariumGame";
 import { useDailyServices } from "./useDailyServices";
 import { useDataRecorder } from "@/core/games/composables";
 import type { GameController, GameUIState } from "@/core/games/types/game-controller";
@@ -31,6 +31,15 @@ function on_cell_drag(row: number, col: number) {
   if (drag_target_value.value === null) return;
   const result = game.value.set_cell_value(row, col, drag_target_value.value);
   if (result) { recorder.record_click({ row, col }, result.old_value, result.new_value); recorder.save_board_state(game.value.board.value); }
+}
+function on_gutter_click(is_row: boolean, index: number, _button: number) {
+  const result = game.value.handle_line_toggle(is_row, index, AquariumCell.EMPTY, AquariumCell.CROSS);
+  if (result.changes.length > 0) {
+    for (const change of result.changes) {
+      recorder.record_click({ row: change.row, col: change.col }, change.old_value, change.new_value);
+    }
+    recorder.save_board_state(game.value.board.value);
+  }
 }
 function on_cell_enter(row: number, col: number, zone: string) { recorder.record_hover_start({ row, col }, zone); }
 function on_cell_leave(row: number, col: number, zone: string) { recorder.record_hover_end({ row, col }, zone); }
@@ -66,6 +75,6 @@ const canvas_key = computed(() => `${game.value.definition.id}-${game.value.defi
 
 <template>
   <DailyGameLayout :controller="controller" :definition="controller.state.value.definition" :date="services.date" :error="services.error.value">
-    <AquariumCanvas :key="canvas_key" :state="puzzle_state" :get_region="game.get_region" :same_region="game.same_region" @cell-click="on_cell_click" @cell-drag="on_cell_drag" @cell-enter="on_cell_enter" @cell-leave="on_cell_leave" />
+    <AquariumCanvas :key="canvas_key" :state="puzzle_state" :get_region="game.get_region" :same_region="game.same_region" @cell-click="on_cell_click" @cell-drag="on_cell_drag" @cell-enter="on_cell_enter" @cell-leave="on_cell_leave" @gutter-click="on_gutter_click" />
   </DailyGameLayout>
 </template>
