@@ -4,7 +4,7 @@
   "intro": "Aquarium is a water-filling logic puzzle played on a grid divided into blocks called <strong>aquariums</strong>. The below puzzle has 9 regions.",
   "goal": "Your goal is to fill aquariums with water so that they meet certain conditions.",
   "board_example": "Below is an empty Aquarium puzzle:",
-  "rule_gravity": "<strong><span class=\"text-blue-500\">Water</span> obeys gravity:</strong> Within each aquarium, if a cell contains water, all cells <em>below it in the same aquarium</em> must also contain water.",
+  "rule_gravity": "<strong><span class=\"text-blue-500\">Water</span> obeys gravity:</strong> Within each aquarium, if a cell contains water, all cells <em>at its level or below in the same aquarium</em> must also contain water.",
   "rule_gravity_invalid": "The water placement on the left is <strong class=\"text-red-500\">incorrect</strong>.",
   "rule_gravity_valid": "The right board is <strong class=\"text-green-500\">correct</strong> because all water cells below the highest level are filled.",
 
