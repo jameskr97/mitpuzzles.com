@@ -211,7 +211,7 @@ const cell_renderer = computed((): CellRenderer => {
       } else {
         // Fallback: draw X with lines
         ctx.strokeStyle = current_theme.text;
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 1;
         const padding = size * 0.17;
         ctx.beginPath();
         ctx.moveTo(x + padding, y + padding);
