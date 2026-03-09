@@ -512,7 +512,8 @@ class PuzzleService:
         user_id: Optional[uuid.UUID],
         puzzle_type: str,
         puzzle_size: Optional[str] = None,
-        puzzle_difficulty: Optional[str] = None
+        puzzle_difficulty: Optional[str] = None,
+        ignore_seen: bool = False,
     ) -> Optional[Puzzle]:
         """
         Get next puzzle for user, enforcing uniqueness rules.
@@ -563,29 +564,30 @@ class PuzzleService:
             )
         )
 
-        # Exclude puzzles based on uniqueness rules
-        ShownAlias = aliased(PuzzleShown)
-        if user_id:
-            # Logged in: exclude any puzzle this user has seen on ANY device
-            query = query.outerjoin(
-                ShownAlias,
-                and_(
-                    Puzzle.id == ShownAlias.puzzle_id,
-                    ShownAlias.user_id == user_id
+        # Exclude puzzles based on uniqueness rules (skip if cycling)
+        if not ignore_seen:
+            ShownAlias = aliased(PuzzleShown)
+            if user_id:
+                # Logged in: exclude any puzzle this user has seen on ANY device
+                query = query.outerjoin(
+                    ShownAlias,
+                    and_(
+                        Puzzle.id == ShownAlias.puzzle_id,
+                        ShownAlias.user_id == user_id
+                    )
                 )
-            )
-        else:
-            # Anonymous: exclude puzzles THIS device has seen (while anonymous)
-            query = query.outerjoin(
-                ShownAlias,
-                and_(
-                    Puzzle.id == ShownAlias.puzzle_id,
-                    ShownAlias.device_id == device_id,
-                    ShownAlias.user_id == None
+            else:
+                # Anonymous: exclude puzzles THIS device has seen (while anonymous)
+                query = query.outerjoin(
+                    ShownAlias,
+                    and_(
+                        Puzzle.id == ShownAlias.puzzle_id,
+                        ShownAlias.device_id == device_id,
+                        ShownAlias.user_id == None
+                    )
                 )
-            )
 
-        query = query.where(ShownAlias.id == None)
+            query = query.where(ShownAlias.id == None)
 
         # Try to get a priority puzzle first
         priority_query = query.where(PriorityAlias.id.is_not(None)).order_by(func.random())
@@ -2080,9 +2082,20 @@ async def get_next_puzzle_endpoint(
     )
 
     if not puzzle:
+        # All unseen puzzles exhausted — cycle back through seen puzzles
+        puzzle = await service.get_next_puzzle(
+            device_id=device_id,
+            user_id=user_id,
+            puzzle_type=puzzle_type,
+            puzzle_size=puzzle_size,
+            puzzle_difficulty=puzzle_difficulty,
+            ignore_seen=True,
+        )
+
+    if not puzzle:
         raise HTTPException(
             status_code=404,
-            detail=f"No available puzzles for type='{puzzle_type}', size='{puzzle_size}', difficulty='{puzzle_difficulty}' that you haven't seen"
+            detail=f"No available puzzles for type='{puzzle_type}', size='{puzzle_size}', difficulty='{puzzle_difficulty}'"
         )
 
     # Record that this puzzle was shown
