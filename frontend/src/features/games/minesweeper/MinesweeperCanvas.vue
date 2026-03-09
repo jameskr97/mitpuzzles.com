@@ -14,7 +14,7 @@ import type { RuleViolation } from "@/core/games/types/puzzle-types.ts";
 // Props
 const props = defineProps<{
   state: {
-    definition: { rows: number; cols: number };
+    definition: { rows: number; cols: number; initial_state?: number[][] };
     board: number[][];
     violations?: RuleViolation[];
   };
@@ -148,6 +148,10 @@ const cell_renderer = computed((): CellRenderer => {
   const _ = images_loaded.value;
   const current_images = images.value;
 
+  const initial = props.state.definition.initial_state;
+  const numRows = props.state.definition.rows;
+  const numCols = props.state.definition.cols;
+
   return (ctx, row, col, x, y, size, _state) => {
     const value = props.state.board[row][col];
 
@@ -184,23 +188,39 @@ const cell_renderer = computed((): CellRenderer => {
         ctx.drawImage(current_images.unopened_highlighted, x, y, size, size);
       }
     } else if (value >= MinesweeperCell.EMPTY && value <= MinesweeperCell.EIGHT) {
-      const number_images = [
-        current_images.number_0,
-        current_images.number_1,
-        current_images.number_2,
-        current_images.number_3,
-        current_images.number_4,
-        current_images.number_5,
-        current_images.number_6,
-        current_images.number_7,
-        current_images.number_8,
-      ];
+      // Skip drawing "0" if no adjacent cell is markable (hidden in initial_state)
+      let should_draw = value !== MinesweeperCell.EMPTY;
+      if (!should_draw && initial) {
+        for (let dr = -1; dr <= 1 && !should_draw; dr++) {
+          for (let dc = -1; dc <= 1 && !should_draw; dc++) {
+            if (dr === 0 && dc === 0) continue;
+            const nr = row + dr, nc = col + dc;
+            if (nr >= 0 && nr < numRows && nc >= 0 && nc < numCols) {
+              if (initial[nr][nc] === -1) should_draw = true;
+            }
+          }
+        }
+      }
 
-      const img = number_images[value];
-      if (img) {
-        const diff = 1.3;
-        const offset = size - size / diff;
-        ctx.drawImage(img, x + offset / 2, y + offset / 2, size / diff, size / diff);
+      if (should_draw) {
+        const number_images = [
+          current_images.number_0,
+          current_images.number_1,
+          current_images.number_2,
+          current_images.number_3,
+          current_images.number_4,
+          current_images.number_5,
+          current_images.number_6,
+          current_images.number_7,
+          current_images.number_8,
+        ];
+
+        const img = number_images[value];
+        if (img) {
+          const diff = 1.3;
+          const offset = size - size / diff;
+          ctx.drawImage(img, x + offset / 2, y + offset / 2, size / diff, size / diff);
+        }
       }
     } else if (value === MinesweeperCell.FLAG) {
       if (current_images.flag) {
