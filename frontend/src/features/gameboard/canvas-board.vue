@@ -119,10 +119,8 @@ const computedCellSize = computed(() => {
     return props.cellSize * props.scale;
   }
 
-  // Auto-calculate based on container size
-  // Use containerSize.value to make this reactive to container resizes
+  // Auto-calculate based on container width (height follows from aspect ratio)
   const containerWidth = containerSize.value.width || 500;
-  const containerHeight = containerSize.value.height || 500;
 
   const outside = props.outsideBorderThickness!;
   const inside = props.insideBorderThickness!;
@@ -141,23 +139,10 @@ const computedCellSize = computed(() => {
 
   const totalCols = props.gutterLeft + props.cols + props.gutterRight;
 
-  // Calculate vertical borders
-  const outsideBordersV = 2 +
-    (props.gutterTop > 0 ? 1 : 0) +
-    (props.gutterBottom > 0 ? 1 : 0);
-
-  const insideBordersV =
-    Math.max(0, props.gutterTop - 1) +
-    Math.max(0, props.rows - 1) +
-    Math.max(0, props.gutterBottom - 1);
-
-  const totalRows = props.gutterTop + props.rows + props.gutterBottom;
-
-  // Calculate cell size that fits both dimensions
+  // Cell size determined by available width only (height follows naturally)
   const cellWidth = (containerWidth - outsideBordersH * outside - insideBordersH * inside) / totalCols;
-  const cellHeight = (containerHeight - outsideBordersV * outside - insideBordersV * inside) / totalRows;
 
-  return Math.floor(Math.min(cellWidth, cellHeight) * props.scale);
+  return Math.floor(cellWidth * props.scale);
 });
 
 // Computed board dimensions (including gutters and borders)
@@ -743,21 +728,29 @@ function handle_keydown(event: KeyboardEvent) {
 }
 
 let lastScale = window.visualViewport?.scale || 1;
+let resizeRafId: number | null = null;
 
-/** Handle window resize and zoom events */
+/** Debounced resize handler — coalesces all resize sources into a single redraw */
+function scheduleResizeRedraw() {
+  if (resizeRafId !== null) return;
+  resizeRafId = requestAnimationFrame(() => {
+    resizeRafId = null;
+    if (renderer && canvasRef.value) {
+      renderer.setupHighDPI();
+      redraw();
+    }
+  });
+}
+
 function handleWindowResize() {
-  if (renderer && canvasRef.value) {
-    renderer.setupHighDPI();
-    redraw();
-  }
+  scheduleResizeRedraw();
 }
 
 function handleViewportChange() {
   const currentScale = window.visualViewport?.scale || 1;
-
   if (currentScale !== lastScale) {
     lastScale = currentScale;
-    handleWindowResize();
+    scheduleResizeRedraw();
   }
 }
 
@@ -808,6 +801,11 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
+  if (resizeRafId !== null) {
+    cancelAnimationFrame(resizeRafId);
+    resizeRafId = null;
+  }
+
   if (containerResizeObserver) {
     containerResizeObserver.disconnect();
     containerResizeObserver = null;
@@ -834,23 +832,7 @@ watch(
 watch(
   containerSize,
   () => {
-    if (renderer && canvasRef.value) {
-      // Use double RAF to ensure browser has completed layout before redrawing
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          renderer?.setupHighDPI();
-          redraw();
-
-          // Safety net: redraw again after a short delay in case layout wasn't fully settled
-          setTimeout(() => {
-            if (renderer && canvasRef.value) {
-              renderer.setupHighDPI();
-              redraw();
-            }
-          }, 50);
-        });
-      });
-    }
+    scheduleResizeRedraw();
   },
   { deep: true }
 );
@@ -876,24 +858,21 @@ defineExpose({
 </script>
 
 <template>
-  <div ref="containerRef" class="w-full h-full flex items-center justify-center">
-    <div class="w-full h-full flex items-center justify-center">
-      <canvas
-        ref="canvasRef"
-        :width="boardWidth"
-        :height="boardHeight"
-        tabindex="0"
-        @contextmenu.prevent
-        @mousedown="handle_mousedown"
-        @mouseup="handle_mouseup"
-        @mousemove="handle_mousemove"
-        @mouseenter="handle_board_enter"
-        @mouseleave="handle_board_leave"
-        @keydown="handle_keydown"
-        @dblclick="props.enableExport && exportAsPng()"
-        @dragstart.prevent
-        class="block !w-full !h-full object-contain [touch-action:manipulation] [image-rendering:pixelated]"
-      />
-    </div>
+  <div ref="containerRef" class="w-full flex items-center justify-center">
+    <canvas
+      ref="canvasRef"
+      tabindex="0"
+      @contextmenu.prevent
+      @mousedown="handle_mousedown"
+      @mouseup="handle_mouseup"
+      @mousemove="handle_mousemove"
+      @mouseenter="handle_board_enter"
+      @mouseleave="handle_board_leave"
+      @keydown="handle_keydown"
+      @dblclick="props.enableExport && exportAsPng()"
+      @dragstart.prevent
+      class="block !w-full [touch-action:manipulation] [image-rendering:pixelated]"
+      :style="{ aspectRatio: `${boardWidth} / ${boardHeight}` }"
+    />
   </div>
 </template>

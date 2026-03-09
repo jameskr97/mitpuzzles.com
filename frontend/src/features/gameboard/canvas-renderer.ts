@@ -40,14 +40,15 @@ export class CanvasRenderer {
 
     const rect = this.canvas.getBoundingClientRect();
 
-    // Set physical pixel dimensions (high resolution)
-    // Account for BOTH device pixel ratio AND browser zoom
-    this.canvas.width = rect.width * this.dpr * scale;
-    this.canvas.height = rect.height * this.dpr * scale;
+    const newWidth = Math.round(rect.width * this.dpr * scale);
+    const newHeight = Math.round(rect.height * this.dpr * scale);
 
-    // Set CSS display size (stays the same)
-    this.canvas.style.width = `${rect.width}px`;
-    this.canvas.style.height = `${rect.height}px`;
+    // Only resize the pixel buffer if dimensions actually changed
+    // (setting canvas.width/height clears the canvas even if value is unchanged)
+    if (this.canvas.width !== newWidth || this.canvas.height !== newHeight) {
+      this.canvas.width = newWidth;
+      this.canvas.height = newHeight;
+    }
 
     // Reset transform to avoid stacking when called multiple times
     this.ctx.setTransform(1, 0, 0, 1, 0, 0);
