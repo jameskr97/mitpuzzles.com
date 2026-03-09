@@ -359,6 +359,7 @@ onMounted(() => {
                     type="number"
                     min="1"
                     max="120"
+                    class="w-20"
                     :disabled="profile_loading"
                     @input="profile_error = ''"
                   />
