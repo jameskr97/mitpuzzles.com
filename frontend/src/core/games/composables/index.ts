@@ -26,6 +26,9 @@ export {
   type DataRecorderReturn,
 } from "./useDataRecorder.ts";
 
+// Cell interaction patterns
+export { useCellDragHandlers } from "./useCellDragHandlers.ts";
+
 // Violation checking utilities
 export {
   ORTHOGONAL_DIRECTIONS,
