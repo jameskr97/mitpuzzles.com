@@ -112,8 +112,13 @@ export function getGravatarUrl(email: string, size = 80) {
   return `https://www.gravatar.com/avatar/${hash}?s=${size}&d=identicon`;
 }
 
+export function isDailyVariant(variant?: string[]): boolean {
+  return variant?.length === 1 && variant[0] === "daily";
+}
+
 export function getPuzzleDisplayName(parts?: string[]): string {
   if (!parts) return "undefined";
+  if (isDailyVariant(parts)) return "Daily Challenge";
   if (parts.length < 2) return parts[0];
   if (parts[1] == null) return parts[0];
   const name = parts

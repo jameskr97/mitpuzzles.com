@@ -15,7 +15,10 @@ import { usePuzzleMetadataStore } from "@/core/store/puzzle/usePuzzleMetadataSto
 import { usePuzzleProgressStore } from "@/core/store/puzzle/usePuzzleProgressStore.ts";
 import { usePuzzleLeaderboardStore } from "@/core/store/puzzle/usePuzzleLeaderboardStore.ts";
 import { usePuzzleHistoryStore } from "@/core/store/puzzle/usePuzzleHistoryStore.ts";
+import { useDailyPuzzleStore } from "@/core/store/puzzle/useDailyPuzzleStore.ts";
 import { broadcast_channel_service } from "@/core/services/broadcast_channel.ts";
+import { submitDailyAttempt } from "@/core/services/app.ts";
+import { isDailyVariant } from "@/utils.ts";
 import type { PuzzleDefinition } from "@/core/games/types/puzzle-types.ts";
 
 export interface FreeplayServicesReturn<TMeta = any> {
@@ -39,6 +42,12 @@ export interface FreeplayServicesReturn<TMeta = any> {
 
   /** Error message if puzzle loading failed */
   error: Ref<string | null>;
+
+  /** Whether daily mode is active */
+  is_daily: ComputedRef<boolean>;
+
+  /** Current daily date (null when not in daily mode) */
+  daily_date: Ref<string | null>;
 
   /** Request a new puzzle */
   request_new_puzzle: () => Promise<PuzzleDefinition<TMeta> | null>;
@@ -71,50 +80,78 @@ export async function useFreeplayServices<TMeta = any>(
   const progress_store = usePuzzleProgressStore();
   const leaderboard_store = usePuzzleLeaderboardStore();
   const history_store = usePuzzleHistoryStore();
+  const daily_store = useDailyPuzzleStore();
 
   // Ensure stores are initialized
   await metadata_store.initializeStore();
   await progress_store.init();
 
-  // Get initial variant selection
+  // Get initial variant selection and determine mode
   const selected = metadata_store.getSelectedVariant(puzzle_type);
-  const current_variant = ref<[string, string]>([selected[0], selected[1]]);
+  const is_daily = computed(() => isDailyVariant(metadata_store.getSelectedVariant(puzzle_type)));
+  const daily_date = ref<string | null>(null);
+  const current_variant = ref<[string, string]>(
+    isDailyVariant(selected) ? ["", ""] : [selected[0], selected[1]]
+  );
+
+  // Dynamic progress key: changes between freeplay and daily modes
+  const progress_key = computed(() =>
+    is_daily.value && daily_date.value
+      ? `daily:${daily_date.value}:${puzzle_type}`
+      : puzzle_type
+  );
 
   // Error state for when puzzle loading fails
   const error = ref<string | null>(null);
 
-  // Load puzzle definition
+  // Load puzzle definition (branching on mode)
   let puzzle_definition: PuzzleDefinition<TMeta> | null = null;
-  try {
-    puzzle_definition = await definition_store.getOrFetchPuzzle<TMeta>(
-      puzzle_type,
-      current_variant.value[0],
-      current_variant.value[1]
-    );
-  } catch (err) {
-    // Set error state when API fails (e.g., 404 - no puzzles available)
-    console.warn(`Failed to fetch puzzle for ${puzzle_type}:`, err);
-    error.value = `No puzzles available for this game type. Please check back later.`;
+
+  if (isDailyVariant(selected)) {
+    try {
+      await daily_store.ensureFresh();
+      daily_date.value = daily_store.today_date;
+      puzzle_definition = await daily_store.fetchDailyDefinition(daily_date.value, puzzle_type);
+      if (puzzle_definition) {
+        current_variant.value = [`${puzzle_definition.rows}x${puzzle_definition.cols}`, ""];
+      }
+    } catch (err) {
+      console.warn(`Failed to fetch daily puzzle for ${puzzle_type}:`, err);
+      error.value = "No daily puzzle available. Please check back later.";
+    }
+  } else {
+    try {
+      puzzle_definition = await definition_store.getOrFetchPuzzle<TMeta>(
+        puzzle_type,
+        current_variant.value[0],
+        current_variant.value[1]
+      );
+    } catch (err) {
+      console.warn(`Failed to fetch puzzle for ${puzzle_type}:`, err);
+      error.value = `No puzzles available for this game type. Please check back later.`;
+    }
   }
 
   const definition = ref<PuzzleDefinition<TMeta> | null>(puzzle_definition);
 
-  // Get saved board state
+  // Get saved board state using the current progress key
   const saved_board = ref<number[][] | null>(
-    progress_store.current_puzzle_states[puzzle_type] ?? null
+    progress_store.current_puzzle_states[progress_key.value] ?? null
   );
 
   // Tutorial tracking
-  const tutorial_used = ref(progress_store.used_tutorial[puzzle_type] ?? false);
+  const tutorial_used = ref(
+    is_daily.value ? false : (progress_store.used_tutorial[puzzle_type] ?? false)
+  );
 
   // Initialize progress if first load
-  if (!progress_store.timestamp_start[puzzle_type] && saved_board.value === null && definition.value) {
-    await progress_store.reset_puzzle(puzzle_type, definition.value.initial_state);
+  if (!progress_store.timestamp_start[progress_key.value] && saved_board.value === null && definition.value) {
+    await progress_store.reset_puzzle(progress_key.value, definition.value.initial_state);
   }
 
-  // Computed state
-  const is_solved = computed(() => progress_store.is_puzzle_solved(puzzle_type));
-  const formatted_time = computed(() => progress_store.get_formatted_time(puzzle_type));
+  // Computed state using dynamic progress key
+  const is_solved = computed(() => progress_store.is_puzzle_solved(progress_key.value));
+  const formatted_time = computed(() => progress_store.get_formatted_time(progress_key.value));
 
   // Setup broadcast listeners for cross-tab sync
   const broadcast_unsubscribers: (() => void)[] = [];
@@ -159,78 +196,141 @@ export async function useFreeplayServices<TMeta = any>(
   });
 
   /**
-   * Request a new puzzle
+   * Request a new puzzle (or switch modes when variant changes)
    */
   async function request_new_puzzle(): Promise<PuzzleDefinition<TMeta> | null> {
-    // Save incomplete attempt if any moves were made
-    const events = history_store.get_events(puzzle_type, "freeplay");
-    if (events.length > 0 && !is_solved.value) {
-      try {
-        await history_store.upload_attempt_history(puzzle_type, "freeplay");
-      } catch (err) {
-        console.error("Failed to save incomplete attempt:", err);
-      }
-    }
-
-    // Get current variant selection
     const variant = metadata_store.getSelectedVariant(puzzle_type);
-    current_variant.value = [variant[0], variant[1]];
 
-    // Request new puzzle
-    let new_definition: PuzzleDefinition<TMeta>;
-    try {
-      new_definition = await definition_store.requestNewPuzzle<TMeta>(
-        puzzle_type,
-        variant[0],
-        variant[1]
-      );
-    } catch (err) {
-      // Set error state when API fails
-      console.warn(`Failed to fetch new puzzle for ${puzzle_type}:`, err);
-      error.value = `No puzzles available for this game type. Please check back later.`;
-      return null;
+    if (isDailyVariant(variant)) {
+      // Daily mode: fetch today's puzzle
+      try {
+        await daily_store.ensureFresh();
+        daily_date.value = daily_store.today_date;
+        const new_def = await daily_store.fetchDailyDefinition(daily_date.value, puzzle_type);
+        if (!new_def) {
+          error.value = "No daily puzzle available. Please check back later.";
+          return null;
+        }
+        error.value = null;
+        definition.value = new_def;
+        current_variant.value = [`${new_def.rows}x${new_def.cols}`, ""];
+
+        // Load daily saved state
+        const daily_key = `daily:${daily_date.value}:${puzzle_type}`;
+        saved_board.value = progress_store.current_puzzle_states[daily_key] ?? null;
+        tutorial_used.value = false;
+
+        if (!progress_store.timestamp_start[daily_key] && saved_board.value === null) {
+          await progress_store.reset_puzzle(daily_key, new_def.initial_state);
+        }
+
+        return new_def;
+      } catch (err) {
+        console.warn(`Failed to fetch daily puzzle for ${puzzle_type}:`, err);
+        error.value = "No daily puzzle available. Please check back later.";
+        return null;
+      }
+    } else {
+      // Freeplay mode: fetch new random puzzle
+      current_variant.value = [variant[0], variant[1]];
+      daily_date.value = null;
+
+      // Save incomplete attempt if any moves were made
+      const events = history_store.get_events(puzzle_type, "freeplay");
+      if (events.length > 0 && !is_solved.value) {
+        try {
+          await history_store.upload_attempt_history(puzzle_type, "freeplay");
+        } catch (err) {
+          console.error("Failed to save incomplete attempt:", err);
+        }
+      }
+
+      let new_definition: PuzzleDefinition<TMeta>;
+      try {
+        new_definition = await definition_store.requestNewPuzzle<TMeta>(
+          puzzle_type,
+          variant[0],
+          variant[1]
+        );
+      } catch (err) {
+        console.warn(`Failed to fetch new puzzle for ${puzzle_type}:`, err);
+        error.value = `No puzzles available for this game type. Please check back later.`;
+        return null;
+      }
+
+      error.value = null;
+      definition.value = new_definition;
+      saved_board.value = null;
+      tutorial_used.value = false;
+
+      await history_store.clear_events(puzzle_type, "freeplay");
+      await progress_store.reset_puzzle(puzzle_type, new_definition.initial_state);
+
+      broadcast_channel_service.broadcast_new_puzzle(puzzle_type, new_definition);
+
+      return new_definition;
     }
-
-    // Clear any previous error
-    error.value = null;
-    definition.value = new_definition;
-    saved_board.value = null;
-    tutorial_used.value = false;
-
-    // Clear history and reset timer
-    await history_store.clear_events(puzzle_type, "freeplay");
-    await progress_store.reset_puzzle(puzzle_type, new_definition.initial_state);
-
-    // Broadcast to other tabs
-    broadcast_channel_service.broadcast_new_puzzle(puzzle_type, new_definition);
-
-    return new_definition;
   }
 
   /**
    * Mark puzzle as solved
    */
   async function mark_solved(): Promise<void> {
-    await progress_store.mark_puzzle_solved(puzzle_type);
+    const pk = progress_key.value;
+    await progress_store.mark_puzzle_solved(pk);
 
-    // Upload history
-    await history_store.upload_attempt_history(puzzle_type, "freeplay");
+    if (is_daily.value && daily_date.value) {
+      // Daily submission
+      if (!definition.value) return;
 
-    // Refresh all leaderboard time periods
-    const [size, difficulty] = current_variant.value;
-    await Promise.all([
-      leaderboard_store.refreshLeaderboard(puzzle_type, size, difficulty, "today"),
-      leaderboard_store.refreshLeaderboard(puzzle_type, size, difficulty, "weekly"),
-      leaderboard_store.refreshLeaderboard(puzzle_type, size, difficulty, "monthly"),
-      leaderboard_store.refreshLeaderboard(puzzle_type, size, difficulty, "all_time"),
-    ]);
+      const events = history_store.get_events(pk, "freeplay");
+      const action_history = events.map((event) => ({
+        action: event.action_type,
+        timestamp: event.timestamp,
+        sequence: event.sequence,
+        cell: event.cell,
+        key: event.key,
+        old_value: event.old_value,
+        new_value: event.new_value,
+        board_snapshot: event.board_snapshot,
+        custom_data: event.custom_data,
+      }));
+
+      const payload = {
+        puzzle_id: definition.value.id,
+        timestamp_start: progress_store.timestamp_start[pk],
+        timestamp_finish: progress_store.timestamp_finish[pk],
+        action_history,
+        board_state: progress_store.current_puzzle_states[pk] || [],
+        is_solved: true,
+        used_tutorial: tutorial_used.value,
+      };
+
+      try {
+        await submitDailyAttempt(daily_date.value, puzzle_type, payload);
+        await daily_store.refreshDailyLeaderboard(daily_date.value, puzzle_type);
+      } catch (err) {
+        console.error("Failed to submit daily attempt:", err);
+      }
+    } else {
+      // Freeplay submission
+      await history_store.upload_attempt_history(pk, "freeplay");
+
+      const [size, difficulty] = current_variant.value;
+      await Promise.all([
+        leaderboard_store.refreshLeaderboard(puzzle_type, size, difficulty, "today"),
+        leaderboard_store.refreshLeaderboard(puzzle_type, size, difficulty, "weekly"),
+        leaderboard_store.refreshLeaderboard(puzzle_type, size, difficulty, "monthly"),
+        leaderboard_store.refreshLeaderboard(puzzle_type, size, difficulty, "all_time"),
+      ]);
+    }
   }
 
   /**
    * Reset puzzle progress
    */
   async function reset_progress(initial_board: number[][]): Promise<void> {
-    await progress_store.reset_puzzle(puzzle_type, initial_board);
+    await progress_store.reset_puzzle(progress_key.value, initial_board);
     saved_board.value = initial_board;
   }
 
@@ -240,7 +340,7 @@ export async function useFreeplayServices<TMeta = any>(
   function mark_tutorial_used(): void {
     if (!tutorial_used.value) {
       tutorial_used.value = true;
-      progress_store.mark_tutorial_used(puzzle_type);
+      progress_store.mark_tutorial_used(progress_key.value);
     }
   }
 
@@ -248,7 +348,7 @@ export async function useFreeplayServices<TMeta = any>(
    * Save board state
    */
   async function save_board_state(board: number[][]): Promise<void> {
-    await progress_store.update_puzzle_state(puzzle_type, board);
+    await progress_store.update_puzzle_state(progress_key.value, board);
     saved_board.value = board;
   }
 
@@ -256,7 +356,7 @@ export async function useFreeplayServices<TMeta = any>(
    * Upload attempt history
    */
   async function upload_attempt_history(): Promise<void> {
-    await history_store.upload_attempt_history(puzzle_type, "freeplay");
+    await history_store.upload_attempt_history(progress_key.value, "freeplay");
   }
 
   return {
@@ -267,6 +367,8 @@ export async function useFreeplayServices<TMeta = any>(
     tutorial_used,
     formatted_time,
     error,
+    is_daily,
+    daily_date,
     request_new_puzzle,
     mark_solved,
     reset_progress,

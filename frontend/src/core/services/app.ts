@@ -68,6 +68,10 @@ export async function submitPuzzleAttempt(payload: PuzzleFreeplayAttemptPayload)
   return await request("post", "/api/puzzle/freeplay/submit", { ...payload });
 }
 
+export async function submitDailyAttempt(date: string, puzzle_type: string, payload: any): Promise<any> {
+  return await request("post", `/api/puzzle/daily/${date}/submit/${puzzle_type}`, payload);
+}
+
 export async function submitProlificExperiment(payload: ProlificExperimentPayload): Promise<any> {
   return await request("post", "/api/experiment/prolific", payload);
 }

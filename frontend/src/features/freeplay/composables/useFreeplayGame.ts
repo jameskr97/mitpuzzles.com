@@ -37,7 +37,7 @@ export async function useFreeplayGame<TReturn extends GridGameReturn<TMeta>, TMe
 
   const recorder = useDataRecorder({
     mode: "freeplay",
-    puzzle_type,
+    puzzle_type: services.is_daily.value ? `daily:${puzzle_type}` : puzzle_type,
     persist: true,
     broadcast: true,
   })
@@ -109,8 +109,8 @@ export async function useFreeplayGame<TReturn extends GridGameReturn<TMeta>, TMe
   async function request_new_puzzle() {
     const new_def = await services.request_new_puzzle();
     if (new_def) {
-      game.value = create_game(new_def, null);
-      ui.value.show_solved_state = false;
+      game.value = create_game(new_def, services.saved_board.value);
+      ui.value.show_solved_state = services.is_solved.value;
       ui.value.tutorial_mode = false;
     }
   }
@@ -129,6 +129,9 @@ export async function useFreeplayGame<TReturn extends GridGameReturn<TMeta>, TMe
     ui,
     current_variant: services.current_variant,
     tutorial_used: services.tutorial_used,
+    formatted_time: services.formatted_time,
+    is_daily: services.is_daily,
+    daily_date: services.daily_date,
     check_solution,
     clear_puzzle,
     request_new_puzzle,

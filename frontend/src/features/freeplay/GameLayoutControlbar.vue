@@ -39,8 +39,8 @@ const current_scale = computed({
   set: (value: number[]) => scale_store.setScale(puzzle_type, value[0]),
 });
 
-// Timer display
-const formatted_time = computed(() => progress_store.get_formatted_time(puzzle_type));
+// Timer display (uses dynamic progress key from controller)
+const formatted_time = computed(() => props.controller.formatted_time.value);
 
 // Difficulty selection
 async function on_difficulty_select(variant: string[]) {
@@ -125,8 +125,8 @@ function download_payload() {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <!-- New Puzzle button -->
-        <Button @click="controller.request_new_puzzle">
+        <!-- New Puzzle button (hidden in daily mode) -->
+        <Button v-if="!controller.is_daily.value" @click="controller.request_new_puzzle">
           {{ $t("freeplay:control.new_puzzle") }}
         </Button>
 

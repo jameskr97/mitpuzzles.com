@@ -19,14 +19,6 @@ export const routes: RouteRecordRaw[] = [
   route.view("/board2", "board2", "board2"),
   ...Object.values(DEV_TOOLS).map(({ key, meta }) => route.dev(key, meta)),
   ...Object.keys(ACTIVE_GAMES).map(route.game),
-  // Daily Challenge routes
-  route.view("/daily", "DailyChallenge", "DailyChallenge"),
-  ...Object.keys(ACTIVE_GAMES).map((name) => ({
-    path: `/daily/${name}`,
-    name: `daily-${name}`,
-    component: () => import(`@/features/daily/Daily${capitalize(name)}.vue`),
-    meta: { game_type: name },
-  })),
   {
     path: "/experiment/:experiment_id",
     name: "experiment",

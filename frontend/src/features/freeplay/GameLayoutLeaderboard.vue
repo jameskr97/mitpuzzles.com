@@ -18,6 +18,7 @@ import Container from "@/core/components/ui/Container.vue";
 import { Separator } from "@/core/components/ui/separator";
 import { Button } from "@/core/components/ui/button";
 import { usePuzzleLeaderboardStore } from "@/core/store/puzzle/usePuzzleLeaderboardStore";
+import { useDailyPuzzleStore } from "@/core/store/puzzle/useDailyPuzzleStore";
 import { useTranslation } from "i18next-vue";
 
 const { t } = useTranslation();
@@ -38,18 +39,17 @@ const size = computed(() => props.current_variant[0]);
 const difficulty = computed(() => props.current_variant[1]);
 
 const leaderboard_store = usePuzzleLeaderboardStore();
+const daily_store = useDailyPuzzleStore();
 
-// Refresh leaderboard when variant or time period changes
+// Refresh leaderboard when variant, time period, or mode changes
 watch(
-  () => [props.current_variant, time_period.value, scoring_method.value] as const,
-  async ([variant, period, method]) => {
-    await leaderboard_store.refreshLeaderboard(
-      props.puzzle_type,
-      variant[0],
-      variant[1],
-      period,
-      method
-    );
+  () => [props.current_variant, time_period.value, scoring_method.value, controller.is_daily.value, controller.daily_date.value] as const,
+  async ([variant, period, method, is_daily, daily_date]) => {
+    if (is_daily && daily_date) {
+      await daily_store.refreshDailyLeaderboard(daily_date, props.puzzle_type);
+    } else {
+      await leaderboard_store.refreshLeaderboard(props.puzzle_type, variant[0], variant[1], period, method);
+    }
   },
   { immediate: true }
 );
@@ -87,15 +87,12 @@ const tutorial_message = computed(() => {
 });
 
 // Get leaderboard entries
-const leaderboard_entries = computed(() =>
-  leaderboard_store.getLeaderboard(
-    props.puzzle_type,
-    size.value,
-    difficulty.value,
-    time_period.value,
-    scoring_method.value
-  )
-);
+const leaderboard_entries = computed(() => {
+  if (controller.is_daily.value && controller.daily_date.value) {
+    return daily_store.getDailyLeaderboard(controller.daily_date.value, props.puzzle_type);
+  }
+  return leaderboard_store.getLeaderboard(props.puzzle_type, size.value, difficulty.value, time_period.value, scoring_method.value);
+});
 </script>
 
 <template>
@@ -118,8 +115,8 @@ const leaderboard_entries = computed(() =>
     <template v-if="is_leaderboard_open">
       <Separator class="mt-2 mb-1" />
 
-      <!-- Scoring method selector -->
-      <div class="flex gap-1 justify-center">
+      <!-- Scoring method selector (hidden in daily mode) -->
+      <div v-if="!controller.is_daily.value" class="flex gap-1 justify-center">
         <Button
           class="px-3"
           v-for="method in [
@@ -134,8 +131,8 @@ const leaderboard_entries = computed(() =>
         </Button>
       </div>
 
-      <!-- Time period selector -->
-      <div class="flex justify-between">
+      <!-- Time period selector (hidden in daily mode) -->
+      <div v-if="!controller.is_daily.value" class="flex justify-between">
         <Button
           class="px-3"
           v-for="period in [

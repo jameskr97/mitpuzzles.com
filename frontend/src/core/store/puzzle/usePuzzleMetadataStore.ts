@@ -39,6 +39,11 @@ export const usePuzzleMetadataStore = defineStore("mitlogic.puzzle.metadata", {
         }
       });
 
+      // inject "daily" as the first variant for every puzzle type
+      Object.keys(this.variants).forEach((key) => {
+        this.variants[key].unshift(["daily"]);
+      });
+
       // load user preferences from localStorage
       this.load_selected_variants();
     },
