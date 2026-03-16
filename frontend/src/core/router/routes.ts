@@ -1,6 +1,6 @@
 import type { RouteRecordRaw } from "vue-router";
 import { route } from "./helpers";
-import { ACTIVE_GAMES, ADMIN_TOOLS, DEV_TOOLS } from "@/constants.ts";
+import { ACTIVE_GAMES, ADMIN_TOOLS } from "@/constants.ts";
 import ExperimentRunner from "@/features/experiment-core/components/ExperimentRunner.vue";
 
 function capitalize(s: string) {
@@ -17,7 +17,6 @@ export const routes: RouteRecordRaw[] = [
   route.view("/about-us", "about-us", "AboutUs"),
   route.view("/privacy-policy", "privacy-policy", "privacy-policy"),
   route.view("/board2", "board2", "board2"),
-  ...Object.values(DEV_TOOLS).map(({ key, meta }) => route.dev(key, meta)),
   ...Object.keys(ACTIVE_GAMES).map(route.game),
   {
     path: "/experiment/:experiment_id",

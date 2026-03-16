@@ -20,8 +20,6 @@ export const ACTIVE_GAMES: Record<string, ReturnType<typeof create_game_entry>> 
 };
 export type PUZZLE_TYPES = keyof typeof ACTIVE_GAMES;
 
-export const DEV_TOOLS: Record<string, ReturnType<typeof create_dev_tool>> = {};
-
 export const ACTIVE_EXPERIMENTS: Record<string, any> = {
   "forced-choice": { key: "forced-choice", title: "Preview & Play", icon: "👀" },
   "metacognition": { key: "metacognition", title: "Confidence Check", icon: "🤔", },

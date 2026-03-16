@@ -13,7 +13,7 @@ import {
   SidebarRail,
   useSidebar,
 } from "@/core/components/ui/sidebar";
-import { ACTIVE_EXPERIMENTS, ACTIVE_GAMES, ADMIN_TOOLS, DEV_TOOLS } from "@/constants.ts";
+import { ACTIVE_EXPERIMENTS, ACTIVE_GAMES, ADMIN_TOOLS } from "@/constants.ts";
 import { useAuthStore } from "@/core/store/useAuthStore.ts";
 import AppLogo from "@/core/components/AppLogo.vue";
 import AppFeedbackModal from "@/core/components/AppFeedbackModal.vue";
@@ -42,14 +42,6 @@ const close_sidebar_on_mobile = () => {
         <SidebarGroupLabel>{{ $t('ui:nav.games') }}</SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip="Daily Challenge">
-                <router-link to="/daily" class="text-xl" @click.capture="close_sidebar_on_mobile">
-                  <span>📅</span>
-                  <span>{{ $t('ui:nav.daily_challenge') }}</span>
-                </router-link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
             <SidebarMenuItem v-for="game in Object.values(ACTIVE_GAMES)" :key="game.key">
               <SidebarMenuButton asChild :tooltip="game.name">
                 <router-link :to="{ name: 'game-' + game.key }" class="text-xl" @click.capture="close_sidebar_on_mobile">
@@ -92,20 +84,6 @@ const close_sidebar_on_mobile = () => {
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroupContent>
-      </SidebarGroup>
-
-      <SidebarGroup v-if="user.isAdmin">
-        <SidebarGroupLabel class="text-lg">Dev Tools (Admin Only)</SidebarGroupLabel>
-        <SidebarMenu>
-          <SidebarMenuItem v-for="tool in DEV_TOOLS" :key="tool.key">
-            <SidebarMenuButton asChild :tooltip="tool.name" v-if="!tool.requires_admin">
-              <router-link :to="{ name: 'dev-' + tool.key }" class="text-xl" @click.capture="close_sidebar_on_mobile">
-                <span>{{ tool.icon }}</span>
-                <span>{{ tool.name }}</span>
-              </router-link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
       </SidebarGroup>
     </SidebarContent>
     <SidebarFooter>
