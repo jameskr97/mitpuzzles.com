@@ -49,7 +49,6 @@ const cell_bridges = computed(() => {
     const [r1, c1] = bridge.island1;
     const [r2, c2] = bridge.island2;
     if (r1 === r2) {
-      // Horizontal bridge
       const min_col = Math.min(c1, c2);
       const max_col = Math.max(c1, c2);
       for (let c = min_col; c <= max_col; c++) {
@@ -59,7 +58,6 @@ const cell_bridges = computed(() => {
         map.set(key, existing);
       }
     } else {
-      // Vertical bridge
       const min_row = Math.min(r1, r2);
       const max_row = Math.max(r1, r2);
       for (let r = min_row; r <= max_row; r++) {
@@ -73,7 +71,6 @@ const cell_bridges = computed(() => {
   return map;
 });
 
-// Helper functions
 function cancel_drag(): void {
   drag_state.source = null;
   drag_state.destination = null;
@@ -102,26 +99,18 @@ function update_drag_destination(current_row: number, current_col: number): void
     return;
   }
 
-  // Determine primary direction based on relative position
   const dy = current_row - src_row;
   const dx = current_col - src_col;
   let dr = 0, dc = 0;
 
-  if (Math.abs(dx) > Math.abs(dy)) {
-    dc = dx > 0 ? 1 : -1;
-  } else if (Math.abs(dy) > Math.abs(dx)) {
-    dr = dy > 0 ? 1 : -1;
-  } else if (dx !== 0) {
-    dc = dx > 0 ? 1 : -1;
-  } else {
-    drag_state.destination = null;
-    return;
-  }
+  if (Math.abs(dx) > Math.abs(dy)) dc = dx > 0 ? 1 : -1;
+  else if (Math.abs(dy) > Math.abs(dx)) dr = dy > 0 ? 1 : -1;
+  else if (dx !== 0) dc = dx > 0 ? 1 : -1;
+  else { drag_state.destination = null; return; }
 
   drag_state.destination = props.find_island_in_direction(src_row, src_col, dr, dc);
 }
 
-// Native event handlers
 function handle_mousedown(event: MouseEvent): void {
   const canvas = (canvas_board_ref.value as any)?.$el?.querySelector?.("canvas") as HTMLCanvasElement | null;
   if (!canvas) return;
@@ -161,7 +150,6 @@ function handle_contextmenu(event: MouseEvent): void {
   event.preventDefault();
 }
 
-// Set up native event listeners
 onMounted(() => {
   const canvas = (canvas_board_ref.value as any)?.$el?.querySelector?.("canvas") as HTMLCanvasElement | null;
   if (canvas) {
@@ -184,17 +172,20 @@ onUnmounted(() => {
   document.removeEventListener("mouseup", handle_mouseup);
 });
 
-// Force redraw when drag state changes
 watch(
   () => [drag_state.source, drag_state.destination, drag_state.dragging],
-  () => {
-    const board = canvas_board_ref.value as any;
-    board?.redraw?.();
-  },
+  () => { (canvas_board_ref.value as any)?.redraw?.(); },
   { deep: true }
 );
 
-// Cell renderer
+// Helper to draw a line segment via raw ctx
+function draw_bridge_line(ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: number, y2: number) {
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+}
+
 const cell_renderer = computed((): CellRenderer => {
   const current_theme = theme.value;
   const current_bridges = cell_bridges.value;
@@ -203,25 +194,22 @@ const cell_renderer = computed((): CellRenderer => {
   const current_drag = drag_state;
   const all_bridges = props.state.bridges;
 
-  return (ctx, row, col, x, y, size) => {
+  return (r, cell, row, col, _state) => {
+    const ctx = r.ctx;
     const key = `${row},${col}`;
     const island_count = current_islands.get(key);
     const bridge_info = current_bridges.get(key);
-    const island_radius = size * ISLAND_RADIUS_RATIO;
-    const center_x = x + size / 2;
-    const center_y = y + size / 2;
+    const island_radius = cell.size * ISLAND_RADIUS_RATIO;
+    const { x, y, size, cx, cy } = cell;
     const is_drag_source = current_drag.source?.[0] === row && current_drag.source?.[1] === col;
     const is_drag_dest = current_drag.destination?.[0] === row && current_drag.destination?.[1] === col;
 
-    // Background
-    ctx.fillStyle = current_theme.background;
-    ctx.fillRect(x, y, size + 1, size + 1);
+    r.fillCell(cell, current_theme.background, 1);
 
     const is_island_cell = island_count !== undefined;
 
     // Draw bridges
     if (is_island_cell) {
-      // For island cells, draw bridge segments from center outward
       ctx.strokeStyle = current_theme.text;
       ctx.lineWidth = BRIDGE_WIDTH;
       ctx.lineCap = "butt";
@@ -239,81 +227,42 @@ const cell_renderer = computed((): CellRenderer => {
         const count = bridge.count;
 
         if (other_row === row) {
-          // Horizontal bridge
-          const to_right = other_col > col;
+          const edge_x = other_col > col ? x + size : x;
           if (count === 1) {
-            ctx.beginPath();
-            ctx.moveTo(center_x, center_y);
-            ctx.lineTo(to_right ? x + size : x, center_y);
-            ctx.stroke();
+            draw_bridge_line(ctx, cx, cy, edge_x, cy);
           } else {
-            ctx.beginPath();
-            ctx.moveTo(center_x, center_y - BRIDGE_GAP);
-            ctx.lineTo(to_right ? x + size : x, center_y - BRIDGE_GAP);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(center_x, center_y + BRIDGE_GAP);
-            ctx.lineTo(to_right ? x + size : x, center_y + BRIDGE_GAP);
-            ctx.stroke();
+            draw_bridge_line(ctx, cx, cy - BRIDGE_GAP, edge_x, cy - BRIDGE_GAP);
+            draw_bridge_line(ctx, cx, cy + BRIDGE_GAP, edge_x, cy + BRIDGE_GAP);
           }
         } else {
-          // Vertical bridge
-          const to_down = other_row > row;
+          const edge_y = other_row > row ? y + size : y;
           if (count === 1) {
-            ctx.beginPath();
-            ctx.moveTo(center_x, center_y);
-            ctx.lineTo(center_x, to_down ? y + size : y);
-            ctx.stroke();
+            draw_bridge_line(ctx, cx, cy, cx, edge_y);
           } else {
-            ctx.beginPath();
-            ctx.moveTo(center_x - BRIDGE_GAP, center_y);
-            ctx.lineTo(center_x - BRIDGE_GAP, to_down ? y + size : y);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(center_x + BRIDGE_GAP, center_y);
-            ctx.lineTo(center_x + BRIDGE_GAP, to_down ? y + size : y);
-            ctx.stroke();
+            draw_bridge_line(ctx, cx - BRIDGE_GAP, cy, cx - BRIDGE_GAP, edge_y);
+            draw_bridge_line(ctx, cx + BRIDGE_GAP, cy, cx + BRIDGE_GAP, edge_y);
           }
         }
       }
     } else if (bridge_info) {
-      // For non-island cells, draw full line across cell
       ctx.strokeStyle = current_theme.text;
       ctx.lineWidth = BRIDGE_WIDTH;
       ctx.lineCap = "butt";
 
       if (bridge_info.horizontal > 0) {
         if (bridge_info.horizontal === 1) {
-          ctx.beginPath();
-          ctx.moveTo(x, center_y);
-          ctx.lineTo(x + size, center_y);
-          ctx.stroke();
+          draw_bridge_line(ctx, x, cy, x + size, cy);
         } else {
-          ctx.beginPath();
-          ctx.moveTo(x, center_y - BRIDGE_GAP);
-          ctx.lineTo(x + size, center_y - BRIDGE_GAP);
-          ctx.stroke();
-          ctx.beginPath();
-          ctx.moveTo(x, center_y + BRIDGE_GAP);
-          ctx.lineTo(x + size, center_y + BRIDGE_GAP);
-          ctx.stroke();
+          draw_bridge_line(ctx, x, cy - BRIDGE_GAP, x + size, cy - BRIDGE_GAP);
+          draw_bridge_line(ctx, x, cy + BRIDGE_GAP, x + size, cy + BRIDGE_GAP);
         }
       }
       if (bridge_info.vertical > 0) {
         if (bridge_info.vertical === 1) {
-          ctx.beginPath();
-          ctx.moveTo(center_x, y);
-          ctx.lineTo(center_x, y + size);
-          ctx.stroke();
+          draw_bridge_line(ctx, cx, y, cx, y + size);
         } else {
-          ctx.beginPath();
-          ctx.moveTo(center_x - BRIDGE_GAP, y);
-          ctx.lineTo(center_x - BRIDGE_GAP, y + size);
-          ctx.stroke();
-          ctx.beginPath();
-          ctx.moveTo(center_x + BRIDGE_GAP, y);
-          ctx.lineTo(center_x + BRIDGE_GAP, y + size);
-          ctx.stroke();
+          draw_bridge_line(ctx, cx - BRIDGE_GAP, y, cx - BRIDGE_GAP, y + size);
+          draw_bridge_line(ctx, cx + BRIDGE_GAP, y, cx + BRIDGE_GAP, y + size);
         }
       }
     }
@@ -335,15 +284,9 @@ const cell_renderer = computed((): CellRenderer => {
         ctx.lineWidth = BRIDGE_WIDTH;
         ctx.globalAlpha = 0.5;
         if (src_row === dst_row) {
-          ctx.beginPath();
-          ctx.moveTo(x, center_y);
-          ctx.lineTo(x + size, center_y);
-          ctx.stroke();
+          draw_bridge_line(ctx, x, cy, x + size, cy);
         } else {
-          ctx.beginPath();
-          ctx.moveTo(center_x, y);
-          ctx.lineTo(center_x, y + size);
-          ctx.stroke();
+          draw_bridge_line(ctx, cx, y, cx, y + size);
         }
         ctx.globalAlpha = 1;
       }
@@ -355,48 +298,26 @@ const cell_renderer = computed((): CellRenderer => {
       const is_satisfied = current_bridge_count === island_count;
 
       ctx.beginPath();
-      ctx.arc(center_x, center_y, island_radius, 0, Math.PI * 2);
+      ctx.arc(cx, cy, island_radius, 0, Math.PI * 2);
 
-      // Fill color based on state
-      if (is_drag_source) {
-        ctx.fillStyle = current_theme.selectFill || "#e0e7ff";
-      } else if (is_drag_dest) {
-        ctx.fillStyle = current_theme.targetFill || "#fef3c7";
-      } else {
-        ctx.fillStyle = current_theme.background;
-      }
+      if (is_drag_source) ctx.fillStyle = current_theme.selectFill || "#e0e7ff";
+      else if (is_drag_dest) ctx.fillStyle = current_theme.targetFill || "#fef3c7";
+      else ctx.fillStyle = current_theme.background;
       ctx.fill();
 
-      // Border color
-      if (is_drag_source) {
-        ctx.strokeStyle = current_theme.selectBorder || "#4f46e5";
-        ctx.lineWidth = 3;
-      } else if (is_drag_dest) {
-        ctx.strokeStyle = current_theme.targetBorder || "#f59e0b";
-        ctx.lineWidth = 3;
-      } else if (is_satisfied) {
-        ctx.strokeStyle = current_theme.hint;
-        ctx.lineWidth = 3;
-      } else {
-        ctx.strokeStyle = current_theme.text;
-        ctx.lineWidth = 2;
-      }
+      if (is_drag_source) { ctx.strokeStyle = current_theme.selectBorder || "#4f46e5"; ctx.lineWidth = 3; }
+      else if (is_drag_dest) { ctx.strokeStyle = current_theme.targetBorder || "#f59e0b"; ctx.lineWidth = 3; }
+      else if (is_satisfied) { ctx.strokeStyle = current_theme.hint; ctx.lineWidth = 3; }
+      else { ctx.strokeStyle = current_theme.text; ctx.lineWidth = 2; }
       ctx.stroke();
 
-      // Text color
-      if (is_drag_source) {
-        ctx.fillStyle = current_theme.selectBorder || "#4f46e5";
-      } else if (is_drag_dest) {
-        ctx.fillStyle = current_theme.targetBorder || "#f59e0b";
-      } else if (is_satisfied) {
-        ctx.fillStyle = current_theme.hint;
-      } else {
-        ctx.fillStyle = current_theme.text;
-      }
-      ctx.font = `bold ${size * 0.45}px sans-serif`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(island_count.toString(), center_x, center_y + 1);
+      let text_color: string;
+      if (is_drag_source) text_color = current_theme.selectBorder || "#4f46e5";
+      else if (is_drag_dest) text_color = current_theme.targetBorder || "#f59e0b";
+      else if (is_satisfied) text_color = current_theme.hint;
+      else text_color = current_theme.text;
+
+      r.textCentered(cell, island_count.toString(), { color: text_color, sizeFactor: 0.45, offsetY: 1 });
     }
   };
 });

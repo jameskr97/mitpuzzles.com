@@ -1,23 +1,22 @@
 import type { PuzzleState } from "@/core/games/types/puzzle-types.ts";
+import type { CanvasRenderer } from "./canvas-renderer.ts";
+
+export interface CellBox {
+  readonly x: number;
+  readonly y: number;
+  readonly size: number;
+  readonly cx: number;
+  readonly cy: number;
+}
 
 /**
- * function type for rendering individual cells on the canvas.
- *
- * @param ctx - Canvas 2D rendering context
- * @param row - Row index of the cell
- * @param col - Column index of the cell
- * @param x - X coordinate of top-left corner (in logical pixels)
- * @param y - Y coordinate of top-left corner (in logical pixels)
- * @param size - Size of the cell (in logical pixels)
- * @param state - Current puzzle state
+ * Function type for rendering individual cells on the canvas.
  */
 export type CellRenderer = (
-  ctx: CanvasRenderingContext2D,
+  r: CanvasRenderer,
+  cell: CellBox,
   row: number,
   col: number,
-  x: number,
-  y: number,
-  size: number,
   state: PuzzleState
 ) => void;
 

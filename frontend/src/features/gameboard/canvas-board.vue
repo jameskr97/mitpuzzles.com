@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, watch, computed, nextTick } from 'vue';
 import { CanvasRenderer } from './canvas-renderer';
-import type { CellRenderer, CellCoordinate } from './canvas-types';
+import type { CellRenderer, CellCoordinate, CellBox } from './canvas-types';
 
 
 const props = withDefaults(
@@ -234,6 +234,10 @@ function setupCanvas() {
 /**
  * Redraw the entire board
  */
+function cellBox(x: number, y: number, size: number): CellBox {
+  return { x, y, size, cx: x + size / 2, cy: y + size / 2 };
+}
+
 function redraw() {
   if (!canvasRef.value || !renderer) return;
 
@@ -256,7 +260,7 @@ function redraw() {
         const x = gridStartX.value + col * (cellSize + inside);
         const y = topGutterStartY + row * (cellSize + inside);
         // Pass row as-is (0 to gutterTop-1) so renderer can detect it's in top gutter
-        props.cellRenderer(ctx, row, col + props.gutterLeft, x, y, cellSize, props.state);
+        props.cellRenderer(renderer, cellBox(x, y, cellSize), row, col + props.gutterLeft, props.state);
       }
     }
   }
@@ -270,7 +274,7 @@ function redraw() {
         const y = gridStartY.value + row * (cellSize + inside);
         // Pass col as-is (0 to gutterLeft-1) so renderer can detect it's in left gutter
         // Offset row by gutterTop so it doesn't conflict with top gutter rows
-        props.cellRenderer(ctx, row + props.gutterTop, col, x, y, cellSize, props.state);
+        props.cellRenderer(renderer, cellBox(x, y, cellSize), row + props.gutterTop, col, props.state);
       }
     }
   }
@@ -282,7 +286,7 @@ function redraw() {
       const y = gridStartY.value + row * (cellSize + inside);
 
       // Offset row/col by gutter sizes so renderer knows these are main grid cells
-      props.cellRenderer(ctx, row + props.gutterTop, col + props.gutterLeft, x, y, cellSize, props.state);
+      props.cellRenderer(renderer, cellBox(x, y, cellSize), row + props.gutterTop, col + props.gutterLeft, props.state);
     }
   }
 
@@ -293,7 +297,7 @@ function redraw() {
       for (let col = 0; col < props.gutterRight; col++) {
         const x = rightGutterStartX + col * (cellSize + inside);
         const y = gridStartY.value + row * (cellSize + inside);
-        props.cellRenderer(ctx, row + props.gutterTop, col + props.gutterLeft + props.cols, x, y, cellSize, props.state);
+        props.cellRenderer(renderer, cellBox(x, y, cellSize), row + props.gutterTop, col + props.gutterLeft + props.cols, props.state);
       }
     }
   }
@@ -305,7 +309,7 @@ function redraw() {
       for (let col = 0; col < props.cols; col++) {
         const x = gridStartX.value + col * (cellSize + inside);
         const y = bottomGutterStartY + row * (cellSize + inside);
-        props.cellRenderer(ctx, row + props.gutterTop + props.rows, col + props.gutterLeft, x, y, cellSize, props.state);
+        props.cellRenderer(renderer, cellBox(x, y, cellSize), row + props.gutterTop + props.rows, col + props.gutterLeft, props.state);
       }
     }
   }

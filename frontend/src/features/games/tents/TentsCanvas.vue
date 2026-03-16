@@ -1,7 +1,4 @@
 <script setup lang="ts">
-/**
- * TentsCanvas - Canvas-based renderer for Tents
- */
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import CanvasBoard from "@/features/gameboard/canvas-board.vue";
 import { useCanvasTheme } from "@/features/gameboard/canvas-theme";
@@ -25,11 +22,8 @@ const emit = defineEmits<{
   (e: "gutter-click", is_row: boolean, index: number, button: number): void;
 }>();
 
-// Track hovered cell for hover event recording
 const hovered_cell = ref<{ row: number; col: number; zone: string } | null>(null);
-
 const { theme } = useCanvasTheme();
-
 const is_dragging = ref(false);
 const drag_button = ref<number>(0);
 const dragged_cells = ref<Set<string>>(new Set());
@@ -46,30 +40,19 @@ onMounted(() => {
   }
   document.addEventListener("mouseup", stop_drag);
 });
-
 onUnmounted(() => { document.removeEventListener("mouseup", stop_drag); });
 
 function on_cell_mousedown(coord: { row: number; col: number; zone: string }, event: MouseEvent) {
-  // Handle gutter clicks (tent counts on left and top)
   if (coord.zone === "leftGutter") {
-    console.log("left gutter click", coord);
-    // Left gutter shows row tent counts, clicking toggles that row
     const board_row = coord.row;
-    if (board_row >= 0 && board_row < props.state.definition.rows) {
-      emit("gutter-click", true, board_row, event.button);
-    }
+    if (board_row >= 0 && board_row < props.state.definition.rows) emit("gutter-click", true, board_row, event.button);
     return;
   }
   if (coord.zone === "topGutter") {
-    console.log("top gutter click", coord);
-    // Top gutter shows column tent counts, clicking toggles that column
     const board_col = coord.col;
-    if (board_col >= 0 && board_col < props.state.definition.cols) {
-      emit("gutter-click", false, coord.col, event.button);
-    }
+    if (board_col >= 0 && board_col < props.state.definition.cols) emit("gutter-click", false, coord.col, event.button);
     return;
   }
-
   if (coord.zone !== "game") return;
   is_dragging.value = true;
   drag_button.value = event.button;
@@ -78,11 +61,8 @@ function on_cell_mousedown(coord: { row: number; col: number; zone: string }, ev
 }
 
 function on_cell_enter(coord: { row: number; col: number; zone: string }, _event: MouseEvent) {
-  // Emit hover enter for tracking (all zones)
   hovered_cell.value = { row: coord.row, col: coord.col, zone: coord.zone };
   emit("cell-enter", coord.row, coord.col, coord.zone);
-
-  // Handle drag (game zone only)
   if (coord.zone !== "game" || !is_dragging.value) return;
   const cell_key = `${coord.row},${coord.col}`;
   if (dragged_cells.value.has(cell_key)) return;
@@ -95,9 +75,7 @@ function on_cell_leave(coord: { row: number; col: number; zone: string }, _event
 }
 
 function on_board_leave(_event: MouseEvent) {
-  if (hovered_cell.value) {
-    emit("cell-leave", hovered_cell.value.row, hovered_cell.value.col, hovered_cell.value.zone);
-  }
+  if (hovered_cell.value) emit("cell-leave", hovered_cell.value.row, hovered_cell.value.col, hovered_cell.value.zone);
   hovered_cell.value = null;
 }
 
@@ -108,7 +86,7 @@ const cell_renderer = computed((): CellRenderer => {
   const current_theme = theme.value;
   const current_images = images.value;
 
-  return (ctx, row, col, x, y, size, _state) => {
+  return (r, cell, row, col, _state) => {
     const puzzle_state = props.state;
 
     // Top gutter: column tent counts
@@ -118,11 +96,7 @@ const cell_renderer = computed((): CellRenderer => {
       const has_violation = puzzle_state.violations?.some(
         (v) => v.rule_name === "line_sum_col_exceeded" && v.locations?.some((loc) => loc.row === -1 && loc.col === actual_col)
       );
-      ctx.fillStyle = has_violation ? current_theme.error : "black";
-      ctx.font = `bold ${size * 0.7}px sans-serif`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(col_count.toString(), x + size / 2, y + size / 2);
+      r.textCentered(cell, col_count.toString(), { color: has_violation ? current_theme.error : "black", sizeFactor: 0.7, weight: 'bold' });
       return;
     }
 
@@ -133,11 +107,7 @@ const cell_renderer = computed((): CellRenderer => {
       const has_violation = puzzle_state.violations?.some(
         (v) => v.rule_name === "line_sum_row_exceeded" && v.locations?.some((loc) => loc.row === actual_row && loc.col === -1)
       );
-      ctx.fillStyle = has_violation ? current_theme.error : "black";
-      ctx.font = `bold ${size * 0.7}px sans-serif`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(row_count.toString(), x + size / 2, y + size / 2);
+      r.textCentered(cell, row_count.toString(), { color: has_violation ? current_theme.error : "black", sizeFactor: 0.7, weight: 'bold' });
       return;
     }
 
@@ -154,16 +124,13 @@ const cell_renderer = computed((): CellRenderer => {
     const red_bg = "#fca5a5";
 
     if (value === TentsCell.TENT) {
-      ctx.fillStyle = has_violation ? red_bg : green_bg;
-      ctx.fillRect(x, y, size + 1, size + 1);
-      if (current_images.tent) ctx.drawImage(current_images.tent, x, y, size, size);
+      r.fillCell(cell, has_violation ? red_bg : green_bg, 1);
+      if (current_images.tent) r.imageCell(cell, current_images.tent);
     } else if (value === TentsCell.TREE) {
-      ctx.fillStyle = green_bg;
-      ctx.fillRect(x, y, size + 1, size + 1);
-      if (current_images.tree) ctx.drawImage(current_images.tree, x, y, size, size);
+      r.fillCell(cell, green_bg, 1);
+      if (current_images.tree) r.imageCell(cell, current_images.tree);
     } else if (value === TentsCell.GREEN) {
-      ctx.fillStyle = green_bg;
-      ctx.fillRect(x, y, size + 1, size + 1);
+      r.fillCell(cell, green_bg, 1);
     }
   };
 });

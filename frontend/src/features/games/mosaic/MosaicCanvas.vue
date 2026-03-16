@@ -1,7 +1,4 @@
 <script setup lang="ts">
-/**
- * MosaicCanvas - Canvas-based renderer for Mosaic
- */
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import CanvasBoard from "@/features/gameboard/canvas-board.vue";
 import { useCanvasTheme } from "@/features/gameboard/canvas-theme";
@@ -18,12 +15,10 @@ const props = defineProps<{
   get_number_clue?: (row: number, col: number) => number | null;
 }>();
 
-// Default get_number_clue reads from initial_state (values 0-9 are number clues)
 function default_get_number_clue(row: number, col: number): number | null {
   const initial = props.state.definition.initial_state;
   if (!initial || !initial[row]) return null;
   const value = initial[row][col];
-  // In mosaic, values 0-9 in initial_state are number clues
   return (value >= 0 && value <= 9) ? value : null;
 }
 
@@ -36,11 +31,8 @@ const emit = defineEmits<{
   (e: "cell-leave", row: number, col: number, zone: string): void;
 }>();
 
-// Track hovered cell for hover event recording
 const hovered_cell = ref<{ row: number; col: number; zone: string } | null>(null);
-
 const { theme } = useCanvasTheme();
-
 const is_dragging = ref(false);
 const drag_button = ref<number>(0);
 const dragged_cells = ref<Set<string>>(new Set());
@@ -57,11 +49,8 @@ function on_cell_mousedown(coord: { row: number; col: number; zone: string }, ev
 }
 
 function on_cell_enter(coord: { row: number; col: number; zone: string }, _event: MouseEvent) {
-  // Emit hover enter for tracking (all zones)
   hovered_cell.value = { row: coord.row, col: coord.col, zone: coord.zone };
   emit("cell-enter", coord.row, coord.col, coord.zone);
-
-  // Handle drag (game zone only)
   if (coord.zone !== "game" || !is_dragging.value) return;
   const cell_key = `${coord.row},${coord.col}`;
   if (dragged_cells.value.has(cell_key)) return;
@@ -74,9 +63,7 @@ function on_cell_leave(coord: { row: number; col: number; zone: string }, _event
 }
 
 function on_board_leave(_event: MouseEvent) {
-  if (hovered_cell.value) {
-    emit("cell-leave", hovered_cell.value.row, hovered_cell.value.col, hovered_cell.value.zone);
-  }
+  if (hovered_cell.value) emit("cell-leave", hovered_cell.value.row, hovered_cell.value.col, hovered_cell.value.zone);
   hovered_cell.value = null;
 }
 
@@ -85,7 +72,7 @@ function stop_drag() { is_dragging.value = false; dragged_cells.value.clear(); }
 const cell_renderer = computed((): CellRenderer => {
   const current_theme = theme.value;
 
-  return (ctx, row, col, x, y, size, _state) => {
+  return (r, cell, row, col, _state) => {
     const puzzle_state = props.state;
     const value = puzzle_state.board[row][col];
 
@@ -110,20 +97,12 @@ const cell_renderer = computed((): CellRenderer => {
       text_color = "#000000";
     }
 
-    ctx.fillStyle = bg_color;
-    ctx.fillRect(x + 1, y + 1, size, size);
-
-    ctx.strokeStyle = "#9ca3af";
-    ctx.lineWidth = 1;
-    ctx.strokeRect(x, y, size, size);
+    r.fillCell(cell, bg_color, 1);
+    r.strokeCell(cell, "#9ca3af");
 
     const number_clue = get_number_clue.value(row, col);
     if (number_clue !== null) {
-      ctx.fillStyle = text_color;
-      ctx.font = `bold ${size * 0.6}px sans-serif`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(number_clue.toString(), x + size / 2, y + size / 2);
+      r.textCentered(cell, number_clue.toString(), { color: text_color });
     }
   };
 });

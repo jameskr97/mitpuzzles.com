@@ -1,10 +1,4 @@
 <script setup lang="ts">
-/**
- * LightupCanvas - Canvas-based renderer for Lightup (Akari)
- *
- * Clean event-based interface - emits cell-click events.
- * No dependency on old interaction bridge.
- */
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import CanvasBoard from "@/features/gameboard/canvas-board.vue";
 import { useCanvasTheme } from "@/features/gameboard/canvas-theme";
@@ -12,7 +6,6 @@ import type { CellRenderer } from "@/features/gameboard/canvas-types";
 import { LightupCell, WALL_STATES, NUMBERED_WALLS, compute_lit_cells } from "./useLightupGame";
 import type { RuleViolation } from "@/core/games/types/puzzle-types.ts";
 
-// Props
 const props = defineProps<{
   state: {
     definition: { rows: number; cols: number };
@@ -22,7 +15,6 @@ const props = defineProps<{
   };
 }>();
 
-// Events
 const emit = defineEmits<{
   (e: "cell-click", row: number, col: number, button: number): void;
   (e: "cell-drag", row: number, col: number): void;
@@ -30,75 +22,44 @@ const emit = defineEmits<{
   (e: "cell-leave", row: number, col: number, zone: string): void;
 }>();
 
-// Track hovered cell for hover event recording
 const hovered_cell = ref<{ row: number; col: number; zone: string } | null>(null);
-
-// Theme support
 const { theme } = useCanvasTheme();
-
-// Canvas board ref
 const canvas_board_ref = ref<InstanceType<typeof CanvasBoard> | null>(null);
-
-// Drag state for click-and-drag support
 const is_dragging = ref(false);
 const drag_button = ref<number>(0);
 const dragged_cells = ref<Set<string>>(new Set());
 
-// Preload images
 const bulb_image = ref<HTMLImageElement | null>(null);
 const bulb_violation_image = ref<HTMLImageElement | null>(null);
 const cross_image = ref<HTMLImageElement | null>(null);
 const images_loaded = ref(0);
 
 onMounted(() => {
-  const bulb_img = new Image();
-  bulb_img.src = "/assets/lightup/bulb.svg";
-  bulb_img.onload = () => {
-    bulb_image.value = bulb_img;
-    images_loaded.value++;
-  };
-
-  const bulb_violation_img = new Image();
-  bulb_violation_img.src = "/assets/lightup/bulb-violation.svg";
-  bulb_violation_img.onload = () => {
-    bulb_violation_image.value = bulb_violation_img;
-    images_loaded.value++;
-  };
-
-  const cross_img = new Image();
-  cross_img.src = "/assets/lightup/cross.svg";
-  cross_img.onload = () => {
-    cross_image.value = cross_img;
-    images_loaded.value++;
-  };
-
-  // Document-level mouseup listener for drag
+  const assets: [string, typeof bulb_image][] = [
+    ["/assets/lightup/bulb.svg", bulb_image],
+    ["/assets/lightup/bulb-violation.svg", bulb_violation_image],
+    ["/assets/lightup/cross.svg", cross_image],
+  ];
+  for (const [path, target] of assets) {
+    const img = new Image();
+    img.src = path;
+    img.onload = () => { target.value = img; images_loaded.value++; };
+  }
   document.addEventListener("mouseup", stop_drag);
 });
+onUnmounted(() => { document.removeEventListener("mouseup", stop_drag); });
 
-onUnmounted(() => {
-  document.removeEventListener("mouseup", stop_drag);
-});
-
-// Handle cell mousedown - start drag and emit first click
 function on_cell_mousedown(coord: { row: number; col: number; zone: string }, event: MouseEvent) {
   if (coord.zone !== "game") return;
-
-  // Start drag tracking
   is_dragging.value = true;
   drag_button.value = event.button;
   dragged_cells.value = new Set([`${coord.row},${coord.col}`]);
-
   emit("cell-click", coord.row, coord.col, event.button);
 }
 
-// Handle cell enter during drag - emit drag event for new cells
 function on_cell_enter(coord: { row: number; col: number; zone: string }, _event: MouseEvent) {
-  // Emit hover enter for tracking (all zones)
   hovered_cell.value = { row: coord.row, col: coord.col, zone: coord.zone };
   emit("cell-enter", coord.row, coord.col, coord.zone);
-
-  // Handle drag (game zone only)
   if (coord.zone !== "game" || !is_dragging.value) return;
   const cell_key = `${coord.row},${coord.col}`;
   if (dragged_cells.value.has(cell_key)) return;
@@ -111,111 +72,61 @@ function on_cell_leave(coord: { row: number; col: number; zone: string }, _event
 }
 
 function on_board_leave(_event: MouseEvent) {
-  if (hovered_cell.value) {
-    emit("cell-leave", hovered_cell.value.row, hovered_cell.value.col, hovered_cell.value.zone);
-  }
+  if (hovered_cell.value) emit("cell-leave", hovered_cell.value.row, hovered_cell.value.col, hovered_cell.value.zone);
   hovered_cell.value = null;
 }
 
-// Handle mouseup anywhere - stop drag
-function stop_drag() {
-  is_dragging.value = false;
-  dragged_cells.value.clear();
-}
+function stop_drag() { is_dragging.value = false; dragged_cells.value.clear(); }
 
-// Compute lit_cells from board if not provided (for preview/browser modes)
 const computed_lit_cells = computed(() => {
   if (props.state.lit_cells) return props.state.lit_cells;
   const { rows, cols } = props.state.definition;
   return compute_lit_cells(props.state.board, rows, cols);
 });
 
-// Helper to check if a cell is lit
 function is_cell_lit(row: number, col: number): boolean {
   const cols = props.state.definition.cols;
-  const i = row * cols + col;
-  return computed_lit_cells.value[i] || false;
+  return computed_lit_cells.value[row * cols + col] || false;
 }
 
-// Lightup cell renderer
 const cell_renderer = computed((): CellRenderer => {
-  // Access for reactivity
   const _ = images_loaded.value;
   const current_theme = theme.value;
   const current_bulb = bulb_image.value;
   const current_bulb_violation = bulb_violation_image.value;
   const current_cross = cross_image.value;
 
-  return (ctx, row, col, x, y, size, _state) => {
+  return (r, cell, row, col, _state) => {
     const puzzle_state = props.state;
     const value = puzzle_state.board[row][col];
     const is_lit = is_cell_lit(row, col);
 
-    // Determine background color
+    // Background
+    const is_wall = (WALL_STATES as readonly number[]).includes(value);
     let bg_color = current_theme.background;
-    if (WALL_STATES.includes(value)) {
-      bg_color = current_theme.wall;
-    } else if (is_lit || value === LightupCell.BULB) {
-      bg_color = current_theme.lit;
-    }
+    if (is_wall) bg_color = current_theme.wall;
+    else if (is_lit || value === LightupCell.BULB) bg_color = current_theme.lit;
 
-    // Draw cell background
-    ctx.fillStyle = bg_color;
-    ctx.fillRect(x, y, size + 1, size + 1);
+    r.fillCell(cell, bg_color, 1);
 
-    // Render content based on cell type
-    if (WALL_STATES.includes(value)) {
-      // Wall cell with optional number
-      const wall_number = NUMBERED_WALLS.includes(value) ? value : null;
-
+    // Wall with optional number
+    if (is_wall) {
+      const wall_number = (NUMBERED_WALLS as readonly number[]).includes(value) ? value : null;
       if (wall_number !== null) {
-        // Check for violation
         const has_violation = puzzle_state.violations?.some(
-          (v) =>
-            v.rule_name === "numbered_wall_constraint_violated" &&
-            v.locations?.some((loc) => loc.row === row && loc.col === col)
+          (v) => v.rule_name === "numbered_wall_constraint_violated" && v.locations?.some((loc) => loc.row === row && loc.col === col)
         );
-
-        ctx.fillStyle = has_violation ? current_theme.error : current_theme.background;
-        ctx.font = `${size * 0.7}px sans-serif`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(wall_number.toString(), x + size / 2 + 1, y + size / 2 + 1);
+        r.textCentered(cell, wall_number.toString(), { color: has_violation ? current_theme.error : current_theme.background, sizeFactor: 0.7, offsetY: 1 });
       }
     } else if (value === LightupCell.BULB) {
-      // Bulb cell
       const has_violation = puzzle_state.violations?.some(
-        (v) =>
-          v.rule_name === "bulb_intersection_violation" &&
-          v.locations?.some((loc) => loc.row === row && loc.col === col)
+        (v) => v.rule_name === "bulb_intersection_violation" && v.locations?.some((loc) => loc.row === row && loc.col === col)
       );
-
-      // Use the appropriate bulb image
       const bulb_img = has_violation ? current_bulb_violation : current_bulb;
-
-      if (bulb_img) {
-        ctx.drawImage(bulb_img, x, y, size, size);
-      }
+      if (bulb_img) r.imageCell(cell, bulb_img);
     } else if (value === LightupCell.CROSS) {
-      // Cross mark
-      if (current_cross) {
-        const img_size = size * 0.67;
-        const offset = (size - img_size) / 2;
-        ctx.drawImage(current_cross, x + offset, y + offset, img_size, img_size);
-      } else {
-        // Fallback: draw X with lines
-        ctx.strokeStyle = current_theme.text;
-        ctx.lineWidth = 1;
-        const padding = size * 0.17;
-        ctx.beginPath();
-        ctx.moveTo(x + padding, y + padding);
-        ctx.lineTo(x + size - padding, y + size - padding);
-        ctx.moveTo(x + size - padding, y + padding);
-        ctx.lineTo(x + padding, y + size - padding);
-        ctx.stroke();
-      }
+      r.crossMark(cell, current_cross, { lineColor: current_theme.text });
     }
-    // EMPTY cells: just background (already drawn with lit state)
   };
 });
 </script>

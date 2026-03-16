@@ -1,37 +1,44 @@
-import type { GridConfig, TextOptions } from './canvas-types';
+import type { GridConfig, TextOptions, CellBox } from './canvas-types';
+
+export interface CellTextStyle {
+  color?: string;
+  sizeFactor?: number;
+  sizePx?: number;
+  weight?: 'normal' | 'bold';
+  font?: string;
+  offsetY?: number;
+}
+
+export interface RegionBorderOptions {
+  border_width?: number;
+  border_color?: string;
+}
 
 /**
  * Canvas renderer with high-DPI support and drawing primitives.
- *
- * Handles:
- * - High-DPI display scaling
- * - Basic shape rendering (rectangles, lines)
- * - Text rendering with proper alignment
- * - Grid rendering with optional major lines
+ * - setting up high-dpi display scaling
+ * - shape/text/grid rendering
+ * - is cell aware
  */
 export class CanvasRenderer {
   private canvas: HTMLCanvasElement;
-  private ctx: CanvasRenderingContext2D;
+  readonly ctx: CanvasRenderingContext2D;
   private dpr: number = 1;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
-    const context = canvas.getContext('2d', { alpha: true });
-
+    const context = canvas.getContext("2d", { alpha: true });
     if (!context) {
-      throw new Error('Failed to get 2D context from canvas');
+      throw new Error("Failed to get 2D context from canvas");
     }
 
     this.ctx = context;
-
-    // Disable anti-aliasing for crisp rendering
-    this.ctx.imageSmoothingEnabled = false;
-
+    this.ctx.imageSmoothingEnabled = false; // disable anti-aliasing for crisp rendering
     this.setupHighDPI();
   }
 
   /**
-   * Setup canvas for high-DPI displays (retina, etc.)
+   * Setup canvas for high-DPI displays
    * Ensures crisp rendering on all displays
    */
   setupHighDPI(): void {
@@ -233,5 +240,121 @@ export class CanvasRenderer {
    */
   unclip(): void {
     this.ctx.restore();
+  }
+
+  /** cell aware rendering methods **/
+  fillCell(cell: CellBox, color: string, overflow: number = 0): void {
+    this.ctx.fillStyle = color;
+    this.ctx.fillRect(cell.x, cell.y, cell.size + overflow, cell.size + overflow);
+  }
+
+  strokeCell(cell: CellBox, color: string, lineWidth: number = 1): void {
+    this.ctx.strokeStyle = color;
+    this.ctx.lineWidth = lineWidth;
+    this.ctx.strokeRect(cell.x, cell.y, cell.size, cell.size);
+  }
+
+  strokeRectInset(cell: CellBox, color: string, inset: number, lineWidth: number = 3): void {
+    this.ctx.strokeStyle = color;
+    this.ctx.lineWidth = lineWidth;
+    this.ctx.strokeRect(cell.x + inset, cell.y + inset, cell.size - inset * 2, cell.size - inset * 2);
+  }
+
+  textCentered(cell: CellBox, text: string, style?: CellTextStyle): void {
+    const s = style ?? {};
+    const fontSize = s.sizePx ?? (cell.size * (s.sizeFactor ?? 0.6));
+    const weight = s.weight ?? 'bold';
+    const font = s.font ?? 'sans-serif';
+    this.ctx.font = `${weight} ${fontSize}px ${font}`;
+    this.ctx.fillStyle = s.color ?? '#000000';
+    this.ctx.textAlign = 'center';
+    this.ctx.textBaseline = 'middle';
+    this.ctx.fillText(text, cell.cx, cell.cy + (s.offsetY ?? 0));
+  }
+
+  imageCell(cell: CellBox, img: HTMLImageElement): void {
+    this.ctx.drawImage(img, cell.x, cell.y, cell.size, cell.size);
+  }
+
+  imageCentered(cell: CellBox, img: HTMLImageElement, scaleFactor: number = 0.67): void {
+    const imgSize = cell.size * scaleFactor;
+    const offset = (cell.size - imgSize) / 2;
+    this.ctx.drawImage(img, cell.x + offset, cell.y + offset, imgSize, imgSize);
+  }
+
+  crossMark(cell: CellBox, image: HTMLImageElement | null, options?: {
+    imageScale?: number;
+    linePadding?: number;
+    lineColor?: string;
+    lineWidth?: number;
+  }): void {
+    const o = options ?? {};
+    if (image) {
+      this.imageCentered(cell, image, o.imageScale ?? 0.67);
+    } else {
+      const padding = cell.size * (o.linePadding ?? 0.17);
+      this.ctx.strokeStyle = o.lineColor ?? '#000000';
+      this.ctx.lineWidth = o.lineWidth ?? 1;
+      this.ctx.beginPath();
+      this.ctx.moveTo(cell.x + padding, cell.y + padding);
+      this.ctx.lineTo(cell.x + cell.size - padding, cell.y + cell.size - padding);
+      this.ctx.moveTo(cell.x + cell.size - padding, cell.y + padding);
+      this.ctx.lineTo(cell.x + padding, cell.y + cell.size - padding);
+      this.ctx.stroke();
+    }
+  }
+
+  filledSquare(cell: CellBox, color: string, inset: number = 2): void {
+    const i2 = inset * 2;
+    this.ctx.fillStyle = color;
+    this.ctx.fillRect(cell.x + inset, cell.y + inset, cell.size - i2, cell.size - i2);
+  }
+
+  regionBorders(
+    cell: CellBox,
+    row: number, col: number,
+    rows: number, cols: number,
+    regionMap: number[][],
+    options?: RegionBorderOptions,
+  ): void {
+    const bw = options?.border_width ?? 3;
+    const bc = options?.border_color ?? '#000000';
+    this.ctx.strokeStyle = bc;
+    this.ctx.lineWidth = bw;
+    const currentRegion = regionMap[row]?.[col];
+    const overlap = bw / 2;
+    const { x, y, size } = cell;
+
+    if (row === 0 || regionMap[row - 1]?.[col] !== currentRegion) {
+      this.ctx.beginPath();
+      this.ctx.moveTo(x - overlap, y);
+      this.ctx.lineTo(x + size + overlap, y);
+      this.ctx.stroke();
+    }
+    if (row === rows - 1 || regionMap[row + 1]?.[col] !== currentRegion) {
+      this.ctx.beginPath();
+      this.ctx.moveTo(x - overlap, y + size);
+      this.ctx.lineTo(x + size + overlap, y + size);
+      this.ctx.stroke();
+    }
+    if (col === 0 || regionMap[row]?.[col - 1] !== currentRegion) {
+      this.ctx.beginPath();
+      this.ctx.moveTo(x, y - overlap);
+      this.ctx.lineTo(x, y + size + overlap);
+      this.ctx.stroke();
+    }
+    if (col === cols - 1 || regionMap[row]?.[col + 1] !== currentRegion) {
+      this.ctx.beginPath();
+      this.ctx.moveTo(x + size, y - overlap);
+      this.ctx.lineTo(x + size, y + size + overlap);
+      this.ctx.stroke();
+    }
+  }
+
+  withFilter(filter: string, fn: () => void): void {
+    const prev = this.ctx.filter;
+    this.ctx.filter = filter;
+    fn();
+    this.ctx.filter = prev;
   }
 }
