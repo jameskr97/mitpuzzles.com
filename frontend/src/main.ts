@@ -8,6 +8,7 @@ import { createLogger } from "@/core/services/logger.ts";
 const log = createLogger("main");
 import "./style.css";
 import 'overlayscrollbars/overlayscrollbars.css';
+import { useAppStore} from "@/core/store/useAppStore.ts";
 
 // Router
 import { router, setup_auth_guard, check_initial_route } from "@/core/router";
@@ -39,18 +40,25 @@ if (import.meta.hot) {
   log("Bootstrapping app...");
   register_pwa();
 
+
   const app = createApp(App)
     .use(createPinia())
     .use(router)
     .use(I18NextVue, { i18next })
     .component("v-icon", OhVueIcon);
+  app.config.errorHandler = posthog_error_handler;
+  app.mount("#app");
 
-  // Initialize stores
-  await init_app_store();
-  await init_session_tracking();
+  init_app_store();
+  init_session_tracking();
+  init_puzzle_stores();
 
-  // Gate PostHog behind privacy consent
-  const { useAppStore } = await import("@/core/store/useAppStore.ts");
+  // following three lines must happen in this order (each dependent on the last)
+  await init_auth();
+  setup_auth_guard(router);
+  await check_initial_route(router);
+
+  // gate posthog behind privacy consent
   const appStore = useAppStore();
   if (appStore.has_consented) {
     init_posthog(app);
@@ -58,14 +66,4 @@ if (import.meta.hot) {
     watch(() => appStore.has_consented, (v) => { if (v) init_posthog(app); }, { once: true });
   }
 
-  // Initialize auth and set up router guards
-  await init_auth();
-  await check_initial_route(router);
-  setup_auth_guard(router);
-
-  app.config.errorHandler = posthog_error_handler;
-
-  // Initialize puzzle stores and mount
-  await init_puzzle_stores();
-  app.mount("#app");
 })();

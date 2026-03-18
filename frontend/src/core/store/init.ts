@@ -6,16 +6,16 @@ import { usePuzzleProgressStore } from "@/core/store/puzzle/usePuzzleProgressSto
 import { usePuzzleHistoryStore } from "@/core/store/puzzle/usePuzzleHistoryStore.ts";
 import { usePuzzleScaleStore } from "@/core/store/puzzle/usePuzzleScaleStore.ts";
 
-export async function init_app_store() {
+export function init_app_store() {
   const app_store = useAppStore();
   app_store.init_consent();
-  await app_store.updateDeviceFingerprint();
+  app_store.updateDeviceFingerprint();
   app_store.initCacheVersion();
 }
 
-export async function init_session_tracking() {
+export function init_session_tracking() {
   const session_tracker = useSessionTrackingStore();
-  await session_tracker.initialize();
+  session_tracker.initialize();
 }
 
 export async function init_auth() {
@@ -23,11 +23,9 @@ export async function init_auth() {
   await auth_store.initializeAuth();
 }
 
-export async function init_puzzle_stores() {
-  await Promise.all([
-    usePuzzleScaleStore().init(),
-    usePuzzleProgressStore().init(),
-    usePuzzleMetadataStore().initializeStore(),
-    usePuzzleHistoryStore().init(),
-  ]);
+export function init_puzzle_stores() {
+  usePuzzleScaleStore().init();
+  usePuzzleProgressStore().init();
+  usePuzzleMetadataStore().initializeStore();
+  usePuzzleHistoryStore().init();
 }

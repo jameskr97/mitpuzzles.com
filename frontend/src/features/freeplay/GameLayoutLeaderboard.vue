@@ -47,7 +47,7 @@ watch(
   async ([variant, period, method, is_daily, daily_date]) => {
     if (is_daily && daily_date) {
       await daily_store.refreshDailyLeaderboard(daily_date, props.puzzle_type);
-    } else {
+    } else if (variant[0] && variant[1]) {
       await leaderboard_store.refreshLeaderboard(props.puzzle_type, variant[0], variant[1], period, method);
     }
   },

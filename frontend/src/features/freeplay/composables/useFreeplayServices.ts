@@ -17,7 +17,6 @@ import { usePuzzleLeaderboardStore } from "@/core/store/puzzle/usePuzzleLeaderbo
 import { usePuzzleHistoryStore } from "@/core/store/puzzle/usePuzzleHistoryStore.ts";
 import { useDailyPuzzleStore } from "@/core/store/puzzle/useDailyPuzzleStore.ts";
 import { broadcast_channel_service } from "@/core/services/broadcast_channel.ts";
-import { submitDailyAttempt } from "@/core/services/app.ts";
 import { isDailyVariant } from "@/utils.ts";
 import { capture_error } from "@/core/services/posthog.ts";
 import type { PuzzleDefinition } from "@/core/games/types/puzzle-types.ts";
@@ -82,6 +81,12 @@ export async function useFreeplayServices<TMeta = any>(
   const leaderboard_store = usePuzzleLeaderboardStore();
   const history_store = usePuzzleHistoryStore();
   const daily_store = useDailyPuzzleStore();
+
+  // register lifecycle hooks before any await
+  const broadcast_unsubscribers: (() => void)[] = [];
+  onUnmounted(() => {
+    broadcast_unsubscribers.forEach((fn) => fn());
+  });
 
   // Ensure stores are initialized
   await metadata_store.initializeStore();
@@ -154,8 +159,7 @@ export async function useFreeplayServices<TMeta = any>(
   const is_solved = computed(() => progress_store.is_puzzle_solved(progress_key.value));
   const formatted_time = computed(() => progress_store.get_formatted_time(progress_key.value));
 
-  // Setup broadcast listeners for cross-tab sync
-  const broadcast_unsubscribers: (() => void)[] = [];
+  // setup broadcast listeners for cross-tab sync
 
   broadcast_unsubscribers.push(
     broadcast_channel_service.subscribe("game_state_update", (message) => {
@@ -190,11 +194,6 @@ export async function useFreeplayServices<TMeta = any>(
       }
     })
   );
-
-  // Cleanup on unmount
-  onUnmounted(() => {
-    broadcast_unsubscribers.forEach((fn) => fn());
-  });
 
   /**
    * Request a new puzzle (or switch modes when variant changes)
@@ -308,7 +307,7 @@ export async function useFreeplayServices<TMeta = any>(
       };
 
       try {
-        await submitDailyAttempt(daily_date.value, puzzle_type, payload);
+        await daily_store.submitDailyAttempt(daily_date.value, puzzle_type, payload);
         await daily_store.refreshDailyLeaderboard(daily_date.value, puzzle_type);
       } catch (err) {
         capture_error("daily_submit_failed", err, { puzzle_type, date: daily_date.value });
@@ -318,12 +317,13 @@ export async function useFreeplayServices<TMeta = any>(
       await history_store.upload_attempt_history(pk, "freeplay");
 
       const [size, difficulty] = current_variant.value;
-      await Promise.all([
-        leaderboard_store.refreshLeaderboard(puzzle_type, size, difficulty, "today"),
-        leaderboard_store.refreshLeaderboard(puzzle_type, size, difficulty, "weekly"),
-        leaderboard_store.refreshLeaderboard(puzzle_type, size, difficulty, "monthly"),
-        leaderboard_store.refreshLeaderboard(puzzle_type, size, difficulty, "all_time"),
-      ]);
+      const periods = ["today", "weekly", "monthly", "all_time"];
+      const methods = ["best", "ao_n"];
+      await Promise.all(
+        periods.flatMap(period => methods.map(method =>
+          leaderboard_store.refreshLeaderboard(puzzle_type, size, difficulty, period, method)
+        ))
+      );
     }
   }
 

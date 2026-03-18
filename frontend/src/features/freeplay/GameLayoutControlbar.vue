@@ -97,7 +97,7 @@ function download_payload() {
 
       <!-- Zoom + Timer row for MOBILE -->
       <div class="flex flex-row w-full items-center md:hidden">
-        <block class="font-mono text-lg text-center w-full">{{ formatted_time }}</block>
+        <span class="font-mono text-lg text-center w-full">{{ formatted_time }}</span>
       </div>
 
       <!-- Buttons row -->
