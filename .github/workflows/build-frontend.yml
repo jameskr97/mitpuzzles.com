@@ -3,7 +3,7 @@ name: Build Frontend
 on:
   push:
     branches: [main, develop]
-    paths: [frontend/**]
+    paths: [frontend/**, backend/app/modules/**, backend/app/errors.py]
     tags: ['*']
   workflow_dispatch:
 
@@ -40,6 +40,20 @@ jobs:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+
+    - name: Export OpenAPI schema
+      run: cd backend && uv sync && uv run python scripts/export_openapi.py openapi.json
+
+    - name: Generate API types
+      run: cd frontend && npm install && npx openapi-typescript ../backend/openapi.json -o src/core/services/api.d.ts
 
     - name: Build and push frontend
       uses: docker/build-push-action@v5

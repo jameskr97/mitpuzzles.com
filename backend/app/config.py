@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any
+from typing import Any, Optional
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -24,14 +24,14 @@ class Settings(BaseSettings):
 
     # auth
     SECRET: str = "secret-secret-secret-secret"
-    RESEND_API_KEY: str = None
-    OAUTH_GOOGLE_CLIENT_ID: str = None
-    OAUTH_GOOGLE_CLIENT_SECRET: str = None
+    RESEND_API_KEY: Optional[str] = None
+    OAUTH_GOOGLE_CLIENT_ID: Optional[str] = None
+    OAUTH_GOOGLE_CLIENT_SECRET: Optional[str] = None
 
     # web push notifications
-    VAPID_PUBLIC_KEY: str = None
-    VAPID_PRIVATE_KEY: str = None
-    VAPID_CLAIM_EMAIL: str = None
+    VAPID_PUBLIC_KEY: Optional[str] = None
+    VAPID_PRIVATE_KEY: Optional[str] = None
+    VAPID_CLAIM_EMAIL: Optional[str] = None
 
     # celery
     CELERY_BROKER_URL: str = "redis://localhost:6379/0"

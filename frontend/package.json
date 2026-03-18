@@ -19,7 +19,8 @@
     "test:run": "vitest run",
     "test:ui": "vitest --ui",
     "generate:api": "openapi-typescript http://localhost:8000/openapi.json -o src/core/services/api.d.ts",
-    "generate:api:watch": "openapi-typescript http://localhost:8000/openapi.json -o src/core/services/api.d.ts --watch"
+    "generate:api:watch": "openapi-typescript http://localhost:8000/openapi.json -o src/core/services/api.d.ts --watch",
+    "generate:api:ci": "openapi-typescript ../backend/openapi.json -o src/core/services/api.d.ts"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.20.0",
