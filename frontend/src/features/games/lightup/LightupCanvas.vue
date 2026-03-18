@@ -90,6 +90,7 @@ function is_cell_lit(row: number, col: number): boolean {
 }
 
 const cell_renderer = computed((): CellRenderer => {
+  // @ts-expect-error reactive dependency trigger
   const _ = images_loaded.value;
   const current_theme = theme.value;
   const current_bulb = bulb_image.value;

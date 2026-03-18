@@ -6,7 +6,7 @@
  * - connection: Bridge/edge-based encoding for Hashi-like games
  * - custom: User-provided encoder function
  */
-import type { Ref } from "vue";
+
 
 export interface SolutionCheckerConfig {
   /**

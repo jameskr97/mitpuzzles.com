@@ -1,6 +1,5 @@
 import { defineAsyncComponent } from "vue";
 import { defaultPuzzles } from "@/core/games/puzzle.defaults.ts";
-import type { RuleViolation } from "@/core/games/types/puzzle-types.ts";
 import CryptoJS from "crypto-js";
 import { createLogger } from "@/core/services/logger.ts";
 const log = createLogger("storage");

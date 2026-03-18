@@ -178,6 +178,11 @@ export const usePuzzleHistoryStore = defineStore("game.history", {
         action: "visibility_summary",
         timestamp: Date.now(),
         sequence: events.length + 1,
+        cell: undefined,
+        key: undefined,
+        old_value: undefined,
+        new_value: undefined,
+        board_snapshot: undefined,
         custom_data: {
           total_visible_ms,
           visible_periods,

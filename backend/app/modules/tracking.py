@@ -227,6 +227,10 @@ class DevicePut(BaseModel):
     thumbmark: Dict = Field(None, description="Thumbmark Data")
 
 
+class DeviceResponse(BaseModel):
+    device_id: str
+
+
 class HeartbeatRequest(BaseModel):
     session_id: str = Field(..., description="Client-generated UUIDv7 session identifier")
     device_id: uuid.UUID = Field(..., description="Device ID from cookie")
@@ -237,7 +241,7 @@ class HeartbeatRequest(BaseModel):
 
 
 
-@router.put("/api/device", tags=["Device Tracking"])
+@router.put("/api/device", tags=["Device Tracking"], response_model=DeviceResponse)
 async def create_device(http_request: Request, device: DevicePut, db: AsyncDatabase):
     """
     Create a new device and thumbmark record

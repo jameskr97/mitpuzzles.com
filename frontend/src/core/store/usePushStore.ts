@@ -53,9 +53,15 @@ export const usePushStore = defineStore('push', {
       if (Notification.permission === 'denied') {
         this.error = 'Notification permission was previously denied. Please enable it in browser settings.';
         return false;
-      } else {
-        this.error = 'Please click the switch again to grant notification permission';
-        return false;
+      }
+
+      // request permission if not yet granted
+      if (Notification.permission === 'default') {
+        const result = await Notification.requestPermission();
+        if (result !== 'granted') {
+          this.error = 'Notification permission was not granted.';
+          return false;
+        }
       }
 
       this.is_loading = true;
@@ -63,7 +69,7 @@ export const usePushStore = defineStore('push', {
 
       // get VAPID key from backend
       const { data: vapidData, error: vapidError } = await api.GET('/api/push/vapid-public-key');
-      if (vapidError) {
+      if (vapidError || !vapidData) {
         this.error = 'Failed to get push notification key';
         this.is_loading = false;
         return false;
@@ -95,7 +101,7 @@ export const usePushStore = defineStore('push', {
         },
       });
       if (error) {
-        this.error = error.message;
+        this.error = 'Failed to register push subscription';
         this.is_loading = false;
         return false;
       }
@@ -136,7 +142,7 @@ export const usePushStore = defineStore('push', {
           },
         });
         if (error) {
-          this.error = error.message;
+          this.error = 'Failed to unsubscribe from push notifications';
           this.is_loading = false;
           return false;
         }

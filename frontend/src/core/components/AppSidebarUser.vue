@@ -1,17 +1,14 @@
 <script setup lang="ts">
 import { ChevronsUpDown, LogOut, Settings } from "lucide-vue-next";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/core/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/core/components/ui/dropdown-menu";
-import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/core/components/ui/sidebar";
+import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/core/components/ui/sidebar";
 import { useAuthStore } from "@/core/store/useAuthStore.ts";
 import UserAvatar from "@/features/auth/components/UserAvatar.vue";
 import { useRouter } from "vue-router";

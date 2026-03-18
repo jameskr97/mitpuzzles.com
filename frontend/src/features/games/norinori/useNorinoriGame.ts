@@ -8,7 +8,7 @@
  * - Every shaded cell must be adjacent to exactly one other shaded cell (forming dominoes)
  * - Dominoes can span across region boundaries
  */
-import { computed, type ComputedRef, type Ref } from "vue";
+import { type ComputedRef, type Ref } from "vue";
 import {
   useBoardState,
   useStateCycler,

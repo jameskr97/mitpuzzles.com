@@ -180,7 +180,7 @@ export class ExperimentDataCollection {
     });
   }
 
-  record_trial_end(response: any, correct?: boolean, points?: number, metadata?: Record<string, any>): void {
+  record_trial_end(response: any, _correct?: boolean, points?: number, metadata?: Record<string, any>): void {
     const trial = this.trials.find((t) => t.trial_id === this.executor.current_trial_id);
     if (!trial) {
       console.warn(`tried to end trial ${this.executor.current_trial_id} but no start record found`);

@@ -3,7 +3,7 @@
  *
  * Mode-agnostic: works in both freeplay and experiment contexts.
  */
-import { computed, type ComputedRef, type Ref } from "vue";
+import { type ComputedRef, type Ref } from "vue";
 import { useBoardState } from "@/core/games/composables";
 import { useStateCycler } from "@/core/games/composables";
 import { useSolutionChecker } from "@/core/games/composables";

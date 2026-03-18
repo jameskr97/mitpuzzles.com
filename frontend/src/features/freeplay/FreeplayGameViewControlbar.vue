@@ -1,12 +1,8 @@
 <script setup lang="ts">
-import { useGameLayout } from "@/core/composables/useGameLayout.ts";
 import { computed, inject, onMounted, onUnmounted, type PropType } from "vue";
 import Container from "@/core/components/ui/Container.vue";
 import FreeplayGameViewTimer from "@/features/freeplay/FreeplayGameViewTimer.vue";
-import GameViewControlBarSettings from "@/features/freeplay/FreeplayGameViewSettings.vue";
 import { Slider } from "@/core/components/ui/slider";
-import { Switch } from "@/core/components/ui/switch";
-import { Label } from "@/core/components/ui/label";
 import { Button } from "@/core/components/ui/button";
 import {
   DropdownMenu,
@@ -15,7 +11,6 @@ import {
   DropdownMenuTrigger,
 } from "@/core/components/ui/dropdown-menu";
 import { getPuzzleDisplayName } from "@/utils.ts";
-import { useRoute } from "vue-router";
 import type { PUZZLE_TYPES } from "@/constants.ts";
 import type { PuzzleController } from "@/core/games/types/puzzle-types.ts";
 import { usePuzzleMetadataStore } from "@/core/store/puzzle/usePuzzleMetadataStore.ts";
@@ -32,7 +27,6 @@ const props = defineProps({
   showSettings: { type: Boolean, default: true },
 });
 
-const route = useRoute();
 const puzzle = inject<PuzzleController>("puzzle") || props.puzzle!;
 const gt = puzzle.state_puzzle.value.definition.puzzle_type as PUZZLE_TYPES;
 

@@ -1,8 +1,11 @@
 export type HistoryMode = "freeplay" | "experiment";
 
 export type GameActionType =
+  | "cell_click"
   | "click"
   | "keypress"
+  | "cell_keypress"
+  | "attempt_solve"
   | "hover"
   | "clear"
   | "tutorial_toggle"

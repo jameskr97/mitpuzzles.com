@@ -41,7 +41,6 @@ const grid_config = computed(() => {
 })
 
 const displayed_puzzles = computed(() => all_puzzles.value)
-const show_load_more = computed(() => has_more.value && !loading_puzzles.value)
 
 // Fetch puzzles
 async function fetch_puzzles(append: boolean = false) {

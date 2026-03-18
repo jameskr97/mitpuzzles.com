@@ -1,28 +1,17 @@
 import { defineStore } from "pinia";
 import posthog from "posthog-js";
-import { useAppStore } from "./useAppStore.ts";
+import { useAppStore } from "./useAppStore";
 import { api } from "@/core/services/client";
-import { capture_error } from "@/core/services/posthog.ts";
 import { i18next } from "@/i18n.ts";
+import { capture_error } from "@/core/services/posthog.ts";
+import type { components } from "@/core/services/api";
 
-export interface User {
-  id: string;
-  email: string;
-  is_active: boolean;
-  is_superuser: boolean;
-  is_verified: boolean;
-  username: string | null;
-}
+export type User = components["schemas"]["UserRead"];
+export type RegisterPayload = components["schemas"]["UserCreate"];
 
 export interface LoginPayload {
   email: string;
   password: string;
-}
-
-export interface RegisterPayload {
-  email: string;
-  password: string;
-  username: string;
 }
 
 interface SocialLoginResponse {
@@ -76,8 +65,8 @@ export const useAuthStore = defineStore("auth", {
       this.loading = true;
       this.error = null;
 
-      const { error, response } = await api.POST("/api/auth/login", {
-        body: { username: credentials.email, password: credentials.password },
+      const { error } = await api.POST("/api/auth/login", {
+        body: { username: credentials.email, password: credentials.password, scope: "" },
         bodySerializer: (body) => new URLSearchParams(body as Record<string, string>),
       });
 
@@ -92,7 +81,7 @@ export const useAuthStore = defineStore("auth", {
       return this.user;
     },
 
-    async register(userData: RegisterPayload) {
+    async register(userData: paths.schemas.UserCreate) {
       this.loading = true;
       this.error = null;
 
@@ -144,10 +133,8 @@ export const useAuthStore = defineStore("auth", {
       this.loading = false;
     },
 
-    async social_login(provider: string) {
-      const { data, error } = await api.GET("/api/oauth/{provider}/authorize", {
-        params: { path: { provider } },
-      });
+    async social_login(_provider: string) {
+      const { data, error } = await api.GET("/api/oauth/google/authorize");
       if (error) {
         this.error = (error as any)?.detail || "Social login failed";
         return;

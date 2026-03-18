@@ -18,7 +18,6 @@ import {
 import { getPuzzleDisplayName } from "@/utils";
 import { usePuzzleMetadataStore } from "@/core/store/puzzle/usePuzzleMetadataStore";
 import { usePuzzleScaleStore } from "@/core/store/puzzle/usePuzzleScaleStore";
-import { usePuzzleProgressStore } from "@/core/store/puzzle/usePuzzleProgressStore";
 import { usePuzzleHistoryStore } from "@/core/store/puzzle/usePuzzleHistoryStore";
 
 const is_dev = import.meta.env.DEV;
@@ -30,7 +29,6 @@ const props = defineProps<{
 const puzzle_type = props.controller.puzzle_type;
 const scale_store = usePuzzleScaleStore();
 const metadata_store = usePuzzleMetadataStore();
-const progress_store = usePuzzleProgressStore();
 const history_store = usePuzzleHistoryStore();
 
 // Scale slider

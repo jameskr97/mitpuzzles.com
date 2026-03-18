@@ -9,7 +9,7 @@ export interface MultiSelectOption {
   disabled?: boolean
 }
 
-const props = defineProps<{
+defineProps<{
   label: string
   options: MultiSelectOption[]
 }>()

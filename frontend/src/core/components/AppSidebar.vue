@@ -58,7 +58,7 @@ const close_sidebar_on_mobile = () => {
         <SidebarGroupLabel>{{ $t('ui:nav.experiments') }}</SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu>
-            <SidebarMenuItem v-for="(value, index) in ACTIVE_EXPERIMENTS">
+            <SidebarMenuItem v-for="value in ACTIVE_EXPERIMENTS">
               <SidebarMenuButton asChild>
                 <router-link :to="'/experiment/' + value.key" :key="value.key" class="text-xl" @click="close_sidebar_on_mobile">
                   <span>{{value.icon}}</span>

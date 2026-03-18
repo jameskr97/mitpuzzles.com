@@ -2,7 +2,6 @@
 import { ref } from "vue";
 import { storeToRefs } from "pinia";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/core/components/ui/tabs";
-import Container from "@/core/components/ui/Container.vue";
 import FilterSidebar from "@/features/analysis/components/FilterSidebar.vue";
 import BrowserTab from "@/features/analysis/tabs/BrowserTab.vue";
 import DownloadTab from "@/features/analysis/tabs/DownloadTab.vue";

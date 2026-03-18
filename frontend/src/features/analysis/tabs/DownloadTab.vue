@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, computed, watch } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import Container from '@/core/components/ui/Container.vue'
 import { Badge } from '@/core/components/ui/badge'
 import { Button } from '@/core/components/ui/button'
@@ -31,24 +31,6 @@ const loading_experiments = ref(false)
 
 const freeplay_preview = ref<FreeplayPreview | null>(null)
 const loading_preview = ref(false)
-
-// Computed summary of selected filters
-const filter_summary = computed(() => {
-  const parts: string[] = []
-  if (store.puzzle_types.size > 0) {
-    parts.push(`${store.puzzle_types.size} type${store.puzzle_types.size > 1 ? 's' : ''}`)
-  }
-  if (store.puzzle_sizes.size > 0) {
-    parts.push(`${store.puzzle_sizes.size} size${store.puzzle_sizes.size > 1 ? 's' : ''}`)
-  }
-  if (store.difficulties.size > 0) {
-    parts.push(`${store.difficulties.size} difficult${store.difficulties.size > 1 ? 'ies' : 'y'}`)
-  }
-  if (store.selected_entity_id) {
-    parts.push(`1 ${store.scope}`)
-  }
-  return parts.length > 0 ? parts.join(', ') : 'All puzzles'
-})
 
 const format_duration = (seconds: number) => {
   const mins = Math.floor(seconds / 60)

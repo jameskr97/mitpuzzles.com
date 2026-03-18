@@ -5,7 +5,7 @@ import PuzzleRenderer from "@/core/components/PuzzleRenderer.vue";
 import type { AnalysisJobPuzzle } from "../types";
 import { get_result_variant, convert_to_definition } from "../utils";
 
-const props = defineProps<{
+defineProps<{
   puzzle: AnalysisJobPuzzle | null;
 }>();
 

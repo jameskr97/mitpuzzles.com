@@ -65,7 +65,7 @@ export const usePuzzleDefinitionStore = defineStore("puzzle-definitions", {
     },
 
     /** get existing puzzle or fetch a new one */
-    async getOrFetchPuzzle<TMeta>(puzzle_type: string, size: string, difficulty: string): Promise<PuzzleDefinition<TMeta>> {
+    async getOrFetchPuzzle<TMeta>(puzzle_type: string, size: string, difficulty: string): Promise<PuzzleDefinition<TMeta> | null> {
       const existing = await this.getDefinition(puzzle_type);
       if (existing) return existing as PuzzleDefinition<TMeta>;
       return await this.requestNewPuzzle(puzzle_type, size, difficulty);

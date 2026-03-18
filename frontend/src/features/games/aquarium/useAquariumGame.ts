@@ -10,7 +10,7 @@
  * - Water obeys gravity: if a cell is filled, all cells below it in the same region must also be filled
  * - Different aquariums are independent (water level can differ between tanks)
  */
-import { computed, type ComputedRef, type Ref } from "vue";
+import { type ComputedRef, type Ref } from "vue";
 import {
   useBoardState,
   useStateCycler,

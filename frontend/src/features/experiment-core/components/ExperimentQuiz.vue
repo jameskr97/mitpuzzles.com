@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject, type PropType, ref } from "vue";
+import { type PropType, ref } from "vue";
 import { Checkbox } from "@/core/components/ui/checkbox";
 import { Button } from "@/core/components/ui/button";
 import { Alert, AlertTitle } from "@/core/components/ui/alert";

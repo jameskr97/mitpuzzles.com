@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { ref } from "vue";
 import type { graph_node } from "@/features/experiment-core/graph/types";
 import Container from "@/core/components/ui/Container.vue";
 import { Button } from "@/core/components/ui/button";

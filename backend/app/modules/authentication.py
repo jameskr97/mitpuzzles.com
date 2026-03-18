@@ -45,6 +45,9 @@ class UserUpdate(schemas.BaseUserUpdate):
 
 class UserCreate(schemas.BaseUserCreate):
     username: Optional[str] = None
+    is_active: Optional[bool] = True
+    is_superuser: Optional[bool] = False
+    is_verified: Optional[bool] = False
 
 
 # Models

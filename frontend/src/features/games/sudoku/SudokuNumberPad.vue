@@ -6,7 +6,7 @@ const props = defineProps<{
   state: PuzzleState;
 }>();
 
-const emit = defineEmits<{
+defineEmits<{
   (e: 'keyPress', key: string): void;
 }>()
 

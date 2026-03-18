@@ -70,6 +70,7 @@ function on_board_leave(_event: MouseEvent) {
 function stop_drag() { is_dragging.value = false; dragged_cells.value.clear(); }
 
 const cell_renderer = computed((): CellRenderer => {
+  // @ts-expect-error reactive dependency trigger
   const current_theme = theme.value;
 
   return (r, cell, row, col, _state) => {

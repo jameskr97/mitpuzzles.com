@@ -723,12 +723,12 @@ function handle_board_leave(event: MouseEvent) {
   emit('board-leave', event);
 }
 
-function handle_keydown(event: KeyboardEvent) {
-  // Only handle if a cell is focused
+function handle_keydown(_event: KeyboardEvent) {
+  // only handle if a cell is focused
   if (!focused_cell) return;
 
-  // Emit as cell-keydown (add to emit types if needed)
-  // For now, games can handle keyboard via their own listeners
+  // emit as cell-keydown (add to emit types if needed)
+  // for now, games can handle keyboard via their own listeners
 }
 
 let lastScale = window.visualViewport?.scale || 1;

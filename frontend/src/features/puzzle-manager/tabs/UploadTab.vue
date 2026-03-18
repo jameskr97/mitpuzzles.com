@@ -32,11 +32,6 @@ interface FileEntry {
   upload_error: string | null;
 }
 
-interface ActiveJob {
-  job_id: string;
-  filename: string;
-}
-
 const store = use_analysis_jobs_store();
 const files = ref<FileEntry[]>([]);
 const active_job_ids = ref<string[]>([]);
@@ -273,7 +268,7 @@ onUnmounted(() => {
         v-if="rejected_message"
         class="flex items-center gap-2 p-2 text-sm text-red-500 bg-red-50 dark:bg-red-950 rounded-md"
       >
-        <AlertCircle class="h-4 w-4 flex-shrink-0" />
+        <AlertCircle class="h-4 w-4 shrink-0" />
         {{ rejected_message }}
       </div>
 
@@ -307,7 +302,7 @@ onUnmounted(() => {
         >
           <div class="flex items-center justify-between mb-2">
             <div class="font-medium text-sm truncate flex-1">{{ active.filename }}</div>
-            <Button variant="ghost" size="icon" class="h-6 w-6 flex-shrink-0" @click="remove_job(active.job_id)">
+            <Button variant="ghost" size="icon" class="h-6 w-6 shrink-0" @click="remove_job(active.job_id)">
               <X class="h-4 w-4" />
             </Button>
           </div>

@@ -92,6 +92,7 @@ function on_board_leave(_event: MouseEvent) {
 function stop_drag() { is_dragging.value = false; dragged_cells.value.clear(); }
 
 const cell_renderer = computed((): CellRenderer => {
+  // @ts-expect-error reactive dependency trigger
   const _ = images_loaded.value;
   const current_images = images.value;
   const initial = props.state.definition.initial_state;

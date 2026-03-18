@@ -10,9 +10,9 @@ services:
       PYTHONPATH: /workspace/backend
 
   postgres:
-    image: postgres:18rc1
+    image: postgres:18.1
     restart: unless-stopped
-    volumes: [postgres-data-18:/var/lib/postgresql/data]
+    volumes: [postgres-data-18:/var/lib/postgresql]
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=password

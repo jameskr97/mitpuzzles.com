@@ -8,11 +8,16 @@ interface LeaderboardEntry {
   is_current_user: boolean;
 }
 
+interface LeaderboardData {
+  leaderboard: LeaderboardEntry[];
+  count: number;
+}
+
 type LeaderboardKey = `${string}:${string}:${string}:${string}:${string}`;
 
 export const usePuzzleLeaderboardStore = defineStore("mitlogic.freeplay.leaderboard", {
   state: () => ({
-    leaderboard: {} as Record<LeaderboardKey, LeaderboardEntry[]>,
+    leaderboard: {} as Record<LeaderboardKey, LeaderboardData>,
   }),
 
   getters: {
@@ -20,18 +25,14 @@ export const usePuzzleLeaderboardStore = defineStore("mitlogic.freeplay.leaderbo
       (state) =>
       (puzzle_type: string, size: string, difficulty: string, time_period: string = "all_time", scoring_method: string = "best"): number => {
         const key: LeaderboardKey = `${puzzle_type}:${size}:${difficulty}:${time_period}:${scoring_method}`;
-        const board: any = state.leaderboard[key];
-        if (!board) return 0;
-        return board.count;
+        return state.leaderboard[key]?.count ?? 0;
       },
 
     getLeaderboard:
       (state) =>
       (puzzle_type: string, size: string, difficulty: string, time_period: string = "all_time", scoring_method: string = "best"): LeaderboardEntry[] => {
         const key: LeaderboardKey = `${puzzle_type}:${size}:${difficulty}:${time_period}:${scoring_method}`;
-        const board: any = state.leaderboard[key];
-
-        return board?.leaderboard || [];
+        return state.leaderboard[key]?.leaderboard ?? [];
       },
   },
 

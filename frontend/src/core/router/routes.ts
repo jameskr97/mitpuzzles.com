@@ -3,10 +3,6 @@ import { route } from "./helpers";
 import { ACTIVE_GAMES, ADMIN_TOOLS } from "@/constants.ts";
 import ExperimentRunner from "@/features/experiment-core/components/ExperimentRunner.vue";
 
-function capitalize(s: string) {
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
-
 export const routes: RouteRecordRaw[] = [
   route.view("", "Home", "Home"),
   ...Object.values(ADMIN_TOOLS).map((tool) => route.admin(tool.route_path, tool.key, tool.key)),

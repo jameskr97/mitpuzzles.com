@@ -15,7 +15,7 @@ import { valueUpdater } from "@/core/components/ui/table/utils";
 import { Badge } from "@/core/components/ui/badge";
 import { Button } from "@/core/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/core/components/ui/table";
-import type { BackgroundJob, BackgroundJobPuzzle } from "../types";
+import type { BackgroundJob, AnalysisJobPuzzle } from "../types";
 import { format_date, get_status_variant } from "../utils";
 import JobSummary from "../components/JobSummary.vue";
 import PuzzleGrid from "../components/PuzzleGrid.vue";
@@ -30,7 +30,7 @@ const error = ref<string | null>(null);
 const selected_job = ref<BackgroundJob | null>(null);
 
 // Puzzle detail modal
-const selected_puzzle = ref<BackgroundJobPuzzle | null>(null);
+const selected_puzzle = ref<AnalysisJobPuzzle | null>(null);
 const puzzle_modal_open = ref(false);
 
 // Polling for real-time updates
@@ -215,7 +215,7 @@ const view_job = (job: BackgroundJob) => {
   selected_job.value = job;
 };
 
-const open_puzzle_detail = (puzzle: BackgroundJobPuzzle) => {
+const open_puzzle_detail = (puzzle: AnalysisJobPuzzle) => {
   selected_puzzle.value = puzzle;
   puzzle_modal_open.value = true;
 };

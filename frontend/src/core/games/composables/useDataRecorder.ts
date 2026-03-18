@@ -7,6 +7,7 @@
  */
 import { usePuzzleProgressStore } from "@/core/store/puzzle/usePuzzleProgressStore.ts";
 import { usePuzzleHistoryStore } from "@/core/store/puzzle/usePuzzleHistoryStore.ts";
+import type { GameActionType } from "@/core/store/database/types.ts";
 import { broadcast_channel_service } from "@/core/services/broadcast_channel.ts";
 import type { Cell } from "@/core/games/types/puzzle-types.ts";
 
@@ -156,7 +157,7 @@ export function useDataRecorder(config: DataRecorderConfig): DataRecorderReturn 
    * Record to freeplay history
    */
   function record_to_freeplay(
-    action_type: string,
+    action_type: GameActionType,
     data: Record<string, any>
   ): void {
     if (!history_store) return;

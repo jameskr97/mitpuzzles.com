@@ -147,14 +147,23 @@ const is_interactive = computed(() => props.interactive !== false);
 
 const cell_renderer = computed((): CellRenderer => {
   const current_theme = theme.value;
+  // @ts-expect-error reactive dependency trigger
   const _ = active_cell.value;
+  // @ts-expect-error reactive dependency trigger
   const __ = props.correct_cells;
+  // @ts-expect-error reactive dependency trigger
   const ___ = props.incorrect_cells;
+  // @ts-expect-error reactive dependency trigger
   const ____ = focused_cell.value;
+  // @ts-expect-error reactive dependency trigger
   const _____ = hovered_cell.value;
+  // @ts-expect-error reactive dependency trigger
   const ______ = props.highlight_row;
+  // @ts-expect-error reactive dependency trigger
   const _______ = props.highlight_col;
+  // @ts-expect-error reactive dependency trigger
   const ________ = props.highlight_box;
+  // @ts-expect-error reactive dependency trigger
   const _________ = props.highlight_cells;
   const blur_enabled = props.blur_mode;
 

@@ -31,7 +31,7 @@ interface PuzzleProgressState {
   used_tutorial: Record<string, boolean>; // whether tutorial was used with violations shown
   gutter_markings: Record<string, GutterMarkings>; // gutter completion markings
   displayPrecision: Precision; // show seconds or milliseconds
-  updateInterval: NodeJS.Timeout | null; // unused, kept for compatibility
+  updateInterval: ReturnType<typeof setInterval> | null;
   broadcast_unsubscribers: (() => void)[]; // cleanup functions for broadcast listeners
   tracked_puzzles: Set<string>; // puzzles currently being tracked for visibility
   visibility_listener: (() => void) | null; // cleanup function for visibility listener

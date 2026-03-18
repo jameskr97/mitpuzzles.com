@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject, ref } from "vue";
+import { inject } from "vue";
 import type { PuzzleController } from "@/core/games/types/puzzle-types.ts";
 import { usePuzzleProgressStore } from "@/core/store/puzzle/usePuzzleProgressStore.ts";
 

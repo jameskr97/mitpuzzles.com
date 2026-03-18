@@ -10,7 +10,7 @@ const props = defineProps<{
 function format_json(obj: any): string {
   const json_string = JSON.stringify(
     obj,
-    (key, value) => {
+    (_key, value) => {
       // Compact 1D arrays onto single line
       if (Array.isArray(value) && value.length > 0 && !Array.isArray(value[0])) {
         return `[${value.join(", ")}]`

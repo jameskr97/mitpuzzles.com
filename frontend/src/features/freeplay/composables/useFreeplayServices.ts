@@ -93,8 +93,8 @@ export async function useFreeplayServices<TMeta = any>(
   await progress_store.init();
 
   // Get initial variant selection and determine mode
-  const selected = metadata_store.getSelectedVariant(puzzle_type);
-  const is_daily = computed(() => isDailyVariant(metadata_store.getSelectedVariant(puzzle_type)));
+  const selected = metadata_store.getSelectedVariant(puzzle_type) as string[];
+  const is_daily = computed(() => isDailyVariant(metadata_store.getSelectedVariant(puzzle_type) as string[]));
   const daily_date = ref<string | null>(null);
   const current_variant = ref<[string, string]>(
     isDailyVariant(selected) ? ["", ""] : [selected[0], selected[1]]
@@ -199,7 +199,7 @@ export async function useFreeplayServices<TMeta = any>(
    * Request a new puzzle (or switch modes when variant changes)
    */
   async function request_new_puzzle(): Promise<PuzzleDefinition<TMeta> | null> {
-    const variant = metadata_store.getSelectedVariant(puzzle_type);
+    const variant = metadata_store.getSelectedVariant(puzzle_type) as string[];
 
     if (isDailyVariant(variant)) {
       // Daily mode: fetch today's puzzle

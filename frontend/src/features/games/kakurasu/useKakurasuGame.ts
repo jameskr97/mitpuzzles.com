@@ -4,7 +4,7 @@
  * Mode-agnostic: works in both freeplay and experiment contexts.
  * Uses the new game primitives architecture.
  */
-import { computed, type ComputedRef, type Ref } from "vue";
+import { type ComputedRef, type Ref } from "vue";
 import {
   useBoardState,
   useStateCycler,

@@ -4,7 +4,7 @@
  * that we need to reference the game's data. Make sure there are no duplicates!
  */
 /* prettier-ignore */
-import { create_admin_tool, create_dev_tool, create_game_entry } from "@/utils.ts";
+import { create_admin_tool, create_game_entry } from "@/utils.ts";
 
 export const ACTIVE_GAMES: Record<string, ReturnType<typeof create_game_entry>> = {
   aquarium: create_game_entry("🐠", "aquarium"),

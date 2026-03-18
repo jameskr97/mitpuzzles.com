@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { Avatar, AvatarFallback, AvatarImage } from "@/core/components/ui/avatar";
-import { computed, ref, type PropType } from "vue";
+import { computed, type PropType } from "vue";
 import { getGravatarUrl } from "@/utils.ts";
-import { useAuthStore, type User } from "@/core/store/useAuthStore.ts";
+import type { User } from "@/core/store/useAuthStore.ts";
 
 const props = defineProps({
   user: {

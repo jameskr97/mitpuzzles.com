@@ -5,7 +5,7 @@ import { useCanvasTheme } from "@/features/gameboard/canvas-theme";
 import type { CellRenderer } from "@/features/gameboard/canvas-types";
 import { AquariumCell } from "./useAquariumGame";
 import type { AquariumMeta } from "./useAquariumGame";
-import type { PuzzleState, RuleViolation } from "@/core/games/types/puzzle-types.ts";
+import type { PuzzleState } from "@/core/games/types/puzzle-types.ts";
 
 const props = defineProps<{
   state: PuzzleState<AquariumMeta>;
@@ -70,6 +70,7 @@ function stop_drag() { is_dragging.value = false; dragged_cells.value.clear(); }
 const REGION_BORDER_WIDTH = 3;
 
 const cell_renderer = computed((): CellRenderer => {
+  // @ts-expect-error reactive dependency trigger
   const _ = image_loaded.value;
   const current_theme = theme.value;
   const current_cross = cross_image.value;

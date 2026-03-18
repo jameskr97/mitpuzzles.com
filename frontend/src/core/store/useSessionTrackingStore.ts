@@ -24,7 +24,7 @@ export const useSessionTrackingStore = defineStore("session_tracking", {
     session_id: '',
     is_tracking: false,
     is_visible: true,
-    heartbeat_timer: null as NodeJS.Timeout | null,
+    heartbeat_timer: null as ReturnType<typeof setInterval> | null,
     visible_start_time: null as number | null,
     accumulated_visible_time: 0,
     initial_referrer: null as string | null,

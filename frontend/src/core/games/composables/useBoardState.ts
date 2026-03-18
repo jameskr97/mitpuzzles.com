@@ -5,7 +5,7 @@
  * Mode-agnostic: works in both freeplay and experiment contexts.
  */
 import { ref, computed, type Ref, type ComputedRef } from "vue";
-import type { Cell } from "@/core/games/types/puzzle-types.ts";
+
 
 export interface BoardStateReturn {
   /** Current board state (reactive) */
