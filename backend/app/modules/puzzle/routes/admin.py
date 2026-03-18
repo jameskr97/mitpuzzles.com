@@ -4,17 +4,12 @@ from typing import Optional, List
 
 from fastapi import APIRouter, HTTPException, Query, Depends
 from fastapi.responses import JSONResponse
-from sqlalchemy import select, func, case, and_
+from sqlalchemy import select, func, case
 
 from app.dependencies import AsyncDatabase
 from app.modules.authentication import User
-from app.modules.puzzle.schemas import (
-    PriorityPuzzleListResponse,
-    PriorityGroupedListResponse,
-    AddPriorityRequest,
-)
 from app.modules.puzzle.services import PuzzleAdminService
-from app.modules.puzzle.models import Puzzle, FreeplayPuzzleAttempt, PuzzlePriority
+from app.modules.puzzle.models import Puzzle, FreeplayPuzzleAttempt
 from app.modules.puzzle.routes.dependencies import require_admin
 
 router = APIRouter()
@@ -125,126 +120,3 @@ async def export_game_data(
     )
 
 
-################################################################################
-# priority puzzles
-
-@router.get("/admin/priority", response_model=PriorityPuzzleListResponse)
-async def get_priority_puzzles(
-    db: AsyncDatabase,
-    _user: User = Depends(require_admin),
-    include_inactive: bool = Query(False),
-    puzzle_type: Optional[str] = Query(None),
-    limit: int = Query(100, ge=1, le=500),
-    offset: int = Query(0, ge=0),
-):
-    """get list of priority puzzles with statistics."""
-    return await PuzzleAdminService(db).get_priority_puzzles(
-        include_inactive=include_inactive, puzzle_type=puzzle_type, limit=limit, offset=offset,
-    )
-
-
-@router.get("/admin/priority/grouped", response_model=PriorityGroupedListResponse)
-async def get_priority_puzzles_grouped(
-    db: AsyncDatabase,
-    _user: User = Depends(require_admin),
-    include_inactive: bool = Query(False),
-):
-    """get priority puzzles grouped by type/size/difficulty."""
-    return await PuzzleAdminService(db).get_priority_puzzles_grouped(include_inactive=include_inactive)
-
-
-@router.post("/admin/priority", status_code=201)
-async def add_priority_puzzle(
-    request: AddPriorityRequest,
-    db: AsyncDatabase,
-    _user: User = Depends(require_admin),
-):
-    """add a puzzle to the priority queue."""
-    priority = await PuzzleAdminService(db).add_priority_puzzle(request.puzzle_id)
-    return {"status": "success", "message": "Puzzle added to priority queue", "priority_id": str(priority.id), "puzzle_id": str(priority.puzzle_id)}
-
-
-@router.delete("/admin/priority/{priority_id}")
-async def remove_priority_puzzle(
-    priority_id: uuid.UUID,
-    db: AsyncDatabase,
-    _user: User = Depends(require_admin),
-):
-    """remove a puzzle from the priority queue."""
-    priority = await PuzzleAdminService(db).remove_priority_puzzle(priority_id)
-    return {"status": "success", "message": "Puzzle removed from priority queue", "priority_id": str(priority.id)}
-
-
-@router.get("/admin/priority/group/export")
-async def export_priority_group_attempts(
-    db: AsyncDatabase,
-    _user: User = Depends(require_admin),
-    puzzle_type: str = Query(...),
-    puzzle_size: str = Query(...),
-    puzzle_difficulty: Optional[str] = Query(None),
-    solved_only: bool = Query(True),
-):
-    """export all attempts for priority puzzles in a group."""
-    query = (
-        select(PuzzlePriority.puzzle_id)
-        .join(Puzzle, PuzzlePriority.puzzle_id == Puzzle.id)
-        .where(
-            and_(
-                PuzzlePriority.removed_at == None,
-                Puzzle.puzzle_type == puzzle_type,
-                Puzzle.puzzle_size == puzzle_size,
-            )
-        )
-    )
-    if puzzle_difficulty:
-        query = query.where(Puzzle.puzzle_difficulty == puzzle_difficulty)
-    else:
-        query = query.where(Puzzle.puzzle_difficulty == None)
-
-    result = await db.execute(query)
-    priority_puzzle_ids = [str(row[0]) for row in result.all()]
-
-    if not priority_puzzle_ids:
-        raise HTTPException(status_code=404, detail="No priority puzzles found for this group")
-
-    admin_service = PuzzleAdminService(db)
-    difficulties = [puzzle_difficulty] if puzzle_difficulty else None
-    data = await admin_service.export_freeplay_data(
-        puzzle_types=[puzzle_type], puzzle_sizes=[puzzle_size], puzzle_difficulties=difficulties,
-        solved_filter="solved" if solved_only else None,
-    )
-
-    data = [a for a in data if a["puzzle"]["id"] in priority_puzzle_ids]
-    if not data:
-        raise HTTPException(status_code=404, detail="No attempts found for this priority group")
-
-    diff_part = f"_{puzzle_difficulty}" if puzzle_difficulty else ""
-    filename = f"priority_{puzzle_type}_{puzzle_size}{diff_part}_group_attempts.json"
-    return JSONResponse(content=data, headers={"Content-Disposition": f"attachment; filename={filename}", "Content-Type": "application/json"})
-
-
-@router.get("/admin/priority/{priority_id}/export")
-async def export_priority_puzzle_attempts(
-    priority_id: uuid.UUID,
-    db: AsyncDatabase,
-    _user: User = Depends(require_admin),
-    solved_only: bool = Query(True),
-):
-    """export all attempts for a specific priority puzzle."""
-    admin_service = PuzzleAdminService(db)
-    puzzle = await admin_service.get_priority_puzzle_definition(priority_id)
-    if not puzzle:
-        raise HTTPException(status_code=404, detail=f"Priority record with id {priority_id} not found")
-
-    data = await admin_service.export_freeplay_data(
-        puzzle_types=[puzzle.puzzle_type], puzzle_sizes=[puzzle.puzzle_size],
-        puzzle_difficulties=[puzzle.puzzle_difficulty] if puzzle.puzzle_difficulty else None,
-        solved_filter="solved" if solved_only else None,
-    )
-
-    data = [a for a in data if a["puzzle"]["id"] == str(puzzle.id)]
-    if not data:
-        raise HTTPException(status_code=404, detail="No attempts found for this puzzle")
-
-    filename = f"priority_{puzzle.puzzle_type}_{puzzle.puzzle_size}_{puzzle.id}_attempts.json"
-    return JSONResponse(content=data, headers={"Content-Disposition": f"attachment; filename={filename}", "Content-Type": "application/json"})
