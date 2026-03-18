@@ -24,7 +24,7 @@ const forgot_password_modal_open = ref(false);
 
 // Form validation
 const isFormValid = computed(() => {
-  return email.value && password.value && email.value.includes("@");
+  return email.value && password.value;
 });
 
 // Clear error when user starts typing
