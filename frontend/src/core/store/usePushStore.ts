@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import axios from 'axios';
+import { api } from '@/core/services/client';
 
 export const usePushStore = defineStore('push', {
   state: () => ({
@@ -37,19 +37,13 @@ export const usePushStore = defineStore('push', {
       return window.btoa(binary);
     },
 
-    // Check current subscription status
     async check_subscription_status() {
       if (!this.is_supported) return;
-
-      try {
-        const response = await axios.get('/api/push/subscription-status');
-        this.is_subscribed = response.data.subscribed;
-      } catch (err: any) {
-        console.error('Failed to check subscription status:', err);
-      }
+      const { data, error } = await api.GET('/api/push/subscription-status');
+      if (error) return;
+      this.is_subscribed = data.subscribed;
     },
 
-    // Subscribe to push notifications
     async subscribe() {
       if (!this.is_supported) {
         this.error = 'Push notifications are not supported in this browser';
@@ -60,8 +54,6 @@ export const usePushStore = defineStore('push', {
         this.error = 'Notification permission was previously denied. Please enable it in browser settings.';
         return false;
       } else {
-        // Permission is 'default' - need to request it
-        // This MUST be called synchronously from a user gesture
         this.error = 'Please click the switch again to grant notification permission';
         return false;
       }
@@ -69,81 +61,90 @@ export const usePushStore = defineStore('push', {
       this.is_loading = true;
       this.error = '';
 
+      // get VAPID key from backend
+      const { data: vapidData, error: vapidError } = await api.GET('/api/push/vapid-public-key');
+      if (vapidError) {
+        this.error = 'Failed to get push notification key';
+        this.is_loading = false;
+        return false;
+      }
+
+      // browser push API — can throw
+      let subscription: PushSubscription;
       try {
-        // Get the service worker registration
         const registration = await navigator.serviceWorker.ready;
-
-        // Get VAPID public key from backend
-        const vapidResponse = await axios.get('/api/push/vapid-public-key');
-        const vapid_public_key = vapidResponse.data.public_key;
-
-        // Subscribe to push notifications
-        const subscription = await registration.pushManager.subscribe({
+        subscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey: this.urlBase64ToUint8Array(vapid_public_key),
+          applicationServerKey: this.urlBase64ToUint8Array(vapidData.public_key),
         });
+      } catch (err) {
+        console.error('Browser push subscription failed:', err);
+        this.error = 'Failed to subscribe to push notifications';
+        this.is_loading = false;
+        return false;
+      }
 
-        // Send subscription to backend
-        await axios.post('/api/push/subscribe', {
+      // send subscription to backend
+      const { error } = await api.POST('/api/push/subscribe', {
+        body: {
           endpoint: subscription.endpoint,
           keys: {
             p256dh: this.arrayBufferToBase64(subscription.getKey('p256dh')),
             auth: this.arrayBufferToBase64(subscription.getKey('auth')),
           },
-        });
-
-        this.is_subscribed = true;
-        this.is_loading = false;
-        return true;
-
-      } catch (err: any) {
-        console.error('Failed to subscribe to push notifications:', err);
-        this.error = err.response?.data?.detail || 'Failed to subscribe to push notifications';
+        },
+      });
+      if (error) {
+        this.error = error.message;
         this.is_loading = false;
         return false;
       }
+
+      this.is_subscribed = true;
+      this.is_loading = false;
+      return true;
     },
 
-    // Unsubscribe from push notifications
     async unsubscribe() {
       if (!this.is_supported) return false;
 
       this.is_loading = true;
       this.error = '';
 
+      // browser push API — can throw
+      let subscription: PushSubscription | null;
       try {
-        // Get the service worker registration
         const registration = await navigator.serviceWorker.ready;
-
-        // Get current subscription
-        const subscription = await registration.pushManager.getSubscription();
-
-        if (subscription) {
-          // Unsubscribe from push manager
-          await subscription.unsubscribe();
-
-          // Remove subscription from backend
-          await axios.delete('/api/push/unsubscribe', {
-            data: {
-              endpoint: subscription.endpoint,
-              keys: {
-                p256dh: this.arrayBufferToBase64(subscription.getKey('p256dh')),
-                auth: this.arrayBufferToBase64(subscription.getKey('auth')),
-              },
-            },
-          });
-        }
-
-        this.is_subscribed = false;
-        this.is_loading = false;
-        return true;
-
-      } catch (err: any) {
-        console.error('Failed to unsubscribe from push notifications:', err);
-        this.error = err.response?.data?.detail || 'Failed to unsubscribe from push notifications';
+        subscription = await registration.pushManager.getSubscription();
+        if (subscription) await subscription.unsubscribe();
+      } catch (err) {
+        console.error('Browser push unsubscribe failed:', err);
+        this.error = 'Failed to unsubscribe from push notifications';
         this.is_loading = false;
         return false;
       }
+
+      // remove subscription from backend
+      if (subscription) {
+        const { error } = await api.DELETE('/api/push/unsubscribe', {
+          body: {
+            endpoint: subscription.endpoint,
+            keys: {
+              p256dh: this.arrayBufferToBase64(subscription.getKey('p256dh')),
+              auth: this.arrayBufferToBase64(subscription.getKey('auth')),
+            },
+          },
+        });
+        if (error) {
+          this.error = error.message;
+          this.is_loading = false;
+          return false;
+        }
+      }
+
+      this.is_subscribed = false;
+      this.is_loading = false;
+      return true;
     },
   },
 });

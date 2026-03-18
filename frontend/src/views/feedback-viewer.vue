@@ -9,7 +9,7 @@ import {
 } from "@tanstack/vue-table";
 import { ArrowUpDown } from "lucide-vue-next";
 import { h, onMounted, ref } from "vue";
-import axios from "axios";
+import { api } from "@/core/services/client";
 
 import { valueUpdater } from "@/core/components/ui/table/utils";
 import Container from "@/core/components/ui/Container.vue";
@@ -131,8 +131,8 @@ const fetch_feedback = async () => {
   try {
     loading.value = true;
     error.value = null;
-    const response = await axios.get("/api/feedback/admin/list");
-    feedback_list.value = response.data;
+    const { data } = await api.GET("/api/feedback/admin/list");
+    if (data) feedback_list.value = data;
   } catch (err) {
     error.value = "Failed to load feedback";
     console.error("Error fetching feedback:", err);

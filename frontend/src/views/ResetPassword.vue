@@ -7,7 +7,7 @@ import { Separator } from "@/core/components/ui/separator";
 import { computed, ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import AppLogo from "@/core/components/AppLogo.vue";
-import axios from "axios";
+import { api } from "@/core/services/client";
 import { useTranslation } from "i18next-vue";
 import { useAppStore } from "@/core/store/useAppStore.ts";
 
@@ -44,23 +44,21 @@ const submit_form = async () => {
   error.value = "";
   success.value = false;
 
-  try {
-    await axios.post("/api/auth/reset-password", {
-      token: token.value,
-      password: new_password.value,
-    });
-    success.value = true;
+  const { error: err } = await api.POST("/api/auth/reset-password", {
+    body: { token: token.value, password: new_password.value },
+  });
+  loading.value = false;
 
-    // Redirect to login after 3 seconds
-    setTimeout(() => {
-      appStore.open_login_modal();
-      router.push("/");
-    }, 3000);
-  } catch (err: any) {
-    error.value = err.response?.data?.detail || "Failed to reset password";
-  } finally {
-    loading.value = false;
+  if (err) {
+    error.value = (err as any)?.detail || "Failed to reset password";
+    return;
   }
+
+  success.value = true;
+  setTimeout(() => {
+    appStore.open_login_modal();
+    router.push("/");
+  }, 3000);
 };
 
 onMounted(() => {

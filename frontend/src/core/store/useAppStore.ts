@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { Thumbmark } from "@thumbmarkjs/thumbmarkjs";
-import { api } from "@/core/services/axios.ts";
+import { api } from "@/core/services/client";
+import { capture_error } from "@/core/services/posthog.ts";
 
 const CACHE_VERSION = 1;
 const CACHE_STORAGE_KEY = 'mitlogic.cache.version';
@@ -21,12 +22,22 @@ export const useAppStore = defineStore("mitlogic.appconfig", {
     open_login_modal() { this.login_modal_open = true; },
     close_login_modal() { this.login_modal_open = false; },
 
-    async updateDeviceFingerprint() {
-      this.thumbmark = await(new Thumbmark()).get();
-      try {
-        const response = await api.put("/api/device", { thumbmark: this.thumbmark  });
-        this.device_id = response.data.device_id;
-      } catch (error: any) {}
+    updateDeviceFingerprint(retriesLeft = 3) {
+      (new Thumbmark()).get()
+        .then((thumbmark) => {
+          this.thumbmark = thumbmark;
+          return api.PUT("/api/device", { body: { thumbmark } });
+        })
+        .then(({ data }) => {
+          if (data) this.device_id = data.device_id;
+        })
+        .catch((error) => {
+          if (retriesLeft > 0) {
+            setTimeout(() => this.updateDeviceFingerprint(retriesLeft - 1), 3000);
+          } else {
+            capture_error("device_fingerprint_failed", error);
+          }
+        });
     },
 
     async invalidateAllCaches() {

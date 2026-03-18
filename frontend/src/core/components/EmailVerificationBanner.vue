@@ -26,24 +26,16 @@ const resend_verification_email = async () => {
   resendError.value = "";
   resendSuccess.value = false;
 
-  try {
-    await authStore.resend_verification_email();
+  const success = await authStore.resend_verification_email();
+
+  if (success) {
     resendSuccess.value = true;
-    setTimeout(() => {
-      resendSuccess.value = false;
-    }, 5000);
-  } catch (error: any) {
-    if (error.response?.status === 429) {
-      resendError.value = t("auth:verification.error_rate_limit");
-    } else {
-      resendError.value = t("auth:verification.error_failed");
-    }
-    setTimeout(() => {
-      resendError.value = "";
-    }, 5000);
-  } finally {
-    isResending.value = false;
+    setTimeout(() => { resendSuccess.value = false; }, 5000);
+  } else {
+    resendError.value = authStore.error || t("auth:verification.error_failed");
+    setTimeout(() => { resendError.value = ""; }, 5000);
   }
+  isResending.value = false;
 };
 </script>
 

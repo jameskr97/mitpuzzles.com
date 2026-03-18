@@ -9,7 +9,7 @@ import {
 } from "@tanstack/vue-table";
 import { ArrowUpDown, RefreshCw, Trash2, Eye, ChevronLeft } from "lucide-vue-next";
 import { h, onMounted, onUnmounted, ref } from "vue";
-import axios from "axios";
+import { api } from "@/core/services/client";
 
 import { valueUpdater } from "@/core/components/ui/table/utils";
 import { Badge } from "@/core/components/ui/badge";
@@ -137,8 +137,8 @@ const poll_running_jobs = async () => {
   }
 
   try {
-    const response = await axios.get("/api/analysis/jobs");
-    jobs.value = response.data;
+    const { data } = await api.GET("/api/analysis/jobs");
+    jobs.value = (data ?? []) as any;
 
     // Update selected job if it's in the list
     if (selected_job.value) {
@@ -175,8 +175,8 @@ const fetch_jobs = async () => {
   try {
     loading.value = true;
     error.value = null;
-    const response = await axios.get("/api/analysis/jobs");
-    jobs.value = response.data;
+    const { data } = await api.GET("/api/analysis/jobs");
+    jobs.value = (data ?? []) as any;
 
     // Start polling if there are running jobs
     check_and_start_polling();
@@ -190,7 +190,7 @@ const fetch_jobs = async () => {
 
 const restart_job = async (job_id: string) => {
   try {
-    await axios.post(`/api/analysis/jobs/${job_id}/restart`);
+    await api.POST("/api/analysis/jobs/{job_id}/restart", { params: { path: { job_id } } });
     await fetch_jobs();
   } catch (err) {
     console.error("Error restarting job:", err);
@@ -201,7 +201,7 @@ const delete_job = async (job_id: string) => {
   if (!confirm("Are you sure you want to delete this job?")) return;
 
   try {
-    await axios.delete(`/api/analysis/jobs/${job_id}`);
+    await api.DELETE("/api/analysis/jobs/{job_id}", { params: { path: { job_id } } });
     if (selected_job.value?.id === job_id) {
       selected_job.value = null;
     }

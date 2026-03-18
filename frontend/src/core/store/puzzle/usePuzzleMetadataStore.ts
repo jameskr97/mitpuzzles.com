@@ -1,23 +1,22 @@
 import { defineStore } from "pinia";
-import { api } from "@/core/services/axios.ts";
+import { api } from "@/core/services/client";
 
 const LOCAL_STORAGE_SELECTED_VARIANT_KEY = (puzzle_type: string) => `mitlogic.${puzzle_type}.selected_variant`;
 
 export const usePuzzleMetadataStore = defineStore("mitlogic.puzzle.metadata", {
   state: () => ({
-    variants: {} as Record<string, string[][]>, // puzzle_type -> list of variants (each variant is a list of strings)
-    selected_variant: {} as Record<string, string[]>,
+    variants: {} as Record<string, (string | null)[][]>,
+    selected_variant: {} as Record<string, (string | null)[]>,
     initialized: false,
   }),
 
   getters: {
-    getVariants: (state) => (puzzle_type: string): string[][] => state.variants[puzzle_type] || [],
-    getSelectedVariant: (state) => (puzzle_type: string): string[] => {
+    getVariants: (state) => (puzzle_type: string): (string | null)[][] => state.variants[puzzle_type] || [],
+    getSelectedVariant: (state) => (puzzle_type: string): (string | null)[] => {
         const selected = state.selected_variant[puzzle_type];
         if (selected && selected.length > 0) {
           return selected;
         }
-        // Fallback to first variant if no selection or empty selection
         const variants = state.variants[puzzle_type];
         return variants && variants.length > 0 ? variants[0] : [];
       },
@@ -29,13 +28,12 @@ export const usePuzzleMetadataStore = defineStore("mitlogic.puzzle.metadata", {
       this.initialized = true;
 
       // load from API (Workbox handles caching)
-      const response = await api.get('/api/puzzle/definition/types');
-      const loaded = response.data;
-      Object.keys(loaded).forEach((key) => {
-        this.variants[key] = loaded[key].available_difficulties;
-        // set default if no selection exists
+      const { data, error } = await api.GET("/api/puzzle/definition/types");
+      if (error) return;
+      Object.keys(data).forEach((key) => {
+        this.variants[key] = data[key].available_difficulties;
         if (!this.selected_variant[key]) {
-          this.selected_variant[key] = loaded[key].default_difficulty;
+          this.selected_variant[key] = data[key].default_difficulty;
         }
       });
 

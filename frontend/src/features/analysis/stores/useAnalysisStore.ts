@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
-import { api } from '@/core/services/axios'
+import { api } from '@/core/services/client'
 
 export interface FilterOption {
   value: string
@@ -64,11 +64,10 @@ export const useAnalysisStore = defineStore('analysis', () => {
         }
       }
 
-      const response = await api.get('/api/puzzle/filter-options', {
-        params,
-        paramsSerializer: { indexes: null },
+      const { data } = await api.GET('/api/puzzle/filter-options', {
+        params: { query: params as any },
       })
-      options.value = response.data
+      if (data) options.value = data as any
     } catch (error) {
       console.error('Failed to fetch filter options:', error)
     } finally {

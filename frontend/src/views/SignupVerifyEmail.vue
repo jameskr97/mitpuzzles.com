@@ -19,41 +19,21 @@ onMounted(async () => {
     return;
   }
 
-  try {
-    await authStore.verifyEmail(token);
-    // track email verification with posthog
+  const success = await authStore.verifyEmail(token);
+
+  if (success) {
     posthog.capture('email_verified', {
       user_id: authStore.user?.id,
-      email: authStore.user?.email
+      email: authStore.user?.email,
     });
-
-    // fetch current user to update verification status and auto-login
     await authStore.fetchCurrentUser();
     await router.push("/?verified=true");
-  } catch (error: any) {
-    console.error("Verification error:", error);
-
-    // handle different error cases based on status and detail
-    if (error.response?.status === 400) {
-      const errorDetail = error.response?.data?.detail;
-
-      if (errorDetail === "VERIFY_USER_ALREADY_VERIFIED") {
-        // User already verified - redirect to home
-        await router.push("/?alreadyVerified=true");
-      } else if (errorDetail === "VERIFY_USER_BAD_TOKEN") {
-        // Bad token - shouldn't happen, but show support message
-        errorMessage.value = t("auth:verification.error_bad_token");
-      } else {
-        // Other 400 errors
-        errorMessage.value = t("auth:verification.error_generic");
-      }
-    } else if (error.response?.status === 422) {
-      // Validation error - shouldn't happen in normal flow
-      errorMessage.value = t("auth:verification.error_unexpected");
-    } else {
-      // Generic error fallback
-      errorMessage.value = error.message || t("auth:verification.error_generic");
-    }
+  } else if (authStore.error === "VERIFY_USER_ALREADY_VERIFIED") {
+    await router.push("/?alreadyVerified=true");
+  } else if (authStore.error === "VERIFY_USER_BAD_TOKEN") {
+    errorMessage.value = t("auth:verification.error_bad_token");
+  } else {
+    errorMessage.value = t("auth:verification.error_generic");
   }
 });
 </script>

@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { api } from "@/core/services/axios.ts";
+import { api } from "@/core/services/client";
 
 interface LeaderboardEntry {
   rank: number;
@@ -38,15 +38,12 @@ export const usePuzzleLeaderboardStore = defineStore("mitlogic.freeplay.leaderbo
   actions: {
     /** fetch latest leaderboard (Workbox uses NetworkFirst with fallback to cache) */
     async refreshLeaderboard(puzzle_type: string, size: string, difficulty: string, time_period: string = "all_time", scoring_method: string = "best") {
-      try {
-        const endpoint = `/api/puzzle/freeplay/leaderboard?puzzle_type=${puzzle_type}&puzzle_size=${size}&puzzle_difficulty=${difficulty}&limit=10&time_period=${time_period}&scoring_method=${scoring_method}`;
-        const response = await api.get(endpoint);
-        const data = response.data;
-        const key: LeaderboardKey = `${puzzle_type}:${size}:${difficulty}:${time_period}:${scoring_method}`;
-        this.leaderboard[key] = data;
-      } catch (error) {
-        return [];
-      }
+      const { data, error } = await api.GET("/api/puzzle/freeplay/leaderboard", {
+        params: { query: { puzzle_type, puzzle_size: size, puzzle_difficulty: difficulty, limit: 10, time_period, scoring_method } },
+      });
+      if (error) return;
+      const key: LeaderboardKey = `${puzzle_type}:${size}:${difficulty}:${time_period}:${scoring_method}`;
+      this.leaderboard[key] = data;
     },
   },
 });

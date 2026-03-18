@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
-import { api } from "@/core/services/axios";
+import { api } from "@/core/services/client";
 import type { BackgroundJob } from "../types";
 
 export const use_analysis_jobs_store = defineStore("analysis_jobs", () => {
@@ -15,49 +15,55 @@ export const use_analysis_jobs_store = defineStore("analysis_jobs", () => {
   }
 
   async function fetch_job(job_id: string): Promise<BackgroundJob> {
-    const response = await api.get(`/api/analysis/jobs/${job_id}`);
-    jobs.value[job_id] = response.data;
-    return response.data;
+    const { data } = await api.GET("/api/analysis/jobs/{job_id}", { params: { path: { job_id } } });
+    const job = data as unknown as BackgroundJob;
+    jobs.value[job_id] = job;
+    return job;
   }
 
   async function fetch_all_jobs(): Promise<BackgroundJob[]> {
-    const response = await api.get("/api/analysis/jobs");
-    for (const job of response.data) {
+    const { data } = await api.GET("/api/analysis/jobs");
+    const all = (data ?? []) as unknown as BackgroundJob[];
+    for (const job of all) {
       jobs.value[job.id] = job;
     }
-    return response.data;
+    return all;
   }
 
-  async function upload_file(file: File): Promise<string> {
+  async function upload_file(file: File): Promise<string | null> {
     const form_data = new FormData();
     form_data.append("file", file);
 
-    const response = await api.post("/api/analysis/upload", form_data, {
-      headers: { "Content-Type": "multipart/form-data" },
+    const { data, error } = await api.POST("/api/analysis/upload", {
+      body: form_data as any,
+      bodySerializer: (b: any) => b,
     });
-
-    return response.data.job_id;
+    if (error) return null;
+    return (data as any)?.job_id;
   }
 
-  async function start_database_audit(puzzle_type: string): Promise<string> {
-    const response = await api.post("/api/analysis/analyze-database", {
-      puzzle_type,
+  async function start_database_audit(puzzle_type: string): Promise<string | null> {
+    const { data, error } = await api.POST("/api/analysis/analyze-database", {
+      body: { puzzle_type } as any,
     });
-    return response.data.job_id;
+    if (error) return null;
+    return (data as any)?.job_id;
   }
 
-  async function import_unique(job_id: string): Promise<number> {
-    const response = await api.post(`/api/analysis/jobs/${job_id}/import-unique`);
-    return response.data.imported;
+  async function import_unique(job_id: string): Promise<number | null> {
+    const { data, error } = await api.POST("/api/analysis/jobs/{job_id}/import-unique", { params: { path: { job_id } } });
+    if (error) return null;
+    return (data as any)?.imported;
   }
 
-  async function disable_non_unique(job_id: string): Promise<number> {
-    const response = await api.post(`/api/analysis/jobs/${job_id}/disable-non-unique`);
-    return response.data.disabled;
+  async function disable_non_unique(job_id: string): Promise<number | null> {
+    const { data, error } = await api.POST("/api/analysis/jobs/{job_id}/disable-non-unique", { params: { path: { job_id } } });
+    if (error) return null;
+    return (data as any)?.disabled;
   }
 
   async function delete_job(job_id: string): Promise<void> {
-    await api.delete(`/api/analysis/jobs/${job_id}`);
+    await api.DELETE("/api/analysis/jobs/{job_id}", { params: { path: { job_id } } });
     delete jobs.value[job_id];
     poll_job_ids.delete(job_id);
   }

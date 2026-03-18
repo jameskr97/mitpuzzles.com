@@ -8,6 +8,7 @@ from sqlalchemy import select
 from app.dependencies import AsyncDatabase, get_device_id
 from app.modules.authentication import User, fastapi_users
 from app.modules.puzzle.schemas import (
+    ErrorResponse,
     PuzzleDefinitionResponse,
     DailyTodayResponse,
     PuzzleSubmitResponse,
@@ -21,7 +22,7 @@ from app.modules.puzzle.models import Puzzle, DailyPuzzle
 router = APIRouter()
 
 
-@router.get("/daily/today", response_model=DailyTodayResponse)
+@router.get("/daily/today", response_model=DailyTodayResponse, responses={400: {"model": ErrorResponse}})
 async def get_daily_today(
     db: AsyncDatabase,
     device_id: uuid.UUID = Depends(get_device_id),
@@ -34,7 +35,7 @@ async def get_daily_today(
     return {"date": today.strftime("%Y-%m-%d"), "puzzles": statuses}
 
 
-@router.get("/daily/{date}/definition/{puzzle_type}")
+@router.get("/daily/{date}/definition/{puzzle_type}", responses={400: {"model": ErrorResponse}, 404: {"model": ErrorResponse}})
 async def get_daily_definition(date: str, puzzle_type: str, db: AsyncDatabase):
     """get the puzzle definition for a specific daily puzzle."""
     try:
@@ -52,7 +53,7 @@ async def get_daily_definition(date: str, puzzle_type: str, db: AsyncDatabase):
     raise HTTPException(status_code=404, detail=f"No daily puzzle found for {puzzle_type} on {date}")
 
 
-@router.get("/daily/{date}/leaderboard/{puzzle_type}", response_model=LeaderboardResponse)
+@router.get("/daily/{date}/leaderboard/{puzzle_type}", response_model=LeaderboardResponse, responses={400: {"model": ErrorResponse}, 404: {"model": ErrorResponse}})
 async def get_daily_leaderboard(
     date: str,
     puzzle_type: str,
@@ -80,7 +81,7 @@ async def get_daily_leaderboard(
     return LeaderboardResponse.model_validate(data)
 
 
-@router.post("/daily/{date}/submit/{puzzle_type}", status_code=201, response_model=PuzzleSubmitResponse)
+@router.post("/daily/{date}/submit/{puzzle_type}", status_code=201, response_model=PuzzleSubmitResponse, responses={400: {"model": ErrorResponse}, 404: {"model": ErrorResponse}})
 async def submit_daily_attempt(
     date: str,
     puzzle_type: str,

@@ -15,6 +15,7 @@ from app.dependencies import get_async_session, AsyncSession
 from app.service.email import send_verification_email
 from app.models import Base
 from app.config import settings, DeploymentEnvironment
+from app.errors import ErrorResponse
 
 from typing import Optional, Dict, Union
 import datetime
@@ -230,7 +231,7 @@ def check_verification_rate_limit(user_id: str) -> bool:
     return len(verification_requests[user_id]) < VERIFICATION_RATE_LIMIT
 
 # Resend verification email endpoint
-@router_auth.post("/api/auth/request-verify-token")
+@router_auth.post("/api/auth/request-verify-token", responses={400: {"model": ErrorResponse}, 429: {"model": ErrorResponse}})
 async def resend_verification_email(
     user: User = Depends(fastapi_users.current_user()),
     user_manager: UserManager = Depends(get_user_manager)

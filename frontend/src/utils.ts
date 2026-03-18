@@ -2,7 +2,6 @@ import { defineAsyncComponent } from "vue";
 import { defaultPuzzles } from "@/core/games/puzzle.defaults.ts";
 import type { RuleViolation } from "@/core/games/types/puzzle-types.ts";
 import CryptoJS from "crypto-js";
-import axios from "axios";
 import { createLogger } from "@/core/services/logger.ts";
 const log = createLogger("storage");
 import { i18next } from "@/i18n.ts";
@@ -132,23 +131,21 @@ export function getPuzzleDisplayName(parts?: string[]): string {
 
 export async function download_blob(url: string, filename: string) {
   try {
-    const response = await axios.get(url, {
-      responseType: 'blob'
-    })
+    const response = await fetch(url, { credentials: "include" });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-    // create download
-    const content_type = response.headers['content-type'] || 'application/octet-stream'
-    const blob = new Blob([response.data], { type: content_type })
-    const blob_url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = blob_url
-    a.download = filename
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    window.URL.revokeObjectURL(blob_url)
+    const content_type = response.headers.get("content-type") || "application/octet-stream";
+    const blob = new Blob([await response.blob()], { type: content_type });
+    const blob_url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = blob_url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(blob_url);
   } catch (err) {
-    console.error(`error downloading file from ${url}:`, err)
+    console.error(`error downloading file from ${url}:`, err);
   }
 }
 

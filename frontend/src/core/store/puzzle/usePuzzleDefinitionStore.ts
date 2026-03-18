@@ -1,8 +1,8 @@
 import { defineStore } from "pinia";
 import type { PuzzleDefinition } from "@/core/games/types/puzzle-types.ts";
-import { getNextPuzzleID } from "@/core/services/app.ts";
 import { useSessionTrackingStore } from "@/core/store/useSessionTrackingStore.ts";
-import { api } from "@/core/services/axios.ts";
+import { api } from "@/core/services/client";
+import { capture_error } from "@/core/services/posthog.ts";
 
 // localStorage helpers
 export function getCurrentPuzzleID(puzzle_type: string): string | null {
@@ -23,38 +23,43 @@ export const usePuzzleDefinitionStore = defineStore("puzzle-definitions", {
     async getDefinition(puzzle_type: string): Promise<PuzzleDefinition | null> {
       const puzzle_id = getCurrentPuzzleID(puzzle_type);
       if (!puzzle_id) return null;
-      puzzle_id as unknown as number;
       return await this.getDefinitionByID(puzzle_id);
     },
 
     /** get puzzle definition by specific puzzle ID (Workbox handles caching) */
-    async getDefinitionByID(puzzle_id: number): Promise<PuzzleDefinition | null> {
-      try {
-        const response = await api.get<PuzzleDefinition>(`/api/puzzle/definition/${puzzle_id}`);
-        return response.data;
-      } catch (error) {
-        console.warn(`Failed to get puzzle definition for ID ${puzzle_id}:`, error);
+    async getDefinitionByID(puzzle_id: string): Promise<PuzzleDefinition | null> {
+      const { data, error } = await api.GET("/api/puzzle/definition/{puzzle_id}", {
+        params: { path: { puzzle_id } },
+      });
+      if (error) {
+        console.warn(`Failed to get puzzle definition for ID ${puzzle_id}:`, error.detail);
         return null;
       }
+      return (data as PuzzleDefinition) ?? null;
     },
 
     /** request a new puzzle from the server and set it as current */
-    async requestNewPuzzle<TMeta>(puzzle_type: string, size: string, difficulty: string): Promise<PuzzleDefinition<TMeta>> {
-      // Get session_id from session tracking store
+    async requestNewPuzzle<TMeta>(puzzle_type: string, size: string, difficulty: string): Promise<PuzzleDefinition<TMeta> | null> {
       const sessionStore = useSessionTrackingStore();
-      const session_id = sessionStore.session_id;
 
       // request 1: get next puzzle id (with priority and uniqueness enforcement)
-      const res_id = await getNextPuzzleID(puzzle_type, size, difficulty, session_id);
-      if (res_id.status !== 200) throw new Error("Failed to fetch new puzzle ID");
+      const { data: idData, error } = await api.GET("/api/puzzle/next", {
+        params: { query: { puzzle_type, puzzle_size: size, puzzle_difficulty: difficulty, session_id: sessionStore.session_id } },
+      });
+      if (error) {
+        capture_error("next_puzzle_failed", error, { puzzle_type, size, difficulty });
+        return null;
+      }
 
-      const puzzle_id = res_id.data.puzzle_id?.toString();
-      if (!puzzle_id) throw new Error("Puzzle ID missing from response");
+      const puzzle_id = idData.puzzle_id;
       this.setCurrentPuzzle(puzzle_type, puzzle_id);
 
       // request 2: get puzzle definition by id (Workbox caches it)
       const definition = await this.getDefinitionByID(puzzle_id);
-      if (!definition) throw new Error("Failed to fetch puzzle definition");
+      if (!definition) {
+        capture_error("puzzle_definition_failed", null, { puzzle_id });
+        return null;
+      }
 
       return definition as PuzzleDefinition<TMeta>;
     },
@@ -66,8 +71,8 @@ export const usePuzzleDefinitionStore = defineStore("puzzle-definitions", {
       return await this.requestNewPuzzle(puzzle_type, size, difficulty);
     },
 
-    async cache_puzzle_ids<TMeta>(puzzle_ids: number[]): Promise<PuzzleDefinition<TMeta>[]> {
-      const promises = puzzle_ids.map(pid =>  this.getDefinitionByID(pid))
+    async cache_puzzle_ids<TMeta>(puzzle_ids: string[]): Promise<PuzzleDefinition<TMeta>[]> {
+      const promises = puzzle_ids.map(pid => this.getDefinitionByID(pid));
       return await Promise.all(promises) as PuzzleDefinition<TMeta>[];
     },
 

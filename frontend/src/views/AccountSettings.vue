@@ -10,7 +10,7 @@ import { computed, onMounted, ref } from "vue";
 import { useAuthStore } from "@/core/store/useAuthStore.ts";
 import { usePushStore } from "@/core/store/usePushStore.ts";
 import { ACTIVE_GAMES } from "@/constants.ts";
-import axios from "axios";
+import { api } from "@/core/services/client";
 import { useTranslation } from "i18next-vue";
 import { capture_event } from "@/core/services/posthog.ts";
 
@@ -56,17 +56,16 @@ const submit_username = async () => {
   username_success.value = false;
   username_error.value = "";
 
-  try {
-    await auth_store.updateUsername(new_username.value);
-    username_success.value = true;
-    setTimeout(() => {
-      username_success.value = false;
-    }, 3000);
-  } catch (error: any) {
-    username_error.value = error.response?.data?.detail || "Failed to update username";
-  } finally {
-    username_loading.value = false;
+  const result = await auth_store.updateUsername(new_username.value);
+  username_loading.value = false;
+
+  if (!result) {
+    username_error.value = auth_store.error || "Failed to update username";
+    return;
   }
+
+  username_success.value = true;
+  setTimeout(() => { username_success.value = false; }, 3000);
 };
 
 const submit_password = async () => {
@@ -74,20 +73,19 @@ const submit_password = async () => {
   password_success.value = false;
   password_error.value = "";
 
-  try {
-    await auth_store.update_password(current_password.value, new_password.value);
-    password_success.value = true;
-    current_password.value = "";
-    new_password.value = "";
-    confirm_password.value = "";
-    setTimeout(() => {
-      password_success.value = false;
-    }, 3000);
-  } catch (error: any) {
-    password_error.value = error.response?.data?.detail || "Failed to update password";
-  } finally {
-    password_loading.value = false;
+  const result = await auth_store.update_password(current_password.value, new_password.value);
+  password_loading.value = false;
+
+  if (!result) {
+    password_error.value = auth_store.error || "Failed to update password";
+    return;
   }
+
+  password_success.value = true;
+  current_password.value = "";
+  new_password.value = "";
+  confirm_password.value = "";
+  setTimeout(() => { password_success.value = false; }, 3000);
 };
 
 // Profile form
@@ -102,17 +100,13 @@ const profile_error = ref("");
 const game_types = Object.keys(ACTIVE_GAMES);
 
 const fetch_profile = async () => {
-  try {
-    const response = await axios.get("/api/profile/me");
-    const profile = response.data;
+  const { data: profile, error } = await api.GET("/api/profile/me");
+  if (error) return;
 
-    if (profile.age) profile_age.value = profile.age;
-    if (profile.gender) profile_gender.value = profile.gender;
-    if (profile.education_level) profile_education_level.value = profile.education_level;
-    if (profile.game_experience) profile_game_experience.value = profile.game_experience;
-  } catch (error: any) {
-    console.error("Failed to fetch profile:", error);
-  }
+  if (profile.age) profile_age.value = profile.age;
+  if (profile.gender) profile_gender.value = profile.gender;
+  if (profile.education_level) profile_education_level.value = profile.education_level;
+  if (profile.game_experience) profile_game_experience.value = profile.game_experience;
 };
 
 const submit_profile = async () => {
@@ -120,21 +114,22 @@ const submit_profile = async () => {
   profile_success.value = false;
   profile_error.value = "";
 
-  try {
-    await axios.patch("/api/profile/me", {
+  const { error } = await api.PATCH("/api/profile/me", {
+    body: {
       age: profile_age.value || null,
       gender: profile_gender.value || null,
       education_level: profile_education_level.value || null,
       game_experience: profile_game_experience.value,
-    });
+    },
+  });
+
+  profile_loading.value = false;
+
+  if (error) {
+    profile_error.value = (error as any)?.detail || "Failed to update profile";
+  } else {
     profile_success.value = true;
-    setTimeout(() => {
-      profile_success.value = false;
-    }, 3000);
-  } catch (error: any) {
-    profile_error.value = error.response?.data?.detail || "Failed to update profile";
-  } finally {
-    profile_loading.value = false;
+    setTimeout(() => { profile_success.value = false; }, 3000);
   }
 };
 

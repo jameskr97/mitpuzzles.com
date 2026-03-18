@@ -130,14 +130,13 @@ const remove_job = async (job_id: string) => {
 };
 
 const import_unique = async (job_id: string) => {
-  try {
-    const imported = await store.import_unique(job_id);
-    alert(`Imported ${imported} unique puzzles to database`);
-    await remove_job(job_id);
-  } catch (err: any) {
-    console.error("Error importing puzzles:", err);
-    alert(err.response?.data?.detail || "Failed to import puzzles");
+  const imported = await store.import_unique(job_id);
+  if (imported === null) {
+    alert("Failed to import puzzles");
+    return;
   }
+  alert(`Imported ${imported} unique puzzles to database`);
+  await remove_job(job_id);
 };
 
 const upload_all = async () => {
@@ -147,16 +146,16 @@ const upload_all = async () => {
     entry.uploading = true;
     entry.upload_error = null;
 
-    try {
-      const job_id = await store.upload_file(entry.file);
-      active_job_ids.value.push(job_id);
-      files.value = files.value.filter((f) => f.id !== entry.id);
-      store.add_to_polling(job_id);
-    } catch (err: any) {
-      console.error("Error uploading file:", err);
-      entry.upload_error = err.response?.data?.detail || "Upload failed";
+    const job_id = await store.upload_file(entry.file);
+    if (!job_id) {
+      entry.upload_error = "Upload failed";
       entry.uploading = false;
+      continue;
     }
+
+    active_job_ids.value.push(job_id);
+    files.value = files.value.filter((f) => f.id !== entry.id);
+    store.add_to_polling(job_id);
   }
 };
 

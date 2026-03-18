@@ -5,7 +5,7 @@ import { useRoute, useRouter } from "vue-router";
 import { Alert, AlertDescription } from "@/core/components/ui/alert";
 import { Button } from "@/core/components/ui/button";
 import { X } from "lucide-vue-next";
-import axios from "axios";
+import { api } from "@/core/services/client";
 
 const DISMISSED_KEY = "mitlogic.banner.demographic_dismissed";
 
@@ -43,8 +43,8 @@ const fetch_profile = async () => {
 
   is_loading.value = true;
   try {
-    const response = await axios.get("/api/profile/me");
-    profile.value = response.data;
+    const { data } = await api.GET("/api/profile/me");
+    if (data) profile.value = data;
   } catch (error) {
     console.error("Failed to fetch profile:", error);
   } finally {

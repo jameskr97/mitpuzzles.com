@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useAnalysisStore } from '@/features/analysis/stores/useAnalysisStore'
-import { api } from '@/core/services/axios'
+import { api } from '@/core/services/client'
 import Container from '@/core/components/ui/Container.vue'
 import PuzzleBrowserItem from '@/features/analysis/components/PuzzleBrowserItem.vue'
 import PuzzleDefinitionModal from '@/features/analysis/components/PuzzleDefinitionModal.vue'
@@ -71,11 +71,10 @@ async function fetch_puzzles(append: boolean = false) {
       params.has_attempts = store.has_attempts
     }
 
-    const response = await api.get('/api/puzzle/browse', {
-      params,
-      paramsSerializer: { indexes: null },
+    const { data, error } = await api.GET('/api/puzzle/browse', {
+      params: { query: params as any },
     })
-    const data = response.data
+    if (error) return
 
     if (append) {
       all_puzzles.value = [...all_puzzles.value, ...data.puzzles]
@@ -99,8 +98,10 @@ async function show_puzzle_definition(puzzle: any) {
   show_definition_modal.value = true
 
   try {
-    const response = await api.get(`/api/puzzle/definition/${puzzle.id}?include_solution=true`)
-    selected_puzzle_definition.value = response.data as PuzzleDefinition
+    const { data } = await api.GET("/api/puzzle/definition/{puzzle_id}", {
+      params: { path: { puzzle_id: puzzle.id }, query: { include_solution: true } },
+    })
+    selected_puzzle_definition.value = data as unknown as PuzzleDefinition
   } catch (error) {
     console.error('Failed to fetch puzzle definition:', error)
     selected_puzzle_definition.value = puzzle as PuzzleDefinition

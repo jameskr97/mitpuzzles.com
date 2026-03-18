@@ -4,6 +4,8 @@ from typing import List, Dict, Any, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.errors import ErrorResponse
+
 
 class FilterOption(BaseModel):
     """a single filter option with its count."""

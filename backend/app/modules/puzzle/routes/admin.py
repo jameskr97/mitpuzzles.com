@@ -8,6 +8,7 @@ from sqlalchemy import select, func, case
 
 from app.dependencies import AsyncDatabase
 from app.modules.authentication import User
+from app.modules.puzzle.schemas import ErrorResponse
 from app.modules.puzzle.services import PuzzleAdminService
 from app.modules.puzzle.models import Puzzle, FreeplayPuzzleAttempt
 from app.modules.puzzle.routes.dependencies import require_admin
@@ -70,7 +71,7 @@ async def preview_freeplay_export(
     return {"total": row.total or 0, "authenticated": row.authenticated or 0, "anonymous": row.anonymous or 0}
 
 
-@router.get("/admin/freeplay/export")
+@router.get("/admin/freeplay/export", responses={404: {"model": ErrorResponse}})
 async def export_freeplay_data(
     db: AsyncDatabase,
     _user: User = Depends(require_admin),
@@ -104,7 +105,7 @@ async def export_freeplay_data(
     )
 
 
-@router.get("/admin/{puzzle_type}/export")
+@router.get("/admin/{puzzle_type}/export", responses={404: {"model": ErrorResponse}})
 async def export_game_data(
     puzzle_type: str,
     db: AsyncDatabase,

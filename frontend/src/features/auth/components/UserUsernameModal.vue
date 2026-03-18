@@ -49,14 +49,13 @@ async function onSubmit() {
   loading.value = true;
   error.value = "";
 
-  try {
-    await authStore.updateUsername(username.value.trim());
+  const result = await authStore.updateUsername(username.value.trim());
+  loading.value = false;
+
+  if (!result) {
+    error.value = authStore.error || "Failed to update username";
+  } else {
     emit("close");
-  } catch (err: any) {
-    console.error("Failed to update username:", err);
-    error.value = err.response.data.detail || "Failed to update username";
-  } finally {
-    loading.value = false;
   }
 }
 </script>

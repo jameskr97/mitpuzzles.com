@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
 import { ChevronLeft, ChevronRight } from "lucide-vue-next";
-import axios from "axios";
+import { api } from "@/core/services/client";
 
 import { Badge } from "@/core/components/ui/badge";
 import { Button } from "@/core/components/ui/button";
@@ -26,15 +26,14 @@ const result_filter = ref<string | undefined>(undefined);
 const fetch_puzzles = async () => {
   try {
     loading.value = true;
-    const params: Record<string, any> = {
-      page: page.value,
-      page_size: 20,
-    };
+    const query: Record<string, any> = { page: page.value, page_size: 20 };
     if (result_filter.value && result_filter.value !== "null") {
-      params.result_filter = result_filter.value;
+      query.result_filter = result_filter.value;
     }
-    const response = await axios.get(`/api/analysis/jobs/${props.job.id}/puzzles`, { params });
-    puzzles.value = response.data;
+    const { data } = await api.GET("/api/analysis/jobs/{job_id}/puzzles", {
+      params: { path: { job_id: props.job.id }, query },
+    });
+    if (data) puzzles.value = data as any;
   } catch (err) {
     console.error("Error fetching puzzles:", err);
   } finally {

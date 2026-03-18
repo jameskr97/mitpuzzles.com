@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Download, Ban } from "lucide-vue-next";
-import axios from "axios";
+import { api } from "@/core/services/client";
 
 import { Badge } from "@/core/components/ui/badge";
 import { Button } from "@/core/components/ui/button";
@@ -16,14 +16,15 @@ const emit = defineEmits<{
 }>();
 
 const import_unique = async () => {
-  try {
-    const response = await axios.post(`/api/analysis/jobs/${props.job.id}/import-unique`);
-    alert(`Imported ${response.data.imported} unique puzzles`);
-    emit("refresh");
-  } catch (err: any) {
-    console.error("Error importing puzzles:", err);
-    alert(err.response?.data?.detail || "Failed to import puzzles");
+  const { data, error } = await api.POST("/api/analysis/jobs/{job_id}/import-unique", {
+    params: { path: { job_id: props.job.id } },
+  });
+  if (error) {
+    alert((error as any)?.detail || "Failed to import puzzles");
+    return;
   }
+  alert(`Imported ${(data as any)?.imported} unique puzzles`);
+  emit("refresh");
 };
 
 const disable_non_unique = async () => {
@@ -31,14 +32,15 @@ const disable_non_unique = async () => {
     return;
   }
 
-  try {
-    const response = await axios.post(`/api/analysis/jobs/${props.job.id}/disable-non-unique`);
-    alert(`Disabled ${response.data.disabled} non-unique puzzles`);
-    emit("refresh");
-  } catch (err: any) {
-    console.error("Error disabling puzzles:", err);
-    alert(err.response?.data?.detail || "Failed to disable puzzles");
+  const { data, error } = await api.POST("/api/analysis/jobs/{job_id}/disable-non-unique", {
+    params: { path: { job_id: props.job.id } },
+  });
+  if (error) {
+    alert((error as any)?.detail || "Failed to disable puzzles");
+    return;
   }
+  alert(`Disabled ${(data as any)?.disabled} non-unique puzzles`);
+  emit("refresh");
 };
 </script>
 

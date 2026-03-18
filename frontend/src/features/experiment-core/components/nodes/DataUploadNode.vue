@@ -3,7 +3,7 @@ import { inject, onMounted, ref, type Ref } from "vue";
 import { Card, CardContent } from "@/core/components/ui/card";
 import { Upload, CheckCircle, AlertCircle } from "lucide-vue-next";
 import type { GraphExecutor } from "@/features/experiment-core";
-import { submitExperimentData } from "@/core/services/app.ts";
+import { api } from "@/core/services/client";
 import { capture_error } from "@/core/services/posthog.ts";
 
 const emit = defineEmits(["complete"]);
@@ -15,7 +15,7 @@ async function start_upload() {
     try {
       executor.value.data_collection.mark_experiment_complete();
       const experiment_data = executor.value.data_collection.export_for_analysis();
-      await submitExperimentData(experiment_data);
+      await api.POST("/api/experiment", { body: experiment_data as any });
       status.value = "completed";
       setTimeout(() => emit("complete"), 1500);
     } catch (error) {

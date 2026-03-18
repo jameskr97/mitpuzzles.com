@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { api } from "@/core/services/axios.ts";
+import { api } from "@/core/services/client";
 import { capture_error } from "@/core/services/posthog.ts";
 
 export interface DailyPuzzleStatus {
@@ -45,18 +45,19 @@ export const useDailyPuzzleStore = defineStore("mitlogic.daily", {
 
     async fetchDailyPuzzles() {
       this.loading = true;
-      try {
-        const response = await api.get("/api/puzzle/daily/today");
-        this.today_date = response.data.date;
-        this.puzzles = response.data.puzzles;
-      } catch (error) {
+      const { data, error } = await api.GET("/api/puzzle/daily/today");
+      this.loading = false;
+
+      if (error) {
         capture_error("daily_puzzles_fetch_failed", error);
-      } finally {
-        this.loading = false;
+        return;
       }
+
+      this.today_date = data.date;
+      this.puzzles = data.puzzles;
     },
 
-    /** Fetch only if the stored date is stale */
+    /** fetch only if the stored date is stale */
     async ensureFresh() {
       if (this.isStale()) {
         await this.fetchDailyPuzzles();
@@ -64,23 +65,32 @@ export const useDailyPuzzleStore = defineStore("mitlogic.daily", {
     },
 
     async fetchDailyDefinition(date: string, puzzle_type: string) {
-      const response = await api.get(`/api/puzzle/daily/${date}/definition/${puzzle_type}`);
-      return response.data;
+      const { data, error } = await api.GET("/api/puzzle/daily/{date}/definition/{puzzle_type}", {
+        params: { path: { date, puzzle_type } },
+      });
+      if (error) return null;
+      return data;
     },
 
     async refreshDailyLeaderboard(date: string, puzzle_type: string) {
-      try {
-        const response = await api.get(`/api/puzzle/daily/${date}/leaderboard/${puzzle_type}`);
-        const key: LeaderboardKey = `${date}:${puzzle_type}`;
-        this.leaderboards[key] = response.data.leaderboard || [];
-      } catch {
-        // keep existing data on error
-      }
+      const { data, error } = await api.GET("/api/puzzle/daily/{date}/leaderboard/{puzzle_type}", {
+        params: { path: { date, puzzle_type } },
+      });
+      if (error) return;
+      const key: LeaderboardKey = `${date}:${puzzle_type}`;
+      this.leaderboards[key] = data.leaderboard || [];
     },
 
     async submitDailyAttempt(date: string, puzzle_type: string, attempt_data: any) {
-      const response = await api.post(`/api/puzzle/daily/${date}/submit/${puzzle_type}`, attempt_data);
-      return response.data;
+      const { data, error } = await api.POST("/api/puzzle/daily/{date}/submit/{puzzle_type}", {
+        params: { path: { date, puzzle_type } },
+        body: attempt_data,
+      });
+      if (error) {
+        capture_error("daily_submit_failed", error, { date, puzzle_type });
+        return null;
+      }
+      return data;
     },
   },
 });

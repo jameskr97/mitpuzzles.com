@@ -1,7 +1,9 @@
 import { defineStore } from "pinia";
-import axios, { type AxiosResponse } from "axios";
 import posthog from "posthog-js";
 import { useAppStore } from "./useAppStore.ts";
+import { api } from "@/core/services/client";
+import { capture_error } from "@/core/services/posthog.ts";
+import { i18next } from "@/i18n.ts";
 
 export interface User {
   id: string;
@@ -45,124 +47,112 @@ export const useAuthStore = defineStore("auth", {
     async fetchCurrentUser() {
       this.loading = true;
       this.error = null;
-      
-      try {
-        const response = await axios.get("/api/users/me");
-        this.user = response.data;
-        // identify user to posthog
-        const appStore = useAppStore();
-        posthog.identify(this.user?.id,
-          {
-            email: this.user?.email,
-            username: this.user?.username,
-            last_login: new Date(),
-            device_id: appStore.device_id,
-          })
 
-        return this.user;
-      } catch (error: any) {
-        if (error.response?.status === 401) {
+      const { data, error, response } = await api.GET("/api/users/me");
+      this.loading = false;
+
+      if (error) {
+        if (response.status === 401) {
           this.user = null;
         } else {
-          this.error = error.response?.data?.detail || "Failed to fetch user";
+          this.error = (error as any)?.detail || "Failed to fetch user";
+          capture_error("fetch_current_user_failed", error);
         }
-        throw error;
-      } finally {
-        this.loading = false;
+        return null;
       }
+
+      this.user = data as User;
+      const appStore = useAppStore();
+      posthog.identify(this.user?.id, {
+        email: this.user?.email,
+        username: this.user?.username,
+        last_login: new Date(),
+        device_id: appStore.device_id,
+      });
+      return this.user;
     },
 
     async login(credentials: LoginPayload) {
       this.loading = true;
       this.error = null;
-      
-      try {
-        const formData = new FormData();
-        formData.append("username", credentials.email);
-        formData.append("password", credentials.password);
-        
-        await axios.post("/api/auth/login", formData, {
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-        });
-        await this.fetchCurrentUser(); // After successful login, fetch user data
-        return this.user;
-      } catch (error: any) {
-        this.error = error.response?.data?.detail || "Login failed";
-        throw error;
-      } finally {
+
+      const { error, response } = await api.POST("/api/auth/login", {
+        body: { username: credentials.email, password: credentials.password },
+        bodySerializer: (body) => new URLSearchParams(body as Record<string, string>),
+      });
+
+      if (error) {
+        this.error = (error as any)?.detail || "Login failed";
         this.loading = false;
+        return null;
       }
+
+      await this.fetchCurrentUser();
+      this.loading = false;
+      return this.user;
     },
 
-    async register(userData: RegisterPayload): Promise<AxiosResponse> {
+    async register(userData: RegisterPayload) {
       this.loading = true;
       this.error = null;
-      
-      try {
-        return await axios.post("/api/auth/register", userData);
-      } catch (error: any) {
-        this.error = error.response?.data?.detail || "Registration failed";
-        throw error;
-      } finally {
-        this.loading = false;
+
+      const { data, error } = await api.POST("/api/auth/register", { body: userData });
+      this.loading = false;
+
+      if (error) {
+        this.error = (error as any)?.detail || "Registration failed";
+        capture_error("registration_failed", error);
+        return null;
       }
+
+      return data;
     },
 
     async verifyEmail(token: string) {
-      try {
-        await axios.post("/api/auth/verify", {token});
-        // track email verification with posthog
-        posthog.capture('email_verified',
-          { user_id: this.user?.id, email: this.user?.email }
-        );
-      } catch (error: any) {
-        this.error = error.response?.data?.detail;
-        throw error;
+      const { error } = await api.POST("/api/auth/verify", { body: { token } });
+      if (error) {
+        this.error = (error as any)?.detail;
+        return false;
       }
+
+      posthog.capture('email_verified', { user_id: this.user?.id, email: this.user?.email });
+      return true;
     },
 
     async resend_verification_email() {
       this.loading = true;
       this.error = null;
 
-      try {
-        await axios.post("/api/auth/request-verify-token");
-        return { success: true };
-      } catch (error: any) {
-        this.error = error.response?.data?.detail || "Failed to resend verification email";
-        throw error;
-      } finally {
-        this.loading = false;
+      const { error, response } = await api.POST("/api/auth/request-verify-token");
+      this.loading = false;
+
+      if (error) {
+        this.error = response.status === 429
+          ? i18next.t("auth:verification.error_rate_limit")
+          : (error as any)?.detail || i18next.t("auth:verification.error_failed");
+        return false;
       }
+      return true;
     },
 
     async logout() {
       this.loading = true;
-      
-      try {
-        await axios.post("/api/auth/logout");
-        posthog.reset()
-      } catch (error) {
-        // Even if logout fails on server, clear local state
-        console.warn("Logout request failed:", error);
-      } finally {
-        this.user = null;
-        this.error = null;
-        this.loading = false;
-      }
+      await api.POST("/api/auth/logout");
+      posthog.reset();
+      this.user = null;
+      this.error = null;
+      this.loading = false;
     },
 
     async social_login(provider: string) {
-      try {
-        const response = await axios.get<SocialLoginResponse>(`/api/oauth/${provider}/authorize`);
-        window.location.href = response.data.authorization_url;
-
-      } catch (error: any) {
-        this.error = error.response?.data?.detail || "Social login failed";
-        throw error;
+      const { data, error } = await api.GET("/api/oauth/{provider}/authorize", {
+        params: { path: { provider } },
+      });
+      if (error) {
+        this.error = (error as any)?.detail || "Social login failed";
+        return;
       }
+      window.location.href = (data as SocialLoginResponse).authorization_url;
     },
 
     clearError() {
@@ -170,44 +160,41 @@ export const useAuthStore = defineStore("auth", {
     },
 
     async initializeAuth() {
-      try {
-        await this.fetchCurrentUser();
-      } catch (error) {} // User not authenticated, which is fine
+      await this.fetchCurrentUser();
     },
 
     async updateUsername(username: string) {
       this.loading = true;
       this.error = null;
 
-      try {
-        const response = await axios.patch("/api/users/me", { username });
-        this.user = response.data;
-        return this.user;
-      } catch (error: any) {
-        this.error = error.response?.data?.detail || "Failed to update username";
-        throw error;
-      } finally {
-        this.loading = false;
+      const { data, error } = await api.PATCH("/api/users/me", { body: { username } });
+      this.loading = false;
+
+      if (error) {
+        this.error = (error as any)?.detail || "Failed to update username";
+        return null;
       }
+
+      this.user = data as User;
+      return this.user;
     },
 
     async update_password(current_password: string, new_password: string) {
       this.loading = true;
       this.error = null;
 
-      try {
-        const response = await axios.patch("/api/users/me", {
-          password: new_password,
-          current_password: current_password
-        });
-        this.user = response.data;
-        return this.user;
-      } catch (error: any) {
-        this.error = error.response?.data?.detail || "Failed to update password";
-        throw error;
-      } finally {
-        this.loading = false;
+      const { data, error } = await api.PATCH("/api/users/me", {
+        body: { password: new_password, current_password },
+      });
+      this.loading = false;
+
+      if (error) {
+        this.error = (error as any)?.detail || "Failed to update password";
+        return null;
       }
+
+      this.user = data as User;
+      return this.user;
     },
   },
 });

@@ -51,6 +51,10 @@ class VapidPublicKeyResponse(BaseModel):
     public_key: str
 
 
+class SubscriptionStatusResponse(BaseModel):
+    subscribed: bool
+
+
 # Router
 router = APIRouter(tags=["Push Notifications"], prefix="/api/push")
 
@@ -126,7 +130,7 @@ async def unsubscribe_from_push(
     )
 
 
-@router.get("/subscription-status")
+@router.get("/subscription-status", response_model=SubscriptionStatusResponse)
 async def get_subscription_status(
     current_user: User | None = Depends(fastapi_users.current_user(optional=True)),
     session: AsyncSession = Depends(get_async_session),

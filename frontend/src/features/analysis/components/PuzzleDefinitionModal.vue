@@ -5,7 +5,7 @@ import { Button } from '@/core/components/ui/button'
 import PuzzleRenderer from '@/core/components/PuzzleRenderer.vue'
 import type { PuzzleDefinition } from '@/core/games/types/puzzle-types.ts'
 import JSONContainer from "@/core/components/ui/JSONContainer.vue"
-import { api } from '@/core/services/axios'
+import { api } from '@/core/services/client'
 
 interface PuzzleStats {
   puzzle_id: string
@@ -46,8 +46,8 @@ const state_solved = computed(() => {
 async function fetch_stats(puzzle_id: string) {
   loading_stats.value = true
   try {
-    const response = await api.get(`/api/puzzle/stats/${puzzle_id}`)
-    stats.value = response.data
+    const { data } = await api.GET("/api/puzzle/stats/{puzzle_id}", { params: { path: { puzzle_id } } })
+    stats.value = data ?? null
   } catch (error) {
     console.error('Failed to fetch puzzle stats:', error)
     stats.value = null

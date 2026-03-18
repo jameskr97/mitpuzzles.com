@@ -23,6 +23,9 @@ dist-ssr
 *.sln
 *.sw?
 
+# Generated
+src/core/services/api.d.ts
+
 # Playwright
 /test-results/
 /playwright-report/

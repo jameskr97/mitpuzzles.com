@@ -6,6 +6,7 @@ from fastapi import APIRouter, HTTPException, Query, Depends
 from app.dependencies import AsyncDatabase, get_device_id
 from app.modules.authentication import User, fastapi_users
 from app.modules.puzzle.schemas import (
+    ErrorResponse,
     PuzzleDefinitionResponse,
     PuzzleDefinitionSolution,
     PuzzleIdResponse,
@@ -23,7 +24,7 @@ from app.modules.puzzle.formatting import format_puzzle_for_frontend, format_puz
 router = APIRouter()
 
 
-@router.get("/definition/random", response_model=PuzzleIdResponse)
+@router.get("/definition/random", response_model=PuzzleIdResponse, responses={404: {"model": ErrorResponse}})
 async def get_random_puzzle(
     db: AsyncDatabase,
     puzzle_type: str = Query(..., description="Type of puzzle"),
@@ -38,7 +39,7 @@ async def get_random_puzzle(
     return PuzzleIdResponse(puzzle_id=puzzle.id)
 
 
-@router.get("/next", response_model=PuzzleIdResponse)
+@router.get("/next", response_model=PuzzleIdResponse, responses={400: {"model": ErrorResponse}, 404: {"model": ErrorResponse}})
 async def get_next_puzzle(
     db: AsyncDatabase,
     device_id: uuid.UUID = Depends(get_device_id),
@@ -117,7 +118,7 @@ async def browse_puzzles(
     )
 
 
-@router.get("/definition/{puzzle_id}")
+@router.get("/definition/{puzzle_id}", responses={404: {"model": ErrorResponse}, 403: {"model": ErrorResponse}})
 async def get_puzzle(
     db: AsyncDatabase,
     puzzle_id: uuid.UUID,
@@ -138,7 +139,7 @@ async def get_puzzle(
     return PuzzleDefinitionResponse.model_validate(format_puzzle_for_frontend(puzzle))
 
 
-@router.get("/stats/{puzzle_id}", response_model=PuzzleStatsResponse)
+@router.get("/stats/{puzzle_id}", response_model=PuzzleStatsResponse, responses={404: {"model": ErrorResponse}})
 async def get_puzzle_stats(db: AsyncDatabase, puzzle_id: uuid.UUID):
     """get statistics for a specific puzzle."""
     service = PuzzleService(db)
@@ -148,7 +149,7 @@ async def get_puzzle_stats(db: AsyncDatabase, puzzle_id: uuid.UUID):
     return await service.get_puzzle_stats(puzzle_id)
 
 
-@router.post("/freeplay/submit", status_code=201, response_model=PuzzleSubmitResponse)
+@router.post("/freeplay/submit", status_code=201, response_model=PuzzleSubmitResponse, responses={400: {"model": ErrorResponse}, 404: {"model": ErrorResponse}})
 async def submit_freeplay_attempt(
     attempt_data: FreeplayAttemptCreate,
     db: AsyncDatabase,
@@ -160,7 +161,7 @@ async def submit_freeplay_attempt(
     return PuzzleSubmitResponse(status="Puzzle submitted.", id=str(attempt.id))
 
 
-@router.get("/freeplay/leaderboard", response_model=LeaderboardResponse)
+@router.get("/freeplay/leaderboard", response_model=LeaderboardResponse, responses={400: {"model": ErrorResponse}})
 async def get_freeplay_leaderboard(
     db: AsyncDatabase,
     puzzle_type: str = Query(...),

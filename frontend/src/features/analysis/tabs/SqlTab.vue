@@ -9,7 +9,7 @@ import Container from '@/core/components/ui/Container.vue'
 import { Button } from '@/core/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/core/components/ui/table'
 import { useAnalysisStore } from '@/features/analysis/stores/useAnalysisStore'
-import { api } from '@/core/services/axios'
+import { api } from '@/core/services/client'
 
 const store = useAnalysisStore()
 
@@ -75,8 +75,8 @@ function get_sql(): string {
 
 onMounted(async () => {
   try {
-    const response = await api.get('/api/data-export/schema')
-    db_schema = response.data
+    const { data } = await api.GET('/api/data-export/schema')
+    db_schema = (data as any) ?? {}
   } catch {
     db_schema = { puzzle: ['id', 'puzzle_type', 'puzzle_size', 'puzzle_difficulty'] }
   }
@@ -122,46 +122,41 @@ async function run_preview() {
   loading_preview.value = true
   error_message.value = ''
   preview_data.value = null
-  try {
-    const response = await api.post('/api/data-export/sql/preview', build_request_body())
-    preview_data.value = response.data
-  } catch (err: any) {
-    error_message.value = err.response?.data?.detail || 'Query failed'
-  } finally {
-    loading_preview.value = false
+
+  const { data, error } = await api.POST('/api/data-export/sql/preview', { body: build_request_body() as any })
+  loading_preview.value = false
+
+  if (error) {
+    error_message.value = (error as any)?.detail || 'Query failed'
+    return
   }
+  preview_data.value = data as any
 }
 
 async function run_download() {
   loading_download.value = true
   error_message.value = ''
-  try {
-    const response = await api.post('/api/data-export/sql/download', build_request_body(), {
-      responseType: 'blob',
-    })
-    const blob = new Blob([response.data], { type: 'application/vnd.apache.parquet' })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'query_result.parquet'
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    window.URL.revokeObjectURL(url)
-  } catch (err: any) {
-    if (err.response?.data instanceof Blob) {
-      const text = await err.response.data.text()
-      try {
-        error_message.value = JSON.parse(text).detail || 'Download failed'
-      } catch {
-        error_message.value = 'Download failed'
-      }
-    } else {
-      error_message.value = err.response?.data?.detail || 'Download failed'
-    }
-  } finally {
-    loading_download.value = false
+
+  const { data, error } = await api.POST('/api/data-export/sql/download', {
+    body: build_request_body() as any,
+    parseAs: 'blob',
+  })
+  loading_download.value = false
+
+  if (error) {
+    error_message.value = 'Download failed'
+    return
   }
+
+  const blob = new Blob([data as any], { type: 'application/vnd.apache.parquet' })
+  const url = window.URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'query_result.parquet'
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  window.URL.revokeObjectURL(url)
 }
 
 function truncate(val: any, max = 80): string {

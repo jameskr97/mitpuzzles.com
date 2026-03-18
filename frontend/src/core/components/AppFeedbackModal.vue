@@ -10,7 +10,7 @@ import {
 } from "@/core/components/ui/dialog";
 import { Textarea } from "@/core/components/ui/textarea";
 import { Button } from "@/core/components/ui/button";
-import { submitFeedback } from "@/core/services/app.ts";
+import { api } from "@/core/services/client";
 import { capture_error } from "@/core/services/posthog.ts";
 import { ref } from "vue";
 import { useAuthStore } from "@/core/store/useAuthStore.ts";
@@ -36,7 +36,7 @@ async function submit() {
 
   submitting.value = true;
   try {
-    const res = await submitFeedback(feedback.value, metadata);
+    const res = await api.POST("/api/feedback", { body: { message: feedback.value, feedback_metadata: metadata } as any });
     if (res.status !== 201) capture_error("feedback_submit_failed", new Error(`status ${res.status}`));
 
     feedback.value = "";

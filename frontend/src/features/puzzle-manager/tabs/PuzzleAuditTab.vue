@@ -38,17 +38,17 @@ const run_audit = async (puzzle_type: string) => {
   const state = audit_states.value[puzzle_type];
   state.loading = true;
 
-  try {
-    const job_id = await store.start_database_audit(puzzle_type);
-    state.job_id = job_id;
-    await store.fetch_job(job_id);
-    store.add_to_polling(job_id);
-  } catch (err: any) {
-    console.error("Error starting audit:", err);
-    alert(err.response?.data?.detail || "Failed to start audit");
-  } finally {
+  const job_id = await store.start_database_audit(puzzle_type);
+  if (!job_id) {
+    alert("Failed to start audit");
     state.loading = false;
+    return;
   }
+
+  state.job_id = job_id;
+  await store.fetch_job(job_id);
+  store.add_to_polling(job_id);
+  state.loading = false;
 };
 
 const disable_non_unique = async (puzzle_type: string) => {
@@ -60,15 +60,15 @@ const disable_non_unique = async (puzzle_type: string) => {
     return;
   }
 
-  try {
-    const disabled = await store.disable_non_unique(job.id);
-    alert(`Disabled ${disabled} puzzles`);
-    await store.delete_job(job.id);
-    audit_states.value[puzzle_type].job_id = null;
-  } catch (err: any) {
-    console.error("Error disabling puzzles:", err);
-    alert(err.response?.data?.detail || "Failed to disable puzzles");
+  const disabled = await store.disable_non_unique(job.id);
+  if (disabled === null) {
+    alert("Failed to disable puzzles");
+    return;
   }
+
+  alert(`Disabled ${disabled} puzzles`);
+  await store.delete_job(job.id);
+  audit_states.value[puzzle_type].job_id = null;
 };
 
 const clear_result = async (puzzle_type: string) => {

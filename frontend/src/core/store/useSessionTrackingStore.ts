@@ -2,6 +2,7 @@ import { defineStore } from "pinia";
 import { v7 as uuidv7 } from 'uuid';
 import { useAppStore } from './useAppStore.ts';
 import { useAuthStore } from './useAuthStore.ts';
+import { api } from '@/core/services/client';
 import { createLogger } from '@/core/services/logger.ts';
 const log = createLogger('session_tracker');
 
@@ -40,25 +41,32 @@ export const useSessionTrackingStore = defineStore("session_tracking", {
      * initialize session tracking
      * call this after device fingerprinting is complete
      */
-    async initialize(): Promise<void> {
+    initialize(): void {
       if (!this.is_local_storage_available()) {
         console.warn('SessionTracker: localStorage not available, tracking disabled');
         return;
       }
 
-      // Wait for device_id to be available
-      if (!this.device_id) {
-        console.warn('SessionTracker: device_id not available yet, cannot initialize');
-        return;
-      }
-
       this.initial_referrer = document.referrer || null;
-      this.initialize_session(); // initialize or resume session
-      this.setup_visibility_tracking(); // set up visibility tracking
-      this.start_tracking(); // start tracking
-      await this.send_heartbeat(); // send initial heartbeat immediately
+      this.initialize_session();
+      this.setup_visibility_tracking();
 
-      log('Initialized with session %s', this.session_id);
+      if (this.device_id) {
+        this.start_tracking();
+        this.send_heartbeat();
+        log('Initialized with session %s', this.session_id);
+      } else {
+        // device_id not ready yet — watch for it
+        const appStore = useAppStore();
+        const unwatch = appStore.$subscribe(() => {
+          if (appStore.device_id) {
+            unwatch();
+            this.start_tracking();
+            this.send_heartbeat();
+            log('Initialized with session %s (after device_id ready)', this.session_id);
+          }
+        });
+      }
     },
 
     /**
@@ -225,26 +233,13 @@ export const useSessionTrackingStore = defineStore("session_tracking", {
       };
 
       try {
-        const response = await fetch('/api/tracking/heartbeat', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
-        });
-
-        if (response.ok) {
-          this.update_last_activity();
-          log('Heartbeat sent, active_duration: %d', active_duration);
-        } else {
-          console.warn('SessionTracker: Heartbeat failed with status', response.status);
-          // Don't reset counters on failure - will retry next interval
-          this.accumulated_visible_time += active_duration * 1000; // Convert back to ms
-        }
+        await api.POST("/api/tracking/heartbeat", { body: payload });
+        this.update_last_activity();
+        log('Heartbeat sent, active_duration: %d', active_duration);
       } catch (error) {
         console.warn('SessionTracker: Heartbeat request failed:', error);
-        // Don't reset counters on failure - will retry next interval
-        this.accumulated_visible_time += active_duration * 1000; // Convert back to ms
+        // don't reset counters on failure - will retry next interval
+        this.accumulated_visible_time += active_duration * 1000;
       }
     },
 
@@ -272,18 +267,8 @@ export const useSessionTrackingStore = defineStore("session_tracking", {
         const success = navigator.sendBeacon('/api/tracking/heartbeat', blob);
         log('Beacon sent %s, active_duration: %d', success ? 'successfully' : 'failed', active_duration);
       } else {
-        // Fallback for browsers without sendBeacon
-        console.warn('SessionTracker: sendBeacon not available, using synchronous fetch');
-        fetch('/api/tracking/heartbeat', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
-          keepalive: true, // Try to keep request alive during page unload
-        }).catch(() => {
-          // Ignore errors in fallback
-        });
+        // fallback for browsers without sendBeacon
+        api.POST("/api/tracking/heartbeat", { body: payload }).catch(() => {});
       }
     },
   },

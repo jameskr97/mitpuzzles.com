@@ -10,7 +10,7 @@ import {
 import { Input } from "@/core/components/ui/input";
 import { Label } from "@/core/components/ui/label";
 import { computed, ref, watch } from "vue";
-import axios from "axios";
+import { api } from "@/core/services/client";
 import { useTranslation } from "i18next-vue";
 
 const { t } = useTranslation();
@@ -49,13 +49,13 @@ const submit_form = async () => {
   error.value = "";
   success.value = false;
 
-  try {
-    await axios.post("/api/auth/forgot-password", { email: email.value });
+  const { error: err } = await api.POST("/api/auth/forgot-password", { body: { email: email.value } });
+  loading.value = false;
+
+  if (err) {
+    error.value = (err as any)?.detail || "Failed to send password reset email";
+  } else {
     success.value = true;
-  } catch (err: any) {
-    error.value = err.response?.data?.detail || "Failed to send password reset email";
-  } finally {
-    loading.value = false;
   }
 };
 
@@ -76,8 +76,8 @@ watch(() => props.open, (is_open) => {
 
 <template>
   <Dialog :open="open" @update:open="close_modal">
-    <DialogContent data-testid="dialog-forgot-password" class="sm:max-w-[425px]">
-      <DialogHeader>
+    <DialogContent class="sm:max-w-[425px]">
+      <DialogHeader data-testid="dialog-forgot-password">
         <DialogTitle>{{ $t('auth:forgot_password.title') }}</DialogTitle>
         <DialogDescription>
           {{ $t('auth:forgot_password.description') }}

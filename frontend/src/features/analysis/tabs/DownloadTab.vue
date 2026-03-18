@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { onMounted, ref, computed, watch } from 'vue'
-import axios from 'axios'
 import Container from '@/core/components/ui/Container.vue'
 import { Badge } from '@/core/components/ui/badge'
 import { Button } from '@/core/components/ui/button'
@@ -8,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/core/components/ui/t
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/core/components/ui/table'
 import { download_blob } from '@/utils'
 import { useAnalysisStore } from '@/features/analysis/stores/useAnalysisStore'
-import { api } from '@/core/services/axios'
+import { api } from '@/core/services/client'
 
 interface ExperimentSummary {
   experiment_id: string
@@ -60,8 +59,8 @@ const format_duration = (seconds: number) => {
 const fetch_experiments = async () => {
   loading_experiments.value = true
   try {
-    const response = await axios.get('/api/experiment/admin/summary')
-    experiments.value = response.data
+    const { data } = await api.GET('/api/experiment/admin/summary')
+    if (data) experiments.value = data as any
   } catch (err) {
     console.error('Failed to fetch experiments:', err)
   } finally {
@@ -93,8 +92,8 @@ const fetch_freeplay_preview = async () => {
     if (store.date_end) params.append('date_end', store.date_end)
 
     const query = params.toString() ? `?${params.toString()}` : ''
-    const response = await api.get(`/api/puzzle/admin/freeplay/preview${query}`)
-    freeplay_preview.value = response.data
+    const { data } = await api.GET(`/api/puzzle/admin/freeplay/preview${query}` as any)
+    if (data) freeplay_preview.value = data as any
   } catch (err) {
     console.error('Failed to fetch freeplay preview:', err)
   } finally {

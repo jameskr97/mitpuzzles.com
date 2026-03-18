@@ -15,7 +15,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/core/components/ui/popover'
-import { api } from '@/core/services/axios'
 import { cn } from '@/lib/utils'
 
 interface Entity {
@@ -102,13 +101,11 @@ async function fetch_entities(search_query?: string) {
   current_offset.value = 0
   try {
     const endpoint = props.scope === 'device' ? '/api/admin/devices' : '/api/admin/users'
-    const params: Record<string, string | number> = { limit: LIMIT, offset: 0 }
-    if (search_query) {
-      params.search = search_query
-    }
+    const query = new URLSearchParams({ limit: String(LIMIT), offset: '0' })
+    if (search_query) query.set('search', search_query)
 
-    const response = await api.get(endpoint, { params })
-    const data = response.data
+    const response = await fetch(`${endpoint}?${query}`, { credentials: 'include' })
+    const data = await response.json()
 
     entities.value = map_response_to_entities(data)
     total_count.value = data.total_count
@@ -127,16 +124,11 @@ async function fetch_more_entities() {
   loading_more.value = true
   try {
     const endpoint = props.scope === 'device' ? '/api/admin/devices' : '/api/admin/users'
-    const params: Record<string, string | number> = {
-      limit: LIMIT,
-      offset: current_offset.value
-    }
-    if (search.value) {
-      params.search = search.value
-    }
+    const query = new URLSearchParams({ limit: String(LIMIT), offset: String(current_offset.value) })
+    if (search.value) query.set('search', search.value)
 
-    const response = await api.get(endpoint, { params })
-    const data = response.data
+    const response = await fetch(`${endpoint}?${query}`, { credentials: 'include' })
+    const data = await response.json()
 
     const new_entities = map_response_to_entities(data)
     entities.value = [...entities.value, ...new_entities]
