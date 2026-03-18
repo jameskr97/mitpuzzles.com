@@ -1,0 +1,129 @@
+import uuid
+from datetime import datetime
+from typing import List, Dict, Any, Optional
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class PuzzleDefinitionResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    puzzle_type: str
+    rows: int
+    cols: int
+    initial_state: List[List[int]]
+    solution_hash: str
+    meta: Dict[str, Any]
+
+class PuzzleDefinitionSolution(PuzzleDefinitionResponse):
+    model_config = ConfigDict(from_attributes=True)
+    solution: List[List[int]]
+
+class PuzzleResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    created_at: datetime
+    updated_at: datetime
+    puzzle_hash: str
+    puzzle_type: str
+    puzzle_size: str
+    puzzle_difficulty: str
+    puzzle_data: Dict[str, Any]
+
+class PuzzleIdResponse(BaseModel):
+    """Schema for puzzle ID only responses"""
+    model_config = ConfigDict(from_attributes=True)
+
+    puzzle_id: uuid.UUID
+
+class PriorityPuzzleResponse(BaseModel):
+    """Schema for priority puzzle responses"""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    puzzle_id: uuid.UUID
+    puzzle_type: str
+    puzzle_size: str
+    puzzle_difficulty: Optional[str]
+    added_at: datetime
+    is_active: bool
+    times_shown: int
+    times_solved: int
+
+
+class FreeplayAttemptCreate(BaseModel):
+    """Schema for creating freeplay puzzle attempts"""
+    puzzle_id: uuid.UUID = Field(..., description="ID of the associated puzzle")
+    timestamp_start: int = Field(description="Start time of the attempt")
+    timestamp_finish: int = Field(default=None, description="Finish time of the attempt")
+    action_history: List[Dict[str, Any]] = Field(default_factory=list, description="History of user actions")
+    board_state: List[List[int]] = Field(default_factory=list, description="Final board state")
+    is_solved: bool = Field(default=False, description="Whether the puzzle was solved")
+    used_tutorial: bool = Field(default=False, description="Whether tutorial was used")
+
+
+class LeaderboardEntryResponse(BaseModel):
+    """Schema for leaderboard entry responses"""
+    model_config = ConfigDict(from_attributes=True)
+
+    rank: int
+    duration_display: str
+    username: str
+    is_current_user: bool = False
+
+
+class LeaderboardResponse(BaseModel):
+    """Schema for leaderboard responses"""
+    model_config = ConfigDict(from_attributes=True)
+
+    leaderboard: List[LeaderboardEntryResponse]
+    count: int
+
+class PriorityPuzzleSummary(BaseModel):
+    """Schema for priority puzzle summary (without full definition)"""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    puzzle_id: uuid.UUID
+    added_at: datetime
+    is_active: bool
+    times_shown: int
+    times_solved: int
+
+class PriorityGroupResponse(BaseModel):
+    """Schema for a group of priority puzzles by type/size/difficulty"""
+    model_config = ConfigDict(from_attributes=True)
+
+    puzzle_type: str
+    puzzle_size: str
+    puzzle_difficulty: Optional[str]
+    total_puzzles: int
+    total_shown: int
+    total_solved: int
+    puzzles: List[PriorityPuzzleSummary]
+
+
+class PriorityGroupedListResponse(BaseModel):
+    """Schema for grouped list of priority puzzles"""
+    model_config = ConfigDict(from_attributes=True)
+
+    groups: List[PriorityGroupResponse]
+    total_groups: int
+    total_puzzles: int
+
+
+
+class PriorityPuzzleListResponse(BaseModel):
+    """Schema for list of priority puzzles"""
+    model_config = ConfigDict(from_attributes=True)
+
+    priorities: List[PriorityPuzzleResponse]
+    total_count: int
+
+
+
+class AddPriorityRequest(BaseModel):
+    """Schema for adding a puzzle to priority"""
+    puzzle_id: uuid.UUID
