@@ -5,6 +5,36 @@ from typing import List, Dict, Any, Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 
+class FilterOption(BaseModel):
+    """a single filter option with its count."""
+    value: str
+    count: int
+
+
+class FilterOptionsResponse(BaseModel):
+    """available filter options with counts."""
+    puzzle_types: List[FilterOption]
+    puzzle_sizes: List[FilterOption]
+    puzzle_difficulties: List[FilterOption]
+    attempts_options: List[FilterOption]
+
+
+class SizeDifficulty(BaseModel):
+    """a [size, difficulty] pair like ["5x5", "easy"]."""
+    size: str
+    difficulty: Optional[str]
+
+
+class PuzzleTypeConfig(BaseModel):
+    """metadata for a single puzzle type."""
+    available_difficulties: List[List[Optional[str]]]
+    default_difficulty: List[Optional[str]]
+    total_puzzles: int
+
+
+PuzzleTypesResponse = Dict[str, PuzzleTypeConfig]
+
+
 class PuzzleDefinitionResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -124,6 +154,51 @@ class PriorityPuzzleListResponse(BaseModel):
 
 
 
+class PuzzleStatsResponse(BaseModel):
+    """statistics for a specific puzzle."""
+    puzzle_id: str
+    total_attempts: int
+    solved_attempts: int
+    solve_rate: float
+    authenticated_attempts: int
+    anonymous_attempts: int
+    avg_duration_seconds: Optional[float]
+    min_duration_seconds: Optional[float]
+    max_duration_seconds: Optional[float]
+    unique_devices: int
+    unique_users: int
+
+
+class PaginatedPuzzlesResponse(BaseModel):
+    """paginated puzzle browse results."""
+    puzzles: List[PuzzleDefinitionResponse]
+    total_count: int
+    offset: int
+    limit: int
+    has_more: bool
+
+
+class DailyPuzzleStatus(BaseModel):
+    """status of a single daily puzzle for a user/device."""
+    puzzle_type: str
+    puzzle_id: str
+    daily_puzzle_id: str
+    is_solved: bool
+    completion_time: Optional[str]
+
+
+class DailyTodayResponse(BaseModel):
+    """response for today's daily puzzle status."""
+    date: str
+    puzzles: List[DailyPuzzleStatus]
+
+
+class PuzzleSubmitResponse(BaseModel):
+    """response for puzzle submission endpoints."""
+    status: str
+    id: str
+
+
 class AddPriorityRequest(BaseModel):
-    """Schema for adding a puzzle to priority"""
+    """schema for adding a puzzle to priority."""
     puzzle_id: uuid.UUID

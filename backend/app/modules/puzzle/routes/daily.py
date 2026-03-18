@@ -9,6 +9,8 @@ from app.dependencies import AsyncDatabase, get_device_id
 from app.modules.authentication import User, fastapi_users
 from app.modules.puzzle.schemas import (
     PuzzleDefinitionResponse,
+    DailyTodayResponse,
+    PuzzleSubmitResponse,
     FreeplayAttemptCreate,
     LeaderboardResponse,
 )
@@ -19,7 +21,7 @@ from app.modules.puzzle.models import Puzzle, DailyPuzzle
 router = APIRouter()
 
 
-@router.get("/daily/today")
+@router.get("/daily/today", response_model=DailyTodayResponse)
 async def get_daily_today(
     db: AsyncDatabase,
     device_id: uuid.UUID = Depends(get_device_id),
@@ -27,7 +29,7 @@ async def get_daily_today(
 ):
     """get today's daily puzzle status for this user/device."""
     service = DailyPuzzleService(db)
-    today = datetime.now(timezone.utc)
+    today = datetime.now(timezone.utc).replace(tzinfo=None)
     statuses = await service.get_daily_puzzle_status(today, user.id if user else None, device_id)
     return {"date": today.strftime("%Y-%m-%d"), "puzzles": statuses}
 
@@ -78,7 +80,7 @@ async def get_daily_leaderboard(
     return LeaderboardResponse.model_validate(data)
 
 
-@router.post("/daily/{date}/submit/{puzzle_type}", status_code=201)
+@router.post("/daily/{date}/submit/{puzzle_type}", status_code=201, response_model=PuzzleSubmitResponse)
 async def submit_daily_attempt(
     date: str,
     puzzle_type: str,

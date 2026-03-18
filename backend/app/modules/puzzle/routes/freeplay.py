@@ -9,6 +9,11 @@ from app.modules.puzzle.schemas import (
     PuzzleDefinitionResponse,
     PuzzleDefinitionSolution,
     PuzzleIdResponse,
+    PuzzleTypesResponse,
+    PuzzleSubmitResponse,
+    PuzzleStatsResponse,
+    PaginatedPuzzlesResponse,
+    FilterOptionsResponse,
     FreeplayAttemptCreate,
     LeaderboardResponse,
 )
@@ -69,13 +74,13 @@ async def get_next_puzzle(
     return PuzzleIdResponse(puzzle_id=puzzle.id)
 
 
-@router.get("/definition/types")
-async def get_types(db: AsyncDatabase):
+@router.get("/definition/types", response_model=PuzzleTypesResponse)
+async def get_types(db: AsyncDatabase) -> PuzzleTypesResponse:
     """get puzzle type metadata."""
     return await PuzzleService(db).get_types()
 
 
-@router.get("/filter-options")
+@router.get("/filter-options", response_model=FilterOptionsResponse)
 async def get_filter_options(
     db: AsyncDatabase,
     puzzle_type: Optional[List[str]] = Query(default=None),
@@ -92,7 +97,7 @@ async def get_filter_options(
     )
 
 
-@router.get("/browse")
+@router.get("/browse", response_model=PaginatedPuzzlesResponse)
 async def browse_puzzles(
     db: AsyncDatabase,
     puzzle_id: Optional[str] = Query(default=None),
@@ -133,7 +138,7 @@ async def get_puzzle(
     return PuzzleDefinitionResponse.model_validate(format_puzzle_for_frontend(puzzle))
 
 
-@router.get("/stats/{puzzle_id}")
+@router.get("/stats/{puzzle_id}", response_model=PuzzleStatsResponse)
 async def get_puzzle_stats(db: AsyncDatabase, puzzle_id: uuid.UUID):
     """get statistics for a specific puzzle."""
     service = PuzzleService(db)
@@ -143,16 +148,16 @@ async def get_puzzle_stats(db: AsyncDatabase, puzzle_id: uuid.UUID):
     return await service.get_puzzle_stats(puzzle_id)
 
 
-@router.post("/freeplay/submit", status_code=201)
+@router.post("/freeplay/submit", status_code=201, response_model=PuzzleSubmitResponse)
 async def submit_freeplay_attempt(
     attempt_data: FreeplayAttemptCreate,
     db: AsyncDatabase,
     device_id: uuid.UUID = Depends(get_device_id),
     user: Optional[User] = Depends(fastapi_users.current_user(optional=True)),
-):
+) -> PuzzleSubmitResponse:
     """submit a freeplay puzzle attempt."""
     attempt = await PuzzleService(db).create_freeplay_attempt(attempt_data=attempt_data, device_id=device_id, user=user)
-    return {"status": "Puzzle submitted.", "id": str(attempt.id)}
+    return PuzzleSubmitResponse(status="Puzzle submitted.", id=str(attempt.id))
 
 
 @router.get("/freeplay/leaderboard", response_model=LeaderboardResponse)
