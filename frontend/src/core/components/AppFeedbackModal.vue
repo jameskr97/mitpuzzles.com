@@ -19,15 +19,12 @@ interface Metadata {
   url: string;
   puzzle_id?: number;
   user?: any;
-  [key: string]: string;
+  [key: string]: unknown;
 }
 
-// References
 const submitted = ref(false);
 const submitting = ref(false);
 const feedback = ref("");
-
-// Stores
 const user = useAuthStore();
 
 async function submit() {
@@ -35,18 +32,19 @@ async function submit() {
   if (user.isAuthenticated) metadata.user = user.user;
 
   submitting.value = true;
-  try {
-    const res = await api.POST("/api/feedback", { body: { message: feedback.value, feedback_metadata: metadata } as any });
-    if (res.status !== 201) capture_error("feedback_submit_failed", new Error(`status ${res.status}`));
+  const { error } = await api.POST("/api/feedback", {
+    body: { message: feedback.value, feedback_metadata: metadata } as any,
+  });
+  submitting.value = false;
 
-    feedback.value = "";
-    submitted.value = true;
-    setTimeout(() => (submitted.value = false), 3000);
-  } catch (e: any) {
-    capture_error("feedback_submit_failed", e);
-  } finally {
-    submitting.value = false;
+  if (error) {
+    capture_error("feedback_submit_failed", error);
+    return;
   }
+
+  feedback.value = "";
+  submitted.value = true;
+  setTimeout(() => (submitted.value = false), 3000);
 }
 </script>
 
