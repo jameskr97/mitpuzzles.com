@@ -17,6 +17,7 @@ import {
 import Container from "@/core/components/ui/Container.vue";
 import { Separator } from "@/core/components/ui/separator";
 import { Button } from "@/core/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/core/components/ui/select";
 import { usePuzzleLeaderboardStore } from "@/core/store/puzzle/usePuzzleLeaderboardStore";
 import { useDailyPuzzleStore } from "@/core/store/puzzle/useDailyPuzzleStore";
 import { useTranslation } from "i18next-vue";
@@ -104,39 +105,33 @@ const leaderboard_entries = computed(() => {
         <v-icon name="ri-trophy-line" :scale="1.5" class="mr-2" />
         <span class="text-xl">{{ $t("freeplay:leaderboard.title") }}</span>
       </div>
-      <v-icon
-        name="md-keyboardarrowdown-round"
-        :scale="1.5"
-        :class="{ 'rotate-180': is_leaderboard_open }"
-        @click="is_leaderboard_open = !is_leaderboard_open"
-      />
+      <div class="flex items-center gap-2">
+        <Select v-if="!controller.is_daily.value" v-model="scoring_method">
+          <SelectTrigger class="h-8 w-24 text-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ao_n">{{ $t('freeplay:leaderboard.scoring_ao3') }}</SelectItem>
+            <SelectItem value="best">{{ $t('freeplay:leaderboard.scoring_best') }}</SelectItem>
+          </SelectContent>
+        </Select>
+        <v-icon
+          name="md-keyboardarrowdown-round"
+          :scale="1.5"
+          :class="{ 'rotate-180': is_leaderboard_open }"
+          @click="is_leaderboard_open = !is_leaderboard_open"
+        />
+      </div>
     </div>
 
     <template v-if="is_leaderboard_open">
       <Separator class="mt-2 mb-1" />
-
-      <!-- Scoring method selector (hidden in daily mode) -->
-      <div v-if="!controller.is_daily.value" class="flex gap-1 justify-center">
-        <Button
-          class="px-3"
-          v-for="method in [
-            { value: 'best', label: $t('freeplay:leaderboard.scoring_best') },
-            { value: 'ao_n', label: $t('freeplay:leaderboard.scoring_ao3') },
-          ]"
-          :key="method.value"
-          :variant="scoring_method === method.value ? 'outline' : 'link'"
-          @click="scoring_method = method.value"
-        >
-          {{ method.label }}
-        </Button>
-      </div>
 
       <!-- Time period selector (hidden in daily mode) -->
       <div v-if="!controller.is_daily.value" class="flex justify-between">
         <Button
           class="px-3"
           v-for="period in [
-            { value: 'today', label: $t('ui:time_period.today') },
             { value: 'weekly', label: $t('ui:time_period.weekly') },
             { value: 'monthly', label: $t('ui:time_period.monthly') },
             { value: 'all_time', label: $t('ui:time_period.all_time') },

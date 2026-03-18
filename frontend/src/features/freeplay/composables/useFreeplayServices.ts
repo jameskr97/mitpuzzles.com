@@ -317,7 +317,7 @@ export async function useFreeplayServices<TMeta = any>(
       await history_store.upload_attempt_history(pk, "freeplay");
 
       const [size, difficulty] = current_variant.value;
-      const periods = ["today", "weekly", "monthly", "all_time"];
+      const periods = ["weekly", "monthly", "all_time"];
       const methods = ["best", "ao_n"];
       await Promise.all(
         periods.flatMap(period => methods.map(method =>
