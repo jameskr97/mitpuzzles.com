@@ -30,10 +30,12 @@ dependencies = [
 dev = [
     "black[d]>=25.1.0",
     "go-task-bin>=3.44.1",
+    "httpx>=0.28.1",
     "mkdocs-material>=9.6.18",
     "pytest>=8.4.1",
     "pytest-asyncio>=1.1.0",
     "ruff>=0.12.10",
+    "testcontainers>=4.14.2",
 ]
 
 

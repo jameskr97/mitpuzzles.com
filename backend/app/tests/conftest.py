@@ -1,59 +1,72 @@
-from collections.abc import Generator, AsyncGenerator
-from unittest.mock import AsyncMock, patch
+"""test configuration — spins up a disposable PostgreSQL container per session."""
+
+from collections.abc import AsyncGenerator
 
 import pytest
 import pytest_asyncio
-from fastapi.testclient import TestClient
+from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from sqlalchemy import delete
+from sqlalchemy import text
+
+from testcontainers.postgres import PostgresContainer
 
 from app.main import app
 from app.dependencies import get_async_session
-from app.models.base import Base
-from app.models.device import Device, DeviceThumbmark
-from app.modules.auth.models import User
-
-# Use in-memory SQLite with async support
-test_engine = create_async_engine("sqlite+aiosqlite:///:memory:")
-async_session_maker = async_sessionmaker(test_engine, expire_on_commit=False)
+from app.models import Base
 
 
-async def get_test_db() -> AsyncGenerator[AsyncSession, None]:
-    async with async_session_maker() as session:
-        yield session
+# --- database ---
 
-
-@pytest_asyncio.fixture(scope="function", autouse=True)
-async def setup_db():
-    # Create tables
-    async with test_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
-    yield
-
-    # Clean up after each test
-    async with async_session_maker() as session:
-        await session.execute(delete(User))
-        await session.execute(delete(DeviceThumbmark))
-        await session.execute(delete(Device))
-        await session.commit()
+@pytest.fixture(scope="session")
+def postgres_url():
+    """start a PostgreSQL container for the test session."""
+    with PostgresContainer("postgres:18") as pg:
+        url = pg.get_connection_url()
+        async_url = url.replace("psycopg2", "asyncpg")
+        yield async_url
 
 
 @pytest_asyncio.fixture
-async def db() -> AsyncSession:
-    async with async_session_maker() as session:
+async def db(postgres_url) -> AsyncGenerator[AsyncSession, None]:
+    """fresh database for each test — creates tables, yields session, drops tables."""
+    engine = create_async_engine(postgres_url)
+
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    session_maker = async_sessionmaker(engine, expire_on_commit=False)
+    async with session_maker() as session:
         yield session
 
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
 
-@pytest.fixture(scope="module")
-def client() -> Generator[TestClient, None, None]:
-    app.dependency_overrides[get_async_session] = get_test_db
-    with TestClient(app) as c:
+    await engine.dispose()
+
+
+# --- test client ---
+
+@pytest_asyncio.fixture
+async def client(postgres_url) -> AsyncGenerator[AsyncClient, None]:
+    """async test client with its own fresh database."""
+    engine = create_async_engine(postgres_url)
+
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    session_maker = async_sessionmaker(engine, expire_on_commit=False)
+
+    async def override_session() -> AsyncGenerator[AsyncSession, None]:
+        async with session_maker() as session:
+            yield session
+
+    app.dependency_overrides[get_async_session] = override_session
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as c:
         yield c
     app.dependency_overrides.clear()
 
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
 
-@pytest.fixture
-def mock_send_verification_email():
-    with patch("app.modules.auth.routes.send_verification_email", new_callable=AsyncMock) as mock:
-        yield mock
+    await engine.dispose()
