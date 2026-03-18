@@ -19,8 +19,8 @@ class FreeplayPuzzleAttempt(Base):
 
     # primary key and timestamps
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
-    created_at: Mapped[DateTime] = mapped_column(DateTime(), default=datetime.now(timezone.utc), nullable=False)
-    updated_at: Mapped[DateTime] = mapped_column(DateTime(), default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc), nullable=False)
+    created_at: Mapped[DateTime] = mapped_column(DateTime(), default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[DateTime] = mapped_column(DateTime(), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     # identifiers
     device_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("device.id", ondelete="CASCADE"), nullable=True)

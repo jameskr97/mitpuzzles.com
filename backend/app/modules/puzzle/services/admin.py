@@ -220,7 +220,7 @@ class PuzzleAdminService:
         if existing:
             raise HTTPException(status_code=400, detail="Puzzle is already in the priority queue")
 
-        priority = PuzzlePriority(puzzle_id=puzzle_id, added_at=datetime.now(timezone.utc))
+        priority = PuzzlePriority(puzzle_id=puzzle_id, added_at=datetime.utcnow())
         self.db.add(priority)
         await self.db.commit()
         await self.db.refresh(priority)
@@ -236,7 +236,7 @@ class PuzzleAdminService:
         if priority.removed_at is not None:
             raise HTTPException(status_code=400, detail="Priority record is already removed")
 
-        priority.removed_at = datetime.now(timezone.utc)
+        priority.removed_at = datetime.utcnow()
         await self.db.commit()
         await self.db.refresh(priority)
         return priority

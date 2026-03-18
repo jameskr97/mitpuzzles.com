@@ -184,13 +184,14 @@ class LeaderboardService:
 
 
 def _time_cutoff(time_period: str) -> Optional[datetime]:
-    """convert a time period string to a cutoff datetime."""
+    """convert a time period string to a naive UTC cutoff datetime."""
+    now = datetime.utcnow()
     if time_period == "today":
-        return datetime.now(timezone.utc) - timedelta(hours=24)
+        return now - timedelta(hours=24)
     elif time_period == "weekly":
-        return datetime.now(timezone.utc) - timedelta(days=7)
+        return now - timedelta(days=7)
     elif time_period == "monthly":
-        return datetime.now(timezone.utc) - timedelta(days=30)
+        return now - timedelta(days=30)
     return None
 
 
