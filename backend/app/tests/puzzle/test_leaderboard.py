@@ -14,7 +14,7 @@ from app.dependencies import get_async_session
 from app.models import Base
 from app.modules.puzzle.models import Puzzle, FreeplayPuzzleAttempt
 from app.modules.tracking import Device
-from app.modules.authentication import User
+from app.modules.authentication import User, AccessToken
 
 
 # --- helpers ---
@@ -56,6 +56,16 @@ async def create_puzzle(db: AsyncSession, puzzle_type="sudoku", size="9x9", diff
     db.add(puzzle)
     await db.flush()
     return puzzle
+
+
+async def authenticate(client: AsyncClient, db: AsyncSession, user: User) -> None:
+    """create an access token and set the cookie on the client."""
+    import secrets
+    token = secrets.token_urlsafe(32)
+    access_token = AccessToken(token=token, user_id=user.id)
+    db.add(access_token)
+    await db.flush()
+    client.cookies.set("access_token", token)
 
 
 async def create_attempt(
@@ -229,6 +239,118 @@ class TestFreeplayLeaderboard:
         response = await client.get("/api/puzzle/freeplay/leaderboard", params=LEADERBOARD_PARAMS)
         assert response.status_code == 200
         assert response.json()["count"] == 0
+
+    @pytest.mark.asyncio
+    async def test_leaderboard_shows_user_neighbors_when_outside_top(self, seeded_client):
+        """when user is at rank 10 with limit=5, show top 5 + ranks 9,10,11."""
+        client, db = seeded_client
+        device = await create_device(db)
+        puzzle = await create_puzzle(db)
+
+        # create 12 users with increasing times (player1=fastest, player12=slowest)
+        users = []
+        for i in range(1, 13):
+            user = await create_user(db, f"player{i}", f"player{i}@test.com")
+            users.append(user)
+            await create_attempt(db, puzzle, device, user, start=1000, finish=1000 + i * 10000)
+
+        # authenticate as player10 (rank 10)
+        target_user = users[9]
+        await authenticate(client, db, target_user)
+        await db.commit()
+
+        response = await client.get("/api/puzzle/freeplay/leaderboard", params={
+            **LEADERBOARD_PARAMS,
+            "limit": 5,
+        })
+        assert response.status_code == 200
+        data = response.json()
+        board = data["leaderboard"]
+
+        # should have top 5 + neighbors (9, 10, 11) = 8 entries
+        assert data["count"] == 8
+
+        # top 5
+        assert board[0]["username"] == "player1"
+        assert board[0]["rank"] == 1
+        assert board[4]["username"] == "player5"
+        assert board[4]["rank"] == 5
+
+        # neighbors
+        assert board[5]["username"] == "player9"
+        assert board[5]["rank"] == 9
+        assert board[6]["username"] == "player10"
+        assert board[6]["rank"] == 10
+        assert board[6]["is_current_user"] == True
+        assert board[7]["username"] == "player11"
+        assert board[7]["rank"] == 11
+
+    @pytest.mark.asyncio
+    async def test_leaderboard_no_neighbors_when_in_top(self, seeded_client):
+        """when user is in the top N, no neighbor section is added."""
+        client, db = seeded_client
+        device = await create_device(db)
+        puzzle = await create_puzzle(db)
+
+        users = []
+        for i in range(1, 8):
+            user = await create_user(db, f"player{i}", f"player{i}@test.com")
+            users.append(user)
+            await create_attempt(db, puzzle, device, user, start=1000, finish=1000 + i * 10000)
+
+        # authenticate as player3 (rank 3, within top 5)
+        await authenticate(client, db, users[2])
+        await db.commit()
+
+        response = await client.get("/api/puzzle/freeplay/leaderboard", params={
+            **LEADERBOARD_PARAMS,
+            "limit": 5,
+        })
+        assert response.status_code == 200
+        data = response.json()
+        # just top 5, no extra neighbors
+        assert data["count"] == 5
+        assert any(e["is_current_user"] for e in data["leaderboard"])
+
+    @pytest.mark.asyncio
+    async def test_leaderboard_last_place_no_neighbor_after(self, seeded_client):
+        """when user is last, show neighbor before and self, but no neighbor after."""
+        client, db = seeded_client
+        device = await create_device(db)
+        puzzle = await create_puzzle(db)
+
+        # create 8 users (player1=fastest, player8=slowest)
+        users = []
+        for i in range(1, 9):
+            user = await create_user(db, f"player{i}", f"player{i}@test.com")
+            users.append(user)
+            await create_attempt(db, puzzle, device, user, start=1000, finish=1000 + i * 10000)
+
+        # authenticate as player8 (last place, rank 8)
+        await authenticate(client, db, users[7])
+        await db.commit()
+
+        response = await client.get("/api/puzzle/freeplay/leaderboard", params={
+            **LEADERBOARD_PARAMS,
+            "limit": 5,
+        })
+        assert response.status_code == 200
+        data = response.json()
+        board = data["leaderboard"]
+
+        # top 5 + neighbor before (7) + self (8) = 7 entries, no entry after
+        assert data["count"] == 7
+
+        # top 5
+        assert board[4]["username"] == "player5"
+        assert board[4]["rank"] == 5
+
+        # neighbors: only before + self
+        assert board[5]["username"] == "player7"
+        assert board[5]["rank"] == 7
+        assert board[6]["username"] == "player8"
+        assert board[6]["rank"] == 8
+        assert board[6]["is_current_user"] == True
 
     @pytest.mark.asyncio
     async def test_leaderboard_invalid_time_period(self, client):

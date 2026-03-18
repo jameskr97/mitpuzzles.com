@@ -241,13 +241,23 @@ def _build_leaderboard_response(all_rows, limit: int, user) -> Dict[str, Any]:
             "is_current_user": is_current,
         })
 
-    # append current user at their actual rank if they're not in the top N
+    # if user is outside top N, show their neighbors (before, self, after)
     if user and current_user_entry and not current_user_in_top:
-        entries.append({
-            "rank": current_user_rank,
-            "duration_display": format_duration(current_user_entry.completion_time_seconds),
-            "username": current_user_entry.username,
-            "is_current_user": True,
-        })
+        user_idx = current_user_rank - 1  # 0-based index into all_rows
+
+        for offset in [-1, 0, 1]:
+            neighbor_idx = user_idx + offset
+            if neighbor_idx < 0 or neighbor_idx >= len(all_rows):
+                continue
+            # skip if already in the top entries
+            if neighbor_idx < limit:
+                continue
+            row = all_rows[neighbor_idx]
+            entries.append({
+                "rank": neighbor_idx + 1,
+                "duration_display": format_duration(row.completion_time_seconds),
+                "username": row.username,
+                "is_current_user": bool(row.user_id == user.id),
+            })
 
     return {"leaderboard": entries, "count": len(entries)}
