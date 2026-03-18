@@ -13,6 +13,8 @@ import { databaseManager } from "@/core/store/database";
 import { usePuzzleProgressStore } from "@/core/store/puzzle/usePuzzleProgressStore.ts";
 import { getCurrentPuzzleID } from "@/core/store/puzzle/usePuzzleDefinitionStore.ts";
 import type { GameEvent, GameActionType } from "@/core/store/database/types.ts";
+import { createLogger } from "@/core/services/logger.ts";
+const log = createLogger("puzzle_history");
 
 interface HistoryState {
   events: Record<string, GameEvent[]>; // key: puzzle_type-mode or experiment_id-mode
@@ -208,7 +210,7 @@ export const usePuzzleHistoryStore = defineStore("game.history", {
       );
 
       if (!has_non_visibility_events) {
-        console.log(`Skipping upload for ${puzzle_type} - only visibility events present (no user interaction)`);
+        log("Skipping upload for %s - only visibility events", puzzle_type);
         return;
       }
 

@@ -10,6 +10,7 @@ import { useAuthStore } from "@/core/store/useAuthStore.ts";
 import { useAppStore } from "@/core/store/useAppStore.ts";
 import UserForgotPasswordModal from "@/features/auth/components/UserForgotPasswordModal.vue";
 import { useTranslation } from "i18next-vue";
+import { capture_error } from "@/core/services/posthog.ts";
 
 const { t } = useTranslation();
 const auth = useAuthStore();
@@ -53,7 +54,7 @@ const handleLogin = async () => {
     password.value = "";
     await router.push("/"); // redirect homepage
   } catch (error) {
-    console.error("Login failed:", error);
+    capture_error("login_failed", error);
   }
 };
 

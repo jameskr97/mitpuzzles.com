@@ -1,13 +1,14 @@
 import { registerSW } from "virtual:pwa-register";
-import logger from "@/core/services/logger.ts";
+import { createLogger } from "@/core/services/logger.ts";
+const log = createLogger("pwa");
 
 export function register_pwa() {
   registerSW({
     onNeedRefresh() {
-      logger.debug("Service worker needs refresh");
+      log("Service worker needs refresh");
     },
     onOfflineReady() {
-      logger.debug("App ready to work offline");
+      log("App ready to work offline");
     },
   });
 }

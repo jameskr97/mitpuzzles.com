@@ -51,18 +51,12 @@ export const usePushStore = defineStore('push', {
 
     // Subscribe to push notifications
     async subscribe() {
-      console.log('[usePushStore] subscribe() called');
-      console.log('[usePushStore] is_supported:', this.is_supported);
-
       if (!this.is_supported) {
         this.error = 'Push notifications are not supported in this browser';
         return false;
       }
 
-      // Check if already granted
-      if (Notification.permission === 'granted') {
-        console.log('[usePushStore] Permission already granted, proceeding to subscribe');
-      } else if (Notification.permission === 'denied') {
+      if (Notification.permission === 'denied') {
         this.error = 'Notification permission was previously denied. Please enable it in browser settings.';
         return false;
       } else {

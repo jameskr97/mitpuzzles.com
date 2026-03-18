@@ -1,4 +1,6 @@
 import { computed, readonly, ref, type Ref } from "vue";
+import { createLogger } from "@/core/services/logger.ts";
+const log = createLogger("experiment:state-machine");
 
 export interface StateTransition<TState extends string> {
   /** the state this transition is from, or null if it's the initial state */
@@ -24,7 +26,6 @@ export interface StateMachineConfig<TState extends string> {
       canTransition?: (to: TState) => boolean;
     }
   >;
-  debug?: boolean;
 }
 
 interface StateMachineState<TState extends string> {
@@ -55,7 +56,7 @@ export function useStateMachine<TState extends string>(config: StateMachineConfi
 
     // check if transition is allowed
     if (!canTransition(from, state_new)) {
-      if (config.debug) console.warn(`Cannot transition from ${from} to ${state_new}`);
+      log("Cannot transition from %s to %s", from, state_new);
       return false;
     }
 
@@ -65,7 +66,7 @@ export function useStateMachine<TState extends string>(config: StateMachineConfi
       try {
         const result = config_current.onExit();
         if (result === false) {
-          if (config.debug) console.log(`Transition ${from} → ${state_new} aborted by onExit`);
+          log("Transition %s to %s aborted by onExit", from, state_new);
           return false;
         }
       } catch (error) {
@@ -98,7 +99,7 @@ export function useStateMachine<TState extends string>(config: StateMachineConfi
       }
     });
 
-    if (config.debug) console.log(`State Machine Transition ${from} → ${state_new}`);
+    log("Transition %s to %s", from, state_new);
     return true;
   }
 
@@ -124,7 +125,7 @@ export function useStateMachine<TState extends string>(config: StateMachineConfi
       }
     }
 
-    if (config.debug) console.log(`State Machine Reset to ${config.state_initial}`);
+    log("Reset to %s", config.state_initial);
   }
 
   return {

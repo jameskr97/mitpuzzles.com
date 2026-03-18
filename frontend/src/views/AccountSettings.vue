@@ -12,6 +12,7 @@ import { usePushStore } from "@/core/store/usePushStore.ts";
 import { ACTIVE_GAMES } from "@/constants.ts";
 import axios from "axios";
 import { useTranslation } from "i18next-vue";
+import { capture_event } from "@/core/services/posthog.ts";
 
 const { t } = useTranslation();
 
@@ -147,30 +148,23 @@ const toggle_notifications = async (enabled: boolean | Event) => {
 
   // Handle if event is passed instead of boolean
   const isEnabled = typeof enabled === "boolean" ? enabled : (enabled as any).target?.checked;
-  console.log("toggle_notifications called with:", isEnabled);
-  console.log("Current subscription status:", push_store.is_subscribed);
-
   if (isEnabled) {
-    console.log("Attempting to subscribe...");
-
-    // Wait for permission
     const permission = await permissionPromise;
-    console.log("Permission result:", permission);
 
     if (permission !== "granted") {
       push_store.error = "Notification permission denied";
+      capture_event("push_permission_denied");
       return;
     }
 
     const success = await push_store.subscribe();
     if (success) {
-      console.log("Successfully subscribed!");
+      capture_event("push_subscribed");
     }
   } else {
-    console.log("Attempting to unsubscribe...");
     const success = await push_store.unsubscribe();
     if (success) {
-      console.log("Successfully unsubscribed!");
+      capture_event("push_unsubscribed");
     }
   }
 };

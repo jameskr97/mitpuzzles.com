@@ -3,6 +3,8 @@ import { defaultPuzzles } from "@/core/games/puzzle.defaults.ts";
 import type { RuleViolation } from "@/core/games/types/puzzle-types.ts";
 import CryptoJS from "crypto-js";
 import axios from "axios";
+import { createLogger } from "@/core/services/logger.ts";
+const log = createLogger("storage");
 import { i18next } from "@/i18n.ts";
 import _ from "lodash";
 
@@ -83,7 +85,7 @@ export class StorageVersionManager {
     return new Promise((resolve) => {
       const request = indexedDB.deleteDatabase(StorageVersionManager.INDEXEDDB_NAME);
       request.onsuccess = () => {
-        console.log("[StorageVersionManager] IndexedDB cleared successfully");
+        log("IndexedDB cleared successfully");
         resolve();
       };
       request.onerror = () => {

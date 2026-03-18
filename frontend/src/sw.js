@@ -1,3 +1,5 @@
+self.__WB_DISABLE_DEV_LOGS = true;
+
 import { precacheAndRoute } from 'workbox-precaching';
 import { registerRoute } from 'workbox-routing';
 import { NetworkFirst, CacheFirst } from 'workbox-strategies';

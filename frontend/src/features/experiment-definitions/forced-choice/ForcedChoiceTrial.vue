@@ -3,6 +3,8 @@ import { computed, inject, onMounted, ref, type Ref, toRef } from "vue";
 import Container from "@/core/components/ui/Container.vue";
 import { Button } from "@/core/components/ui/button";
 import { useStateMachine } from "@/features/experiment-core/composables/useStateMachine.ts";
+import { createLogger } from "@/core/services/logger.ts";
+const log = createLogger("experiment:forced_choice");
 import { useTimer } from "@/features/experiment-core/composables/useTimer.ts";
 import type { PuzzleDefinition } from "@/core/games/types/puzzle-types.ts";
 import PuzzleSelector from "./PuzzleSelector.vue";
@@ -99,7 +101,7 @@ const state_machine = useStateMachine<trial_state>({
     [trial_state.preview]: {
       canTransitionTo: [trial_state.choice],
       onEnter: () => {
-        console.log("entered preview phase");
+        log("entered preview phase");
 
         trial_result.value.timestamps!.preview_start = Date.now();
         preview_timer.start(() => {
@@ -117,7 +119,7 @@ const state_machine = useStateMachine<trial_state>({
       canTransitionTo: [trial_state.solving],
       canTransition: () => selected_puzzle_index.value !== null,
       onEnter: () => {
-        console.log("entered choice phase");
+        log("entered choice phase");
         trial_result.value.timestamps!.choice_start = Date.now();
       },
       onExit: () => {
@@ -140,7 +142,7 @@ const state_machine = useStateMachine<trial_state>({
     [trial_state.solving]: {
       canTransitionTo: [trial_state.complete],
       onEnter: () => {
-        console.log("entered solving phase");
+        log("entered solving phase");
         trial_result.value.timestamps!.solving_start = Date.now();
         solving_timer.start(() => {
           trial_result.value.solving_phase_data!.completed = false;
@@ -157,7 +159,7 @@ const state_machine = useStateMachine<trial_state>({
     },
     [trial_state.complete]: {
       onEnter: () => {
-        console.log("trial complete - saving data");
+        log("trial complete - saving data");
 
         // record trial completion using experiment store
         if (executor?.value?.data_collection && pc.value) {
@@ -244,9 +246,9 @@ function p2_select_puzzle(shuffled_index: number) {
 const can_proceed_to_solving = computed(() => selected_puzzle_index.value !== null);
 
 async function handle_submit() {
-  console.log('handle_submit called');
+  log("handle_submit called");
   const result = await pc.value.check_solution();
-  console.log('check_solution result:', result);
+  log("check_solution result: %O", result);
   if (result) {
     trial_result.value.solving_phase_data!.completed = true;
     state_machine.transitionTo(trial_state.complete);

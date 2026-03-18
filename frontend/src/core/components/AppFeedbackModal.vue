@@ -11,7 +11,7 @@ import {
 import { Textarea } from "@/core/components/ui/textarea";
 import { Button } from "@/core/components/ui/button";
 import { submitFeedback } from "@/core/services/app.ts";
-import logger from "@/core/services/logger.ts";
+import { capture_error } from "@/core/services/posthog.ts";
 import { ref } from "vue";
 import { useAuthStore } from "@/core/store/useAuthStore.ts";
 
@@ -37,14 +37,13 @@ async function submit() {
   submitting.value = true;
   try {
     const res = await submitFeedback(feedback.value, metadata);
-    if (res.status !== 201) logger.error("Failed to submit feedback", res);
+    if (res.status !== 201) capture_error("feedback_submit_failed", new Error(`status ${res.status}`));
 
     feedback.value = "";
     submitted.value = true;
     setTimeout(() => (submitted.value = false), 3000);
-    logger.info("Feedback submitted successfully");
   } catch (e: any) {
-    logger.error("Failed to submit feedback", e);
+    capture_error("feedback_submit_failed", e);
   } finally {
     submitting.value = false;
   }

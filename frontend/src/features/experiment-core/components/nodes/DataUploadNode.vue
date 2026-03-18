@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/core/components/ui/card";
 import { Upload, CheckCircle, AlertCircle } from "lucide-vue-next";
 import type { GraphExecutor } from "@/features/experiment-core";
 import { submitExperimentData } from "@/core/services/app.ts";
+import { capture_error } from "@/core/services/posthog.ts";
 
 const emit = defineEmits(["complete"]);
 const executor = inject<Ref<GraphExecutor>>("experiment-executor");
@@ -18,11 +19,11 @@ async function start_upload() {
       status.value = "completed";
       setTimeout(() => emit("complete"), 1500);
     } catch (error) {
-      console.error("failed to upload experiment data:", error);
+      capture_error("experiment_upload_failed", error);
       status.value = "failed";
     }
   } else {
-    console.error("no experiment store available for data upload");
+    capture_error("experiment_upload_failed", new Error("no experiment store available for data upload"));
     status.value = "failed";
   }
 }

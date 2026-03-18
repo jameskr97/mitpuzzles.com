@@ -172,10 +172,7 @@ export const useAuthStore = defineStore("auth", {
     async initializeAuth() {
       try {
         await this.fetchCurrentUser();
-      } catch (error) {
-        // User is not authenticated, which is fine
-        console.log("User not authenticated on initialization");
-      }
+      } catch (error) {} // User not authenticated, which is fine
     },
 
     async updateUsername(username: string) {

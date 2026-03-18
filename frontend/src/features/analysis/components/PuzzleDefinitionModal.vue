@@ -44,7 +44,6 @@ const state_solved = computed(() => {
 })
 
 async function fetch_stats(puzzle_id: string) {
-  console.log("doing request")
   loading_stats.value = true
   try {
     const response = await api.get(`/api/puzzle/stats/${puzzle_id}`)

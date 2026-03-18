@@ -8,6 +8,9 @@ import { ComponentRegistry } from "@/features/experiment-core/ComponentRegistry"
 import type { GraphExecutor } from "@/features/experiment-core/graph/GraphExecutor";
 import { Button } from "@/core/components/ui/button";
 import { Separator } from "@/core/components/ui/separator";
+import { capture_error } from "@/core/services/posthog.ts";
+import { createLogger } from "@/core/services/logger.ts";
+const log = createLogger("experiment:trial-node");
 
 const props = defineProps<{ node: graph_node }>();
 const emit = defineEmits(["complete", "trialStart"]);
@@ -47,8 +50,7 @@ async function load_stimuli() {
     error.value = null;
     stimuli.value = await StimuliLoader.load_stimuli(trial_config.value.stimuli);
 
-    // console.log(`loaded ${stimuli.value.total_count} trials from ${trial_config.value.stimuli.source}`);
-    // console.log(`format: ${stimuli.value.format}`);
+    log("loaded %d trials from %s (format: %s)", stimuli.value.total_count, trial_config.value.stimuli.source, stimuli.value.format);
 
     // reset trial progress for this node
     if (executor?.value) {
@@ -60,7 +62,7 @@ async function load_stimuli() {
       emit("trialStart");
     }
   } catch (err) {
-    console.error("failed to load stimuli:", err);
+    capture_error("stimuli_load_failed", err);
     error.value = err instanceof Error ? err.message : "unknown error loading stimuli";
   } finally {
     loading.value = false;

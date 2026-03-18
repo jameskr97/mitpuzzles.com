@@ -12,6 +12,8 @@ import {
 import { useExperimentPuzzle } from "@/features/experiment-core/composables/useExperimentPuzzle";
 import type { PuzzleDefinition } from "@/core/games/types/puzzle-types.ts";
 import type { GraphExecutor } from "@/features/experiment-core/graph/GraphExecutor";
+import { createLogger } from "@/core/services/logger.ts";
+const log = createLogger("experiment:metacognition");
 import MinesweeperCanvas from "@/features/games/minesweeper/MinesweeperCanvas.vue";
 import { MinesweeperCell } from "@/features/games/minesweeper/useMinesweeperGame";
 import ExperimentInputSlider from "@/features/experiment-core/components/input/ExperimentInputSlider.vue";
@@ -123,7 +125,7 @@ const state_machine = useStateMachine<trial_state>({
     [trial_state.preview]: {
       canTransitionTo: [trial_state.prospective],
       onEnter: () => {
-        console.log("entered preview phase");
+        log("entered preview phase");
         trial_timestamps.value.preview_start = Date.now();
 
         // randomly select preview time
@@ -143,7 +145,7 @@ const state_machine = useStateMachine<trial_state>({
       canTransitionTo: [trial_state.solving],
       canTransition: () => can_proceed_from_prospective.value,
       onEnter: () => {
-        console.log("entered prospective phase");
+        log("entered prospective phase");
         trial_timestamps.value.prospective_start = Date.now();
       },
       onExit: () => {
@@ -153,7 +155,7 @@ const state_machine = useStateMachine<trial_state>({
     [trial_state.solving]: {
       canTransitionTo: [trial_state.retrospective],
       onEnter: () => {
-        console.log("entered solving phase");
+        log("entered solving phase");
         trial_timestamps.value.solving_start = Date.now();
 
         // randomly select time limit
@@ -173,7 +175,7 @@ const state_machine = useStateMachine<trial_state>({
       canTransitionTo: [trial_state.complete],
       canTransition: () => can_proceed_from_retrospective.value,
       onEnter: () => {
-        console.log("entered retrospective phase");
+        log("entered retrospective phase");
         trial_timestamps.value.retrospective_start = Date.now();
       },
       onExit: () => {
@@ -182,7 +184,7 @@ const state_machine = useStateMachine<trial_state>({
     },
     [trial_state.complete]: {
       onEnter: () => {
-        console.log("trial complete - saving data");
+        log("trial complete - saving data");
 
         // calculate performance
         const correct_cells = pc.get_correct_cells?.() || [];

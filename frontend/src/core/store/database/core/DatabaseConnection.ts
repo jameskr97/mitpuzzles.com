@@ -1,3 +1,6 @@
+import { createLogger } from "@/core/services/logger.ts";
+const log = createLogger("indexeddb");
+
 export class DatabaseConnection {
   private db: IDBDatabase | null = null;
   private readonly DB_NAME = "mitpuzzles";
@@ -10,23 +13,23 @@ export class DatabaseConnection {
       const request = indexedDB.open(this.DB_NAME, this.DB_VERSION);
 
       request.onerror = () => {
-        console.log("[IndexedDB] on error was called");
+        log("open error: %O", request.error);
         reject(request.error);
       };
       request.onsuccess = () => {
-        console.log("[IndexedDB] Database opened successfully");
+        log("Database opened successfully");
         this.db = request.result;
         resolve();
       };
 
       request.onupgradeneeded = (event) => {
-        console.log("[IndexedDB] on upgrade needed was called");
+        log("Upgrade needed (v%d → v%d)", event.oldVersion, event.newVersion);
         const db = (event.target as IDBOpenDBRequest).result;
         this.createStores(db);
       };
 
       request.onblocked = (_event) => {
-        console.log("[IndexedDB] Database upgrade blocked");
+        log("Database upgrade blocked");
       };
     });
   }
@@ -71,11 +74,11 @@ export class DatabaseConnection {
 
       request.onerror = () => {
         reject(request.error);
-        console.log("indexeddb performTransaction error", request.error);
+        log("Transaction error: %O", request.error);
       };
       request.onsuccess = () => {
         resolve(request.result);
-        console.log("[IndexedDB] Transaction completed successfully");
+        log("Transaction completed");
       };
     });
   }
@@ -89,7 +92,7 @@ export class DatabaseConnection {
     return new Promise((resolve, reject) => {
       const deleteRequest = indexedDB.deleteDatabase(this.DB_NAME);
       deleteRequest.onsuccess = () => {
-        console.log("[IndexedDB] Database deleted successfully");
+        log("Database deleted successfully");
         this.db = null;
         // reinitialize with new database
         this.init().then(resolve).catch(reject);

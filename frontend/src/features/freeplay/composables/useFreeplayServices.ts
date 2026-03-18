@@ -19,6 +19,7 @@ import { useDailyPuzzleStore } from "@/core/store/puzzle/useDailyPuzzleStore.ts"
 import { broadcast_channel_service } from "@/core/services/broadcast_channel.ts";
 import { submitDailyAttempt } from "@/core/services/app.ts";
 import { isDailyVariant } from "@/utils.ts";
+import { capture_error } from "@/core/services/posthog.ts";
 import type { PuzzleDefinition } from "@/core/games/types/puzzle-types.ts";
 
 export interface FreeplayServicesReturn<TMeta = any> {
@@ -116,7 +117,7 @@ export async function useFreeplayServices<TMeta = any>(
         current_variant.value = [`${puzzle_definition.rows}x${puzzle_definition.cols}`, ""];
       }
     } catch (err) {
-      console.warn(`Failed to fetch daily puzzle for ${puzzle_type}:`, err);
+      capture_error("daily_puzzle_fetch_failed", err, { puzzle_type });
       error.value = "No daily puzzle available. Please check back later.";
     }
   } else {
@@ -127,7 +128,7 @@ export async function useFreeplayServices<TMeta = any>(
         current_variant.value[1]
       );
     } catch (err) {
-      console.warn(`Failed to fetch puzzle for ${puzzle_type}:`, err);
+      capture_error("puzzle_fetch_failed", err, { puzzle_type });
       error.value = `No puzzles available for this game type. Please check back later.`;
     }
   }
@@ -226,7 +227,7 @@ export async function useFreeplayServices<TMeta = any>(
 
         return new_def;
       } catch (err) {
-        console.warn(`Failed to fetch daily puzzle for ${puzzle_type}:`, err);
+        capture_error("daily_puzzle_fetch_failed", err, { puzzle_type });
         error.value = "No daily puzzle available. Please check back later.";
         return null;
       }
@@ -241,7 +242,7 @@ export async function useFreeplayServices<TMeta = any>(
         try {
           await history_store.upload_attempt_history(puzzle_type, "freeplay");
         } catch (err) {
-          console.error("Failed to save incomplete attempt:", err);
+          capture_error("incomplete_attempt_save_failed", err, { puzzle_type });
         }
       }
 
@@ -253,7 +254,7 @@ export async function useFreeplayServices<TMeta = any>(
           variant[1]
         );
       } catch (err) {
-        console.warn(`Failed to fetch new puzzle for ${puzzle_type}:`, err);
+        capture_error("puzzle_fetch_failed", err, { puzzle_type });
         error.value = `No puzzles available for this game type. Please check back later.`;
         return null;
       }
@@ -310,7 +311,7 @@ export async function useFreeplayServices<TMeta = any>(
         await submitDailyAttempt(daily_date.value, puzzle_type, payload);
         await daily_store.refreshDailyLeaderboard(daily_date.value, puzzle_type);
       } catch (err) {
-        console.error("Failed to submit daily attempt:", err);
+        capture_error("daily_submit_failed", err, { puzzle_type, date: daily_date.value });
       }
     } else {
       // Freeplay submission

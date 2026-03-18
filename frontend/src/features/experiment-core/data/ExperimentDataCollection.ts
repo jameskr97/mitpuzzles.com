@@ -3,6 +3,8 @@
  * captures trial data, node navigation, and user interactions
  */
 import { GraphExecutor, node_type } from "@/features/experiment-core";
+import { createLogger } from "@/core/services/logger.ts";
+const log = createLogger("experiment:data-collection");
 import type { PuzzleDefinition } from "@/core/games/types/puzzle-types.ts";
 
 export interface trial_data {
@@ -142,7 +144,7 @@ export class ExperimentDataCollection {
 
     // if upload has already completed, don't track additional node visits
     if (this.experiment_end_time) {
-      console.log(`skipping node visit tracking for ${node_id} - upload already completed`);
+      log("skipping node visit tracking for %s - upload already completed", node_id);
       return;
     }
 
@@ -236,7 +238,7 @@ export class ExperimentDataCollection {
   record_node_completion(node_id: string): void {
     // if upload has already completed, don't track additional node completions
     if (this.experiment_end_time) {
-      console.log(`skipping node completion tracking for ${node_id} - experiment already completed`);
+      log("skipping node completion tracking for %s - experiment already completed", node_id);
       return;
     }
 
@@ -289,7 +291,7 @@ export class ExperimentDataCollection {
       end_time: this.experiment_end_time,
       duration: this.experiment_end_time ? this.experiment_end_time - this.experiment_start_time : undefined,
     };
-    console.log("Exporting experiment data for analysis:", data);
+    log("Exporting experiment data for analysis: %O", data);
 
     // OK DATA COLLECTION. We want to build a final stat structure that looks like the following:
     // It's not the best for analysis, but it's the best to see and ensure that everything is captured.

@@ -98,7 +98,6 @@ export const useAnalysisStore = defineStore('analysis', () => {
       () => selected_entity_id
     ],
     () => {
-      console.log("user changed")
       fetch_options()
     },
     { deep: true }

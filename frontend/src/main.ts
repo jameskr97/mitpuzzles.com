@@ -4,7 +4,8 @@ import App from "./App.vue";
 import { OhVueIcon } from "@/icons";
 import { I18NextVue, i18next } from "@/i18n.ts";
 import { StorageVersionManager } from "@/utils.ts";
-import logger from "@/core/services/logger.ts";
+import { createLogger } from "@/core/services/logger.ts";
+const log = createLogger("main");
 import "./style.css";
 import 'overlayscrollbars/overlayscrollbars.css';
 
@@ -13,7 +14,7 @@ import { router, setup_auth_guard, check_initial_route } from "@/core/router";
 
 // Services
 import { register_pwa } from "@/core/services/pwa.ts";
-import { init_posthog } from "@/core/services/posthog.ts";
+import { init_posthog, posthog_error_handler } from "@/core/services/posthog.ts";
 import { check_maintenance_mode } from "@/core/services/maintenance.ts";
 import { watch } from "vue";
 
@@ -35,7 +36,7 @@ if (import.meta.hot) {
   // Check for maintenance mode before initializing
   if (await check_maintenance_mode()) return;
 
-  logger.debug("Bootstrapping app...");
+  log("Bootstrapping app...");
   register_pwa();
 
   const app = createApp(App)
@@ -61,6 +62,8 @@ if (import.meta.hot) {
   await init_auth();
   await check_initial_route(router);
   setup_auth_guard(router);
+
+  app.config.errorHandler = posthog_error_handler;
 
   // Initialize puzzle stores and mount
   await init_puzzle_stores();

@@ -14,6 +14,8 @@ import { broadcast_channel_service } from "@/core/services/broadcast_channel.ts"
 // GutterMarkings type for nonograms row/col completion tracking
 type GutterMarkings = Record<string, boolean>;
 import { usePuzzleHistoryStore } from "@/core/store/puzzle/usePuzzleHistoryStore.ts";
+import { createLogger } from "@/core/services/logger.ts";
+const log = createLogger("puzzle_progress");
 
 // constants + types
 type Precision = "seconds" | "centiseconds";
@@ -198,7 +200,7 @@ export const usePuzzleProgressStore = defineStore("puzzle.progress", {
     /** starts tracking page visibility for a puzzle */
     async start_visibility_tracking(puzzle_type: string, mode: "freeplay" | "experiment" = "freeplay") {
       if (this.tracked_puzzles.has(puzzle_type)) {
-        console.log(`Already tracking visibility for ${puzzle_type}`);
+        log("Already tracking visibility for %s", puzzle_type);
         return;
       }
 
@@ -262,11 +264,11 @@ export const usePuzzleProgressStore = defineStore("puzzle.progress", {
 
     /** setup broadcast channel listeners for cross-tab sync */
     setup_broadcast_listeners() {
-      console.log("Setting up puzzle progress broadcast listeners");
+      log("Setting up broadcast listeners");
       // listen for game state updates from other tabs
       this.broadcast_unsubscribers.push(
         broadcast_channel_service.subscribe('game_state_update', (message) => {
-          console.log("Received game state update via broadcast channel", message);
+          log("Received game state update via broadcast: %O", message);
           // only update state, don't save to database (that was done by source tab)
           this.update_puzzle_state(message.puzzle_type, message.data.board_state, false);
         })

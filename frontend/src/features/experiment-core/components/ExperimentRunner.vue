@@ -16,6 +16,7 @@ import RedirectToSourceNode from "@/features/experiment-core/components/nodes/Re
 import InstructionsNode from "@/features/experiment-core/components/nodes/InstructionsNode.vue";
 import SurveyNode from "@/features/experiment-core/components/nodes/SurveyNode.vue";
 import { ComponentRegistry } from "@/features/experiment-core/ComponentRegistry.ts";
+import { capture_error } from "@/core/services/posthog.ts";
 
 // composables
 const route = useRoute();
@@ -39,7 +40,7 @@ onMounted(async () => {
     await executor.value.start();
     execution_state_ref.value = executor.value.state;
   } catch (err) {
-    console.error("failed to initialize experiment:", err);
+    capture_error("experiment_init_failed", err);
     error.value = err instanceof Error ? err.message : "unknown error";
   } finally {
     loading.value = false;

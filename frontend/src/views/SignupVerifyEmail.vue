@@ -31,7 +31,7 @@ onMounted(async () => {
     await authStore.fetchCurrentUser();
     await router.push("/?verified=true");
   } catch (error: any) {
-    console.log("Verification error:", error);
+    console.error("Verification error:", error);
 
     // handle different error cases based on status and detail
     if (error.response?.status === 400) {

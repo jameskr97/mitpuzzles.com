@@ -53,7 +53,7 @@ async function onSubmit() {
     await authStore.updateUsername(username.value.trim());
     emit("close");
   } catch (err: any) {
-    console.log(err);
+    console.error("Failed to update username:", err);
     error.value = err.response.data.detail || "Failed to update username";
   } finally {
     loading.value = false;

@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import { api } from "@/core/services/axios.ts";
+import { capture_error } from "@/core/services/posthog.ts";
 
 export interface DailyPuzzleStatus {
   puzzle_type: string;
@@ -49,7 +50,7 @@ export const useDailyPuzzleStore = defineStore("mitlogic.daily", {
         this.today_date = response.data.date;
         this.puzzles = response.data.puzzles;
       } catch (error) {
-        console.error("Failed to fetch daily puzzles:", error);
+        capture_error("daily_puzzles_fetch_failed", error);
       } finally {
         this.loading = false;
       }

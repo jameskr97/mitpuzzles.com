@@ -2,6 +2,8 @@ import { defineStore } from "pinia";
 import { v7 as uuidv7 } from 'uuid';
 import { useAppStore } from './useAppStore.ts';
 import { useAuthStore } from './useAuthStore.ts';
+import { createLogger } from '@/core/services/logger.ts';
+const log = createLogger('session_tracker');
 
 const SESSION_ID_KEY = 'session_id';
 const LAST_ACTIVITY_KEY = 'last_activity';
@@ -56,7 +58,7 @@ export const useSessionTrackingStore = defineStore("session_tracking", {
       this.start_tracking(); // start tracking
       await this.send_heartbeat(); // send initial heartbeat immediately
 
-      console.log('SessionTracker: Initialized with session', this.session_id);
+      log('Initialized with session %s', this.session_id);
     },
 
     /**
@@ -75,7 +77,7 @@ export const useSessionTrackingStore = defineStore("session_tracking", {
       window.removeEventListener('pagehide', this.handle_page_hide);
 
       this.is_tracking = false;
-      console.log('SessionTracker: Stopped');
+      log('Stopped');
     },
 
     is_local_storage_available(): boolean {
@@ -102,7 +104,7 @@ export const useSessionTrackingStore = defineStore("session_tracking", {
         if (time_since_last_activity < SESSION_TIMEOUT) {
           // Reuse existing session
           this.session_id = stored_session_id;
-          console.log('SessionTracker: Resuming existing session', stored_session_id);
+          log('Resuming existing session %s', stored_session_id);
           this.update_last_activity();
           return;
         }
@@ -112,7 +114,7 @@ export const useSessionTrackingStore = defineStore("session_tracking", {
       this.session_id = uuidv7();
       localStorage.setItem(SESSION_ID_KEY, this.session_id);
       this.update_last_activity();
-      console.log('SessionTracker: Created new session', this.session_id);
+      log('Created new session %s', this.session_id);
     },
 
     update_last_activity(): void {
@@ -153,11 +155,11 @@ export const useSessionTrackingStore = defineStore("session_tracking", {
         // Send final heartbeat when page becomes hidden
         this.send_beacon_heartbeat();
 
-        console.log('SessionTracker: Page hidden/unfocused, accumulated', accumulated_time, 'ms');
+        log('Page hidden/unfocused, accumulated %dms', accumulated_time);
       } else if (!was_visible && this.is_visible) {
         // Page became visible and focused - start tracking again
         this.visible_start_time = now;
-        console.log('SessionTracker: Page visible and focused again');
+        log('Page visible and focused again');
       }
     },
 
@@ -233,7 +235,7 @@ export const useSessionTrackingStore = defineStore("session_tracking", {
 
         if (response.ok) {
           this.update_last_activity();
-          // console.log('SessionTracker: Heartbeat sent successfully, active_duration:', active_duration);
+          log('Heartbeat sent, active_duration: %d', active_duration);
         } else {
           console.warn('SessionTracker: Heartbeat failed with status', response.status);
           // Don't reset counters on failure - will retry next interval
@@ -268,7 +270,7 @@ export const useSessionTrackingStore = defineStore("session_tracking", {
         });
 
         const success = navigator.sendBeacon('/api/tracking/heartbeat', blob);
-        console.log('SessionTracker: Beacon sent', success ? 'successfully' : 'failed', 'active_duration:', active_duration);
+        log('Beacon sent %s, active_duration: %d', success ? 'successfully' : 'failed', active_duration);
       } else {
         // Fallback for browsers without sendBeacon
         console.warn('SessionTracker: sendBeacon not available, using synchronous fetch');

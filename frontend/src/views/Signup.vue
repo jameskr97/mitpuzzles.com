@@ -10,6 +10,7 @@ import { useRouter } from "vue-router";
 import AppLogo from "@/core/components/AppLogo.vue";
 import { useTranslation } from "i18next-vue";
 import { Separator } from "@/core/components/ui/separator";
+import { capture_error } from "@/core/services/posthog.ts";
 
 const { t } = useTranslation();
 
@@ -59,7 +60,7 @@ const submitForm = async () => {
     await router.push("/");
   } catch (error) {
     // Error is already stored in authStore.error
-    console.error("Registration error:", error);
+    capture_error("registration_failed", error);
   }
 };
 </script>
