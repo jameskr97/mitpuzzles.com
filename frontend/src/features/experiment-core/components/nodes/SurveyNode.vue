@@ -83,7 +83,7 @@ function handle_other_text_change(question_id: string, text: string) {
 
 function submit_survey() {
   if (executor?.value) {
-    const current_node = executor.value.current_node;
+    const current_node = executor.value.current_node!;
     executor.value.data_collection.record_survey_responses(current_node.id, responses.value);
   }
   emit("complete");
@@ -102,8 +102,8 @@ function submit_survey() {
       </Container>
 
       <!-- root-grid -->
-      <Container v-for="(question_group, i) in all_questions" class="grid grid-cols-[1.3fr_2fr] gap-3 items-center p-5">
-        <template v-for="(question, index) in question_group" :key="question.id">
+      <Container v-for="question_group in all_questions" class="grid grid-cols-[1.3fr_2fr] gap-3 items-center p-5">
+        <template v-for="question in question_group" :key="question.id">
           <template v-if="question.type === 'number'">
             <div class="text-xl">{{ question.text }}</div>
             <Input
@@ -137,7 +137,7 @@ function submit_survey() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
-                    <SelectItem v-for="(item, i) in question.options" :value="item.value">
+                    <SelectItem v-for="item in question.options" :value="item.value">
                       {{ item.label }}
                     </SelectItem>
                     <SelectItem v-if="question.other_option" value="other">
@@ -151,7 +151,7 @@ function submit_survey() {
                 v-if="question.other_option?.has_input && responses[question.id] === 'other'"
                 type="text"
                 placeholder="Please specify..."
-                @input="(e) => handle_other_text_change(question.id, (e.target as HTMLInputElement).value)"
+                @input="(e: Event) => handle_other_text_change(question.id, (e.target as HTMLInputElement).value)"
                 class="mt-2"
               />
             </div>
@@ -163,7 +163,7 @@ function submit_survey() {
               <div v-if="question.max_selections && question.max_selections > 1" class="text-sm text-gray-600">
                 Select up to {{ question.max_selections }} options
               </div>
-              <div v-for="(option, i) in question.options" :key="option.value" class="flex items-center space-x-2">
+              <div v-for="option in question.options" :key="option.value" class="flex items-center space-x-2">
                 <Checkbox
                   :id="`${question.id}_${option.value}`"
                   :checked="is_multiple_choice_selected(question.id, option.value)"
@@ -172,8 +172,8 @@ function submit_survey() {
                     !can_select_more(question.id, question.max_selections || 1)
                   "
                   @update:model-value="
-                    (checked) =>
-                      handle_multiple_choice_change(question.id, option.value, checked, question.max_selections || 1)
+                    (checked: string | boolean) =>
+                      handle_multiple_choice_change(question.id, option.value, !!checked, question.max_selections || 1)
                   "
                 />
                 <label
@@ -193,8 +193,8 @@ function submit_survey() {
                     !can_select_more(question.id, question.max_selections || 1)
                   "
                   @update:model-value="
-                    (checked) =>
-                      handle_multiple_choice_change(question.id, 'other', checked, question.max_selections || 1)
+                    (checked: string | boolean) =>
+                      handle_multiple_choice_change(question.id, 'other', !!checked, question.max_selections || 1)
                   "
                 />
                 <label
@@ -209,7 +209,7 @@ function submit_survey() {
                 v-if="question.other_option?.has_input && is_multiple_choice_selected(question.id, 'other')"
                 type="text"
                 placeholder="please specify..."
-                @input="(e) => handle_other_text_change(question.id, (e.target as HTMLInputElement).value)"
+                @input="(e: Event) => handle_other_text_change(question.id, (e.target as HTMLInputElement).value)"
                 class="ml-6 mt-1"
               />
             </div>

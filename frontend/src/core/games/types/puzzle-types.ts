@@ -1,4 +1,5 @@
 import { type Ref } from "vue";
+import type { PuzzleVariant } from "@/core/types";
 
 export type GameZone = "game" | "topGutter" | "bottomGutter" | "leftGutter" | "rightGutter";
 export type Cell = { row: number; col: number; zone?: GameZone };
@@ -16,7 +17,7 @@ export interface PuzzleDefinition<T = {}> {
   initial_state: number[][];
   solution?: number[][];
   solution_hash?: string;
-  meta?: T;
+  meta: T;
 }
 
 export type KakurasuMeta = {
@@ -71,11 +72,11 @@ export interface PuzzleUIState {
 export interface PuzzleController<TMeta = any> {
   state_puzzle: Ref<PuzzleState<TMeta>>;
   state_ui: Ref<PuzzleUIState>;
-  current_puzzle_variant?: Ref<string[]>;
+  current_puzzle_variant?: Ref<PuzzleVariant>;
 
   // game actions
   handle_cell_click: (cell: Cell, event: MouseEvent, override?: number) => void;
-  handle_cell_key_down: (cell: Cell, event: KeyboardEvent, key: string | number) => void;
+  handle_cell_key_down: (cell: Cell, event: KeyboardEvent) => void;
   handle_cell_focus?: (cell: Cell, event: MouseEvent) => void;
   handle_hover_start?: (cell: Cell, event: MouseEvent) => void;
   handle_hover_end?: (cell: Cell, event: MouseEvent) => void;

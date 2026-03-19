@@ -6,6 +6,7 @@
  */
 import { computed, onMounted, onUnmounted } from "vue";
 import type { GameController } from "@/core/games/types/game-controller";
+import type { PuzzleVariant } from "@/core/types";
 import Container from "@/core/components/ui/Container.vue";
 import { Slider } from "@/core/components/ui/slider";
 import { Button } from "@/core/components/ui/button";
@@ -41,7 +42,7 @@ const current_scale = computed({
 const formatted_time = computed(() => props.controller.formatted_time.value);
 
 // Difficulty selection
-async function on_difficulty_select(variant: string[]) {
+async function on_difficulty_select(variant: PuzzleVariant) {
   if (document.activeElement instanceof HTMLElement) {
     document.activeElement.blur();
   }
@@ -111,7 +112,7 @@ function download_payload() {
           <DropdownMenuContent class="w-full">
             <DropdownMenuItem
               v-for="variant in metadata_store.getVariants(puzzle_type)"
-              :key="variant[0] + '.' + variant[1]"
+              :key="variant.size + '.' + variant.difficulty"
               @click="on_difficulty_select(variant)"
             >
               <span>{{ getPuzzleDisplayName(variant) }}</span>

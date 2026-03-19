@@ -18,6 +18,7 @@ const is_prolific_visitor = computed(
 
 const is_direct_visitor = computed(() => !is_prolific_visitor.value);
 
+// @ts-expect-error demo puzzles don't need id/meta
 const definition1: PuzzleDefinition = {
   puzzle_type: "minesweeper",
   rows: 3,
@@ -29,6 +30,7 @@ const definition1: PuzzleDefinition = {
   ],
 };
 
+// @ts-expect-error demo puzzles don't need id/meta
 const definition2: PuzzleDefinition = {
   puzzle_type: "minesweeper",
   rows: 3,

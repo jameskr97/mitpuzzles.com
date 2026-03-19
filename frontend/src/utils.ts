@@ -2,6 +2,7 @@ import { defineAsyncComponent } from "vue";
 import { defaultPuzzles } from "@/core/games/puzzle.defaults.ts";
 import CryptoJS from "crypto-js";
 import { createLogger } from "@/core/services/logger.ts";
+import type { PuzzleVariant } from "@/core/types";
 const log = createLogger("storage");
 import { i18next } from "@/i18n.ts";
 import _ from "lodash";
@@ -112,20 +113,16 @@ export function getGravatarUrl(email: string, size = 80) {
   return `https://www.gravatar.com/avatar/${hash}?s=${size}&d=identicon`;
 }
 
-export function isDailyVariant(variant?: string[]): boolean {
-  return variant?.length === 1 && variant[0] === "daily";
+export function isDailyVariant(variant?: PuzzleVariant): boolean {
+  return variant?.size === "daily";
 }
 
-export function getPuzzleDisplayName(parts?: string[]): string {
-  if (!parts) return "undefined";
-  if (isDailyVariant(parts)) return "Daily Challenge";
-  if (parts.length < 2) return parts[0];
-  if (parts[1] == null) return parts[0];
-  const name = parts
-    .slice(1)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
-  return `${parts[0]} ${name}`;
+export function getPuzzleDisplayName(variant?: PuzzleVariant): string {
+  if (!variant) return "undefined";
+  if (isDailyVariant(variant)) return "Daily Challenge";
+  if (!variant.difficulty) return variant.size;
+  const difficulty = variant.difficulty.charAt(0).toUpperCase() + variant.difficulty.slice(1);
+  return `${variant.size} ${difficulty}`;
 }
 
 export async function download_blob(url: string, filename: string) {

@@ -2,7 +2,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/core/components/ui/avatar";
 import { computed, type PropType } from "vue";
 import { getGravatarUrl } from "@/utils.ts";
-import type { User } from "@/core/store/useAuthStore.ts";
+import type { User } from "@/core/types";
 
 const props = defineProps({
   user: {

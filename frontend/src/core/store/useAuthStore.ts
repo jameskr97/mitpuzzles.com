@@ -4,18 +4,11 @@ import { useAppStore } from "./useAppStore";
 import { api } from "@/core/services/client";
 import { i18next } from "@/i18n.ts";
 import { capture_error } from "@/core/services/posthog.ts";
-import type { components } from "@/core/services/api";
-
-export type User = components["schemas"]["UserRead"];
-export type RegisterPayload = components["schemas"]["UserCreate"];
+import type { User, RegisterPayload } from "@/core/types";
 
 export interface LoginPayload {
   email: string;
   password: string;
-}
-
-interface SocialLoginResponse {
-  authorization_url: string;
 }
 
 export const useAuthStore = defineStore("auth", {
@@ -81,7 +74,7 @@ export const useAuthStore = defineStore("auth", {
       return this.user;
     },
 
-    async register(userData: paths.schemas.UserCreate) {
+    async register(userData: RegisterPayload) {
       this.loading = true;
       this.error = null;
 
@@ -139,7 +132,7 @@ export const useAuthStore = defineStore("auth", {
         this.error = (error as any)?.detail || "Social login failed";
         return;
       }
-      window.location.href = (data as SocialLoginResponse).authorization_url;
+      window.location.href = data.authorization_url;
     },
 
     clearError() {

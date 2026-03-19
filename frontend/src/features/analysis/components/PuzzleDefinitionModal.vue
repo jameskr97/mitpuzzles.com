@@ -118,7 +118,7 @@ function close() {
             <div class="text-center font-semibold">Solution</div>
             <div class="flex justify-center mx-auto w-full md:p-3 md:-translate-y-4 translate-x-0.5">
                 <PuzzleRenderer
-                  v-if="state_solved"
+                  v-if="state_solved && puzzle"
                   :definition="puzzle"
                   :state="state_solved"
                 />

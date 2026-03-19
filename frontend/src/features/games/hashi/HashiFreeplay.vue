@@ -30,6 +30,7 @@ function parse_saved_bridges(saved: number[][] | null): HashiBridge[] {
 // Load saved bridges from progress store, or use empty array for new puzzle
 const initial_bridges = parse_saved_bridges(services.saved_board.value);
 
+if (!services.definition.value) throw new Error("no puzzle definition available");
 const game = shallowRef<HashiGameReturn>(
   useHashiGame(services.definition.value, initial_bridges)
 );
@@ -102,7 +103,7 @@ function clear_puzzle() {
 
 async function request_new_puzzle() {
   const new_def = await services.request_new_puzzle();
-  // New puzzle starts with empty bridges (no saved progress)
+  if (!new_def) return;
   game.value = useHashiGame(new_def, []);
   await recorder.save_board_state([]); // reset existing bridges
   ui.value.show_solved_state = false;
@@ -123,6 +124,9 @@ const controller: GameController = {
   ui,
   current_variant: services.current_variant,
   tutorial_used: services.tutorial_used,
+  formatted_time: services.formatted_time,
+  is_daily: services.is_daily,
+  daily_date: services.daily_date,
   check_solution,
   clear_puzzle,
   request_new_puzzle,

@@ -1,24 +1,25 @@
 import { defineStore } from "pinia";
 import { api } from "@/core/services/client";
+import type { PuzzleVariant } from "@/core/types";
+
+export const DAILY_VARIANT: PuzzleVariant = { size: "daily", difficulty: null };
 
 const LOCAL_STORAGE_SELECTED_VARIANT_KEY = (puzzle_type: string) => `mitlogic.${puzzle_type}.selected_variant`;
 
 export const usePuzzleMetadataStore = defineStore("mitlogic.puzzle.metadata", {
   state: () => ({
-    variants: {} as Record<string, (string | null)[][]>,
-    selected_variant: {} as Record<string, (string | null)[]>,
+    variants: {} as Record<string, PuzzleVariant[]>,
+    selected_variant: {} as Record<string, PuzzleVariant>,
     initialized: false,
   }),
 
   getters: {
-    getVariants: (state) => (puzzle_type: string): (string | null)[][] => state.variants[puzzle_type] || [],
-    getSelectedVariant: (state) => (puzzle_type: string): (string | null)[] => {
+    getVariants: (state) => (puzzle_type: string): PuzzleVariant[] => state.variants[puzzle_type] || [],
+    getSelectedVariant: (state) => (puzzle_type: string): PuzzleVariant => {
         const selected = state.selected_variant[puzzle_type];
-        if (selected && selected.length > 0) {
-          return selected;
-        }
+        if (selected) return selected;
         const variants = state.variants[puzzle_type];
-        return variants && variants.length > 0 ? variants[0] : [];
+        return variants && variants.length > 0 ? variants[0] : DAILY_VARIANT;
       },
   },
 
@@ -27,7 +28,6 @@ export const usePuzzleMetadataStore = defineStore("mitlogic.puzzle.metadata", {
       if (this.initialized) return;
       this.initialized = true;
 
-      // load from API (Workbox handles caching)
       const { data, error } = await api.GET("/api/puzzle/definition/types");
       if (error) return;
       Object.keys(data).forEach((key) => {
@@ -39,20 +39,18 @@ export const usePuzzleMetadataStore = defineStore("mitlogic.puzzle.metadata", {
 
       // inject "daily" as the first variant for every puzzle type
       Object.keys(this.variants).forEach((key) => {
-        this.variants[key].unshift(["daily"]);
+        this.variants[key].unshift(DAILY_VARIANT);
       });
 
-      // load user preferences from localStorage
       this.load_selected_variants();
     },
 
-    set_selected_variant(puzzle_type: string, variant: string[]) {
+    set_selected_variant(puzzle_type: string, variant: PuzzleVariant) {
       this.selected_variant[puzzle_type] = variant;
       try {
         localStorage.setItem(LOCAL_STORAGE_SELECTED_VARIANT_KEY(puzzle_type), JSON.stringify(variant));
       } catch (error) {
         console.warn("Failed to persist selected variant:", error);
-        // this is an ok failure. we just won't persist the preference
       }
     },
 
@@ -63,15 +61,14 @@ export const usePuzzleMetadataStore = defineStore("mitlogic.puzzle.metadata", {
           if (stored) this.selected_variant[puzzle_type] = JSON.parse(stored);
         } catch (error) {
           console.warn(`Failed to load selected variant for ${puzzle_type}:`, error);
-          // this is an ok failure. just set a default.
         }
       }
     },
 
-    doesMatchCurrentVariant(puzzle_type: string, variant: string[]): boolean {
-      const current_variant = this.selected_variant[puzzle_type];
-      if (!current_variant) return false;
-      return current_variant.length === variant.length && current_variant.every((v, i) => v === variant[i]);
+    doesMatchCurrentVariant(puzzle_type: string, variant: PuzzleVariant): boolean {
+      const current = this.selected_variant[puzzle_type];
+      if (!current) return false;
+      return current.size === variant.size && current.difficulty === variant.difficulty;
     },
   },
 });

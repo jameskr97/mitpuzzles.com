@@ -64,6 +64,7 @@ function stop_drag() { is_dragging.value = false; dragged_cells.value.clear(); }
 const REGION_BORDER_WIDTH = 3;
 
 const cell_renderer = computed((): CellRenderer => {
+  // @ts-expect-error reactive dependency trigger
   const _current_theme = theme.value;
   const rows = props.state.definition.rows;
   const cols = props.state.definition.cols;

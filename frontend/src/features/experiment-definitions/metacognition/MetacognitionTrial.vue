@@ -95,7 +95,7 @@ const current_correctly_marked_cells = computed(() => {
   if (!puzzle.value.solution) return 0;
   const solution = puzzle.value.solution;
   const user_board = pc.state_puzzle.value.board;
-  const matching = [MinesweeperCell.FLAG, MinesweeperCell.SAFE];
+  const matching: number[] = [MinesweeperCell.FLAG, MinesweeperCell.SAFE];
 
   let count = 0;
   for (let i = 0; i < solution.length; i++) {

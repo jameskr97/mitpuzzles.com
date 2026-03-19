@@ -24,9 +24,11 @@ import { useTranslation } from "i18next-vue";
 
 const { t } = useTranslation();
 
+import type { PuzzleVariant } from "@/core/types";
+
 const props = defineProps<{
   puzzle_type: string;
-  current_variant: [string, string];
+  current_variant: PuzzleVariant;
 }>();
 
 // Get controller from context for tutorial state
@@ -36,8 +38,8 @@ const is_leaderboard_open = ref(true);
 const scoring_method = ref<string>("ao_n");
 const time_period = ref<string>("weekly");
 
-const size = computed(() => props.current_variant[0]);
-const difficulty = computed(() => props.current_variant[1]);
+const size = computed(() => props.current_variant.size);
+const difficulty = computed(() => props.current_variant.difficulty ?? "");
 
 const leaderboard_store = usePuzzleLeaderboardStore();
 const daily_store = useDailyPuzzleStore();
@@ -48,8 +50,8 @@ watch(
   async ([variant, period, method, is_daily, daily_date]) => {
     if (is_daily && daily_date) {
       await daily_store.refreshDailyLeaderboard(daily_date, props.puzzle_type);
-    } else if (variant[0] && variant[1]) {
-      await leaderboard_store.refreshLeaderboard(props.puzzle_type, variant[0], variant[1], period, method);
+    } else if (variant.size) {
+      await leaderboard_store.refreshLeaderboard(props.puzzle_type, variant.size, variant.difficulty ?? "", period, method);
     }
   },
   { immediate: true }

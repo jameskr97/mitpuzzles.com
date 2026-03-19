@@ -344,7 +344,8 @@ onMounted(() => {
                   <Label for="age">{{ $t('ui:form.age') }}</Label>
                   <Input
                     id="age"
-                    v-model.number="profile_age"
+                    :model-value="profile_age ?? undefined"
+                    @update:model-value="profile_age = $event ? Number($event) : null"
                     type="number"
                     min="1"
                     max="120"

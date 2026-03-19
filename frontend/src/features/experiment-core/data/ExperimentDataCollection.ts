@@ -84,7 +84,7 @@ export class ExperimentDataCollection {
 
   private point_records: point_record[] = []; // points tracking
   private trial_sequence_counters = new Map<string, number>(); // per-trial sequence tracking
-  private participant_data: Record<string, any> = {}; // participant data
+  participant_data: Record<string, any> = {};
   private survey_responses = new Map<string, Record<string, any>>(); // survey responses stored separately to avoid duplication
   private dev_event_logs: dev_event_log[] = []; // dev event logging
 

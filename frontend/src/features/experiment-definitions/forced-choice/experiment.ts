@@ -9,12 +9,8 @@ import minesweeper_hard_hard from "./minesweeper_3x3_hard_hard.json";
 
 // callback function to load all minesweeper stimuli
 function load_all_minesweeper_stimuli(): raw_stimuli {
-  const all_stimuli = [
-    ...minesweeper_easy_easy,
-    ...minesweeper_easy_hard,
-    ...minesweeper_hard_hard
-  ];
-  return all_stimuli;
+  // @ts-expect-error raw stimuli have more fields that PuzzleDefinition
+  return [...minesweeper_easy_easy, ...minesweeper_easy_hard, ...minesweeper_hard_hard];
 }
 
 // check if visitor is from prolific (has PROLIFIC_PID URL parameter)

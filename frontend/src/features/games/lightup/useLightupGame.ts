@@ -28,7 +28,7 @@ export const LightupCell = {
 export type LightupCellValue = (typeof LightupCell)[keyof typeof LightupCell];
 
 /** Wall states for checking */
-export const WALL_STATES = [
+export const WALL_STATES: number[] = [
   LightupCell.WALL_0,
   LightupCell.WALL_1,
   LightupCell.WALL_2,
@@ -38,7 +38,7 @@ export const WALL_STATES = [
 ];
 
 /** Numbered wall states */
-export const NUMBERED_WALLS = [
+export const NUMBERED_WALLS: number[] = [
   LightupCell.WALL_0,
   LightupCell.WALL_1,
   LightupCell.WALL_2,

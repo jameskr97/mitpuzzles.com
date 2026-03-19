@@ -20,7 +20,7 @@ const props = defineProps<{
   trial_index: number;
 }>();
 
-const emit = defineEmits<{
+defineEmits<{
   "trial-complete": [result: any];
 }>();
 

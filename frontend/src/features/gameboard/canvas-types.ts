@@ -83,6 +83,15 @@ export interface CanvasTheme {
 
   /** Hint/clue color */
   hint: string;
+
+  /** selected island fill (hashi) */
+  selectFill?: string;
+  /** target island fill (hashi) */
+  targetFill?: string;
+  /** selected island border (hashi) */
+  selectBorder?: string;
+  /** target island border (hashi) */
+  targetBorder?: string;
 }
 
 /**

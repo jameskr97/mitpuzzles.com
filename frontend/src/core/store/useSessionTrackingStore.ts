@@ -11,13 +11,7 @@ const LAST_ACTIVITY_KEY = 'last_activity';
 const HEARTBEAT_INTERVAL = 15000; // 15 seconds
 const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes in ms
 
-interface HeartbeatPayload {
-  session_id: string;
-  device_id: string;
-  user_id?: string | null;
-  active_duration_delta: number;
-  initial_referrer?: string | null;
-}
+import type { HeartbeatPayload } from "@/core/types";
 
 export const useSessionTrackingStore = defineStore("session_tracking", {
   state: () => ({

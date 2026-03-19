@@ -46,15 +46,15 @@ class PuzzleService:
                 .order_by(Puzzle.puzzle_size)
             )
             difficulty_combinations_rows = (await self.db.execute(query)).all()
-            difficulty_combinations = [tuple(row) for row in difficulty_combinations_rows]
-            difficulty_combinations.sort(key=_sort_key)
+            variants = [{"size": row[0], "difficulty": row[1]} for row in difficulty_combinations_rows]
+            variants.sort(key=lambda v: _sort_key((v["size"], v["difficulty"])))
 
             num_puzzles = await self.db.scalar(
                 select(count(Puzzle.id)).where(Puzzle.puzzle_type == puzzle_type)
             )
             types_config[puzzle_type] = {
-                "available_difficulties": difficulty_combinations,
-                "default_difficulty": difficulty_combinations[0],
+                "available_difficulties": variants,
+                "default_difficulty": variants[0],
                 "total_puzzles": num_puzzles,
             }
         return types_config

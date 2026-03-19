@@ -1,23 +1,12 @@
 import { defineStore } from "pinia";
 import { api } from "@/core/services/client";
-
-interface LeaderboardEntry {
-  rank: number;
-  duration_display: string;
-  username: string;
-  is_current_user: boolean;
-}
-
-interface LeaderboardData {
-  leaderboard: LeaderboardEntry[];
-  count: number;
-}
+import type { LeaderboardEntry, LeaderboardResponse } from "@/core/types";
 
 type LeaderboardKey = `${string}:${string}:${string}:${string}:${string}`;
 
 export const usePuzzleLeaderboardStore = defineStore("mitlogic.freeplay.leaderboard", {
   state: () => ({
-    leaderboard: {} as Record<LeaderboardKey, LeaderboardData>,
+    leaderboard: {} as Record<LeaderboardKey, LeaderboardResponse>,
   }),
 
   getters: {

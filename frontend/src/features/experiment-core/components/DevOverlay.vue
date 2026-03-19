@@ -42,7 +42,7 @@ const is_trial_node = computed(() => executor?.value?.current_node?.type === "tr
 // event log functionality
 // refresh event logs when overlay expands and periodically
 const event_logs = ref<any[]>([]);
-let interval_id: NodeJS.Timeout | null = null;
+let interval_id: ReturnType<typeof setInterval> | null = null;
 
 function start_event_log_refresh() {
   if (interval_id) return; // already running

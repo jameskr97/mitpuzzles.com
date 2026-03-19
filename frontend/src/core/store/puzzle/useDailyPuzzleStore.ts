@@ -1,21 +1,7 @@
 import { defineStore } from "pinia";
 import { api } from "@/core/services/client";
 import { capture_error } from "@/core/services/posthog.ts";
-
-export interface DailyPuzzleStatus {
-  puzzle_type: string;
-  puzzle_id: string;
-  daily_puzzle_id: string;
-  is_solved: boolean;
-  completion_time: string | null;
-}
-
-export interface DailyLeaderboardEntry {
-  rank: number;
-  duration_display: string;
-  username: string;
-  is_current_user: boolean;
-}
+import type { DailyPuzzleStatus, LeaderboardEntry } from "@/core/types";
 
 type LeaderboardKey = `${string}:${string}`;
 
@@ -23,12 +9,12 @@ export const useDailyPuzzleStore = defineStore("mitlogic.daily", {
   state: () => ({
     today_date: "" as string,
     puzzles: [] as DailyPuzzleStatus[],
-    leaderboards: {} as Record<LeaderboardKey, DailyLeaderboardEntry[]>,
+    leaderboards: {} as Record<LeaderboardKey, LeaderboardEntry[]>,
     loading: false,
   }),
 
   getters: {
-    getDailyLeaderboard: (state) => (date: string, puzzle_type: string): DailyLeaderboardEntry[] => {
+    getDailyLeaderboard: (state) => (date: string, puzzle_type: string): LeaderboardEntry[] => {
       const key: LeaderboardKey = `${date}:${puzzle_type}`;
       return state.leaderboards[key] || [];
     },

@@ -53,28 +53,19 @@ const fetch_experiments = async () => {
 const fetch_freeplay_preview = async () => {
   loading_preview.value = true
   try {
-    const params = new URLSearchParams()
-    store.puzzle_types.forEach(type => params.append('puzzle_type', type))
-    store.puzzle_sizes.forEach(size => params.append('puzzle_size', size))
-    store.difficulties.forEach(diff => params.append('puzzle_difficulty', diff))
-
-    // Add entity filter based on scope
+    const query: Record<string, any> = {}
+    if (store.puzzle_types.size > 0) query.puzzle_type = [...store.puzzle_types]
+    if (store.puzzle_sizes.size > 0) query.puzzle_size = [...store.puzzle_sizes]
+    if (store.difficulties.size > 0) query.puzzle_difficulty = [...store.difficulties]
     if (store.selected_entity_id) {
-      if (store.scope === 'user') {
-        params.append('filter_user_id', store.selected_entity_id)
-      } else if (store.scope === 'device') {
-        params.append('filter_device_id', store.selected_entity_id)
-      }
+      if (store.scope === 'user') query.filter_user_id = store.selected_entity_id
+      else if (store.scope === 'device') query.filter_device_id = store.selected_entity_id
     }
+    if (store.solved_filter !== 'all') query.solved_filter = store.solved_filter
+    if (store.date_start) query.date_start = store.date_start
+    if (store.date_end) query.date_end = store.date_end
 
-    if (store.solved_filter !== 'all') {
-      params.append('solved_filter', store.solved_filter)
-    }
-    if (store.date_start) params.append('date_start', store.date_start)
-    if (store.date_end) params.append('date_end', store.date_end)
-
-    const query = params.toString() ? `?${params.toString()}` : ''
-    const { data } = await api.GET(`/api/puzzle/admin/freeplay/preview${query}` as any)
+    const { data } = await api.GET("/api/puzzle/admin/freeplay/preview", { params: { query } })
     if (data) freeplay_preview.value = data as any
   } catch (err) {
     console.error('Failed to fetch freeplay preview:', err)

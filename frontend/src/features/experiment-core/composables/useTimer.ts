@@ -2,7 +2,7 @@ import { onUnmounted, ref } from "vue";
 
 export function useTimer({ duration_seconds = 60 } = {}) {
   const time_remaining = ref(duration_seconds);
-  let timer_interval: NodeJS.Timeout | null = null;
+  let timer_interval: ReturnType<typeof setInterval> | null = null;
 
   // overload signatures
   function start(onComplete: () => void): void;

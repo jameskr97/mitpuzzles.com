@@ -250,6 +250,7 @@ onUnmounted(() => {
           </div>
         </template>
 
+        <!-- @vue-expect-error slot prop not typed on FileDropZone -->
         <template #footer="{ open_file_picker }">
           <div
             v-if="files.length > 0"

@@ -5,6 +5,7 @@
  * Games own their complete logic - this interface just defines what shared UI needs.
  */
 import type { ComputedRef, Ref } from "vue";
+import type { PuzzleVariant } from "@/core/types";
 
 /**
  * Core puzzle definition info that shared UI needs
@@ -50,7 +51,7 @@ export interface GameController {
   ui: Ref<GameUIState>;
 
   // Variant tracking (for leaderboard, new puzzle)
-  current_variant: Ref<[string, string]>; // [size, difficulty]
+  current_variant: Ref<PuzzleVariant>;
 
   // Whether tutorial was used (affects leaderboard eligibility)
   tutorial_used: Ref<boolean>;

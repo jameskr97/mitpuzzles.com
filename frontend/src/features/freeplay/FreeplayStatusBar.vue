@@ -22,7 +22,7 @@ const puzzle = inject<PuzzleController>("puzzle") || props.puzzle!;
         <Label for="tutorial-toggle" class="cursor-pointer font-normal">{{ $t('freeplay:settings.tutorial_mode') }}</Label>
       </div>
       <span class="col-start-2 text-center items-center">
-        {{ getPuzzleDisplayName(puzzle.current_puzzle_variant.value) }}
+        {{ getPuzzleDisplayName(puzzle.current_puzzle_variant?.value) }}
       </span>
       <Badge
         v-if="puzzle.state_ui.value.show_solved_state"

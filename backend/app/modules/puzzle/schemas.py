@@ -21,16 +21,16 @@ class FilterOptionsResponse(BaseModel):
     attempts_options: List[FilterOption]
 
 
-class SizeDifficulty(BaseModel):
-    """a [size, difficulty] pair like ["5x5", "easy"]."""
+class PuzzleVariant(BaseModel):
+    """a size/difficulty combination for a puzzle type."""
     size: str
-    difficulty: Optional[str]
+    difficulty: Optional[str] = None
 
 
 class PuzzleTypeConfig(BaseModel):
     """metadata for a single puzzle type."""
-    available_difficulties: List[List[Optional[str]]]
-    default_difficulty: List[Optional[str]]
+    available_difficulties: List[PuzzleVariant]
+    default_difficulty: PuzzleVariant
     total_puzzles: int
 
 
