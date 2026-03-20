@@ -5,8 +5,6 @@ import type { components } from "@/core/services/api";
 export type PuzzleVariant = components["schemas"]["PuzzleVariant"];
 export type LeaderboardEntry = components["schemas"]["LeaderboardEntryResponse"];
 export type LeaderboardResponse = components["schemas"]["LeaderboardResponse"];
-export type DailyPuzzleStatus = components["schemas"]["DailyPuzzleStatus"];
-
 // auth
 export type User = components["schemas"]["UserRead"];
 export type RegisterPayload = components["schemas"]["UserCreate"];

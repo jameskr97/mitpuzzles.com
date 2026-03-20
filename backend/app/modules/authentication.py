@@ -49,6 +49,12 @@ class UserCreate(schemas.BaseUserCreate):
     is_superuser: Optional[bool] = False
     is_verified: Optional[bool] = False
 
+    model_config = {
+        "json_schema_extra": {
+            "required": ["email", "password"],
+        }
+    }
+
 
 # Models
 class OAuthAccount(SQLAlchemyBaseOAuthAccountTableUUID, Base):

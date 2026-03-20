@@ -59,10 +59,6 @@ export interface GameController {
   // Timer
   formatted_time: ComputedRef<string>;
 
-  // Daily mode
-  is_daily: ComputedRef<boolean>;
-  daily_date: Ref<string | null>;
-
   // Core actions that shared UI can trigger
   check_solution: () => Promise<boolean>;
   clear_puzzle: () => void;

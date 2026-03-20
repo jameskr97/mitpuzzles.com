@@ -125,8 +125,6 @@ const controller: GameController = {
   current_variant: services.current_variant,
   tutorial_used: services.tutorial_used,
   formatted_time: services.formatted_time,
-  is_daily: services.is_daily,
-  daily_date: services.daily_date,
   check_solution,
   clear_puzzle,
   request_new_puzzle,

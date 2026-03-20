@@ -2,8 +2,6 @@ import { defineStore } from "pinia";
 import { api } from "@/core/services/client";
 import type { PuzzleVariant } from "@/core/types";
 
-export const DAILY_VARIANT: PuzzleVariant = { size: "daily", difficulty: null };
-
 const LOCAL_STORAGE_SELECTED_VARIANT_KEY = (puzzle_type: string) => `mitlogic.${puzzle_type}.selected_variant`;
 
 export const usePuzzleMetadataStore = defineStore("mitlogic.puzzle.metadata", {
@@ -19,7 +17,7 @@ export const usePuzzleMetadataStore = defineStore("mitlogic.puzzle.metadata", {
         const selected = state.selected_variant[puzzle_type];
         if (selected) return selected;
         const variants = state.variants[puzzle_type];
-        return variants && variants.length > 0 ? variants[0] : DAILY_VARIANT;
+        return variants && variants.length > 0 ? variants[0] : { size: "", difficulty: null };
       },
   },
 
@@ -35,11 +33,6 @@ export const usePuzzleMetadataStore = defineStore("mitlogic.puzzle.metadata", {
         if (!this.selected_variant[key]) {
           this.selected_variant[key] = data[key].default_difficulty;
         }
-      });
-
-      // inject "daily" as the first variant for every puzzle type
-      Object.keys(this.variants).forEach((key) => {
-        this.variants[key].unshift(DAILY_VARIANT);
       });
 
       this.load_selected_variants();

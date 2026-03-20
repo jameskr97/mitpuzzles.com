@@ -124,8 +124,7 @@ function download_payload() {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <!-- New Puzzle button (hidden in daily mode) -->
-        <Button v-if="!controller.is_daily.value" @click="controller.request_new_puzzle">
+        <Button @click="controller.request_new_puzzle">
           {{ $t("freeplay:control.new_puzzle") }}
         </Button>
 

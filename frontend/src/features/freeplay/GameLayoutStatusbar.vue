@@ -24,9 +24,7 @@ function toggle_tutorial_mode() {
 
 // Current variant display
 const variant_display = computed(() =>
-  props.controller.is_daily.value
-    ? getPuzzleDisplayName({ size: "daily" })
-    : getPuzzleDisplayName(props.controller.current_variant.value)
+  getPuzzleDisplayName(props.controller.current_variant.value)
 );
 </script>
 

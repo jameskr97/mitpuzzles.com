@@ -19,7 +19,6 @@ import { Separator } from "@/core/components/ui/separator";
 import { Button } from "@/core/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/core/components/ui/select";
 import { usePuzzleLeaderboardStore } from "@/core/store/puzzle/usePuzzleLeaderboardStore";
-import { useDailyPuzzleStore } from "@/core/store/puzzle/useDailyPuzzleStore";
 import { useTranslation } from "i18next-vue";
 
 const { t } = useTranslation();
@@ -42,15 +41,12 @@ const size = computed(() => props.current_variant.size);
 const difficulty = computed(() => props.current_variant.difficulty ?? "");
 
 const leaderboard_store = usePuzzleLeaderboardStore();
-const daily_store = useDailyPuzzleStore();
 
-// Refresh leaderboard when variant, time period, or mode changes
+// refresh leaderboard when variant, time period, or scoring method changes
 watch(
-  () => [props.current_variant, time_period.value, scoring_method.value, controller.is_daily.value, controller.daily_date.value] as const,
-  async ([variant, period, method, is_daily, daily_date]) => {
-    if (is_daily && daily_date) {
-      await daily_store.refreshDailyLeaderboard(daily_date, props.puzzle_type);
-    } else if (variant.size) {
+  () => [props.current_variant, time_period.value, scoring_method.value] as const,
+  async ([variant, period, method]) => {
+    if (variant.size) {
       await leaderboard_store.refreshLeaderboard(props.puzzle_type, variant.size, variant.difficulty ?? "", period, method);
     }
   },
@@ -91,9 +87,6 @@ const tutorial_message = computed(() => {
 
 // Get leaderboard entries
 const leaderboard_entries = computed(() => {
-  if (controller.is_daily.value && controller.daily_date.value) {
-    return daily_store.getDailyLeaderboard(controller.daily_date.value, props.puzzle_type);
-  }
   return leaderboard_store.getLeaderboard(props.puzzle_type, size.value, difficulty.value, time_period.value, scoring_method.value);
 });
 </script>
@@ -108,7 +101,7 @@ const leaderboard_entries = computed(() => {
         <span class="text-xl">{{ $t("freeplay:leaderboard.title") }}</span>
       </div>
       <div class="flex items-center gap-2">
-        <Select v-if="!controller.is_daily.value" v-model="scoring_method">
+        <Select v-model="scoring_method">
           <SelectTrigger class="h-8 w-24 text-sm">
             <SelectValue />
           </SelectTrigger>
@@ -130,7 +123,7 @@ const leaderboard_entries = computed(() => {
       <Separator class="mt-2 mb-1" />
 
       <!-- Time period selector (hidden in daily mode) -->
-      <div v-if="!controller.is_daily.value" class="flex justify-between">
+      <div class="flex justify-between">
         <Button
           class="px-3"
           v-for="period in [
