@@ -28,8 +28,6 @@ class PuzzleService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    # --- puzzle queries ---
-
     async def get_puzzle_by_id(self, puzzle_id: uuid.UUID) -> Optional[Puzzle]:
         return await self.db.scalar(select(Puzzle).where(Puzzle.id == puzzle_id))
 
@@ -155,7 +153,7 @@ class PuzzleService:
         offset: int = 0,
     ) -> Dict[str, Any]:
         """browse puzzles with optional filtering and pagination."""
-        excluded_types = ["battleships", "hashi", "norinori"]
+        excluded_types = ["battleships", "norinori"]
 
         conditions = [~Puzzle.puzzle_type.in_(excluded_types)]
         if puzzle_id:
@@ -204,7 +202,7 @@ class PuzzleService:
         filter_device_id: Optional[uuid.UUID] = None,
     ) -> Dict[str, Any]:
         """get available filter options with counts based on current selections."""
-        excluded_types = ["battleships", "hashi", "norinori"]
+        excluded_types = ["battleships", "norinori"]
 
         def base_conditions(exclude_dimension: str):
             conds = [~Puzzle.puzzle_type.in_(excluded_types)]

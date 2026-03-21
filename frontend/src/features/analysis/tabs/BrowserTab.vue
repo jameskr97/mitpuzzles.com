@@ -230,11 +230,6 @@ onUnmounted(() => {
             End of results
           </div>
         </div>
-
-<!--        &lt;!&ndash; No Results &ndash;&gt;-->
-<!--        <div v-if="!loading_puzzles && displayed_puzzles.length === 0" class="text-center text-gray-500 mt-8">-->
-<!--          No puzzles found with the selected filters.-->
-<!--        </div>-->
       </div>
     </Container>
   </div>

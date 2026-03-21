@@ -148,8 +148,6 @@ const canvas_key = computed(() =>
     <HashiCanvas
       :key="canvas_key"
       :state="puzzle_state"
-      :is_island="game.is_island"
-      :find_island_in_direction="game.find_island_in_direction"
       @bridge-toggle="on_bridge_toggle"
     />
   </GameLayout>

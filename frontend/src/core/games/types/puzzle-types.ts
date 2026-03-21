@@ -50,7 +50,7 @@ export type HashiBridge = {
 };
 
 export type HashiMeta = {
-  bridges: HashiBridge[];
+  num_islands?: number;
 };
 
 export type PuzzleState<T = any> = {

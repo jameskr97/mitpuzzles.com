@@ -15,13 +15,40 @@ import type { HashiBridge } from "@/core/games/types/puzzle-types.ts";
 const props = defineProps<{
   state: {
     definition: { rows: number; cols: number; initial_state: number[][] };
-    bridges: HashiBridge[];
-    islands: Map<string, number>;
-    island_bridge_counts: Map<string, number>;
+    bridges?: HashiBridge[];
+    island_bridge_counts?: Map<string, number>;
   };
-  is_island: (row: number, col: number) => boolean;
-  find_island_in_direction: (row: number, col: number, dr: number, dc: number) => [number, number] | null;
 }>();
+
+// derive islands from the grid
+const islands = computed(() => {
+  const map = new Map<string, number>();
+  const grid = props.state.definition.initial_state;
+  for (let r = 0; r < grid.length; r++) {
+    for (let c = 0; c < grid[r].length; c++) {
+      if (grid[r][c] > 0) map.set(`${r},${c}`, grid[r][c]);
+    }
+  }
+  return map;
+});
+const bridges = computed(() => props.state.bridges ?? []);
+const island_bridge_counts = computed(() => props.state.island_bridge_counts ?? new Map<string, number>());
+
+function is_island(row: number, col: number): boolean {
+  return islands.value.has(`${row},${col}`);
+}
+
+function find_island_in_direction(row: number, col: number, dr: number, dc: number): [number, number] | null {
+  const { rows, cols } = props.state.definition;
+  let r = row + dr;
+  let c = col + dc;
+  while (r >= 0 && r < rows && c >= 0 && c < cols) {
+    if (is_island(r, c)) return [r, c];
+    r += dr;
+    c += dc;
+  }
+  return null;
+}
 
 const emit = defineEmits<{
   (e: "bridge-toggle", island1: [number, number], island2: [number, number], button: number): void;
@@ -45,7 +72,7 @@ const BRIDGE_WIDTH = 3;
 // Pre-compute cell bridge segments for rendering
 const cell_bridges = computed(() => {
   const map = new Map<string, { horizontal: number; vertical: number }>();
-  for (const bridge of props.state.bridges) {
+  for (const bridge of bridges.value) {
     const [r1, c1] = bridge.island1;
     const [r2, c2] = bridge.island2;
     if (r1 === r2) {
@@ -108,7 +135,7 @@ function update_drag_destination(current_row: number, current_col: number): void
   else if (dx !== 0) dc = dx > 0 ? 1 : -1;
   else { drag_state.destination = null; return; }
 
-  drag_state.destination = props.find_island_in_direction(src_row, src_col, dr, dc);
+  drag_state.destination = find_island_in_direction(src_row, src_col, dr, dc);
 }
 
 function handle_mousedown(event: MouseEvent): void {
@@ -118,7 +145,7 @@ function handle_mousedown(event: MouseEvent): void {
   if (!cell) return;
   event.preventDefault();
 
-  if (props.is_island(cell.row, cell.col)) {
+  if (is_island(cell.row, cell.col)) {
     drag_state.source = [cell.row, cell.col];
     drag_state.destination = null;
     drag_state.dragging = false;
@@ -189,10 +216,10 @@ function draw_bridge_line(ctx: CanvasRenderingContext2D, x1: number, y1: number,
 const cell_renderer = computed((): CellRenderer => {
   const current_theme = theme.value;
   const current_bridges = cell_bridges.value;
-  const current_islands = props.state.islands;
-  const current_counts = props.state.island_bridge_counts;
+  const current_islands = islands.value;
+  const current_counts = island_bridge_counts.value;
   const current_drag = drag_state;
-  const all_bridges = props.state.bridges;
+  const all_bridges = bridges.value;
 
   return (r, cell, row, col, _state) => {
     const ctx = r.ctx;

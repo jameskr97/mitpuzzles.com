@@ -28,23 +28,6 @@ export interface HashiGameReturn {
     button: number
   ) => { old_count: number; new_count: number } | null;
 
-  /** Check if adding a bridge would cross an existing one */
-  would_cross_bridge: (
-    island1: [number, number],
-    island2: [number, number]
-  ) => boolean;
-
-  /** Find the nearest island in a direction from a given position */
-  find_island_in_direction: (
-    row: number,
-    col: number,
-    dr: number,
-    dc: number
-  ) => [number, number] | null;
-
-  /** Check if position is an island */
-  is_island: (row: number, col: number) => boolean;
-
   /** Check solution */
   check_solution: () => Promise<boolean>;
 
@@ -116,26 +99,6 @@ export function useHashiGame(
     return islands.value.has(`${row},${col}`);
   }
 
-  /**
-   * Find the nearest island in a direction
-   */
-  function find_island_in_direction(
-    row: number,
-    col: number,
-    dr: number,
-    dc: number
-  ): [number, number] | null {
-    let r = row + dr;
-    let c = col + dc;
-    while (r >= 0 && r < rows && c >= 0 && c < cols) {
-      if (is_island(r, c)) {
-        return [r, c];
-      }
-      r += dr;
-      c += dc;
-    }
-    return null;
-  }
 
   /**
    * Get existing bridge between two islands
@@ -211,11 +174,7 @@ export function useHashiGame(
     return false;
   }
 
-  /**
-   * Toggle a bridge between two islands
-   * Left click (button 0): cycle 0 → 1 → 2 → 0
-   * Right click (button 2): cycle 0 → 2 → 1 → 0 (or just decrement)
-   */
+  /** toggle a bridge between two islands */
   function toggle_bridge(
     island1: [number, number],
     island2: [number, number],
@@ -331,9 +290,6 @@ export function useHashiGame(
     rows,
     cols,
     toggle_bridge,
-    would_cross_bridge,
-    find_island_in_direction,
-    is_island,
     check_solution,
     clear,
     get_bridge,
