@@ -45,12 +45,9 @@ class PuzzleDefinitionResponse(BaseModel):
     rows: int
     cols: int
     initial_state: List[List[int]]
+    solution: Optional[List[List[int]]] = None
     solution_hash: str
     meta: Dict[str, Any]
-
-class PuzzleDefinitionSolution(PuzzleDefinitionResponse):
-    model_config = ConfigDict(from_attributes=True)
-    solution: List[List[int]]
 
 class PuzzleResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)

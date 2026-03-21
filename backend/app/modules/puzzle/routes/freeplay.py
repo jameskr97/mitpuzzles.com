@@ -8,7 +8,6 @@ from app.modules.authentication import User, fastapi_users
 from app.modules.puzzle.schemas import (
     ErrorResponse,
     PuzzleDefinitionResponse,
-    PuzzleDefinitionSolution,
     PuzzleIdResponse,
     PuzzleTypesResponse,
     PuzzleSubmitResponse,
@@ -134,7 +133,7 @@ async def get_puzzle(
     if include_solution:
         if not user or not user.is_superuser:
             raise HTTPException(status_code=403, detail="Admin privileges required to include solution")
-        return PuzzleDefinitionSolution.model_validate(format_puzzle_with_solution(puzzle))
+        return PuzzleDefinitionResponse.model_validate(format_puzzle_with_solution(puzzle))
 
     return PuzzleDefinitionResponse.model_validate(format_puzzle_for_frontend(puzzle))
 

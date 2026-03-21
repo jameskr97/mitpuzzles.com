@@ -29,8 +29,6 @@ class PuzzleAdminService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    # --- game data summary ---
-
     async def get_game_data_summary(self) -> List[Dict[str, Any]]:
         """get summary of all game data grouped by puzzle type."""
         puzzle_counts_stmt = (
@@ -77,8 +75,6 @@ class PuzzleAdminService:
             }
             for pt in all_types
         ]
-
-    # --- priority queue ---
 
     async def get_priority_puzzles(
         self,
@@ -253,8 +249,6 @@ class PuzzleAdminService:
             return None
         return priority.puzzle
 
-    # --- exports ---
-
     async def export_game_data(self, puzzle_type: str, user_type: Optional[str] = None) -> List[Dict[str, Any]]:
         """export game data for a puzzle type as a list of attempt dicts."""
         stmt = (
@@ -348,8 +342,6 @@ class PuzzleAdminService:
 
         return [_format_attempt_for_export(a, user_profiles) for a in attempts]
 
-    # --- private helpers ---
-
     async def _batch_shown_counts(self, puzzle_ids: List[uuid.UUID]) -> Dict[uuid.UUID, int]:
         """batch fetch priority-shown counts for a list of puzzle ids."""
         if not puzzle_ids:
@@ -371,10 +363,6 @@ class PuzzleAdminService:
             .group_by(FreeplayPuzzleAttempt.puzzle_id)
         )
         return dict(result.all())
-
-
-# --- export formatting ---
-
 
 def _translate_attempt_data(puzzle_type: str, board_state, action_history):
     """translate board state and action history to research format if needed."""
