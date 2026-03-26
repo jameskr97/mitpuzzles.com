@@ -63,30 +63,23 @@ export const usePuzzleHistoryStore = defineStore("game.history", {
   },
 
   actions: {
-    /** loads all event history from indexeddb into reactive state */
+    /** initialize database connection only — events are loaded lazily */
     async init(): Promise<void> {
       if (this.initialized) return;
       await databaseManager.init();
-
-      const all_events = await databaseManager.history.getAll();
-      
-      // group events by discriminator-mode (puzzle_type for freeplay, experiment_id for experiments)
-      for (const event of all_events) {
-        const discriminator = event.mode === "experiment" ? event.experiment_id : event.puzzle_type;
-        const key = `${discriminator}-${event.mode}`;
-        if (!this.events[key]) this.events[key] = [];
-        this.events[key].push(event);
-        
-        // track highest sequence number
-        this.next_sequence[key] = Math.max(this.next_sequence[key] || 0, event.sequence + 1);
-      }
-      
-      // sort all event arrays by sequence
-      for (const key in this.events) {
-        this.events[key].sort((a, b) => a.sequence - b.sequence);
-      }
-      
       this.initialized = true;
+    },
+
+    /** ensure specific puzzle type and mode are loaded into memory */
+    async ensure_loaded(discriminator: string, mode: "freeplay" | "experiment"): Promise<void> {
+      const key = `${discriminator}-${mode}`;
+      if (key in this.events) return;
+
+      const events = await databaseManager.history.get_events(discriminator, mode);
+      this.events[key] = events;
+      this.next_sequence[key] = events.length > 0
+        ? Math.max(...events.map(e => e.sequence)) + 1
+        : 1;
     },
 
     /** adds a new event to history */
@@ -99,6 +92,7 @@ export const usePuzzleHistoryStore = defineStore("game.history", {
       // get experiment_id for experiment events
       const experiment_id = data.custom_data?.experiment_id;
       const discriminator = mode === "experiment" ? experiment_id : puzzle_type;
+      await this.ensure_loaded(discriminator, mode);
       const key = `${discriminator}-${mode}`;
       const sequence = this.next_sequence[key] || 1;
       const timestamp = Date.now();
