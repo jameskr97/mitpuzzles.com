@@ -11,6 +11,7 @@ import { defineStore } from "pinia";
 import { databaseManager } from "@/core/store/database";
 import { ref } from "vue";
 import { broadcast_channel_service } from "@/core/services/broadcast_channel.ts";
+import type { PuzzleDefinition } from "@/core/games/types/puzzle-types.ts";
 // GutterMarkings type for nonograms row/col completion tracking
 type GutterMarkings = Record<string, boolean>;
 import { createLogger } from "@/core/services/logger.ts";
@@ -36,6 +37,7 @@ setInterval(() => (CURRENT_TIME.value = Date.now()), UPDATE_INTERVAL_MS);
 
 interface PuzzleProgressState {
   initialized: boolean;
+  definitions: Record<string, PuzzleDefinition>; // active puzzle definitions
   timestamp_start: Record<string, number>; // when puzzle first presented
   timestamp_finish: Record<string, number>; // when submit is clicked
   current_puzzle_states: Record<string, number[][]>; // current board state
@@ -51,6 +53,7 @@ interface PuzzleProgressState {
 export const usePuzzleProgressStore = defineStore("puzzle.progress", {
   state: (): PuzzleProgressState => ({
     initialized: false,
+    definitions: {},
     timestamp_start: {},
     timestamp_finish: {},
     current_puzzle_states: {},
@@ -99,6 +102,18 @@ export const usePuzzleProgressStore = defineStore("puzzle.progress", {
         return formatted_time;
       },
 
+    /** gets the current puzzle definition for a puzzle type, or null if none */
+    get_definition:
+      (state) =>
+      <T = any>(puzzle_type: string): PuzzleDefinition<T> | null =>
+        (state.definitions[puzzle_type] as PuzzleDefinition<T>) ?? null,
+
+    /** gets the current puzzle id for a puzzle type, or null if none */
+    get_puzzle_id:
+      (state) =>
+      (puzzle_type: string): string | null =>
+        state.definitions[puzzle_type]?.id ?? null,
+
     /** checks if puzzle has been completed (has finish timestamp) */
     is_puzzle_solved:
       (s) =>
@@ -115,6 +130,7 @@ export const usePuzzleProgressStore = defineStore("puzzle.progress", {
       // for each puzzle, add relevant data to pinia store
       const all_progress = await databaseManager.progress.getAll();
       for (const game of all_progress) {
+        if (game.definition) this.definitions[game.id] = game.definition;
         if (game.timestamp_start) this.timestamp_start[game.id] = game.timestamp_start;
         if (game.timestamp_finish) this.timestamp_finish[game.id] = game.timestamp_finish;
         if (game.state) this.current_puzzle_states[game.id] = game.state;
@@ -124,6 +140,12 @@ export const usePuzzleProgressStore = defineStore("puzzle.progress", {
 
       this.setup_broadcast_listeners();
       this.initialized = true;
+    },
+
+    /** sets the active puzzle definition for a puzzle type */
+    set_definition(puzzle_type: string, definition: PuzzleDefinition) {
+      this.definitions[puzzle_type] = definition;
+      databaseManager.progress.update(puzzle_type, { definition: JSON.parse(JSON.stringify(definition)) });
     },
 
     /** saves current puzzle board state to memory and database */
@@ -310,6 +332,15 @@ export const usePuzzleProgressStore = defineStore("puzzle.progress", {
       this.broadcast_unsubscribers.push(
         broadcast_channel_service.subscribe('gutter_markings_reset', (message) => {
           delete this.gutter_markings[message.puzzle_type];
+        })
+      );
+
+      // listen for new puzzle loaded from other tabs
+      this.broadcast_unsubscribers.push(
+        broadcast_channel_service.subscribe('new_puzzle', (message) => {
+          this.definitions[message.puzzle_type] = message.data.puzzle_definition;
+          this.current_puzzle_states[message.puzzle_type] = message.data.puzzle_definition.initial_state;
+          delete this.used_tutorial[message.puzzle_type];
         })
       );
     },

@@ -11,7 +11,6 @@
 import { defineStore } from "pinia";
 import { databaseManager } from "@/core/store/database";
 import { usePuzzleProgressStore } from "@/core/store/puzzle/usePuzzleProgressStore.ts";
-import { getCurrentPuzzleID } from "@/core/store/puzzle/usePuzzleDefinitionStore.ts";
 import type { GameEvent, GameActionType } from "@/core/store/database/types.ts";
 import { createLogger } from "@/core/services/logger.ts";
 import { emitter } from "@/core/services/event-bus.ts";
@@ -158,7 +157,7 @@ export const usePuzzleHistoryStore = defineStore("game.history", {
       const progressStore = usePuzzleProgressStore();
 
       // Get puzzle info for the API call
-      const puzzle_id = getCurrentPuzzleID(puzzle_type);
+      const puzzle_id = progressStore.get_puzzle_id(puzzle_type);
       const start_timestamp = progressStore.timestamp_start[puzzle_type];
       const finish_timestamp = progressStore.timestamp_finish[puzzle_type];
       const final_board_state = progressStore.current_puzzle_states[puzzle_type];

@@ -16,12 +16,12 @@ import type { PuzzleVariant } from "@/core/types";
 import type { Ref } from "vue";
 
 export interface GameSessionServices<TMeta = any> {
-  definition: Ref<PuzzleDefinition<TMeta> | null>;
-  saved_board: Ref<number[][] | null>;
+  definition: Ref<PuzzleDefinition<TMeta> | null> | ComputedRef<PuzzleDefinition<TMeta> | null>;
+  saved_board: Ref<number[][] | null> | ComputedRef<number[][] | null>;
   is_solved: ComputedRef<boolean>;
   formatted_time: ComputedRef<string>;
   current_variant: Ref<PuzzleVariant>;
-  tutorial_used: Ref<boolean>;
+  tutorial_used: Ref<boolean> | ComputedRef<boolean>;
   mark_solved: () => Promise<void>;
   mark_tutorial_used: () => void;
   request_new_puzzle: () => Promise<PuzzleDefinition<TMeta> | null>;

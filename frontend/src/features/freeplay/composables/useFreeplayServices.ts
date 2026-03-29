@@ -1,5 +1,4 @@
-import { computed, ref, type Ref, type ComputedRef, onUnmounted } from "vue";
-import { getCurrentPuzzleID, setCurrentPuzzleID } from "@/core/store/puzzle/usePuzzleDefinitionStore.ts";
+import { computed, ref, type Ref, type ComputedRef } from "vue";
 import { usePuzzleMetadataStore } from "@/core/store/puzzle/usePuzzleMetadataStore.ts";
 import { usePuzzleProgressStore } from "@/core/store/puzzle/usePuzzleProgressStore.ts";
 import { usePuzzleHistoryStore } from "@/core/store/puzzle/usePuzzleHistoryStore.ts";
@@ -13,10 +12,10 @@ import { emitter } from "@/core/services/event-bus.ts";
 
 export interface FreeplayServicesReturn<TMeta = any> {
   /** Current puzzle definition (null if error loading) */
-  definition: Ref<PuzzleDefinition<TMeta> | null>;
+  definition: ComputedRef<PuzzleDefinition<TMeta> | null>;
 
   /** Saved board state (null if starting fresh) */
-  saved_board: Ref<number[][] | null>;
+  saved_board: ComputedRef<number[][] | null>;
 
   /** current variant */
   current_variant: Ref<PuzzleVariant>;
@@ -25,7 +24,7 @@ export interface FreeplayServicesReturn<TMeta = any> {
   is_solved: ComputedRef<boolean>;
 
   /** Whether tutorial was used */
-  tutorial_used: Ref<boolean>;
+  tutorial_used: ComputedRef<boolean>;
 
   /** Formatted time string */
   formatted_time: ComputedRef<string>;
@@ -63,11 +62,6 @@ export async function useFreeplayServices<TMeta = any>(
   const metadata_store = usePuzzleMetadataStore();
   const progress_store = usePuzzleProgressStore();
   const history_store = usePuzzleHistoryStore();
-  // register lifecycle hooks before any await
-  const broadcast_unsubscribers: (() => void)[] = [];
-  onUnmounted(() => {
-    broadcast_unsubscribers.forEach((fn) => fn());
-  });
 
   // fetch a new puzzle: request next ID, then fetch definition
   async function fetch_new_puzzle<T>(puzzle_type: string, variant: PuzzleVariant): Promise<PuzzleDefinition<T> | null> {
@@ -78,8 +72,6 @@ export async function useFreeplayServices<TMeta = any>(
       capture_error("next_puzzle_failed", idError, { puzzle_type, variant });
       return null;
     }
-
-    setCurrentPuzzleID(puzzle_type, idData.puzzle_id);
 
     const { data: defData, error: defError } = await api.GET("/api/puzzle/definition/{puzzle_id}", {
       params: { path: { puzzle_id: idData.puzzle_id } },
@@ -101,15 +93,8 @@ export async function useFreeplayServices<TMeta = any>(
   const progress_key = computed(() => puzzle_type);
   const error = ref<string | null>(null);
 
-  // load puzzle definition — try existing from localStorage, otherwise fetch new
-  let puzzle_definition: PuzzleDefinition<TMeta> | null = null;
-  const existing_id = getCurrentPuzzleID(puzzle_type);
-  if (existing_id) {
-    const { data } = await api.GET("/api/puzzle/definition/{puzzle_id}", {
-      params: { path: { puzzle_id: existing_id } },
-    });
-    if (data) puzzle_definition = data as PuzzleDefinition<TMeta>;
-  }
+  // load puzzle definition — try existing from progress store, otherwise fetch new
+  let puzzle_definition = progress_store.get_definition<TMeta>(puzzle_type);
   if (!puzzle_definition) {
     puzzle_definition = await fetch_new_puzzle<TMeta>(puzzle_type, current_variant.value);
   }
@@ -125,64 +110,21 @@ export async function useFreeplayServices<TMeta = any>(
     };
     current_variant.value = actual_variant;
     metadata_store.set_selected_variant(puzzle_type, actual_variant);
+    progress_store.set_definition(puzzle_type, puzzle_definition);
   }
 
-  const definition = ref<PuzzleDefinition<TMeta> | null>(puzzle_definition);
+  // read state from progress store — single source of truth
+  const definition = computed(() => (progress_store.definitions[puzzle_type] ?? null) as PuzzleDefinition<TMeta> | null);
+  const saved_board = computed(() => progress_store.current_puzzle_states[progress_key.value] ?? null);
+  const tutorial_used = computed(() => progress_store.used_tutorial[puzzle_type] ?? false);
 
-  // Get saved board state using the current progress key
-  const saved_board = ref<number[][] | null>(
-    progress_store.current_puzzle_states[progress_key.value] ?? null
-  );
-
-  // Tutorial tracking
-  const tutorial_used = ref(
-    progress_store.used_tutorial[puzzle_type] ?? false
-  );
-
-  // Initialize progress if first load
-  if (!progress_store.timestamp_start[progress_key.value] && saved_board.value === null && definition.value) {
+  // initialize progress if first load
+  if (!progress_store.timestamp_start[progress_key.value] && !saved_board.value && definition.value) {
     await progress_store.reset_puzzle(progress_key.value, definition.value.initial_state);
   }
 
-  // Computed state using dynamic progress key
   const is_solved = computed(() => progress_store.is_puzzle_solved(progress_key.value));
   const formatted_time = computed(() => progress_store.get_formatted_time(progress_key.value));
-
-  // setup broadcast listeners for cross-tab sync
-
-  broadcast_unsubscribers.push(
-    broadcast_channel_service.subscribe("game_state_update", (message) => {
-      if (message.puzzle_type === puzzle_type) {
-        saved_board.value = message.data.board_state;
-      }
-    })
-  );
-
-  broadcast_unsubscribers.push(
-    broadcast_channel_service.subscribe("game_reset", (message) => {
-      if (message.puzzle_type === puzzle_type) {
-        saved_board.value = message.data.initial_state;
-      }
-    })
-  );
-
-  broadcast_unsubscribers.push(
-    broadcast_channel_service.subscribe("new_puzzle", (message) => {
-      if (message.puzzle_type === puzzle_type) {
-        definition.value = message.data.puzzle_definition;
-        saved_board.value = null;
-        tutorial_used.value = false;
-      }
-    })
-  );
-
-  broadcast_unsubscribers.push(
-    broadcast_channel_service.subscribe("tutorial_used", (message) => {
-      if (message.puzzle_type === puzzle_type) {
-        tutorial_used.value = true;
-      }
-    })
-  );
 
   /**
    * request a new puzzle
@@ -209,9 +151,7 @@ export async function useFreeplayServices<TMeta = any>(
     }
 
     error.value = null;
-    definition.value = new_definition;
-    saved_board.value = null;
-    tutorial_used.value = false;
+    progress_store.set_definition(puzzle_type, new_definition);
 
     await history_store.clear_events(puzzle_type, "freeplay");
     await progress_store.reset_puzzle(puzzle_type, new_definition.initial_state);
@@ -236,25 +176,16 @@ export async function useFreeplayServices<TMeta = any>(
    */
   async function reset_progress(initial_board: number[][]): Promise<void> {
     await progress_store.reset_puzzle(progress_key.value, initial_board);
-    saved_board.value = initial_board;
   }
 
-  /**
-   * Mark tutorial as used
-   */
   function mark_tutorial_used(): void {
     if (!tutorial_used.value) {
-      tutorial_used.value = true;
       progress_store.mark_tutorial_used(progress_key.value);
     }
   }
 
-  /**
-   * Save board state
-   */
   async function save_board_state(board: number[][]): Promise<void> {
     await progress_store.update_puzzle_state(progress_key.value, board);
-    saved_board.value = board;
   }
 
   /**

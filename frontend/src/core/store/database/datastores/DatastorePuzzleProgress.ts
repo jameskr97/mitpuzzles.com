@@ -3,6 +3,7 @@ import type { DatabaseConnection } from "@/core/store/database/core/DatabaseConn
 
 interface PuzzleProgressData {
   id: string;
+  definition: any | null;
   used_tutorial: boolean;
   timestamp_start: number | null;
   timestamp_finish: number | null;
@@ -26,6 +27,7 @@ export class DatastorePuzzleProgress extends BaseRepository<PuzzleProgressData> 
       lastUpdated: Date.now(),
 
       // set defaults here
+      definition: null,
       timestamp_start: null,
       timestamp_finish: null,
       state: null,

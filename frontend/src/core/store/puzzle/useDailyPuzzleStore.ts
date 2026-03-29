@@ -8,7 +8,7 @@
 
 import { defineStore } from "pinia";
 import { api } from "@/core/services/client";
-import { setCurrentPuzzleID, getCurrentPuzzleID } from "@/core/store/puzzle/usePuzzleDefinitionStore";
+import { usePuzzleProgressStore } from "@/core/store/puzzle/usePuzzleProgressStore";
 import { ACTIVE_GAMES } from "@/constants";
 import type { PuzzleDefinition } from "@/core/games/types/puzzle-types";
 import type { DailyTodayResponse, LeaderboardEntry } from "@/core/types";
@@ -25,7 +25,6 @@ const DAILY_DATE_KEY = "mitlogic.daily_date";
 export const useDailyPuzzleStore = defineStore("puzzle.daily", {
   state: () => ({
     daily: null as DailyTodayResponse | null,
-    definition: null as PuzzleDefinition | null,
     leaderboard: [] as LeaderboardEntry[],
     loading: false,
     error: null as string | null,
@@ -37,7 +36,11 @@ export const useDailyPuzzleStore = defineStore("puzzle.daily", {
     puzzle_type: (state) => state.daily?.puzzle.puzzle_type ?? null,
     game_entry: (state) => state.daily ? ACTIVE_GAMES[state.daily.puzzle.puzzle_type] ?? null : null,
     component: (state) => state.daily ? ACTIVE_GAMES[state.daily.puzzle.puzzle_type]?.component ?? null : null,
-    preview_state: (state) => state.definition ? { definition: state.definition, board: state.definition.initial_state } : null,
+    definition: () => usePuzzleProgressStore().get_definition(DAILY_KEY),
+    preview_state() {
+      const def = this.definition;
+      return def ? { definition: def, board: def.initial_state } : null;
+    },
   },
 
   actions: {
@@ -59,15 +62,14 @@ export const useDailyPuzzleStore = defineStore("puzzle.daily", {
         }
 
         // check if the date or puzzle changed — clear old progress
+        const progress_store = usePuzzleProgressStore();
         const stored_date = localStorage.getItem(DAILY_DATE_KEY);
-        const current_id = getCurrentPuzzleID(DAILY_KEY);
+        const current_id = progress_store.get_puzzle_id(DAILY_KEY);
 
         if (stored_date !== data.date || current_id !== data.puzzle.puzzle_id) {
           emitter.emit("daily:clear-progress", { key: DAILY_KEY });
         }
 
-        // set puzzle ID so useFreeplayServices("daily") picks it up
-        setCurrentPuzzleID(DAILY_KEY, data.puzzle.puzzle_id);
         localStorage.setItem(DAILY_DATE_KEY, data.date);
 
         this.daily = data;
@@ -77,7 +79,7 @@ export const useDailyPuzzleStore = defineStore("puzzle.daily", {
           params: { path: { puzzle_id: data.puzzle.puzzle_id } },
         });
         if (def_data) {
-          this.definition = def_data as PuzzleDefinition;
+          progress_store.set_definition(DAILY_KEY, def_data as PuzzleDefinition);
         }
       } catch (e) {
         this.error = "failed to fetch daily puzzle";
@@ -99,7 +101,6 @@ export const useDailyPuzzleStore = defineStore("puzzle.daily", {
     async refresh() {
       this.initialized = false;
       this.daily = null;
-      this.definition = null;
       this.leaderboard = [];
       await this.init();
     },
