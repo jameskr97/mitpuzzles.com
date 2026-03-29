@@ -17,6 +17,7 @@ const props = defineProps<{
     definition: { rows: number; cols: number; initial_state: number[][] };
     bridges?: HashiBridge[];
     island_bridge_counts?: Map<string, number>;
+    tutorial_mode?: boolean;
   };
 }>();
 
@@ -218,6 +219,7 @@ const cell_renderer = computed((): CellRenderer => {
   const current_bridges = cell_bridges.value;
   const current_islands = islands.value;
   const current_counts = island_bridge_counts.value;
+  const tutorial_mode = props.state.tutorial_mode ?? false;
   const current_drag = drag_state;
   const all_bridges = bridges.value;
 
@@ -334,14 +336,14 @@ const cell_renderer = computed((): CellRenderer => {
 
       if (is_drag_source) { ctx.strokeStyle = current_theme.selectBorder || "#4f46e5"; ctx.lineWidth = 3; }
       else if (is_drag_dest) { ctx.strokeStyle = current_theme.targetBorder || "#f59e0b"; ctx.lineWidth = 3; }
-      else if (is_satisfied) { ctx.strokeStyle = current_theme.hint; ctx.lineWidth = 3; }
+      else if (is_satisfied && tutorial_mode) { ctx.strokeStyle = current_theme.hint; ctx.lineWidth = 3; }
       else { ctx.strokeStyle = current_theme.text; ctx.lineWidth = 2; }
       ctx.stroke();
 
       let text_color: string;
       if (is_drag_source) text_color = current_theme.selectBorder || "#4f46e5";
       else if (is_drag_dest) text_color = current_theme.targetBorder || "#f59e0b";
-      else if (is_satisfied) text_color = current_theme.hint;
+      else if (is_satisfied && tutorial_mode) text_color = current_theme.hint;
       else text_color = current_theme.text;
 
       r.textCentered(cell, island_count.toString(), { color: text_color, sizeFactor: 0.45, offsetY: 1 });

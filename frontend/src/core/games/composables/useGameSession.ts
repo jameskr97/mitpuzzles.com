@@ -7,7 +7,7 @@
  * is injected via the services config.
  */
 
-import type { GridGameReturn } from "@/core/games/types/game-return.ts";
+import type { BaseGameReturn } from "@/core/games/types/game-return.ts";
 import { computed, type ComputedRef, ref, shallowRef, type ShallowRef, watch } from "vue";
 import type { PuzzleDefinition } from "@/core/games/types/puzzle-types.ts";
 import { type DataRecorderReturn, useDataRecorder } from "@/core/games/composables/useDataRecorder.ts";
@@ -28,14 +28,19 @@ export interface GameSessionServices<TMeta = any> {
   start_game?: () => Promise<void>;
 }
 
-export interface GameSessionConfig<TReturn extends GridGameReturn<TMeta>, TMeta = any> {
+export interface GameSessionConfig<TReturn extends BaseGameReturn<TMeta>, TMeta = any> {
   puzzle_type: string;
   services: GameSessionServices<TMeta>;
-  create_game: (definition: PuzzleDefinition<TMeta>, saved_board: number[][] | null) => TReturn;
-  extra_puzzle_state?: (game: TReturn) => Record<string, any>;
+  create_game: (definition: PuzzleDefinition<TMeta>, saved_state: number[][] | null) => TReturn;
+  // returns the state to persist (grid games: board, hashi: serialized bridges)
+  get_saveable_state: (game: TReturn) => number[][];
+  // returns the full state object for the canvas component
+  get_puzzle_state: (game: TReturn, solved: boolean) => Record<string, any>;
+  // optional: returns rule violations for tutorial mode
+  get_violations?: (game: TReturn) => { rule_name: string; locations?: { row: number; col: number }[] }[];
 }
 
-export interface GameSessionReturn<TReturn extends GridGameReturn> {
+export interface GameSessionReturn<TReturn extends BaseGameReturn> {
   game: ShallowRef<TReturn>;
   recorder: DataRecorderReturn;
   controller: GameController;
@@ -45,10 +50,10 @@ export interface GameSessionReturn<TReturn extends GridGameReturn> {
   on_cell_leave: (row: number, col: number, zone: string) => void;
 }
 
-export function useGameSession<TReturn extends GridGameReturn<TMeta>, TMeta = any>(
+export function useGameSession<TReturn extends BaseGameReturn<TMeta>, TMeta = any>(
   config: GameSessionConfig<TReturn, TMeta>
 ): GameSessionReturn<TReturn> {
-  const { puzzle_type, services, create_game, extra_puzzle_state } = config;
+  const { puzzle_type, services, create_game, get_saveable_state, get_puzzle_state, get_violations } = config;
 
   const game = shallowRef<TReturn>(create_game(services.definition.value!, services.saved_board.value));
 
@@ -66,8 +71,10 @@ export function useGameSession<TReturn extends GridGameReturn<TMeta>, TMeta = an
     animate_failure: false,
   });
 
-  // watch violations, and change activation state depending on tutorial mode
-  const violations = computed(() => (ui.value.tutorial_mode ? game.value.get_violations() : []));
+  // watch violations for tutorial mode (only if game supports it)
+  const violations = computed(() =>
+    (ui.value.tutorial_mode && get_violations) ? get_violations(game.value) : []
+  );
   watch(
     () => ui.value.tutorial_mode,
     (is_on) => {
@@ -108,11 +115,11 @@ export function useGameSession<TReturn extends GridGameReturn<TMeta>, TMeta = an
   }
 
   function clear_puzzle() {
-    const old_board = JSON.parse(JSON.stringify(game.value.board.value));
+    const old_state = JSON.parse(JSON.stringify(get_saveable_state(game.value)));
     game.value.clear();
-    const new_board = JSON.parse(JSON.stringify(game.value.board.value));
-    recorder.record_clear(old_board, new_board);
-    recorder.save_board_state(new_board);
+    const new_state = JSON.parse(JSON.stringify(get_saveable_state(game.value)));
+    recorder.record_clear(old_state, new_state);
+    recorder.save_board_state(new_state);
     ui.value.show_solved_state = false;
   }
 
@@ -146,24 +153,7 @@ export function useGameSession<TReturn extends GridGameReturn<TMeta>, TMeta = an
     start_game: services.start_game,
   };
 
-  const puzzle_state = computed(() => {
-    const base: Record<string, any> = {
-      definition: game.value.definition,
-      board: game.value.board.value,
-      solved: services.is_solved.value,
-      violations: violations.value,
-    };
-
-    if (game.value.immutable_cells) {
-      base.immutable_cells = game.value.immutable_cells.value;
-    }
-
-    if (extra_puzzle_state) {
-      Object.assign(base, extra_puzzle_state(game.value));
-    }
-
-    return base;
-  });
+  const puzzle_state = computed(() => get_puzzle_state(game.value, services.is_solved.value));
 
   const canvas_key = computed(
     () => `${game.value.definition.id}-${game.value.definition.rows}-${game.value.definition.cols}`,

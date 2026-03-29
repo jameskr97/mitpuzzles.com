@@ -20,6 +20,17 @@ export async function useFreeplayGame<TReturn extends GridGameReturn<TMeta>, TMe
     puzzle_type: config.puzzle_type,
     services,
     create_game: config.create_game,
-    extra_puzzle_state: config.extra_puzzle_state,
+    get_saveable_state: (game) => game.board.value,
+    get_puzzle_state: (game, solved) => {
+      const base: Record<string, any> = {
+        definition: game.definition,
+        board: game.board.value,
+        solved,
+      };
+      if (game.immutable_cells) base.immutable_cells = game.immutable_cells.value;
+      if (config.extra_puzzle_state) Object.assign(base, config.extra_puzzle_state(game));
+      return base;
+    },
+    get_violations: (game) => game.get_violations(),
   });
 }
