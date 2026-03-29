@@ -1,6 +1,20 @@
 import { defineStore } from "pinia";
 import { api } from "@/core/services/client";
 import type { LeaderboardEntry, LeaderboardResponse } from "@/core/types";
+import { emitter } from "@/core/services/event-bus.ts";
+
+
+emitter.on("puzzle:solved:freeplay", async ({ puzzle_type, variant }) => {
+  const store = usePuzzleLeaderboardStore();
+  const { size, difficulty } = variant;
+  const periods = ["weekly", "monthly", "all_time"];
+  const methods = ["best", "ao_n"];
+  await Promise.all(
+    periods.flatMap((period) => methods.map((method) =>
+        store.refreshLeaderboard(puzzle_type, size, difficulty ?? "", period, method)),
+    ),
+  );
+});
 
 type LeaderboardKey = `${string}:${string}:${string}:${string}:${string}`;
 

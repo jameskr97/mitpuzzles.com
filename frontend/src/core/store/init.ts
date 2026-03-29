@@ -6,6 +6,7 @@ import { usePuzzleProgressStore } from "@/core/store/puzzle/usePuzzleProgressSto
 import { usePuzzleHistoryStore } from "@/core/store/puzzle/usePuzzleHistoryStore.ts";
 import { usePuzzleScaleStore } from "@/core/store/puzzle/usePuzzleScaleStore.ts";
 import { useDailyPuzzleStore } from "@/core/store/puzzle/useDailyPuzzleStore.ts";
+import { usePuzzleLeaderboardStore } from "@/core/store/puzzle/usePuzzleLeaderboardStore.ts";
 
 export function init_app_store() {
   const app_store = useAppStore();

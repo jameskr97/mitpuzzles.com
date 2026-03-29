@@ -11,6 +11,7 @@ import { usePuzzleProgressStore } from "@/core/store/puzzle/usePuzzleProgressSto
 import { usePuzzleHistoryStore } from "@/core/store/puzzle/usePuzzleHistoryStore";
 import type { GameSessionServices } from "@/core/games/composables";
 import type { PuzzleVariant } from "@/core/types";
+import { emitter } from "@/core/services/event-bus.ts";
 
 const DAILY_KEY = "daily";
 
@@ -40,8 +41,8 @@ export function useDailyServices<TMeta = any>(): GameSessionServices<TMeta> {
   const formatted_time = computed(() => progress_store.get_formatted_time(DAILY_KEY));
 
   const current_variant = ref<PuzzleVariant>({
-    size: daily_store.daily?.puzzle_size ?? "",
-    difficulty: daily_store.daily?.puzzle_difficulty ?? null,
+    size: daily_store.daily?.puzzle.puzzle_size ?? "",
+    difficulty: daily_store.daily?.puzzle.puzzle_difficulty ?? null,
   });
 
   const tutorial_used = ref(progress_store.used_tutorial[DAILY_KEY] ?? false);
@@ -58,7 +59,7 @@ export function useDailyServices<TMeta = any>(): GameSessionServices<TMeta> {
           credentials: "include",
           body: JSON.stringify(payload),
         });
-        await daily_store.refreshLeaderboard();
+        emitter.emit("puzzle:solved:daily", { date: daily_store.daily.date });
       } catch (err) {
         console.error("failed to submit daily attempt:", err);
       }

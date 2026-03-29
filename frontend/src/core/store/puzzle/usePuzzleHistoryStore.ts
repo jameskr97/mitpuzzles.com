@@ -14,7 +14,20 @@ import { usePuzzleProgressStore } from "@/core/store/puzzle/usePuzzleProgressSto
 import { getCurrentPuzzleID } from "@/core/store/puzzle/usePuzzleDefinitionStore.ts";
 import type { GameEvent, GameActionType } from "@/core/store/database/types.ts";
 import { createLogger } from "@/core/services/logger.ts";
+import { emitter } from "@/core/services/event-bus.ts";
 const log = createLogger("puzzle_history");
+
+emitter.on("daily:clear-progress", async ({ key }) => {
+  const store = usePuzzleHistoryStore();
+  await store.clear_events(key, "freeplay");
+});
+
+emitter.on("puzzle:visibility-changed", async ({ puzzle_type, mode, visible }) => {
+  const store = usePuzzleHistoryStore();
+  const action_type = visible ? "puzzle_visible" : "puzzle_not_visible";
+  log("visibility event recorded:", {puzzle_type, action_type, mode, visible});
+  await store.add_event(puzzle_type, mode, action_type, {});
+});
 
 interface HistoryState {
   events: Record<string, GameEvent[]>; // key: puzzle_type-mode or experiment_id-mode

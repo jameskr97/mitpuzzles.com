@@ -13,9 +13,20 @@ import { ref } from "vue";
 import { broadcast_channel_service } from "@/core/services/broadcast_channel.ts";
 // GutterMarkings type for nonograms row/col completion tracking
 type GutterMarkings = Record<string, boolean>;
-import { usePuzzleHistoryStore } from "@/core/store/puzzle/usePuzzleHistoryStore.ts";
 import { createLogger } from "@/core/services/logger.ts";
+import { emitter } from "@/core/services/event-bus.ts";
 const log = createLogger("puzzle_progress");
+
+// events
+emitter.on("daily:clear-progress", async ({ key }) => {
+  const store = usePuzzleProgressStore();
+  delete store.timestamp_start[key];
+  delete store.timestamp_finish[key];
+  delete store.current_puzzle_states[key];
+  delete store.used_tutorial[key];
+  delete store.gutter_markings[key];
+  await databaseManager.progress.delete(key);
+});
 
 // constants + types
 type Precision = "seconds" | "centiseconds";
@@ -211,13 +222,8 @@ export const usePuzzleProgressStore = defineStore("puzzle.progress", {
         this.setup_visibility_listener();
       }
 
-      // record initial state
-      const history_store = usePuzzleHistoryStore();
-      if (!document.hidden) {
-        await history_store.add_event(puzzle_type, mode, "puzzle_visible", {});
-      } else {
-        await history_store.add_event(puzzle_type, mode, "puzzle_not_visible", {});
-      }
+      // record initial visibility state
+      emitter.emit("puzzle:visibility-changed", { puzzle_type, mode, visible: !document.hidden });
     },
 
     /** stops tracking page visibility for a puzzle */
@@ -226,10 +232,9 @@ export const usePuzzleProgressStore = defineStore("puzzle.progress", {
         return;
       }
 
-      // record final state if currently visible
+      // record final visibility state
       if (!document.hidden) {
-        const history_store = usePuzzleHistoryStore();
-        await history_store.add_event(puzzle_type, mode, "puzzle_not_visible", {});
+        emitter.emit("puzzle:visibility-changed", { puzzle_type, mode, visible: false });
       }
 
       this.tracked_puzzles.delete(puzzle_type);
@@ -243,14 +248,10 @@ export const usePuzzleProgressStore = defineStore("puzzle.progress", {
 
     /** sets up the page visibility API listener */
     setup_visibility_listener() {
-      const handle_visibility_change = async () => {
-        const history_store = usePuzzleHistoryStore();
+      const handle_visibility_change = () => {
         const is_visible = !document.hidden;
-
-        // record event for all tracked puzzles
         for (const puzzle_type of this.tracked_puzzles) {
-          const action_type = is_visible ? "puzzle_visible" : "puzzle_not_visible";
-          await history_store.add_event(puzzle_type, "freeplay", action_type, {});
+          emitter.emit("puzzle:visibility-changed", { puzzle_type, mode: "freeplay", visible: is_visible });
         }
       };
 

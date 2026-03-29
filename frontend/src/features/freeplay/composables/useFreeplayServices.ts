@@ -2,7 +2,6 @@ import { computed, ref, type Ref, type ComputedRef, onUnmounted } from "vue";
 import { getCurrentPuzzleID, setCurrentPuzzleID } from "@/core/store/puzzle/usePuzzleDefinitionStore.ts";
 import { usePuzzleMetadataStore } from "@/core/store/puzzle/usePuzzleMetadataStore.ts";
 import { usePuzzleProgressStore } from "@/core/store/puzzle/usePuzzleProgressStore.ts";
-import { usePuzzleLeaderboardStore } from "@/core/store/puzzle/usePuzzleLeaderboardStore.ts";
 import { usePuzzleHistoryStore } from "@/core/store/puzzle/usePuzzleHistoryStore.ts";
 import { useSessionTrackingStore } from "@/core/store/useSessionTrackingStore.ts";
 import { broadcast_channel_service } from "@/core/services/broadcast_channel.ts";
@@ -10,6 +9,7 @@ import { api } from "@/core/services/client";
 import { capture_error } from "@/core/services/posthog.ts";
 import type { PuzzleDefinition } from "@/core/games/types/puzzle-types.ts";
 import type { PuzzleVariant } from "@/core/types";
+import { emitter } from "@/core/services/event-bus.ts";
 
 export interface FreeplayServicesReturn<TMeta = any> {
   /** Current puzzle definition (null if error loading) */
@@ -62,7 +62,6 @@ export async function useFreeplayServices<TMeta = any>(
   const session_store = useSessionTrackingStore();
   const metadata_store = usePuzzleMetadataStore();
   const progress_store = usePuzzleProgressStore();
-  const leaderboard_store = usePuzzleLeaderboardStore();
   const history_store = usePuzzleHistoryStore();
   // register lifecycle hooks before any await
   const broadcast_unsubscribers: (() => void)[] = [];
@@ -229,15 +228,7 @@ export async function useFreeplayServices<TMeta = any>(
     const pk = progress_key.value;
     await progress_store.mark_puzzle_solved(pk);
     await history_store.upload_attempt_history(pk, "freeplay");
-
-    const { size, difficulty } = current_variant.value;
-    const periods = ["weekly", "monthly", "all_time"];
-    const methods = ["best", "ao_n"];
-    await Promise.all(
-      periods.flatMap(period => methods.map(method =>
-        leaderboard_store.refreshLeaderboard(puzzle_type, size, difficulty ?? "", period, method)
-      ))
-    );
+    emitter.emit("puzzle:solved:freeplay", { puzzle_type, variant: current_variant.value });
   }
 
   /**

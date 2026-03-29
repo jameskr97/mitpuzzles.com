@@ -6,6 +6,7 @@ export type PuzzleDefinitionBase = components["schemas"]["PuzzleDefinitionRespon
 export type PuzzleVariant = components["schemas"]["PuzzleVariant"];
 export type LeaderboardEntry = components["schemas"]["LeaderboardEntryResponse"];
 export type LeaderboardResponse = components["schemas"]["LeaderboardResponse"];
+export type DailyTodayResponse = components["schemas"]["DailyTodayResponse"]
 // auth
 export type User = components["schemas"]["UserRead"];
 export type RegisterPayload = components["schemas"]["UserCreate"];
