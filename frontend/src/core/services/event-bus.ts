@@ -22,6 +22,6 @@ export type EventMap = {
 export const emitter = mitt<EventMap>();
 
 const log = createLogger("event-bus")
-emitter.on('*', (event) => {
-  log("event: ", event)
-})
+// emitter.on('*', (event, payload) => {
+//   log(event, payload)
+// })

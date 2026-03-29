@@ -7,7 +7,8 @@
  *
  * Games provide their own rendering via the default slot.
  */
-import { computed, provide, ref } from "vue";
+import { computed, onUnmounted, provide, ref } from "vue";
+import { emitter } from "@/core/services/event-bus";
 import { Button } from "@/core/components/ui/button";
 import type { GameController, GameDefinition } from "@/core/games/types/game-controller";
 import Container from "@/core/components/ui/Container.vue";
@@ -40,6 +41,13 @@ const game_title = computed(() => puzzle_type.charAt(0).toUpperCase() + puzzle_t
 // Provide controller and layout for child components
 provide("game-controller", props.controller);
 provide("game-layout", layout);
+
+// track puzzle visibility at route level
+const progress_key = is_daily ? "daily" : puzzle_type;
+emitter.emit("puzzle:visibility-changed", { puzzle_type: progress_key, mode: "freeplay", visible: true });
+onUnmounted(() => {
+  emitter.emit("puzzle:visibility-changed", { puzzle_type: progress_key, mode: "freeplay", visible: false });
+});
 
 // start gate — if controller has start_game and timer hasn't begun, require explicit start
 const progress_store = usePuzzleProgressStore();
