@@ -38,7 +38,7 @@ function serialize_bridges(game: HashiGameReturn): number[][] {
 
 const services = mode === "daily"
   ? useDailyServices<HashiMeta>()
-  : await useFreeplayServices<HashiMeta>(puzzle_type);
+  : await useFreeplayServices<HashiMeta>(puzzle_type, { starting_state: [] });
 
 const session = useGameSession({
   puzzle_type: mode === "daily" ? "daily" : puzzle_type,

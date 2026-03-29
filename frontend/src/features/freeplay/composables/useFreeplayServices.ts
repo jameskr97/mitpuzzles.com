@@ -55,7 +55,8 @@ export interface FreeplayServicesReturn<TMeta = any> {
  * Initialize freeplay services for a puzzle type
  */
 export async function useFreeplayServices<TMeta = any>(
-  puzzle_type: string
+  puzzle_type: string,
+  options?: { starting_state?: number[][] }
 ): Promise<FreeplayServicesReturn<TMeta>> {
   // Initialize stores
   const session_store = useSessionTrackingStore();
@@ -120,7 +121,7 @@ export async function useFreeplayServices<TMeta = any>(
 
   // initialize progress if first load
   if (!progress_store.timestamp_start[progress_key.value] && !saved_board.value && definition.value) {
-    await progress_store.reset_puzzle(progress_key.value, definition.value.initial_state);
+    await progress_store.reset_puzzle(progress_key.value, options?.starting_state ?? definition.value.initial_state);
   }
 
   const is_solved = computed(() => progress_store.is_puzzle_solved(progress_key.value));
@@ -154,7 +155,7 @@ export async function useFreeplayServices<TMeta = any>(
     progress_store.set_definition(puzzle_type, new_definition);
 
     await history_store.clear_events(puzzle_type, "freeplay");
-    await progress_store.reset_puzzle(puzzle_type, new_definition.initial_state);
+    await progress_store.reset_puzzle(puzzle_type, options?.starting_state ?? new_definition.initial_state);
 
     broadcast_channel_service.broadcast_new_puzzle(puzzle_type, new_definition);
 

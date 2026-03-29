@@ -159,12 +159,10 @@ export const usePuzzleProgressStore = defineStore("puzzle.progress", {
       }
     },
 
-    /** resets puzzle - clears progress, sets new start time, saves initial state */
-    async reset_puzzle(puzzle_type: string, initial_state: number[][]) {
-      await databaseManager.progress.delete(puzzle_type);
-
+    /** resets puzzle - clears progress, sets new start time, saves state */
+    async reset_puzzle(puzzle_type: string, starting_state: number[][]) {
       this.timestamp_start[puzzle_type] = Date.now();
-      this.current_puzzle_states[puzzle_type] = initial_state;
+      this.current_puzzle_states[puzzle_type] = starting_state;
       delete this.timestamp_finish[puzzle_type]; // if not present, puzzle is in progress
       delete this.used_tutorial[puzzle_type]; // reset tutorial usage
       delete this.gutter_markings[puzzle_type]; // reset gutter markings
@@ -172,11 +170,11 @@ export const usePuzzleProgressStore = defineStore("puzzle.progress", {
       await databaseManager.progress.update(puzzle_type, {
         timestamp_start: this.timestamp_start[puzzle_type],
         timestamp_finish: null,
-        state: JSON.parse(JSON.stringify(initial_state)),
+        state: JSON.parse(JSON.stringify(starting_state)),
         used_tutorial: false,
         gutter_markings: null,
       });
-      broadcast_channel_service.broadcast_game_reset(puzzle_type, initial_state);
+      broadcast_channel_service.broadcast_game_reset(puzzle_type, starting_state);
 
       // start tracking visibility for this puzzle
       await this.start_visibility_tracking(puzzle_type, "freeplay");
