@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import GameLayout from "@/features/freeplay/GameLayout.vue";
 import NorinoriCanvas from "./NorinoriCanvas.vue";
-import { useFreeplayGame } from "@/features/freeplay/composables/useFreeplayGame.ts";
 import { useNorinoriGame, type NorinoriMeta } from "./useNorinoriGame";
-import { useCellDragHandlers } from "@/core/games/composables";
+import { useCellDragHandlers, useGameForMode } from "@/core/games/composables";
 
-const freeplay = await useFreeplayGame<ReturnType<typeof useNorinoriGame>, NorinoriMeta>({
+const freeplay = await useGameForMode<ReturnType<typeof useNorinoriGame>, NorinoriMeta>({
   puzzle_type: "norinori",
   create_game: useNorinoriGame,
 });

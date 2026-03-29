@@ -7,15 +7,22 @@ import uuid
 from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from itertools import groupby
+
 from app.modules.puzzle.models import (
     Puzzle,
     FreeplayPuzzleAttempt,
     DailyPuzzleAttempt,
+    PuzzleShown,
 )
 from app.modules.puzzle.utils import format_duration
 from app.modules.authentication import User
 
 LEADERBOARD_TOP_N_AVERAGE = 3
+AO3_CACHE_TTL_SECONDS = 60
+
+# in-memory cache: key → (timestamp, result)
+_ao3_cache: Dict[str, tuple[float, Dict[str, Any]]] = {}
 
 
 class LeaderboardService:
@@ -35,9 +42,7 @@ class LeaderboardService:
     ) -> Dict[str, Any]:
         """get leaderboard using single best time per user."""
         cutoff = _time_cutoff(time_period)
-
         base_conditions = _freeplay_base_conditions(puzzle_type, puzzle_size, puzzle_difficulty, cutoff)
-
         completion_time = (FreeplayPuzzleAttempt.timestamp_finish - FreeplayPuzzleAttempt.timestamp_start) / 1000.0
 
         # subquery: best time per user
@@ -94,50 +99,101 @@ class LeaderboardService:
         user=None,
         time_period: str = "all_time",
     ) -> Dict[str, Any]:
-        """get leaderboard using average of best N times. users need >= N solves to appear."""
+        """leaderboard using best sliding window of N consecutive assignments.
+
+        walks the puzzle_shown (assignment) log in chronological order.
+        a window of N consecutive assignments only counts if all N were solved.
+        the user's score is the lowest mean from any valid window.
+        results are cached in-memory for AO3_CACHE_TTL_SECONDS.
+        """
+        import time
+        cache_key = f"{puzzle_type}:{puzzle_size}:{puzzle_difficulty}:{time_period}:{limit}"
+        now = time.monotonic()
+        if cache_key in _ao3_cache:
+            cached_at, cached_result = _ao3_cache[cache_key]
+            if now - cached_at < AO3_CACHE_TTL_SECONDS:
+                # re-tag current user on cached data
+                return _retag_current_user(cached_result, user)
         n = LEADERBOARD_TOP_N_AVERAGE
         cutoff = _time_cutoff(time_period)
 
-        base_conditions = _freeplay_base_conditions(puzzle_type, puzzle_size, puzzle_difficulty, cutoff)
         completion_time = (FreeplayPuzzleAttempt.timestamp_finish - FreeplayPuzzleAttempt.timestamp_start) / 1000.0
 
-        # rank each user's solves by time
-        ranked = (
-            select(
-                FreeplayPuzzleAttempt.user_id,
-                completion_time.label("completion_time_seconds"),
-                func.row_number()
-                .over(partition_by=FreeplayPuzzleAttempt.user_id, order_by=completion_time.asc())
-                .label("rn"),
-            )
-            .join(Puzzle, FreeplayPuzzleAttempt.puzzle_id == Puzzle.id)
-            .where(and_(*base_conditions))
-            .subquery()
-        )
-
-        # average of top N, only for users with >= N solves
-        avg_subquery = (
-            select(
-                ranked.c.user_id,
-                func.avg(ranked.c.completion_time_seconds).label("avg_time_seconds"),
-            )
-            .where(ranked.c.rn <= n)
-            .group_by(ranked.c.user_id)
-            .having(func.count() >= n)
-            .subquery()
-        )
+        # fetch the assignment log with solve times (null if not solved)
+        conditions = [
+            PuzzleShown.user_id.is_not(None),
+            Puzzle.puzzle_type == puzzle_type,
+            Puzzle.puzzle_size == puzzle_size,
+            Puzzle.puzzle_difficulty == puzzle_difficulty,
+        ]
+        if cutoff:
+            conditions.append(PuzzleShown.shown_at >= cutoff)
 
         query = (
             select(
-                avg_subquery.c.user_id,
-                avg_subquery.c.avg_time_seconds.label("completion_time_seconds"),
-                User.username,
+                PuzzleShown.user_id,
+                # null if no attempt or not solved
+                completion_time.label("duration"),
             )
-            .join(User, avg_subquery.c.user_id == User.id)
-            .order_by(avg_subquery.c.avg_time_seconds.asc())
+            .join(Puzzle, PuzzleShown.puzzle_id == Puzzle.id)
+            .outerjoin(
+                FreeplayPuzzleAttempt,
+                and_(
+                    PuzzleShown.attempt_id == FreeplayPuzzleAttempt.id,
+                    FreeplayPuzzleAttempt.is_solved == True,
+                    FreeplayPuzzleAttempt.used_tutorial == False,
+                    FreeplayPuzzleAttempt.timestamp_finish.is_not(None),
+                    FreeplayPuzzleAttempt.timestamp_start.is_not(None),
+                ),
+            )
+            .where(and_(*conditions))
+            .order_by(PuzzleShown.user_id, PuzzleShown.shown_at.asc())
         )
 
-        all_rows = (await self.db.execute(query)).all()
+        rows = (await self.db.execute(query)).all()
+
+        # slide window of N across each user's assignment sequence
+        user_best: dict[uuid.UUID, float] = {}
+        for uid, group in groupby(rows, key=lambda r: r.user_id):
+            # each entry is (user_id, duration_or_none)
+            durations = [r.duration for r in group]
+            if len(durations) < n:
+                continue
+            best = None
+            for i in range(len(durations) - n + 1):
+                window = durations[i:i + n]
+                # all N must be solved (non-null)
+                if any(d is None for d in window):
+                    continue
+                mean = sum(window) / n
+                if best is None or mean < best:
+                    best = mean
+            if best is not None:
+                user_best[uid] = best
+
+        if not user_best:
+            return _build_leaderboard_response([], limit, user)
+
+        # fetch usernames
+        username_rows = (await self.db.execute(
+            select(User.id, User.username).where(User.id.in_(user_best.keys()))
+        )).all()
+        usernames = {row.id: row.username for row in username_rows}
+
+        # build sorted result rows matching the interface _build_leaderboard_response expects
+        sorted_users = sorted(user_best.items(), key=lambda x: x[1])
+
+        class Row:
+            def __init__(self, user_id, completion_time_seconds, username):
+                self.user_id = user_id
+                self.completion_time_seconds = completion_time_seconds
+                self.username = username
+
+        all_rows = [
+            Row(uid, t, usernames.get(uid, "???"))
+            for uid, t in sorted_users
+        ]
+
         return _build_leaderboard_response(all_rows, limit, user)
 
     async def get_daily_leaderboard(
@@ -148,7 +204,6 @@ class LeaderboardService:
     ) -> Dict[str, Any]:
         """get leaderboard for a specific daily puzzle."""
         completion_time = (FreeplayPuzzleAttempt.timestamp_finish - FreeplayPuzzleAttempt.timestamp_start) / 1000.0
-
         best_times = (
             select(
                 DailyPuzzleAttempt.user_id,
@@ -178,9 +233,6 @@ class LeaderboardService:
 
         all_rows = (await self.db.execute(query)).all()
         return _build_leaderboard_response(all_rows, limit, user)
-
-
-# --- shared helpers ---
 
 
 def _time_cutoff(time_period: str) -> Optional[datetime]:

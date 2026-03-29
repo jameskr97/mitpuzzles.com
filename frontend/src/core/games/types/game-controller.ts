@@ -63,4 +63,7 @@ export interface GameController {
   check_solution: () => Promise<boolean>;
   clear_puzzle: () => void;
   request_new_puzzle: () => Promise<void>;
+
+  // optional — if present, game requires explicit start (e.g. daily)
+  start_game?: () => Promise<void>;
 }

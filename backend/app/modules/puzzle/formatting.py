@@ -30,6 +30,8 @@ def format_puzzle_for_frontend(puzzle) -> Dict[str, Any]:
     return {
         "id": puzzle.id,
         "puzzle_type": puzzle.puzzle_type,
+        "puzzle_size": puzzle.puzzle_size,
+        "puzzle_difficulty": puzzle.puzzle_difficulty,
         "rows": puzzle_data["rows"],
         "cols": puzzle_data["cols"],
         "initial_state": puzzle_data["initial_state"],

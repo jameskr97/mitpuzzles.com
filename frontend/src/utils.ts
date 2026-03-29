@@ -59,7 +59,7 @@ export function create_admin_tool(
 /** Simplifies resetting all of localStorage and IndexedDB through a version variable. */
 export class StorageVersionManager {
   // Change this to current date when updating the storage version
-  private static readonly VERSION = "2025-12-05";
+  private static readonly VERSION = "2026-03-28";
   private static readonly INDEXEDDB_NAME = "mitpuzzles";
 
   static async clearOldStorage() {

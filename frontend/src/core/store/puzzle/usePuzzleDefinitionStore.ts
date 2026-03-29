@@ -1,5 +1,3 @@
-// localStorage helpers for tracking which puzzle is currently active per type
-
 export function getCurrentPuzzleID(puzzle_type: string): string | null {
   return localStorage.getItem(`mitlogic.${puzzle_type}.current_id`);
 }

@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import GameLayout from "@/features/freeplay/GameLayout.vue";
 import NonogramsCanvas from "./NonogramsCanvas.vue";
-import { useFreeplayGame } from "@/features/freeplay/composables/useFreeplayGame.ts";
 import { useNonogramsGame } from "./useNonogramsGame.ts";
-import { useCellDragHandlers } from "@/core/games/composables";
+import { useCellDragHandlers, useGameForMode } from "@/core/games/composables";
 
-const freeplay = await useFreeplayGame({
+const freeplay = await useGameForMode({
   puzzle_type: "nonograms",
   create_game: useNonogramsGame,
 });

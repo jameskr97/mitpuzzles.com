@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import GameLayout from "@/features/freeplay/GameLayout.vue";
 import MosaicCanvas from "./MosaicCanvas.vue";
-import { useFreeplayGame } from "@/features/freeplay/composables/useFreeplayGame.ts";
 import { useMosaicGame } from "./useMosaicGame";
-import { useCellDragHandlers } from "@/core/games/composables";
+import { useCellDragHandlers, useGameForMode } from "@/core/games/composables";
 
-const freeplay = await useFreeplayGame({
+const freeplay = await useGameForMode({
   puzzle_type: "mosaic",
   create_game: useMosaicGame,
 });

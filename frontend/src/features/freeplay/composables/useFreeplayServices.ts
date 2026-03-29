@@ -118,6 +118,16 @@ export async function useFreeplayServices<TMeta = any>(
     error.value = "No puzzles available for this game type. Please check back later.";
   }
 
+  // sync selected variant to match the actual loaded puzzle
+  if (puzzle_definition) {
+    const actual_variant: PuzzleVariant = {
+      size: puzzle_definition.puzzle_size,
+      difficulty: puzzle_definition.puzzle_difficulty ?? null,
+    };
+    current_variant.value = actual_variant;
+    metadata_store.set_selected_variant(puzzle_type, actual_variant);
+  }
+
   const definition = ref<PuzzleDefinition<TMeta> | null>(puzzle_definition);
 
   // Get saved board state using the current progress key

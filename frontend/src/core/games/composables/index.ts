@@ -26,6 +26,17 @@ export {
   type DataRecorderReturn,
 } from "./useDataRecorder.ts";
 
+// Game session orchestration (shared between freeplay + daily)
+export {
+  useGameSession,
+  type GameSessionServices,
+  type GameSessionConfig,
+  type GameSessionReturn,
+} from "./useGameSession.ts";
+
+// Mode dispatcher (freeplay vs daily)
+export { useGameForMode } from "./useGameForMode.ts";
+
 // Cell interaction patterns
 export { useCellDragHandlers } from "./useCellDragHandlers.ts";
 

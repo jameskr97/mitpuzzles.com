@@ -9,13 +9,17 @@ import { useAuthStore } from "@/core/store/useAuthStore.ts";
 import EmailVerificationBanner from "@/core/components/EmailVerificationBanner.vue";
 import DemographicBanner from "@/core/components/DemographicBanner.vue";
 import { Button } from "@/core/components/ui/button";
+import { useDailyPuzzleStore } from "@/core/store/puzzle/useDailyPuzzleStore.ts";
+import { computed } from "vue";
 
 const appStore = useAppStore();
 const authStore = useAuthStore();
+
+const dailyStore = useDailyPuzzleStore();
 </script>
 
 <template>
-  <div class="flex flex-col gap-2 ">
+  <div class="flex flex-col gap-2">
     <EmailVerificationBanner data-testid="banner-email-verify" />
     <DemographicBanner />
     <AlertEmailAlreadyVerified v-if="$route.query.alreadyVerified" data-testid="banner-email-already-verified" />
@@ -28,33 +32,41 @@ const authStore = useAuthStore();
       </div>
     </Container>
 
-    <Container v-if="!authStore.isAuthenticated" class="w-full justify-center text-lg font-semibold text-gray-700 mb-2 flex flex-col md:flex-row mx-auto items-center">
-        <span>{{ $t('home:track_progress_prompt') }}</span>
-        <div class="flex gap-2 ml-2">
-          <Button @click="appStore.open_login_modal()">
-            {{ $t('home:login_action') }}
+    <Container
+      v-if="!authStore.isAuthenticated"
+      class="w-full justify-center text-lg font-semibold text-gray-700 mb-2 flex flex-col md:flex-row mx-auto items-center"
+    >
+      <span>{{ $t("home:track_progress_prompt") }}</span>
+      <div class="flex gap-2 ml-2">
+        <Button @click="appStore.open_login_modal()">
+          {{ $t("home:login_action") }}
+        </Button>
+        <router-link :to="{ name: 'signup' }">
+          <Button>
+            {{ $t("home:signup_action") }}
           </Button>
-          <router-link :to="{ name: 'signup' }">
-            <Button>
-              {{ $t('home:signup_action') }}
-            </Button>
-          </router-link>
-        </div>
-    </Container>
-      <!-- Game Grid -->
-      <div class="w-full max-w-4xl mx-auto">
-        <div class="grid grid-cols-2 md:grid-cols-3 gap-2 rounded-xl">
-          <HomePuzzlePreview
-            v-for="game in ACTIVE_GAMES"
-            class="rounded"
-            :title="game.name"
-            :page="game.key"
-            :key="game.key"
-            :component="game.component"
-            :state="game.default"
-          />
-        </div>
+        </router-link>
       </div>
-
+    </Container>
+    <!-- Game Grid -->
+    <div class="w-full max-w-4xl mx-auto">
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-2 rounded-xl">
+        <HomePuzzlePreview
+          title="Daily Puzzle"
+          page="daily"
+        >
+          <span class="text-8xl">🗓️</span>
+        </HomePuzzlePreview>
+        <HomePuzzlePreview
+          v-for="game in ACTIVE_GAMES"
+          class="rounded"
+          :title="game.name"
+          :page="game.key"
+          :key="game.key"
+          :component="game.component"
+          :state="game.default"
+        />
+      </div>
     </div>
+  </div>
 </template>

@@ -39,12 +39,28 @@ const close_sidebar_on_mobile = () => {
     </SidebarHeader>
     <SidebarContent>
       <SidebarGroup>
-        <SidebarGroupLabel>{{ $t('ui:nav.games') }}</SidebarGroupLabel>
+        <SidebarGroupLabel>{{ $t("ui:nav.games") }}</SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip="Daily Puzzle">
+                <router-link
+                  :to="{ name: 'game-daily'}"
+                  class="text-xl"
+                  @click.capture="close_sidebar_on_mobile"
+                >
+                  <span>🗓</span>
+                  <span>Daily Puzzle</span>
+                </router-link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
             <SidebarMenuItem v-for="game in Object.values(ACTIVE_GAMES)" :key="game.key">
               <SidebarMenuButton asChild :tooltip="game.name">
-                <router-link :to="{ name: 'game-' + game.key }" class="text-xl" @click.capture="close_sidebar_on_mobile">
+                <router-link
+                  :to="{ name: 'game-' + game.key }"
+                  class="text-xl"
+                  @click.capture="close_sidebar_on_mobile"
+                >
                   <span>{{ game.icon }}</span>
                   <span>{{ game.name }}</span>
                 </router-link>
@@ -55,14 +71,19 @@ const close_sidebar_on_mobile = () => {
       </SidebarGroup>
 
       <SidebarGroup>
-        <SidebarGroupLabel>{{ $t('ui:nav.experiments') }}</SidebarGroupLabel>
+        <SidebarGroupLabel>{{ $t("ui:nav.experiments") }}</SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu>
             <SidebarMenuItem v-for="value in ACTIVE_EXPERIMENTS">
               <SidebarMenuButton asChild>
-                <router-link :to="'/experiment/' + value.key" :key="value.key" class="text-xl" @click="close_sidebar_on_mobile">
-                  <span>{{value.icon}}</span>
-                  <span>{{value.title}}</span>
+                <router-link
+                  :to="'/experiment/' + value.key"
+                  :key="value.key"
+                  class="text-xl"
+                  @click="close_sidebar_on_mobile"
+                >
+                  <span>{{ value.icon }}</span>
+                  <span>{{ value.title }}</span>
                 </router-link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -93,7 +114,7 @@ const close_sidebar_on_mobile = () => {
           <SidebarMenuButton asChild>
             <router-link :to="{ name: 'about-us' }" @click.capture="close_sidebar_on_mobile">
               <v-icon name="bi-info-circle-fill" />
-              {{ $t('ui:nav.about_us') }}
+              {{ $t("ui:nav.about_us") }}
             </router-link>
           </SidebarMenuButton>
 
@@ -101,22 +122,25 @@ const close_sidebar_on_mobile = () => {
           <AppFeedbackModal>
             <SidebarMenuButton>
               <v-icon name="md-feedback-outlined" />
-              {{ $t('ui:nav.feedback') }}
+              {{ $t("ui:nav.feedback") }}
             </SidebarMenuButton>
           </AppFeedbackModal>
 
           <SidebarMenuButton asChild>
             <router-link :to="{ name: 'privacy-policy' }" @click.capture="close_sidebar_on_mobile">
               <v-icon name="bi-shield-lock-fill" />
-              {{ $t('ui:nav.privacy_policy') }}
+              {{ $t("ui:nav.privacy_policy") }}
             </router-link>
           </SidebarMenuButton>
 
-
           <!-- Login Button -->
-          <SidebarMenuButton v-if="!user.isAuthenticated" data-testid="btn-open-login" @click="appStore.open_login_modal()">
+          <SidebarMenuButton
+            v-if="!user.isAuthenticated"
+            data-testid="btn-open-login"
+            @click="appStore.open_login_modal()"
+          >
             <v-icon name="fa-user" />
-            {{ $t('ui:action.login') }}
+            {{ $t("ui:action.login") }}
           </SidebarMenuButton>
           <AppSidebarUser v-else :user="user" />
         </SidebarMenu>

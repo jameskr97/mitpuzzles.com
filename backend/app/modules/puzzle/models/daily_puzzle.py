@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 import uuid
 
-from sqlalchemy import DateTime, UUID, text, ForeignKey, UniqueConstraint
+from sqlalchemy import DateTime, Index, UUID, text, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models import Base
@@ -16,6 +16,7 @@ class DailyPuzzle(Base):
     __tablename__ = "daily_puzzle"
     __table_args__ = (
         UniqueConstraint("puzzle_date", "puzzle_id", name="uq_daily_puzzle_date_puzzle"),
+        Index("idx_daily_puzzle_date", "puzzle_date"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(), primary_key=True, server_default=text("uuidv7()"))

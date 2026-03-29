@@ -1,5 +1,5 @@
 import { type Ref } from "vue";
-import type { PuzzleVariant } from "@/core/types";
+import type { PuzzleDefinitionBase, PuzzleVariant } from "@/core/types";
 
 export type GameZone = "game" | "topGutter" | "bottomGutter" | "leftGutter" | "rightGutter";
 export type Cell = { row: number; col: number; zone?: GameZone };
@@ -9,14 +9,7 @@ export interface RuleViolation {
   locations?: Array<{ row: number; col: number }>;
 }
 
-export interface PuzzleDefinition<T = {}> {
-  id: string;
-  puzzle_type: string;
-  rows: number;
-  cols: number;
-  initial_state: number[][];
-  solution?: number[][];
-  solution_hash?: string;
+export interface PuzzleDefinition<T = {}> extends Omit<PuzzleDefinitionBase, "meta"> {
   meta: T;
 }
 

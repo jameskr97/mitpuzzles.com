@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import GameLayout from "@/features/freeplay/GameLayout.vue";
 import TentsCanvas from "./TentsCanvas.vue";
-import { useFreeplayGame } from "@/features/freeplay/composables/useFreeplayGame.ts";
 import { useTentsGame, TentsCell } from "./useTentsGame";
-import { useCellDragHandlers } from "@/core/games/composables";
+import { useCellDragHandlers, useGameForMode } from "@/core/games/composables";
 import type { TentsMeta } from "@/core/games/types/puzzle-types.ts";
 
-const freeplay = await useFreeplayGame<ReturnType<typeof useTentsGame>, TentsMeta>({
+const freeplay = await useGameForMode<ReturnType<typeof useTentsGame>, TentsMeta>({
   puzzle_type: "tents",
   create_game: useTentsGame,
 });

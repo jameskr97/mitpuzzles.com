@@ -17,7 +17,7 @@ from app.modules.puzzle.schemas import (
     FreeplayAttemptCreate,
     LeaderboardResponse,
 )
-from app.modules.puzzle.services import PuzzleService, LeaderboardService
+from app.modules.puzzle.services import PuzzleService, LeaderboardService, UserStatsService
 from app.modules.puzzle.formatting import format_puzzle_for_frontend, format_puzzle_with_solution
 
 router = APIRouter()
@@ -193,3 +193,23 @@ async def get_freeplay_leaderboard(
         )
 
     return LeaderboardResponse.model_validate(data)
+
+
+@router.get("/freeplay/user-stats")
+async def get_user_stats(
+    db: AsyncDatabase,
+    user: User = Depends(fastapi_users.current_user()),
+    puzzle_type: Optional[str] = Query(None),
+):
+    """get personal puzzle stats for the authenticated user."""
+    return await UserStatsService(db).get_user_stats(user.id, puzzle_type=puzzle_type)
+
+
+@router.get("/freeplay/user-solve-history")
+async def get_user_solve_history(
+    db: AsyncDatabase,
+    user: User = Depends(fastapi_users.current_user()),
+    puzzle_type: Optional[str] = Query(None),
+):
+    """get individual solve times for graphing."""
+    return await UserStatsService(db).get_user_solve_history(user.id, puzzle_type=puzzle_type)

@@ -4,10 +4,10 @@ import GameLayout from "@/features/freeplay/GameLayout.vue";
 import SudokuCanvas from "./SudokuCanvas.vue";
 import SudokuNumberPad from "./SudokuNumberPad.vue";
 import Container from "@/core/components/ui/Container.vue";
-import { useFreeplayGame } from "@/features/freeplay/composables/useFreeplayGame.ts";
+import { useGameForMode } from "@/core/games/composables";
 import { useSudokuGame } from "./useSudokuGame";
 
-const freeplay = await useFreeplayGame({
+const freeplay = await useGameForMode({
   puzzle_type: "sudoku",
   create_game: useSudokuGame,
 });

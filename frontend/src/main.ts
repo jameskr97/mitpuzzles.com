@@ -50,13 +50,15 @@ if (import.meta.hot) {
   app.mount("#app");
 
   init_app_store();
-  init_session_tracking();
   init_puzzle_stores();
 
-  // following three lines must happen in this order (each dependent on the last)
+  // auth must complete before guards are set up
   await init_auth();
   setup_auth_guard(router);
   await check_initial_route(router);
+
+  // heartbeat/tracking is non-critical — run after everything else
+  init_session_tracking();
 
   // gate posthog behind privacy consent
   const appStore = useAppStore();

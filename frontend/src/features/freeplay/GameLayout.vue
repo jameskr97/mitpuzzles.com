@@ -7,10 +7,12 @@
  *
  * Games provide their own rendering via the default slot.
  */
-import { computed, provide } from "vue";
+import { computed, provide, ref } from "vue";
+import { Button } from "@/core/components/ui/button";
 import type { GameController, GameDefinition } from "@/core/games/types/game-controller";
 import Container from "@/core/components/ui/Container.vue";
 import { usePuzzleScaleStore } from "@/core/store/puzzle/usePuzzleScaleStore";
+import { usePuzzleProgressStore } from "@/core/store/puzzle/usePuzzleProgressStore";
 import { ACTIVE_GAMES } from "@/constants";
 import { useGameLayout } from "@/core/composables/useGameLayout";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/core/components/ui/dialog";
@@ -18,6 +20,7 @@ import GameLayoutControlbar from "./GameLayoutControlbar.vue";
 import GameLayoutStatusbar from "./GameLayoutStatusbar.vue";
 import GameLayoutInstructions from "./GameLayoutInstructions.vue";
 import GameLayoutLeaderboard from "./GameLayoutLeaderboard.vue";
+import DailyLeaderboard from "@/features/daily/DailyLeaderboard.vue";
 
 const props = defineProps<{
   controller: GameController;
@@ -28,13 +31,25 @@ const props = defineProps<{
 }>();
 
 const scale_store = usePuzzleScaleStore();
-const puzzle_type = props.controller.puzzle_type;
+const puzzle_type = props.definition.puzzle_type;
+const is_daily = props.controller.puzzle_type === "daily";
 const layout = useGameLayout();
 const game_entry = ACTIVE_GAMES[puzzle_type];
 const game_title = computed(() => puzzle_type.charAt(0).toUpperCase() + puzzle_type.slice(1));
 
 // Provide controller for child components
 provide("game-controller", props.controller);
+
+// start gate — if controller has start_game and timer hasn't begun, require explicit start
+const progress_store = usePuzzleProgressStore();
+const already_started = !!progress_store.timestamp_start[props.controller.puzzle_type];
+const game_started = ref(!props.controller.start_game || already_started);
+async function handle_start() {
+  if (props.controller.start_game) {
+    await props.controller.start_game();
+  }
+  game_started.value = true;
+}
 
 // Compute container width based on scale
 const container_width = computed(() => {
@@ -74,6 +89,20 @@ const container_width = computed(() => {
         </div>
       </Container>
 
+      <!-- start gate for daily -->
+      <Container
+        v-else-if="!game_started"
+        class="w-full max-w-full mx-auto flex flex-col items-center justify-center gap-4 py-20"
+        :style="container_width ? { width: container_width + 'px' } : {}"
+      >
+        <p class="text-gray-600 text-center">
+          {{ $t("daily:start_prompt", { puzzle_type: game_title }) }}
+        </p>
+        <Button size="lg" @click="handle_start">
+          {{ $t("ui:action.start") }}
+        </Button>
+      </Container>
+
       <!-- Game Content (provided by slot) -->
       <Container
         v-else
@@ -89,7 +118,7 @@ const container_width = computed(() => {
       </Container>
 
       <!-- Extra slot for game-specific controls (e.g., Sudoku number pad) -->
-      <slot name="controls" />
+      <slot v-if="game_started" name="controls" />
     </div>
 
     <!-- Right sidebar: Instructions + Leaderboard -->
@@ -99,7 +128,9 @@ const container_width = computed(() => {
         :definition="definition"
         class="w-full md:w-80 flex-shrink"
       />
+      <DailyLeaderboard v-if="is_daily" class="w-full md:w-80 flex-shrink" />
       <GameLayoutLeaderboard
+        v-else
         :puzzle_type="puzzle_type"
         :current_variant="controller.current_variant.value"
         class="w-full md:w-80 flex-shrink"

@@ -13,6 +13,7 @@ export const routes: RouteRecordRaw[] = [
   route.view("/about-us", "about-us", "AboutUs"),
   route.view("/privacy-policy", "privacy-policy", "privacy-policy"),
   route.view("/board2", "board2", "board2"),
+  route.view("/daily", "game-daily", "DailyPuzzle"),
   ...Object.keys(ACTIVE_GAMES).map(route.game),
   {
     path: "/experiment/:experiment_id",

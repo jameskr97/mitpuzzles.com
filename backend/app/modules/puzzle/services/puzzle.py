@@ -59,22 +59,24 @@ class PuzzleService:
 
     async def get_random_puzzle(
         self,
-        puzzle_type: str,
+        puzzle_type: Optional[str] = None,
         puzzle_size: Optional[str] = None,
         puzzle_difficulty: Optional[str] = None,
     ) -> Optional[Puzzle]:
         """get a random active puzzle matching the given criteria."""
-        query = select(Puzzle).where(Puzzle.puzzle_type == puzzle_type, Puzzle.is_active == True)
+        query = select(Puzzle).where(Puzzle.is_active == True)
+
+        if puzzle_type:
+            query = query.where(Puzzle.puzzle_type == puzzle_type)
+            if not puzzle_size:
+                query = query.where(Puzzle.puzzle_size == await self._smallest_size(puzzle_type))
+            query = self._apply_nonograms_filter(query, puzzle_type)
 
         if puzzle_size:
             query = query.where(Puzzle.puzzle_size == puzzle_size)
-        else:
-            query = query.where(Puzzle.puzzle_size == await self._smallest_size(puzzle_type))
-
         if puzzle_difficulty:
             query = query.where(Puzzle.puzzle_difficulty == puzzle_difficulty)
 
-        query = self._apply_nonograms_filter(query, puzzle_type)
         query = query.order_by(func.random())
         return await self.db.scalar(query)
 

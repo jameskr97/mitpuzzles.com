@@ -2,6 +2,7 @@
 import type { components } from "@/core/services/api";
 
 // puzzle
+export type PuzzleDefinitionBase = components["schemas"]["PuzzleDefinitionResponse"];
 export type PuzzleVariant = components["schemas"]["PuzzleVariant"];
 export type LeaderboardEntry = components["schemas"]["LeaderboardEntryResponse"];
 export type LeaderboardResponse = components["schemas"]["LeaderboardResponse"];

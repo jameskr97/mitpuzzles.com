@@ -5,6 +5,7 @@ import { usePuzzleMetadataStore } from "@/core/store/puzzle/usePuzzleMetadataSto
 import { usePuzzleProgressStore } from "@/core/store/puzzle/usePuzzleProgressStore.ts";
 import { usePuzzleHistoryStore } from "@/core/store/puzzle/usePuzzleHistoryStore.ts";
 import { usePuzzleScaleStore } from "@/core/store/puzzle/usePuzzleScaleStore.ts";
+import { useDailyPuzzleStore } from "@/core/store/puzzle/useDailyPuzzleStore.ts";
 
 export function init_app_store() {
   const app_store = useAppStore();
@@ -28,4 +29,5 @@ export function init_puzzle_stores() {
   usePuzzleProgressStore().init();
   usePuzzleMetadataStore().initializeStore();
   usePuzzleHistoryStore().init();
+  useDailyPuzzleStore().init();
 }

@@ -3,5 +3,6 @@
   "subtitle": "One puzzle per game, refreshed daily.",
   "play": "Play",
   "completed": "Completed",
-  "not_started": "Not Started"
+  "not_started": "Not Started",
+  "start_prompt": "Please review the rules before starting this {{puzzle_type}} game. Once you're ready, click the button below."
 }

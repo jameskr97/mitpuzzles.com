@@ -27,7 +27,8 @@ const props = defineProps<{
   controller: GameController;
 }>();
 
-const puzzle_type = props.controller.puzzle_type;
+const puzzle_type = props.controller.state.value.definition.puzzle_type;
+const is_daily = props.controller.puzzle_type === "daily";
 const scale_store = usePuzzleScaleStore();
 const metadata_store = usePuzzleMetadataStore();
 const history_store = usePuzzleHistoryStore();
@@ -99,10 +100,13 @@ function download_payload() {
         <span class="font-mono text-lg text-center w-full">{{ formatted_time }}</span>
       </div>
 
-      <!-- Buttons row -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 w-full gap-1 mt-2">
-        <!-- Difficulty dropdown -->
-        <DropdownMenu>
+      <!-- buttons row - if is daily, then only 2 buttons are shown. clear and submit -->
+      <div
+        class="grid grid-cols-2 w-full gap-1 mt-2"
+        :class="[!is_daily ? 'lg:grid-cols-4' : 'lg:grid-cols-2']"
+      >
+        <!-- Difficulty dropdown (hidden for daily) -->
+        <DropdownMenu v-if="!is_daily">
           <DropdownMenuTrigger>
             <Button class="w-full" variant="outline">
               <span>{{ $t("freeplay:control.difficulty") }}</span>
@@ -116,15 +120,12 @@ function download_payload() {
               @click="on_difficulty_select(variant)"
             >
               <span>{{ getPuzzleDisplayName(variant) }}</span>
-              <v-icon
-                name="bi-check"
-                v-if="metadata_store.doesMatchCurrentVariant(puzzle_type, variant)"
-              />
+              <v-icon name="bi-check" v-if="metadata_store.doesMatchCurrentVariant(puzzle_type, variant)" />
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <Button @click="controller.request_new_puzzle">
+        <Button v-if="!is_daily" @click="controller.request_new_puzzle">
           {{ $t("freeplay:control.new_puzzle") }}
         </Button>
 
@@ -138,11 +139,7 @@ function download_payload() {
         </Button>
 
         <!-- Submit button (becomes Download in dev mode when solved) -->
-        <Button
-          v-if="is_dev && controller.state.value.solved === true"
-          variant="outline"
-          @click="download_payload"
-        >
+        <Button v-if="is_dev && controller.state.value.solved === true" variant="outline" @click="download_payload">
           Download Payload
         </Button>
         <Button

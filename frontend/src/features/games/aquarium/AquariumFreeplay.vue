@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import GameLayout from "@/features/freeplay/GameLayout.vue";
 import AquariumCanvas from "./AquariumCanvas.vue";
-import { useFreeplayGame } from "@/features/freeplay/composables/useFreeplayGame.ts";
 import { useAquariumGame, AquariumCell, type AquariumMeta } from "./useAquariumGame";
-import { useCellDragHandlers } from "@/core/games/composables";
+import { useCellDragHandlers, useGameForMode } from "@/core/games/composables";
 
-const freeplay = await useFreeplayGame<ReturnType<typeof useAquariumGame>, AquariumMeta>({
+const freeplay = await useGameForMode<ReturnType<typeof useAquariumGame>, AquariumMeta>({
   puzzle_type: "aquarium",
   create_game: useAquariumGame,
 });

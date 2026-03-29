@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import GameLayout from "@/features/freeplay/GameLayout.vue";
 import KakurasuCanvas from "./KakurasuCanvas.vue";
-import { useFreeplayGame } from "@/features/freeplay/composables/useFreeplayGame.ts";
 import { useKakurasuGame, KakurasuCell } from "./useKakurasuGame";
-import { useCellDragHandlers } from "@/core/games/composables";
+import { useCellDragHandlers, useGameForMode } from "@/core/games/composables";
 import type { KakurasuMeta } from "@/core/games/types/puzzle-types.ts";
 
-const freeplay = await useFreeplayGame<ReturnType<typeof useKakurasuGame>, KakurasuMeta>({
+const freeplay = await useGameForMode<ReturnType<typeof useKakurasuGame>, KakurasuMeta>({
   puzzle_type: "kakurasu",
   create_game: useKakurasuGame,
 });

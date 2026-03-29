@@ -37,7 +37,8 @@
     "done": "Done",
     "sending": "Sending...",
     "saving": "Saving...",
-    "updating": "Updating..."
+    "updating": "Updating...",
+    "start": "Start"
   },
   "feedback": {
     "title": "Send us your feedback!",

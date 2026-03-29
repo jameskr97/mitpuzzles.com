@@ -42,6 +42,8 @@ class PuzzleDefinitionResponse(BaseModel):
 
     id: uuid.UUID
     puzzle_type: str
+    puzzle_size: str
+    puzzle_difficulty: Optional[str] = None
     rows: int
     cols: int
     initial_state: List[List[int]]
@@ -178,8 +180,10 @@ class PaginatedPuzzlesResponse(BaseModel):
 
 
 class DailyPuzzleStatus(BaseModel):
-    """status of a single daily puzzle for a user/device."""
+    """status of today's daily puzzle for a user/device."""
     puzzle_type: str
+    puzzle_size: str
+    puzzle_difficulty: Optional[str]
     puzzle_id: str
     daily_puzzle_id: str
     is_solved: bool
@@ -189,7 +193,7 @@ class DailyPuzzleStatus(BaseModel):
 class DailyTodayResponse(BaseModel):
     """response for today's daily puzzle status."""
     date: str
-    puzzles: List[DailyPuzzleStatus]
+    puzzle: DailyPuzzleStatus
 
 
 class PuzzleSubmitResponse(BaseModel):

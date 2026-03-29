@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import GameLayout from "@/features/freeplay/GameLayout.vue";
 import LightupCanvas from "./LightupCanvas.vue";
-import { useFreeplayGame } from "@/features/freeplay/composables/useFreeplayGame.ts";
 import { useLightupGame } from "./useLightupGame";
-import { useCellDragHandlers } from "@/core/games/composables";
+import { useCellDragHandlers, useGameForMode } from "@/core/games/composables";
 
-const freeplay = await useFreeplayGame({
+const freeplay = await useGameForMode({
   puzzle_type: "lightup",
   create_game: useLightupGame,
   extra_puzzle_state: (game) => ({ lit_cells: game.lit_cells.value }),
