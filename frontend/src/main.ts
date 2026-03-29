@@ -40,16 +40,14 @@ if (import.meta.hot) {
   log("Bootstrapping app...");
   register_pwa();
 
-
   const app = createApp(App)
     .use(createPinia())
     .use(router)
     .use(I18NextVue, { i18next })
     .component("v-icon", OhVueIcon);
   app.config.errorHandler = posthog_error_handler;
-  app.mount("#app");
 
-  init_app_store();
+  await init_app_store();
   init_puzzle_stores();
 
   // auth must complete before guards are set up
@@ -67,5 +65,7 @@ if (import.meta.hot) {
   } else {
     watch(() => appStore.has_consented, (v) => { if (v) init_posthog(app); }, { once: true });
   }
+
+  app.mount("#app");
 
 })();
