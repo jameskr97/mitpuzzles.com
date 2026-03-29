@@ -19,40 +19,41 @@ export const useAppStore = defineStore("mitlogic.appconfig", {
     needsCacheInvalidation: (state) => state.lastCacheVersion < CACHE_VERSION,
   },
   actions: {
-    open_login_modal() { this.login_modal_open = true; },
-    close_login_modal() { this.login_modal_open = false; },
+    open_login_modal() {
+      this.login_modal_open = true;
+    },
+    close_login_modal() {
+      this.login_modal_open = false;
+    },
 
-    updateDeviceFingerprint(retriesLeft = 3) {
-      (new Thumbmark()).get()
-        .then((thumbmark) => {
-          this.thumbmark = thumbmark;
-          return api.PUT("/api/device", { body: { thumbmark } });
-        })
-        .then(({ data }) => {
-          if (data) this.device_id = data.device_id;
-        })
-        .catch((error) => {
-          if (retriesLeft > 0) {
-            setTimeout(() => this.updateDeviceFingerprint(retriesLeft - 1), 3000);
-          } else {
-            capture_error("device_fingerprint_failed", error);
-          }
-        });
+    async updateDeviceFingerprint(retriesLeft = 3) {
+      try {
+        this.thumbmark = await new Thumbmark().get();
+        const { data, error } = await api.PUT("/api/device", { body: { thumbmark: this.thumbmark } });
+        if (error) throw error;
+        this.device_id = data.device_id;
+      } catch (error) {
+        if (retriesLeft > 0) {
+          setTimeout(() => this.updateDeviceFingerprint(retriesLeft - 1), 3000);
+        } else {
+          capture_error("device_fingerprint_failed", error);
+        }
+      }
     },
 
     async invalidateAllCaches() {
       // Clear Workbox-managed caches
       await Promise.all([
-        caches.delete('puzzle-catalog'),
-        caches.delete('puzzle-definitions'),
-        caches.delete('leaderboards'),
-        caches.delete('daily-definitions'),
-        caches.delete('daily-status'),
-        caches.delete('daily-leaderboards'),
+        caches.delete("puzzle-catalog"),
+        caches.delete("puzzle-definitions"),
+        caches.delete("leaderboards"),
+        caches.delete("daily-definitions"),
+        caches.delete("daily-status"),
+        caches.delete("daily-leaderboards"),
       ]);
 
       // Clear localStorage caches
-      localStorage.removeItem('mitlogic.puzzle.scales');
+      localStorage.removeItem("mitlogic.puzzle.scales");
 
       this.lastCacheVersion = CACHE_VERSION;
       localStorage.setItem(CACHE_STORAGE_KEY, CACHE_VERSION.toString());
@@ -62,18 +63,16 @@ export const useAppStore = defineStore("mitlogic.appconfig", {
       const storedVersion = localStorage.getItem(CACHE_STORAGE_KEY);
       this.lastCacheVersion = storedVersion ? parseInt(storedVersion) : 0;
 
-      if (this.lastCacheVersion < CACHE_VERSION)
-        this.invalidateAllCaches();
+      if (this.lastCacheVersion < CACHE_VERSION) this.invalidateAllCaches();
     },
 
     init_consent() {
-      this.has_consented = localStorage.getItem(CONSENT_STORAGE_KEY) === 'true';
+      this.has_consented = localStorage.getItem(CONSENT_STORAGE_KEY) === "true";
     },
 
     accept_consent() {
       this.has_consented = true;
-      localStorage.setItem(CONSENT_STORAGE_KEY, 'true');
+      localStorage.setItem(CONSENT_STORAGE_KEY, "true");
     },
-
   },
 });

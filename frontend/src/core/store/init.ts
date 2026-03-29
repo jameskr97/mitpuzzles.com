@@ -8,10 +8,10 @@ import { usePuzzleScaleStore } from "@/core/store/puzzle/usePuzzleScaleStore.ts"
 import { useDailyPuzzleStore } from "@/core/store/puzzle/useDailyPuzzleStore.ts";
 import { usePuzzleLeaderboardStore } from "@/core/store/puzzle/usePuzzleLeaderboardStore.ts";
 
-export function init_app_store() {
+export async function init_app_store() {
   const app_store = useAppStore();
   app_store.init_consent();
-  app_store.updateDeviceFingerprint();
+  await app_store.updateDeviceFingerprint();
   app_store.initCacheVersion();
 }
 
