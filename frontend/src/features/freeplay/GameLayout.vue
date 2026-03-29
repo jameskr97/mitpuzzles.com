@@ -33,12 +33,13 @@ const props = defineProps<{
 const scale_store = usePuzzleScaleStore();
 const puzzle_type = props.definition.puzzle_type;
 const is_daily = props.controller.puzzle_type === "daily";
-const layout = useGameLayout();
+const layout = useGameLayout(puzzle_type, { auto_show_instructions: !is_daily });
 const game_entry = ACTIVE_GAMES[puzzle_type];
 const game_title = computed(() => puzzle_type.charAt(0).toUpperCase() + puzzle_type.slice(1));
 
-// Provide controller for child components
+// Provide controller and layout for child components
 provide("game-controller", props.controller);
+provide("game-layout", layout);
 
 // start gate — if controller has start_game and timer hasn't begun, require explicit start
 const progress_store = usePuzzleProgressStore();

@@ -1,24 +1,28 @@
 import { defineStore } from "pinia";
 import { useLocalStorage } from "@vueuse/core";
-import { useRoute } from "vue-router";
 import { computed } from "vue";
 
-export function useGameLayout() {
-  const store = useGameLayoutStore();
-  const route = useRoute();
-  const game_type = route.meta.game_type as string;
+export type GameLayoutReturn = ReturnType<typeof useGameLayout>;
 
-  const isFirstVisit = computed(() => !store.hasVisitedGame(game_type));
+export function useGameLayout(puzzle_type: string, options?: { auto_show_instructions?: boolean }) {
+  const store = useGameLayoutStore();
+  const auto_show = options?.auto_show_instructions ?? true;
+
+  // has user ever seen instructions for this puzzle type?
+  const hasSeenInstructions = computed(() => store.hasVisitedGame(puzzle_type));
+
+  // auto-show on first visit only if auto_show is enabled (freeplay yes, daily no)
   const instructions_visible = computed({
-    get: () => isFirstVisit.value || store.booleanFor("instructions").value,
+    get: () => (auto_show && !hasSeenInstructions.value) || store.booleanFor("instructions", false).value,
     set: (value) => {
-      if (isFirstVisit.value && !value) {
-        // Mark this game as visited when closing instructions first time
-        store.markGameAsVisited(game_type);
+      if (!hasSeenInstructions.value) {
+        // opening or closing instructions marks this puzzle type as seen
+        store.markGameAsVisited(puzzle_type);
       }
-      store.booleanFor("instructions").value = value;
+      store.booleanFor("instructions", false).value = value;
     },
   });
+
   const leaderboard_visible = store.booleanFor("leaderboard");
 
   return {
@@ -26,7 +30,7 @@ export function useGameLayout() {
     leaderboard_visible,
     toggle_instructions: () => (instructions_visible.value = !instructions_visible.value),
     toggle_leaderboard: () => (leaderboard_visible.value = !leaderboard_visible.value),
-    isFirstVisit,
+    hasSeenInstructions,
   };
 }
 
@@ -34,9 +38,9 @@ export const useGameLayoutStore = defineStore("mitlogic.layout", () => {
   const store = useLocalStorage<Record<string, boolean>>("mitlogic.gamelayout", {});
   const visitedGames = useLocalStorage<Record<string, boolean>>("mitlogic.visited_games", {});
 
-  function booleanFor(flag: string) {
+  function booleanFor(flag: string, defaultValue = true) {
     return computed<boolean>({
-      get: () => store.value[flag] ?? true,
+      get: () => store.value[flag] ?? defaultValue,
       set: (v) => (store.value[flag] = v),
     });
   }

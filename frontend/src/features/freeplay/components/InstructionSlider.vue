@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, useSlots } from "vue";
-import { useGameLayout } from "@/core/composables/useGameLayout.ts";
+import { ref, computed, inject, onMounted, onUnmounted, useSlots } from "vue";
+import type { GameLayoutReturn } from "@/core/composables/useGameLayout";
 import { Button } from "@/core/components/ui/button";
 import ProgressBar from "@/core/components/ProgressBar.vue";
 
-const layout = useGameLayout();
+const layout = inject<GameLayoutReturn>("game-layout")!;
 const slots = useSlots();
 const current_step = ref(0);
 

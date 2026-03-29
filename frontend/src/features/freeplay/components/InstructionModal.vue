@@ -6,12 +6,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/core/components/ui/dialog";
-import { computed, type PropType } from "vue";
-import { useGameLayout } from "@/core/composables/useGameLayout.ts";
+import { computed, inject, type PropType } from "vue";
+import type { GameLayoutReturn } from "@/core/composables/useGameLayout";
 import { ACTIVE_GAMES } from "@/constants.ts";
 import type { PuzzleController } from "@/core/games/types/puzzle-types.ts";
 
-const layout = useGameLayout();
+const layout = inject<GameLayoutReturn>("game-layout")!;
 const props = defineProps({
   puzzle: { type: Object as PropType<PuzzleController>, required: true },
 });

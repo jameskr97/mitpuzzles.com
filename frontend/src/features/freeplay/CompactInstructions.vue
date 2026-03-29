@@ -1,15 +1,14 @@
 <script setup lang="ts">
 import { ACTIVE_GAMES } from "@/constants.ts";
-import { type PropType, ref } from "vue";
+import { type PropType, ref, inject } from "vue";
 import type { PuzzleController } from "@/core/games/types/puzzle-types.ts";
+import type { GameLayoutReturn } from "@/core/composables/useGameLayout";
 import Container from "@/core/components/ui/Container.vue";
 import { Separator } from "@/core/components/ui/separator";
 import { InstructionModal } from "@/features/freeplay/components";
-import { useGameLayout } from "@/core/composables/useGameLayout.ts";
-
 
 const is_game_rules_open = ref(true);
-const layout = useGameLayout()
+const layout = inject<GameLayoutReturn>("game-layout")!
 
 const props = defineProps({
   puzzle: { type: Object as PropType<PuzzleController>, required: true },

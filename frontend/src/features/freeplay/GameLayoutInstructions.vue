@@ -4,12 +4,12 @@
  *
  * Works with the new GameController interface.
  */
-import { ref } from "vue";
+import { ref, inject } from "vue";
 import type { GameDefinition } from "@/core/games/types/game-controller";
+import type { GameLayoutReturn } from "@/core/composables/useGameLayout";
 import { ACTIVE_GAMES } from "@/constants";
 import Container from "@/core/components/ui/Container.vue";
 import { Separator } from "@/core/components/ui/separator";
-import { useGameLayout } from "@/core/composables/useGameLayout";
 
 const props = defineProps<{
   puzzle_type: string;
@@ -17,7 +17,7 @@ const props = defineProps<{
 }>();
 
 const is_rules_open = ref(true);
-const layout = useGameLayout();
+const layout = inject<GameLayoutReturn>("game-layout")!;
 const game_entry = ACTIVE_GAMES[props.puzzle_type];
 </script>
 
