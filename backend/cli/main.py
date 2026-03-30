@@ -11,12 +11,14 @@ from app.dependencies import async_session_maker
 from app.modules.experiments import ExperimentRun
 from app.modules.puzzle import Puzzle
 from cli.puzzle_importer import app as puzzle_app
+from cli.activity import app as activity_app
 
 app = typer.Typer(name="app-cli", help="MIT Puzzles CLI", no_args_is_help=True)
 console = Console()
 
-# Add puzzle subcommands
+# Add subcommands
 app.add_typer(puzzle_app, name="puzzle", help="Puzzle import and management commands")
+app.add_typer(activity_app, name="activity", help="User activity management commands")
 
 
 def _ensure_path_exists(path: str):

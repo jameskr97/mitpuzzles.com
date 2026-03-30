@@ -19,7 +19,7 @@ from app.dependencies import async_session_maker
 from app.modules.puzzle import Puzzle, PuzzlePriority
 from cli.normalizer import PuzzleNormalizer
 
-app = typer.Typer(name="puzzle-import", help="Puzzle import and update commands")
+app = typer.Typer(name="puzzle-import", help="Puzzle import and update commands", no_args_is_help=True)
 console = Console()
 
 

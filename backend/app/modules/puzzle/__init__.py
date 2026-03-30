@@ -6,6 +6,7 @@ from app.modules.puzzle.models import (
     PuzzleShown,
     DailyPuzzle,
     DailyPuzzleAttempt,
+    UserActivityDaily,
 )
 
 __all__ = [
@@ -16,5 +17,6 @@ __all__ = [
     "PuzzleShown",
     "DailyPuzzle",
     "DailyPuzzleAttempt",
+    "UserActivityDaily",
 ]
 

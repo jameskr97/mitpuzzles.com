@@ -8,7 +8,7 @@ from sqlalchemy import select, func, case, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.modules.puzzle.models import Puzzle, FreeplayPuzzleAttempt, DailyPuzzle, DailyPuzzleAttempt, PuzzleShown
+from app.modules.puzzle.models import Puzzle, FreeplayPuzzleAttempt, DailyPuzzle, DailyPuzzleAttempt, PuzzleShown, UserActivityDaily
 from app.modules.puzzle.utils import format_duration
 
 
@@ -299,63 +299,45 @@ class UserStatsService:
             for pt, points in by_type.items()
         ]
 
-    async def _get_activity_feed(self, user_id: uuid.UUID, days: int = 7) -> List[Dict[str, Any]]:
-        """get recent activity grouped by day."""
-        duration_expr = (
-            FreeplayPuzzleAttempt.timestamp_finish - FreeplayPuzzleAttempt.timestamp_start
-        ) / 1000.0
-
-        cutoff_ms = int((datetime.utcnow() - timedelta(days=days)).timestamp() * 1000)
-
-        query = (
-            select(
-                Puzzle.puzzle_type,
-                FreeplayPuzzleAttempt.is_solved,
-                FreeplayPuzzleAttempt.timestamp_finish,
-                duration_expr.label("duration"),
-            )
-            .join(Puzzle, FreeplayPuzzleAttempt.puzzle_id == Puzzle.id)
-            .where(
-                FreeplayPuzzleAttempt.user_id == user_id,
-                FreeplayPuzzleAttempt.timestamp_finish.is_not(None),
-                FreeplayPuzzleAttempt.timestamp_finish > cutoff_ms,
-            )
-            .order_by(FreeplayPuzzleAttempt.timestamp_finish.desc())
-        )
-        result = await self.db.execute(query)
-        rows = result.all()
-
-        from collections import defaultdict
-        days_map: Dict[str, Dict[str, Dict[str, Any]]] = defaultdict(lambda: defaultdict(lambda: {"count": 0, "best": None}))
-
-        for row in rows:
-            ts = row.timestamp_finish
-            if isinstance(ts, (int, float)):
-                date_str = datetime.utcfromtimestamp(ts / 1000).strftime("%Y-%m-%d")
-            else:
-                date_str = str(ts)[:10]
-
-            if row.is_solved:
-                entry = days_map[date_str][row.puzzle_type]
-                entry["count"] += 1
-                if row.duration and (entry["best"] is None or row.duration < entry["best"]):
-                    entry["best"] = row.duration
-
+    async def _get_activity_feed(self, user_id: uuid.UUID, limit: int = 90) -> List[Dict[str, Any]]:
+        """get recent activity from the pre-computed user_activity_daily table."""
         ICONS = {
             "sudoku": "🔢", "nonograms": "🏁", "minesweeper": "💣",
-            "lightup": "��", "hashi": "🌉", "mosaic": "🧩",
+            "lightup": "💡", "hashi": "🌉", "mosaic": "🧩",
             "tents": "⛺", "aquarium": "🐠", "kakurasu": "⬛",
         }
 
+        query = (
+            select(UserActivityDaily)
+            .where(UserActivityDaily.user_id == user_id)
+            .order_by(UserActivityDaily.activity_date.desc())
+            .limit(limit)
+        )
+        result = await self.db.execute(query)
+        rows = result.scalars().all()
+
         feed = []
-        for date_str in sorted(days_map.keys(), reverse=True):
+        for row in rows:
             entries = []
-            for pt, data in days_map[date_str].items():
-                icon = ICONS.get(pt, "🧩")
-                text = f"Solved {data['count']} {pt.capitalize()} puzzle{'s' if data['count'] != 1 else ''}"
-                detail = f"best: {format_duration(data['best'])}" if data["best"] else None
-                entries.append({"icon": icon, "text": text, "detail": detail})
-            feed.append({"date": date_str, "entries": entries})
+            data = row.data or {}
+
+            for pt, stats in (data.get("puzzles") or {}).items():
+                solved = stats.get("solved", 0)
+                if solved > 0:
+                    icon = ICONS.get(pt, "🧩")
+                    text = f"Solved {solved} {pt.capitalize()} puzzle{'s' if solved != 1 else ''}"
+                    detail = f"best: {format_duration(stats['best_time'])}" if stats.get("best_time") else None
+                    entries.append({"icon": icon, "text": text, "detail": detail})
+
+            daily = data.get("daily")
+            if daily and daily.get("solved"):
+                detail = f"{format_duration(daily['time'])}" if daily.get("time") else None
+                if daily.get("rank"):
+                    detail = f"{detail} — #{daily['rank']} on leaderboard" if detail else f"#{daily['rank']} on leaderboard"
+                entries.append({"icon": "🗓️", "text": "Completed daily puzzle", "detail": detail})
+
+            if entries:
+                feed.append({"date": str(row.activity_date), "entries": entries})
 
         return feed
 
