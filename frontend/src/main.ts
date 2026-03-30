@@ -48,7 +48,7 @@ if (import.meta.hot) {
   app.config.errorHandler = posthog_error_handler;
 
   await init_app_store();
-  init_puzzle_stores();
+  await init_puzzle_stores();
 
   // auth must complete before guards are set up
   await init_auth();

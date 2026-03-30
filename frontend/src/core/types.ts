@@ -11,5 +11,9 @@ export type DailyTodayResponse = components["schemas"]["DailyTodayResponse"]
 export type User = components["schemas"]["UserRead"];
 export type RegisterPayload = components["schemas"]["UserCreate"];
 
+// playback
+export type PlaybackFrame = components["schemas"]["PlaybackFrame"];
+export type AttemptPlaybackResponse = components["schemas"]["AttemptPlaybackResponse"];
+
 // tracking
 export type HeartbeatPayload = components["schemas"]["HeartbeatRequest"];

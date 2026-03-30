@@ -25,10 +25,10 @@ export async function init_auth() {
   await auth_store.initializeAuth();
 }
 
-export function init_puzzle_stores() {
+export async function init_puzzle_stores() {
   usePuzzleScaleStore().init();
   usePuzzleProgressStore().init();
-  usePuzzleMetadataStore().initializeStore();
+  await usePuzzleMetadataStore().initializeStore();
   usePuzzleHistoryStore().init();
   useDailyPuzzleStore().init();
 }
