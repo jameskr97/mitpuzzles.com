@@ -14,10 +14,10 @@ function format_activity_date(iso: string): string {
 </script>
 
 <template>
-  <Container>
-    <div class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Activity</div>
+  <Container class="flex flex-col overflow-hidden">
+    <div class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 shrink-0">Activity</div>
     <div v-if="activity.length === 0" class="text-sm text-gray-400 text-center py-4">no recent activity</div>
-    <div v-else class="flex flex-col gap-3">
+    <div v-else class="flex flex-col gap-3 overflow-y-auto min-h-0">
       <div v-for="day in activity" :key="day.date">
         <div class="text-xs font-semibold text-amber-700 mb-1">{{ format_activity_date(day.date) }}</div>
         <div class="flex flex-col gap-1.5">

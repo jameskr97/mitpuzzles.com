@@ -17,3 +17,7 @@ export type AttemptPlaybackResponse = components["schemas"]["AttemptPlaybackResp
 
 // tracking
 export type HeartbeatPayload = components["schemas"]["HeartbeatRequest"];
+
+// news
+export type NewsPost = components["schemas"]["NewsPostResponse"];
+export type NewsFeedResponse = components["schemas"]["NewsFeedResponse"];

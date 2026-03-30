@@ -11,10 +11,10 @@ import DemographicBanner from "@/core/components/DemographicBanner.vue";
 import { Button } from "@/core/components/ui/button";
 import { useDailyPuzzleStore } from "@/core/store/puzzle/useDailyPuzzleStore.ts";
 import { computed } from "vue";
+import NewsFeed from "@/core/components/NewsFeed.vue";
+import CreateAccountCTA from "@/core/components/alert/CreateAccountCTA.vue";
 
-const appStore = useAppStore();
 const authStore = useAuthStore();
-
 const dailyStore = useDailyPuzzleStore();
 </script>
 
@@ -24,49 +24,37 @@ const dailyStore = useDailyPuzzleStore();
     <DemographicBanner />
     <AlertEmailAlreadyVerified v-if="$route.query.alreadyVerified" data-testid="banner-email-already-verified" />
     <AlertEmailVerifiySuccess v-if="$route.query.verified" data-testid="banner-email-successfully-verified" />
-    <Container class="grid grid-cols-1">
-      <div class="flex flex-col">
-        <div class="text-lg">
-          <p class="text-center" v-html="$t('home:welcome_message')"></p>
+    <CreateAccountCTA v-if="!authStore.isAuthenticated" />
+
+    <!-- 2-column homepage   -->
+    <div class="w-full grid grid-cols-[1fr_0.5fr] gap-2 mx-auto">
+      <!-- column 1: welcome banner + game grid -->
+      <div class="flex flex-col gap-2">
+        <Container class="grid grid-cols-1 h-min">
+          <div class="flex flex-col">
+            <div class="text-lg">
+              <p class="text-center" v-html="$t('home:welcome_message')"></p>
+            </div>
+          </div>
+        </Container>
+        <div class="grid grid-cols-2 md:grid-cols-3 w-full gap-2 rounded-xl">
+          <HomePuzzlePreview title="Daily Puzzle" page="daily">
+            <span class="text-8xl">🗓️</span>
+          </HomePuzzlePreview>
+          <HomePuzzlePreview
+            v-for="game in ACTIVE_GAMES"
+            class="rounded"
+            :title="game.name"
+            :page="game.key"
+            :key="game.key"
+            :component="game.component"
+            :state="game.default"
+          />
         </div>
       </div>
-    </Container>
 
-    <Container
-      v-if="!authStore.isAuthenticated"
-      class="w-full justify-center text-lg font-semibold text-gray-700 mb-2 flex flex-col md:flex-row mx-auto items-center"
-    >
-      <span>{{ $t("home:track_progress_prompt") }}</span>
-      <div class="flex gap-2 ml-2">
-        <Button @click="appStore.open_login_modal()">
-          {{ $t("home:login_action") }}
-        </Button>
-        <router-link :to="{ name: 'signup' }">
-          <Button>
-            {{ $t("home:signup_action") }}
-          </Button>
-        </router-link>
-      </div>
-    </Container>
-    <!-- Game Grid -->
-    <div class="w-full max-w-4xl mx-auto">
-      <div class="grid grid-cols-2 md:grid-cols-3 gap-2 rounded-xl">
-        <HomePuzzlePreview
-          title="Daily Puzzle"
-          page="daily"
-        >
-          <span class="text-8xl">🗓️</span>
-        </HomePuzzlePreview>
-        <HomePuzzlePreview
-          v-for="game in ACTIVE_GAMES"
-          class="rounded"
-          :title="game.name"
-          :page="game.key"
-          :key="game.key"
-          :component="game.component"
-          :state="game.default"
-        />
-      </div>
+      <!-- column 2: newsfeed -->
+      <NewsFeed />
     </div>
   </div>
 </template>

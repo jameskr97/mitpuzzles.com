@@ -172,8 +172,8 @@ onMounted(async () => {
     </div>
 
     <!-- row 3: featured + recent games | activity -->
-    <div class="grid grid-cols-[2fr_1fr] gap-2">
-      <div class="grid grid-cols-2 gap-2">
+    <div class="grid grid-cols-[2fr_1fr] gap-2 grid-rows-1">
+      <div class="grid grid-cols-2 gap-2 min-h-0">
         <ProfileFeaturedSolve
           v-for="featured in featured_games"
           :key="featured.puzzle_type"
@@ -186,7 +186,7 @@ onMounted(async () => {
         />
         <ProfileGameLog :games="game_log" />
       </div>
-      <ProfileActivityFeed :activity="activity_feed" />
+      <ProfileActivityFeed :activity="activity_feed" class="overflow-hidden h-0 min-h-full"  />
     </div>
 
   </div>

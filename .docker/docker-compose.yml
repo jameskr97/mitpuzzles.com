@@ -94,7 +94,7 @@ services:
 
   # valkey - celery broker
   valkey:
-    image: valkey/valkey:8
+    image: valkey/valkey:9
     restart: unless-stopped
     ports: ["${VALKEY_PORT:-6379}:6379"]
     volumes: [valkey-data:/data]
