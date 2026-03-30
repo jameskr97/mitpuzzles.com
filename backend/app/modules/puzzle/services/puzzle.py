@@ -57,6 +57,55 @@ class PuzzleService:
             }
         return types_config
 
+    @staticmethod
+    def reconstruct_playback_frames(initial_state: list, action_history: list) -> list:
+        """reconstruct board state at each visual action from initial state + action history."""
+        import copy
+        VISUAL_ACTIONS = {"cell_click", "click", "cell_keypress", "keypress", "clear", "attempt_solve"}
+
+        board = copy.deepcopy(initial_state)
+        frames = [{"board": copy.deepcopy(board), "timestamp": 0, "action": "initial", "cell": None}]
+
+        for event in action_history:
+            action = event.get("action")
+            if action not in VISUAL_ACTIONS:
+                continue
+
+            cell = event.get("cell")
+            new_value = event.get("new_value")
+            timestamp = event.get("timestamp", 0)
+
+            if action in ("cell_click", "click", "cell_keypress", "keypress") and cell and new_value is not None:
+                row, col = cell.get("row"), cell.get("col")
+                if row is not None and col is not None and row < len(board) and col < len(board[0]):
+                    board[row][col] = new_value
+            elif action == "clear":
+                board = copy.deepcopy(initial_state)
+
+            # split attempt_solve into success/fail based on custom_data
+            frame_action = action
+            if action == "attempt_solve":
+                custom = event.get("custom_data", {})
+                frame_action = "attempt_solve_success" if custom.get("correct") else "attempt_solve_fail"
+
+            frames.append({
+                "board": copy.deepcopy(board),
+                "timestamp": timestamp,
+                "action": frame_action,
+                "cell": {"row": cell["row"], "col": cell["col"]} if cell and "row" in cell else None,
+            })
+
+        return frames
+
+    async def get_attempt_with_puzzle(self, attempt_id: uuid.UUID) -> Optional[FreeplayPuzzleAttempt]:
+        """get a freeplay attempt by id with its puzzle eagerly loaded."""
+        result = await self.db.execute(
+            select(FreeplayPuzzleAttempt)
+            .options(selectinload(FreeplayPuzzleAttempt.puzzle))
+            .where(FreeplayPuzzleAttempt.id == attempt_id)
+        )
+        return result.scalars().first()
+
     async def get_random_puzzle(
         self,
         puzzle_type: Optional[str] = None,
