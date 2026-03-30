@@ -7,7 +7,7 @@ const log = createLogger("storage");
 import { i18next } from "@/i18n.ts";
 import _ from "lodash";
 
-export function create_game_entry(icon: string, key: string): any {
+export function create_game_entry(icon: string, key: string, options?: { admin_only?: boolean }): any {
   // Capitalize first letter for component name (e.g., "hashi" -> "Hashi")
   const component_name = key.charAt(0).toUpperCase() + key.slice(1);
   return {
@@ -23,6 +23,7 @@ export function create_game_entry(icon: string, key: string): any {
     // Instructions components
     instructions: defineAsyncComponent({ loader: () => import(`@/features/games/${key}/instructions.vue`) }),
     compact_instructions: defineAsyncComponent({ loader: () => import(`@/features/games/${key}/InstructionsCompact.vue`) }),
+    admin_only: options?.admin_only ?? false,
   };
 }
 

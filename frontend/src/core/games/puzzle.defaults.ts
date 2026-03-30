@@ -242,6 +242,29 @@ export const defaultPuzzles: Record<PUZZLE_TYPES, PuzzleState> = {
       [-1, -1, -1, -1, -1, -1],
     ],
   },
+  yinyang: {
+    // @ts-expect-error intentionally incomplete
+    definition: {
+      cols: 6,
+      rows: 6,
+      initial_state: [
+        [ 1, -1, -1, -1, -1, -1],
+        [ 2, -1, -1, -1, -1, -1],
+        [-1, -1, -1,  1,  1, -1],
+        [-1,  2, -1,  2, -1, -1],
+        [-1, -1, -1,  2, -1, -1],
+        [-1, -1, -1, -1, -1,  1],
+      ],
+    },
+    board: [
+      [-3, -1, -1, -1, -1, -1],
+      [-4, -1, -1, -1, -1, -1],
+      [-1, -1, -1, -3, -3, -1],
+      [-1, -4, -1, -4, -1, -1],
+      [-1, -1, -1, -4, -1, -1],
+      [-1, -1, -1, -1, -1, -3],
+    ],
+  },
   aquarium: {
     // @ts-expect-error intentionally incomplete
     definition: {

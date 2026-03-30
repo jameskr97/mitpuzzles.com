@@ -37,6 +37,9 @@ export {
 // Mode dispatcher (freeplay vs daily)
 export { useGameForMode } from "./useGameForMode.ts";
 
+// Demo/test game controller (no api, no persistence)
+export { useDemoGame } from "./useDemoGame.ts";
+
 // Cell interaction patterns
 export { useCellDragHandlers } from "./useCellDragHandlers.ts";
 

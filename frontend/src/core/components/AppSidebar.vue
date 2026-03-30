@@ -25,6 +25,8 @@ import { Separator } from "@/core/components/ui/separator";
 const user = useAuthStore();
 const appStore = useAppStore();
 const sidebar = useSidebar();
+const is_dev = import.meta.env.DEV;
+const visible_games = Object.values(ACTIVE_GAMES).filter(g => !g.admin_only || user.isAdmin || is_dev);
 
 const close_sidebar_on_mobile = () => {
   if (sidebar.isMobile.value) {
@@ -56,7 +58,7 @@ const close_sidebar_on_mobile = () => {
                 </router-link>
               </SidebarMenuButton>
             </SidebarMenuItem>
-            <SidebarMenuItem v-for="game in Object.values(ACTIVE_GAMES)" :key="game.key">
+            <SidebarMenuItem v-for="game in visible_games" :key="game.key">
               <SidebarMenuButton asChild :tooltip="game.name">
                 <router-link
                   :to="{ name: 'game-' + game.key }"

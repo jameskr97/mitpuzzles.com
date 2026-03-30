@@ -12,6 +12,8 @@ import { Badge } from "@/core/components/ui/badge";
 import Container from "@/core/components/ui/Container.vue";
 import { Switch } from "@/core/components/ui/switch";
 import { getPuzzleDisplayName } from "@/utils";
+import { Info } from "lucide-vue-next";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/core/components/ui/tooltip";
 
 const props = withDefaults(
   defineProps<{
@@ -53,19 +55,36 @@ const variant_display = computed(() => getPuzzleDisplayName(props.controller.cur
         {{ variant_display }}
       </span>
 
-      <!-- solved status badge -->
-      <Badge
-        v-if="controller.ui.value.show_solved_state"
-        :variant="controller.state.value.solved ? 'blue' : 'destructive'"
-        class="justify-self-end text-nowrap text-base"
-      >
-        <span v-if="controller.state.value.solved">
-          {{ $t("freeplay:status.solved") }}
-        </span>
-        <span v-else>
-          {{ $t("freeplay:status.not_solved") }}
-        </span>
-      </Badge>
+      <div class="flex items-center gap-1.5 justify-self-end">
+        <!-- demo mode badge -->
+        <TooltipProvider v-if="controller.is_demo">
+          <Tooltip>
+            <TooltipTrigger>
+              <Badge variant="purple" class="text-nowrap text-base cursor-help">
+                <Info class="size-3.5" />
+                Demo Mode
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent>
+              This puzzle is a built-in demo. No puzzles are available from the server yet.
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+        <!-- solved status badge -->
+        <Badge
+          v-if="controller.ui.value.show_solved_state"
+          :variant="controller.state.value.solved ? 'blue' : 'destructive'"
+          class="text-nowrap text-base"
+        >
+          <span v-if="controller.state.value.solved">
+            {{ $t("freeplay:status.solved") }}
+          </span>
+          <span v-else>
+            {{ $t("freeplay:status.not_solved") }}
+          </span>
+        </Badge>
+      </div>
     </div>
   </Container>
 </template>

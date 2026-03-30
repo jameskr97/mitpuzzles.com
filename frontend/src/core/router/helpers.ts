@@ -29,7 +29,7 @@ export const route = {
     path: `/${name}`,
     name: `game-${name}`,
     component: ACTIVE_GAMES[name].freeplay,
-    meta: { game_type: name },
+    meta: { game_type: name, requiresAdmin: ACTIVE_GAMES[name].admin_only && !import.meta.env.DEV },
   }),
 
   dev: (key: string, meta: object) => ({

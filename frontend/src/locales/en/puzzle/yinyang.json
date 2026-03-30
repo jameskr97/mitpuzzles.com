@@ -1,0 +1,18 @@
+{
+  "title": "Yin-Yang",
+  "intro": "Yin-Yang is a logic puzzle where you fill every cell with either a <span class=\"font-black\">black</span> circle (<span class=\"inline-block h-3 w-3 rounded-full bg-black\"></span>) or a <span class=\"font-black\">white</span> circle (<span class=\"inline-block h-3 w-3 rounded-full bg-white border border-gray-400\"></span>).",
+  "board_example": "Some cells are pre-filled as clues. Your goal is to fill the remaining cells.",
+  "rule_connected": "All black circles must form a single connected group (connected horizontally or vertically, not diagonally). Likewise, all white circles must also form a single connected group.",
+  "rule_no_2x2": "No 2\u00d72 region of cells may be entirely the same color.",
+  "rule_clues": "Pre-filled circles are clues and cannot be changed. Use them as starting points for your deductions.",
+  "solved": "The puzzle is solved when every cell is filled and all rules are satisfied.",
+  "control_cycle": "Left click to cycle forward, right click to cycle backward between:",
+  "control_mark_black": "Placing a black circle (<span class=\"inline-block h-3 w-3 rounded-full bg-black\"></span>)",
+  "control_mark_white": "Placing a white circle (<span class=\"inline-block h-3 w-3 rounded-full bg-white border border-gray-400\"></span>)",
+  "control_clear": "Clearing the cell",
+  "compact": {
+    "rule_fill": "Fill every cell with a <span class=\"inline-block h-3 w-3 rounded-full bg-black\"></span> black or <span class=\"inline-block h-3 w-3 rounded-full bg-white border border-gray-400\"></span> white circle.",
+    "rule_connected": "All cells of the same color must be orthogonally connected as a single group.",
+    "rule_no_2x2": "No 2\u00d72 block of cells may all be the same color."
+  }
+}

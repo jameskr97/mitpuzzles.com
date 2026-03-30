@@ -16,6 +16,10 @@ import CreateAccountCTA from "@/core/components/alert/CreateAccountCTA.vue";
 
 const authStore = useAuthStore();
 const dailyStore = useDailyPuzzleStore();
+const is_dev = import.meta.env.DEV;
+const visible_games = computed(() =>
+  Object.values(ACTIVE_GAMES).filter(g => !g.admin_only || authStore.isAdmin || is_dev)
+);
 </script>
 
 <template>
@@ -42,7 +46,7 @@ const dailyStore = useDailyPuzzleStore();
             <span class="text-8xl">🗓️</span>
           </HomePuzzlePreview>
           <HomePuzzlePreview
-            v-for="game in ACTIVE_GAMES"
+            v-for="game in visible_games"
             class="rounded"
             :title="game.name"
             :page="game.key"

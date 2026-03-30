@@ -66,4 +66,7 @@ export interface GameController {
 
   // optional — if present, game requires explicit start (e.g. daily)
   start_game?: () => Promise<void>;
+
+  // optional — marks this as a demo/test game with no backend puzzles
+  is_demo?: boolean;
 }
