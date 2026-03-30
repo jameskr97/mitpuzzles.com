@@ -6,14 +6,7 @@
  */
 import { inject, watch, computed, ref } from "vue";
 import type { GameController } from "@/core/games/types/game-controller";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/core/components/ui/table";
+import LeaderboardTable from "@/core/components/LeaderboardTable.vue";
 import Container from "@/core/components/ui/Container.vue";
 import { Separator } from "@/core/components/ui/separator";
 import { Button } from "@/core/components/ui/button";
@@ -153,26 +146,11 @@ const leaderboard_entries = computed(() => {
             })
           }}
         </div>
-        <Table v-else>
-          <TableHeader>
-            <TableRow>
-              <TableHead class="p-0">{{ $t("ui:table.rank") }}</TableHead>
-              <TableHead>{{ scoring_method === 'ao_n' ? $t("ui:table.avg_time") : $t("ui:table.time") }}</TableHead>
-              <TableHead>{{ $t("ui:table.username") }}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow
-              v-for="(entry, index) in leaderboard_entries"
-              :class="{ 'font-bold': entry.is_current_user }"
-              :key="index"
-            >
-              <TableCell>{{ entry.rank }}</TableCell>
-              <TableCell>{{ entry.duration_display }}</TableCell>
-              <TableCell>{{ entry.username }}</TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
+        <LeaderboardTable
+          v-else
+          :entries="leaderboard_entries"
+          :time_label="scoring_method === 'ao_n' ? $t('ui:table.avg_time') : $t('ui:table.time')"
+        />
       </div>
 
       <!-- Ineligibility message -->

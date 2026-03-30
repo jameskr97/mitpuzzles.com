@@ -4,9 +4,7 @@
  * reads from the daily puzzle store (refreshed after solve in useDailyServices).
  */
 import { onMounted, ref } from "vue";
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/core/components/ui/table";
+import LeaderboardTable from "@/core/components/LeaderboardTable.vue";
 import Container from "@/core/components/ui/Container.vue";
 import { Separator } from "@/core/components/ui/separator";
 import { useDailyPuzzleStore } from "@/core/store/puzzle/useDailyPuzzleStore";
@@ -42,26 +40,7 @@ onMounted(() => {
       <div v-if="daily_store.leaderboard.length === 0" class="text-center text-gray-500 p-4">
         No entries yet. Be the first to solve today's puzzle!
       </div>
-      <Table v-else>
-        <TableHeader>
-          <TableRow>
-            <TableHead class="p-0">{{ $t("ui:table.rank") }}</TableHead>
-            <TableHead>{{ $t("ui:table.time") }}</TableHead>
-            <TableHead>{{ $t("ui:table.username") }}</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          <TableRow
-            v-for="(entry, index) in daily_store.leaderboard"
-            :class="{ 'font-bold': entry.is_current_user }"
-            :key="index"
-          >
-            <TableCell>{{ entry.rank }}</TableCell>
-            <TableCell>{{ entry.duration_display }}</TableCell>
-            <TableCell>{{ entry.username }}</TableCell>
-          </TableRow>
-        </TableBody>
-      </Table>
+      <LeaderboardTable v-else :entries="daily_store.leaderboard" />
     </template>
   </Container>
 </template>
