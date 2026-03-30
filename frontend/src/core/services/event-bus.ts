@@ -5,7 +5,6 @@
 
 import mitt from "mitt";
 import type { PuzzleVariant } from "@/core/types";
-import { createLogger } from "@/core/services/logger.ts";
 
 export type EventMap = {
   // puzzle lifecycle
@@ -20,8 +19,3 @@ export type EventMap = {
 };
 
 export const emitter = mitt<EventMap>();
-
-const log = createLogger("event-bus")
-// emitter.on('*', (event, payload) => {
-//   log(event, payload)
-// })

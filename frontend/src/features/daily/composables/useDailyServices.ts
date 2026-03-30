@@ -32,8 +32,10 @@ export function useDailyServices<TMeta = any>(): GameSessionServices<TMeta> {
   // don't auto-init progress — wait for explicit start_game() call
   // returning users already have timestamp_start so they skip this anyway
   async function start_game() {
+    const def = daily_store.definition;
+    if(!def) throw new Error("daily puzzle info not loaded");
     if (!progress_store.timestamp_start[DAILY_KEY]) {
-      await progress_store.reset_puzzle(DAILY_KEY, definition.initial_state);
+      await progress_store.reset_puzzle(DAILY_KEY, def.initial_state);
     }
   }
 
