@@ -16,6 +16,7 @@ from app.modules.puzzle.schemas import (
     FilterOptionsResponse,
     FreeplayAttemptCreate,
     LeaderboardResponse,
+    AttemptPlaybackResponse,
 )
 from app.modules.puzzle.services import PuzzleService, LeaderboardService, UserStatsService
 from app.modules.puzzle.formatting import format_puzzle_for_frontend, format_puzzle_with_solution
@@ -146,6 +147,36 @@ async def get_puzzle_stats(db: AsyncDatabase, puzzle_id: uuid.UUID):
     if not puzzle:
         raise HTTPException(status_code=404, detail=f"No puzzle found with id {puzzle_id}")
     return await service.get_puzzle_stats(puzzle_id)
+
+
+@router.get("/freeplay/attempts/{attempt_id}", response_model=AttemptPlaybackResponse, responses={404: {"model": ErrorResponse}, 403: {"model": ErrorResponse}})
+async def get_attempt_playback(
+    db: AsyncDatabase,
+    attempt_id: uuid.UUID,
+    user: User = Depends(fastapi_users.current_user()),
+):
+    """get attempt data for playback. admin only."""
+    if not user.is_superuser:
+        raise HTTPException(status_code=403, detail="admin privileges required")
+
+    service = PuzzleService(db)
+    attempt = await service.get_attempt_with_puzzle(attempt_id)
+    if not attempt:
+        raise HTTPException(status_code=404, detail="attempt not found")
+
+    initial_state = attempt.puzzle.puzzle_data.get("initial_state", [])
+    frames = service.reconstruct_playback_frames(initial_state, attempt.action_history)
+
+    return AttemptPlaybackResponse(
+        id=attempt.id,
+        puzzle_definition=PuzzleDefinitionResponse.model_validate(
+            format_puzzle_for_frontend(attempt.puzzle)
+        ),
+        frames=frames,
+        timestamp_start=attempt.timestamp_start,
+        timestamp_finish=attempt.timestamp_finish,
+        is_solved=attempt.is_solved,
+    )
 
 
 @router.post("/freeplay/submit", status_code=201, response_model=PuzzleSubmitResponse, responses={400: {"model": ErrorResponse}, 404: {"model": ErrorResponse}})

@@ -71,6 +71,7 @@ class LeaderboardService:
         query = (
             select(
                 FreeplayPuzzleAttempt.user_id,
+                FreeplayPuzzleAttempt.id.label("attempt_id"),
                 completion_time.label("completion_time_seconds"),
                 User.username,
             )
@@ -188,6 +189,7 @@ class LeaderboardService:
                 self.user_id = user_id
                 self.completion_time_seconds = completion_time_seconds
                 self.username = username
+                self.attempt_id = None
 
         all_rows = [
             Row(uid, t, usernames.get(uid, "???"))
@@ -291,6 +293,7 @@ def _build_leaderboard_response(all_rows, limit: int, user) -> Dict[str, Any]:
             "duration_display": format_duration(row.completion_time_seconds),
             "username": row.username,
             "is_current_user": is_current,
+            "attempt_id": str(row.attempt_id) if hasattr(row, "attempt_id") else None,
         })
 
     # if user is outside top N, show their neighbors (before, self, after)
@@ -310,6 +313,7 @@ def _build_leaderboard_response(all_rows, limit: int, user) -> Dict[str, Any]:
                 "duration_display": format_duration(row.completion_time_seconds),
                 "username": row.username,
                 "is_current_user": bool(row.user_id == user.id),
+                "attempt_id": str(row.attempt_id) if hasattr(row, "attempt_id") else None,
             })
 
     return {"leaderboard": entries, "count": len(entries)}

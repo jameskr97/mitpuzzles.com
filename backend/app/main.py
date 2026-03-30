@@ -123,6 +123,8 @@ app.include_router(push_notifications.router)
 app.include_router(feedback.router)
 app.include_router(experiments.router)
 app.include_router(puzzle.router)
+from app.modules.puzzle.routes.profile import router as profile_router
+app.include_router(profile_router)
 app.include_router(tracking_analytics.router)
 app.include_router(puzzle_analysis.router)
 app.include_router(data_export.router)

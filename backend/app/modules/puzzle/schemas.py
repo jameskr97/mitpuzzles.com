@@ -95,6 +95,24 @@ class FreeplayAttemptCreate(BaseModel):
     used_tutorial: bool = Field(default=False, description="Whether tutorial was used")
 
 
+class PlaybackFrame(BaseModel):
+    """a single frame in a playback — the board state after an action"""
+    board: List[List[int]]
+    timestamp: int
+    action: str
+    cell: Optional[Dict[str, int]] = None
+
+
+class AttemptPlaybackResponse(BaseModel):
+    """schema for attempt playback — precomputed board frames"""
+    id: uuid.UUID
+    puzzle_definition: PuzzleDefinitionResponse
+    frames: List[PlaybackFrame]
+    timestamp_start: int
+    timestamp_finish: Optional[int] = None
+    is_solved: bool
+
+
 class LeaderboardEntryResponse(BaseModel):
     """Schema for leaderboard entry responses"""
     model_config = ConfigDict(from_attributes=True)
@@ -103,6 +121,7 @@ class LeaderboardEntryResponse(BaseModel):
     duration_display: str
     username: str
     is_current_user: bool = False
+    attempt_id: Optional[str] = None
 
 
 class LeaderboardResponse(BaseModel):
@@ -205,3 +224,95 @@ class PuzzleSubmitResponse(BaseModel):
 class AddPriorityRequest(BaseModel):
     """schema for adding a puzzle to priority."""
     puzzle_id: uuid.UUID
+
+
+# -- user profile --
+
+class PuzzleTypeStatsEntry(BaseModel):
+    """per-type solve stats."""
+    puzzle_type: str
+    solved_count: int
+    attempt_count: int
+    best_time: Optional[float] = None
+    avg_time: Optional[float] = None
+
+
+class DailyStreakStats(BaseModel):
+    """daily challenge streak info."""
+    current_streak: int
+    longest_streak: int
+    total_dailies_solved: int
+    fastest_daily_count: int
+
+
+class SolveTimePoint(BaseModel):
+    """single data point for the solve time chart."""
+    date: str
+    avg_time: float
+
+
+class SolveTimeSeriesEntry(BaseModel):
+    """solve time history for one puzzle type."""
+    puzzle_type: str
+    data: List[SolveTimePoint]
+
+
+class ActivityEntry(BaseModel):
+    """single activity entry within a day."""
+    icon: str
+    text: str
+    detail: Optional[str] = None
+
+
+class ActivityDay(BaseModel):
+    """grouped activity for a single day."""
+    date: str
+    entries: List[ActivityEntry]
+
+
+class GameLogEntry(BaseModel):
+    """a single recent game entry."""
+    attempt_id: str
+    puzzle_type: str
+    puzzle_size: str
+    puzzle_difficulty: Optional[str] = None
+    time: Optional[float] = None
+    solved: bool
+    date: str
+
+
+class FeaturedSolve(BaseModel):
+    """fastest solve for a puzzle type, with attempt_id for playback."""
+    puzzle_type: str
+    attempt_id: str
+    best_time: float
+
+
+class UserProfileResponse(BaseModel):
+    """full user profile stats."""
+    username: str
+    member_since: str
+    is_own_profile: bool
+
+    # aggregates
+    total_puzzles_solved: int
+    total_puzzles_attempted: int
+    total_time_seconds: float
+
+    # per-type breakdown
+    puzzle_type_stats: List[PuzzleTypeStatsEntry]
+
+    # daily streak
+    daily_streak: DailyStreakStats
+
+    # solve time chart
+    solve_time_history: List[SolveTimeSeriesEntry]
+
+    # activity feed
+    activity_feed: List[ActivityDay]
+
+    # recent games
+    game_log: List[GameLogEntry]
+
+    # featured fastest solves (top 2 most-played)
+    featured_solves: List[FeaturedSolve]
