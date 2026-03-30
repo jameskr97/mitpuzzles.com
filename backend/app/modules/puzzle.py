@@ -3,6 +3,7 @@ Puzzles module for managing puzzle data and tracking puzzle attempts.
 Stores pre-generated puzzles and tracks user/device attempts at solving them.
 """
 
+import hashlib
 import uuid
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List
@@ -1075,7 +1076,7 @@ class PuzzleService:
                 attempt_data['user'] = {
                     'id': str(attempt.user.id),
                     'username': attempt.user.username,
-                    'email': attempt.user.email
+                    'email_hash': hashlib.sha256(attempt.user.email.lower().encode()).hexdigest()
                 }
 
             # add device type from latest thumbmark
@@ -1211,7 +1212,7 @@ class PuzzleService:
                 user_data = {
                     'id': str(attempt.user.id),
                     'username': attempt.user.username,
-                    'email': attempt.user.email
+                    'email_hash': hashlib.sha256(attempt.user.email.lower().encode()).hexdigest()
                 }
                 # Add profile data if available
                 profile = user_profiles.get(attempt.user_id)
@@ -2053,17 +2054,11 @@ async def export_freeplay_data(
         parts.append(puzzle_type[0])
     if user_type:
         parts.append(user_type)
-    parts.append("export.json")
+    parts.append("export.parquet")
     filename = "_".join(parts)
 
-    from fastapi.responses import JSONResponse
-    return JSONResponse(
-        content=data,
-        headers={
-            "Content-Disposition": f"attachment; filename={filename}",
-            "Content-Type": "application/json"
-        }
-    )
+    from app.service.parquet import parquet_response
+    return parquet_response(data, filename)
 
 
 @router.get("/admin/{puzzle_type}/export")
@@ -2088,16 +2083,10 @@ async def export_game_data(
 
     # create filename
     user_type_suffix = f"_{user_type}" if user_type else ""
-    filename = f"{puzzle_type}{user_type_suffix}_game_export.json"
+    filename = f"{puzzle_type}{user_type_suffix}_game_export.parquet"
 
-    from fastapi.responses import JSONResponse
-    return JSONResponse(
-        content=data,
-        headers={
-            "Content-Disposition": f"attachment; filename={filename}",
-            "Content-Type": "application/json"
-        }
-    )
+    from app.service.parquet import parquet_response
+    return parquet_response(data, filename)
 
 
 # Priority puzzle management endpoints
