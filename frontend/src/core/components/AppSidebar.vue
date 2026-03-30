@@ -13,12 +13,14 @@ import {
   SidebarRail,
   useSidebar,
 } from "@/core/components/ui/sidebar";
-import { ACTIVE_EXPERIMENTS, ACTIVE_GAMES, ADMIN_TOOLS } from "@/constants.ts";
+import { ACTIVE_EXPERIMENTS, ACTIVE_GAMES } from "@/constants.ts";
 import { useAuthStore } from "@/core/store/useAuthStore.ts";
 import AppLogo from "@/core/components/AppLogo.vue";
 import AppFeedbackModal from "@/core/components/AppFeedbackModal.vue";
 import AppSidebarUser from "@/core/components/AppSidebarUser.vue";
 import { useAppStore } from "@/core/store/useAppStore.ts";
+import { User, Info, MessageSquare, ShieldCheck, LogIn, Trophy } from "lucide-vue-next";
+import { Separator } from "@/core/components/ui/separator";
 
 const user = useAuthStore();
 const appStore = useAppStore();
@@ -91,29 +93,32 @@ const close_sidebar_on_mobile = () => {
         </SidebarGroupContent>
       </SidebarGroup>
 
-      <SidebarGroup v-if="user.isAdmin">
-        <SidebarGroupLabel>Data Access</SidebarGroupLabel>
-        <SidebarGroupContent>
-          <SidebarMenu>
-            <SidebarMenuItem v-for="tool in Object.values(ADMIN_TOOLS)" :key="tool.key">
-              <SidebarMenuButton asChild :tooltip="tool.name">
-                <router-link :to="tool.route_path" class="text-xl" @click.capture="close_sidebar_on_mobile">
-                  <span>{{ tool.icon }}</span>
-                  <span>{{ tool.name }}</span>
-                </router-link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarGroupContent>
-      </SidebarGroup>
     </SidebarContent>
     <SidebarFooter>
       <SidebarGroup>
         <SidebarMenu>
+          <!-- Profile (logged in only) -->
+          <SidebarMenuButton v-if="user.isAuthenticated && user.user?.username" asChild>
+            <router-link :to="'/user/' + user.user.username" @click.capture="close_sidebar_on_mobile">
+              <User class="size-4" />
+              {{ $t("ui:nav.profile") }}
+            </router-link>
+          </SidebarMenuButton>
+
+          <!-- Leaderboard -->
+          <SidebarMenuButton asChild>
+            <router-link :to="{ name: 'leaderboard' }" @click.capture="close_sidebar_on_mobile">
+              <Trophy class="size-4" />
+              Leaderboard
+            </router-link>
+          </SidebarMenuButton>
+
+          <Separator />
+
           <!-- About Us Button -->
           <SidebarMenuButton asChild>
             <router-link :to="{ name: 'about-us' }" @click.capture="close_sidebar_on_mobile">
-              <v-icon name="bi-info-circle-fill" />
+              <Info class="size-4" />
               {{ $t("ui:nav.about_us") }}
             </router-link>
           </SidebarMenuButton>
@@ -121,14 +126,14 @@ const close_sidebar_on_mobile = () => {
           <!-- Feedback Button -->
           <AppFeedbackModal>
             <SidebarMenuButton>
-              <v-icon name="md-feedback-outlined" />
+              <MessageSquare class="size-4" />
               {{ $t("ui:nav.feedback") }}
             </SidebarMenuButton>
           </AppFeedbackModal>
 
           <SidebarMenuButton asChild>
             <router-link :to="{ name: 'privacy-policy' }" @click.capture="close_sidebar_on_mobile">
-              <v-icon name="bi-shield-lock-fill" />
+              <ShieldCheck class="size-4" />
               {{ $t("ui:nav.privacy_policy") }}
             </router-link>
           </SidebarMenuButton>
@@ -139,7 +144,7 @@ const close_sidebar_on_mobile = () => {
             data-testid="btn-open-login"
             @click="appStore.open_login_modal()"
           >
-            <v-icon name="fa-user" />
+            <LogIn class="size-4" />
             {{ $t("ui:action.login") }}
           </SidebarMenuButton>
           <AppSidebarUser v-else :user="user" />

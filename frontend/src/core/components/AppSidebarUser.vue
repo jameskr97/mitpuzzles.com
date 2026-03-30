@@ -7,18 +7,16 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuLabel,
 } from "@/core/components/ui/dropdown-menu";
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/core/components/ui/sidebar";
 import { useAuthStore } from "@/core/store/useAuthStore.ts";
 import UserAvatar from "@/features/auth/components/UserAvatar.vue";
 import { useRouter } from "vue-router";
+import { ADMIN_TOOLS } from "@/constants.ts";
 
 const user = useAuthStore();
 const router = useRouter();
-
-const navigate_to_account = async () => {
-  await router.push("/account");
-};
 </script>
 
 <template>
@@ -44,14 +42,27 @@ const navigate_to_account = async () => {
           align="center"
           :side-offset="4"
         >
-          <DropdownMenuItem @click="navigate_to_account">
+          <DropdownMenuItem @click="router.push('/account')">
             <Settings />
-            {{ $t('ui:nav.account_settings') }}
+            {{ $t("ui:nav.account_settings") }}
           </DropdownMenuItem>
+
+          <!-- admin tools -->
+          <template v-if="user.isAdmin">
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel class="text-xs text-gray-400">Admin</DropdownMenuLabel>
+            <router-link v-for="tool in Object.values(ADMIN_TOOLS)" :key="tool.key" :to="tool.route_path">
+              <DropdownMenuItem>
+                <span>{{ tool.icon }}</span>
+                {{ tool.name }}
+              </DropdownMenuItem>
+            </router-link>
+          </template>
+
           <DropdownMenuSeparator />
           <DropdownMenuItem data-testid="btn-logout" @click="user.logout">
             <LogOut />
-            {{ $t('ui:nav.logout') }}
+            {{ $t("ui:nav.logout") }}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
