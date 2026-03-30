@@ -63,6 +63,7 @@ const drag_state = reactive({
   destination: null as [number, number] | null,
   dragging: false,
   button: 0,
+  click_offset: { dx: 0, dy: 0 },
 });
 
 // Rendering constants
@@ -105,7 +106,7 @@ function cancel_drag(): void {
   drag_state.dragging = false;
 }
 
-function get_cell_from_position(canvas: HTMLCanvasElement, clientX: number, clientY: number): { row: number; col: number } | null {
+function get_cell_from_position(canvas: HTMLCanvasElement, clientX: number, clientY: number): { row: number; col: number; dx: number; dy: number } | null {
   const rect = canvas.getBoundingClientRect();
   const x = clientX - rect.left;
   const y = clientY - rect.top;
@@ -115,7 +116,10 @@ function get_cell_from_position(canvas: HTMLCanvasElement, clientX: number, clie
   const col = Math.floor(x / cell_size);
   const row = Math.floor(y / cell_size);
   if (row < 0 || row >= rows || col < 0 || col >= cols) return null;
-  return { row, col };
+  // offset from cell center, normalized to [-0.5, 0.5]
+  const dx = (x / cell_size - col) - 0.5;
+  const dy = (y / cell_size - row) - 0.5;
+  return { row, col, dx, dy };
 }
 
 function update_drag_destination(current_row: number, current_col: number): void {
@@ -139,6 +143,38 @@ function update_drag_destination(current_row: number, current_col: number): void
   drag_state.destination = find_island_in_direction(src_row, src_col, dr, dc);
 }
 
+// find the two islands that a non-island cell sits between (if any)
+function find_bridge_at_cell(row: number, col: number): { island1: [number, number]; island2: [number, number] } | null {
+  if (is_island(row, col)) return null;
+
+  // check horizontal: find islands to the left and right
+  const left = find_island_in_direction(row, col, 0, -1);
+  const right = find_island_in_direction(row, col, 0, 1);
+  if (left && right) {
+    // only if there's actually a bridge here
+    const bridge_info = cell_bridges.value.get(`${row},${col}`);
+    if (bridge_info && bridge_info.horizontal > 0) {
+      return { island1: left, island2: right };
+    }
+  }
+
+  // check vertical: find islands above and below
+  const up = find_island_in_direction(row, col, -1, 0);
+  const down = find_island_in_direction(row, col, 1, 0);
+  if (up && down) {
+    const bridge_info = cell_bridges.value.get(`${row},${col}`);
+    if (bridge_info && bridge_info.vertical > 0) {
+      return { island1: up, island2: down };
+    }
+  }
+
+  // no existing bridge — check if cell sits on a line between two islands
+  if (left && right) return { island1: left, island2: right };
+  if (up && down) return { island1: up, island2: down };
+
+  return null;
+}
+
 function handle_mousedown(event: MouseEvent): void {
   const canvas = (canvas_board_ref.value as any)?.$el?.querySelector?.("canvas") as HTMLCanvasElement | null;
   if (!canvas) return;
@@ -151,7 +187,13 @@ function handle_mousedown(event: MouseEvent): void {
     drag_state.destination = null;
     drag_state.dragging = false;
     drag_state.button = event.button;
+    drag_state.click_offset = { dx: cell.dx, dy: cell.dy };
   } else {
+    // clicked between islands — toggle the bridge directly
+    const bridge = find_bridge_at_cell(cell.row, cell.col);
+    if (bridge) {
+      emit("bridge-toggle", bridge.island1, bridge.island2, event.button);
+    }
     cancel_drag();
   }
 }
@@ -168,9 +210,23 @@ function handle_mousemove(event: MouseEvent): void {
 
 function handle_mouseup(_event: MouseEvent): void {
   if (!drag_state.source) return;
+
   if (drag_state.dragging && drag_state.destination) {
+    // completed a drag between two islands
     emit("bridge-toggle", drag_state.source, drag_state.destination, drag_state.button);
+  } else if (!drag_state.dragging) {
+    // clicked an island without dragging — find adjacent island in click direction
+    const { dx, dy } = drag_state.click_offset;
+    const [row, col] = drag_state.source;
+    let dr = 0, dc = 0;
+    if (Math.abs(dx) > Math.abs(dy)) dc = dx > 0 ? 1 : -1;
+    else dr = dy > 0 ? 1 : -1;
+    const neighbor = find_island_in_direction(row, col, dr, dc);
+    if (neighbor) {
+      emit("bridge-toggle", drag_state.source, neighbor, drag_state.button);
+    }
   }
+
   cancel_drag();
 }
 
