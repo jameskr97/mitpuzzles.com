@@ -11,6 +11,8 @@ import Container from "@/core/components/ui/Container.vue";
 import { Separator } from "@/core/components/ui/separator";
 import { Button } from "@/core/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/core/components/ui/select";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/core/components/ui/tooltip";
+import { Info } from "lucide-vue-next";
 import { usePuzzleLeaderboardStore } from "@/core/store/puzzle/usePuzzleLeaderboardStore";
 import { useTranslation } from "i18next-vue";
 
@@ -45,6 +47,12 @@ watch(
   },
   { immediate: true }
 );
+
+const scoring_description = computed(() => {
+  return scoring_method.value === "ao_n"
+    ? t("freeplay:leaderboard.scoring_ao3_desc")
+    : t("freeplay:leaderboard.scoring_best_desc");
+});
 
 // Check if user is ineligible for leaderboard (tutorial used)
 const is_ineligible = computed(() => {
@@ -94,6 +102,14 @@ const leaderboard_entries = computed(() => {
         <span class="text-xl">{{ $t("freeplay:leaderboard.title") }}</span>
       </div>
       <div class="flex items-center gap-2">
+        <Tooltip>
+          <TooltipTrigger as-child>
+            <Info class="w-4 h-4 text-black cursor-help translate-x-1" />
+          </TooltipTrigger>
+          <TooltipContent side="bottom" class="max-w-60 text-xs">
+            {{ scoring_description }}
+          </TooltipContent>
+        </Tooltip>
         <Select v-model="scoring_method">
           <SelectTrigger class="h-8 w-24 text-sm">
             <SelectValue />
@@ -138,13 +154,7 @@ const leaderboard_entries = computed(() => {
           v-if="leaderboard_entries.length === 0"
           class="text-center text-gray-500 p-4"
         >
-          {{
-            $t("freeplay:leaderboard.no_entries", {
-              size,
-              puzzle_type,
-              difficulty,
-            })
-          }}
+          {{ $t("freeplay:leaderboard.no_entries") }}
         </div>
         <LeaderboardTable
           v-else

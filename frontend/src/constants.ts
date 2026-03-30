@@ -17,7 +17,7 @@ export const ACTIVE_GAMES: Record<string, ReturnType<typeof create_game_entry>> 
   tents: create_game_entry("⛺", "tents"),
   hashi: create_game_entry("🌉", "hashi"),
   yinyang: create_game_entry("☯️", "yinyang", { admin_only: true }),
-  // norinori: create_game_entry("🀄", "norinori"),
+  norinori: create_game_entry("🀄", "norinori"),
 };
 export type PUZZLE_TYPES = keyof typeof ACTIVE_GAMES;
 

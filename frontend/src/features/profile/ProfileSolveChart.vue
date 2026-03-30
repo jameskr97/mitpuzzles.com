@@ -42,7 +42,7 @@ function toggle_type(puzzle_type: string) {
 }
 
 function filtered_history(type: string): { date: string; avg_time: number }[] {
-  const points = props.solve_time_history[type] ?? [];
+  const points = (props.solve_time_history[type] ?? []).filter(p => p.avg_time <= 600);
   const range = TIME_RANGES.find(r => r.value === time_range.value);
   if (!range?.days) return points;
   const cutoff = new Date();

@@ -12,9 +12,22 @@ const props = defineProps<{
     board: number[][];
     violations?: RuleViolation[];
   };
-  get_region: (row: number, col: number) => number;
-  same_region: (r1: number, c1: number, r2: number, c2: number) => boolean;
+  get_region?: (row: number, col: number) => number;
+  same_region?: (r1: number, c1: number, r2: number, c2: number) => boolean;
 }>();
+
+// derive region functions from meta.regions when not provided as props
+const _get_region = computed(() => {
+  if (props.get_region) return props.get_region;
+  const regions = props.state.definition.meta?.regions;
+  if (!regions) return (_r: number, _c: number) => 0;
+  return (row: number, col: number) => regions[row]?.[col] ?? 0;
+});
+
+const _same_region = computed(() => {
+  if (props.same_region) return props.same_region;
+  return (r1: number, c1: number, r2: number, c2: number) => _get_region.value(r1, c1) === _get_region.value(r2, c2);
+});
 
 const emit = defineEmits<{
   (e: "cell-click", row: number, col: number, button: number): void;
@@ -61,7 +74,7 @@ function on_board_leave(_event: MouseEvent) {
 
 function stop_drag() { is_dragging.value = false; dragged_cells.value.clear(); }
 
-const REGION_BORDER_WIDTH = 3;
+const REGION_BORDER_WIDTH = 4;
 
 const cell_renderer = computed((): CellRenderer => {
   // @ts-expect-error reactive dependency trigger
@@ -96,10 +109,10 @@ const cell_renderer = computed((): CellRenderer => {
     r.fillCell(cell, bg_color);
 
     if (value === NorinoriCell.CROSS) {
-      r.crossMark(cell, null, { linePadding: 0.25, lineColor: "#9ca3af", lineWidth: 2 });
+      r.crossMark(cell, null, { linePadding: 0.25, lineColor: "#DD2E44", lineWidth: 2 });
     }
 
-    r.strokeCell(cell, "#797979");
+    r.strokeCell(cell, "#d1d5db");
     r.regionBorders(cell, row, col, rows, cols, region_map, { border_width: REGION_BORDER_WIDTH });
   };
 });
@@ -114,7 +127,7 @@ const cell_renderer = computed((): CellRenderer => {
     :gap="0"
     grid-color="#000"
     outside-border-color="#000"
-    :inside-border-thickness="2"
+    :inside-border-thickness="1"
     :outside-border-thickness="3"
     @cell-mousedown="on_cell_mousedown"
     @cell-enter="on_cell_enter"

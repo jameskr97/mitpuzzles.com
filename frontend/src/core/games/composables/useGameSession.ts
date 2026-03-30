@@ -153,7 +153,11 @@ export function useGameSession<TReturn extends BaseGameReturn<TMeta>, TMeta = an
     start_game: services.start_game,
   };
 
-  const puzzle_state = computed(() => get_puzzle_state(game.value, services.is_solved.value));
+  const puzzle_state = computed(() => {
+    const state = get_puzzle_state(game.value, services.is_solved.value);
+    state.violations = violations.value;
+    return state;
+  });
 
   const canvas_key = computed(
     () => `${game.value.definition.id}-${game.value.definition.rows}-${game.value.definition.cols}`,

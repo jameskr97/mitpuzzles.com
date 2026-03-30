@@ -91,6 +91,13 @@ class PuzzleNormalizer:
         elif has_rows_cols:
             normalized["rows"] = puzzle["rows"]
             normalized["cols"] = puzzle["cols"]
+        elif has_puzzle_size:
+            psize = str(puzzle["puzzle_size"]).split('x')
+            if len(psize) == 2:
+                normalized["rows"] = int(psize[0])
+                normalized["cols"] = int(psize[1])
+            else:
+                raise ValueError(f"Cannot parse puzzle_size '{puzzle['puzzle_size']}' in {puzzle_type} puzzle")
         else:
             # use puzzle size from filename
             psize = str(size).split('x')

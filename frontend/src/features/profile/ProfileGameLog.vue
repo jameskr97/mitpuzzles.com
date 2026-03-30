@@ -31,37 +31,26 @@ function format_time(seconds: number | null): string {
 </script>
 
 <template>
-  <Container class="col-span-2">
+  <Container>
     <div class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Recent Games</div>
     <div v-if="games.length === 0" class="text-sm text-gray-400 text-center py-4">no games yet</div>
-    <div v-else class="flex flex-col gap-2">
+    <div v-else class="flex flex-col">
       <div
         v-for="(game, i) in games"
         :key="i"
-        class="flex items-center gap-3 p-2 rounded border border-gray-100 hover:border-gray-200 transition-colors"
+        class="flex items-center gap-2 py-1 px-1 border-b border-gray-100 last:border-0"
       >
-        <div class="w-10 h-10 shrink-0 flex items-center justify-center text-2xl">
-          {{ get_game_icon(game.puzzle_type) }}
-        </div>
-        <div class="flex-1 min-w-0">
-          <div class="flex items-center gap-1.5">
-            <span>{{ get_game_icon(game.puzzle_type) }}</span>
-            <span class="text-sm font-medium">{{ capitalize(game.puzzle_type) }}</span>
-            <span class="text-xs text-gray-400">{{ game.puzzle_size }} {{ game.puzzle_difficulty }}</span>
-          </div>
-          <div class="text-xs text-gray-400 mt-0.5">{{ game.date }}</div>
-        </div>
-        <div class="shrink-0 text-right">
-          <div
-            class="text-sm font-semibold"
-            :class="game.solved ? 'text-green-600' : 'text-red-400'"
-          >
-            {{ game.solved ? format_time(game.time) : 'DNF' }}
-          </div>
-          <div class="text-xs" :class="game.solved ? 'text-green-500' : 'text-red-300'">
-            {{ game.solved ? 'solved' : 'abandoned' }}
-          </div>
-        </div>
+        <span class="text-sm">{{ get_game_icon(game.puzzle_type) }}</span>
+        <span class="text-sm font-medium">{{ capitalize(game.puzzle_type) }}</span>
+        <span class="text-xs text-gray-400">{{ game.puzzle_size }}</span>
+        <span class="flex-1"></span>
+        <span class="text-xs text-gray-400">{{ game.date }}</span>
+        <span
+          class="text-sm font-semibold w-12 text-right"
+          :class="game.solved ? 'text-green-600' : 'text-red-400'"
+        >
+          {{ game.solved ? format_time(game.time) : 'DNF' }}
+        </span>
       </div>
     </div>
   </Container>
