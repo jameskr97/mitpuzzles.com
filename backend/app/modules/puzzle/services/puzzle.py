@@ -15,6 +15,7 @@ from app.modules.puzzle.models import (
     FreeplayPuzzleAttempt,
     PuzzlePriority,
     PuzzleShown,
+    UserActivityDaily,
 )
 from app.modules.puzzle.formatting import format_puzzle_for_frontend, format_puzzle_with_solution
 
@@ -407,7 +408,44 @@ class PuzzleService:
             attempt_id=attempt.id,
         )
 
+        # update daily activity
+        if user and attempt_data.timestamp_finish:
+            duration = (attempt_data.timestamp_finish - attempt_data.timestamp_start) / 1000.0 if attempt_data.timestamp_start else None
+            await self._upsert_activity(user.id, puzzle.puzzle_type, attempt_data.is_solved, duration)
+
         return attempt
+
+    async def _upsert_activity(self, user_id: uuid.UUID, puzzle_type: str, is_solved: bool, duration: float | None):
+        """Upsert today's user_activity_daily row with this attempt."""
+        from datetime import date as date_type
+        today = date_type.today()
+
+        row = await self.db.scalar(
+            select(UserActivityDaily).where(
+                UserActivityDaily.user_id == user_id,
+                UserActivityDaily.activity_date == today,
+            )
+        )
+
+        if not row:
+            row = UserActivityDaily(user_id=user_id, activity_date=today, data={"puzzles": {}})
+            self.db.add(row)
+
+        data = row.data or {"puzzles": {}}
+        puzzles = data.setdefault("puzzles", {})
+        entry = puzzles.setdefault(puzzle_type, {"solved": 0, "attempted": 0})
+
+        entry["attempted"] = entry.get("attempted", 0) + 1
+        if is_solved:
+            entry["solved"] = entry.get("solved", 0) + 1
+            if duration is not None:
+                if entry.get("best_time") is None or duration < entry["best_time"]:
+                    entry["best_time"] = round(duration, 2)
+
+        from sqlalchemy.orm.attributes import flag_modified
+        row.data = data
+        flag_modified(row, "data")
+        await self.db.commit()
 
     async def record_puzzle_shown(
         self,
