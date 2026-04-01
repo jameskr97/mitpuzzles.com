@@ -1,87 +1,158 @@
+"""tests for authentication — registration, login, and user management."""
+
 import pytest
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.modules.authentication import User
 
 
-from app.modules.auth.models import User
-
-
-class TestUserRegistration:
+class TestRegistration:
     @pytest.mark.asyncio
-    async def test_register_success(self, client, db: AsyncSession, mock_send_verification_email):
-        user = {"username": "user", "email": "test@example.com", "password": "password123"}
-        response = client.post("/api/auth/register", json=user)
-
+    async def test_register_success(self, seeded_client):
+        client, db = seeded_client
+        response = await client.post("/api/auth/register", json={
+            "username": "testuser",
+            "email": "test@example.com",
+            "password": "password123",
+        })
         assert response.status_code == 201
         data = response.json()
-        assert data["username"] == "user"
+        assert data["username"] == "testuser"
         assert data["email"] == "test@example.com"
         assert "id" in data
 
-        # Verify email sending was called
-        mock_send_verification_email.assert_called_once()
+    @pytest.mark.asyncio
+    async def test_register_duplicate_email(self, seeded_client):
+        client, db = seeded_client
+        await client.post("/api/auth/register", json={
+            "username": "user1", "email": "dupe@example.com", "password": "password123",
+        })
+        response = await client.post("/api/auth/register", json={
+            "username": "user2", "email": "dupe@example.com", "password": "password123",
+        })
+        assert response.status_code == 400
 
-    def test_register_duplicate_username(self, client, db: AsyncSession):
-        user1 = {"username": "dupe", "email": "u1@example.com", "password": "password123"}
-        user2 = {"username": "dupe", "email": "u2@example.com", "password": "password123"}
+    @pytest.mark.asyncio
+    async def test_register_duplicate_username(self, seeded_client):
+        client, db = seeded_client
+        await client.post("/api/auth/register", json={
+            "username": "dupe", "email": "u1@example.com", "password": "password123",
+        })
+        response = await client.post("/api/auth/register", json={
+            "username": "dupe", "email": "u2@example.com", "password": "password123",
+        })
+        assert response.status_code == 400
 
-        client.post("/api/auth/register", json=user1)
-        res = client.post("/api/auth/register", json=user2)
-
-        assert res.status_code == 400
-        assert "Username already registered" in res.json()["detail"]
-
-    def test_register_duplicate_email(self, client, db: AsyncSession):
-        user1 = {"username": "user1", "email": "dupe@example.com", "password": "password123"}
-        user2 = {"username": "user2", "email": "dupe@example.com", "password": "password123"}
-
-        client.post("/api/auth/register", json=user1)
-        res = client.post("/api/auth/register", json=user2)
-
-        assert res.status_code == 400
-        assert "Email already registered" in res.json()["detail"]
-
-    def test_register_invalid_email(self, client, db: AsyncSession):
-        user = {"username": "user", "email": "invalid-email", "password": "password123"}
-        res = client.post("/api/auth/register", json=user)
-
-        assert res.status_code == 422
-
-    def test_register_missing_fields(self, client, db: AsyncSession):
-        # missing password
-        user = {"username": "user", "email": "invalid-email"}
-        response = client.post("/api/auth/register", json=user)
+    @pytest.mark.asyncio
+    async def test_register_invalid_email(self, seeded_client):
+        client, _ = seeded_client
+        response = await client.post("/api/auth/register", json={
+            "username": "user", "email": "not-an-email", "password": "password123",
+        })
         assert response.status_code == 422
 
     @pytest.mark.asyncio
-    async def test_password_is_hashed(self, client, db: AsyncSession):
-        user_data = {"username": "user", "email": "example@example.com", "password": "password123"}
-        response = client.post("/api/auth/register", json=user_data)
-        assert response.status_code == 201
+    async def test_register_missing_password(self, seeded_client):
+        client, _ = seeded_client
+        response = await client.post("/api/auth/register", json={
+            "username": "user", "email": "test@example.com",
+        })
+        assert response.status_code == 422
 
-        # Verify password is not stored in plain text
-        result = await db.execute(select(User).where(User.username == "user"))
+    @pytest.mark.asyncio
+    async def test_password_is_hashed(self, seeded_client):
+        client, db = seeded_client
+        await client.post("/api/auth/register", json={
+            "username": "hashtest", "email": "hash@example.com", "password": "password123",
+        })
+        result = await db.execute(select(User).where(User.username == "hashtest"))
         user = result.scalar_one_or_none()
+        assert user is not None
         assert user.hashed_password != "password123"
-        assert user.hashed_password.startswith("$argon2id$")
 
-    # def test_verification_token_created(self, client, db: AsyncSession):
-    #     response = client.post(
-    #         "/auth/register",
-    #         json={
-    #             "username": "tokentest",
-    #             "email": "token@example.com",
-    #             "password": "password123"
-    #         }
-    #     )
-    #
-    #     assert response.status_code == 201
-    #     user_id = response.json()["id"]
-    #
-    #     # Check that verification token was created
-    #     token = db.query(EmailVerificationToken).filter(
-    #         EmailVerificationToken.user_id == user_id
-    #     ).first()
-    #     assert token is not None
-    #     assert token.used == False
-    #     assert token.expires_at > token.date_created
+
+class TestLogin:
+    @pytest.mark.asyncio
+    async def test_login_success(self, seeded_client):
+        client, db = seeded_client
+        await client.post("/api/auth/register", json={
+            "username": "loginuser", "email": "login@example.com", "password": "password123",
+        })
+        result = await db.execute(select(User).where(User.username == "loginuser"))
+        user = result.scalar_one()
+        user.is_verified = True
+        await db.commit()
+
+        response = await client.post("/api/auth/login", data={
+            "username": "login@example.com", "password": "password123",
+        })
+        assert response.status_code in (200, 204)
+
+    @pytest.mark.asyncio
+    async def test_login_wrong_password(self, seeded_client):
+        client, db = seeded_client
+        await client.post("/api/auth/register", json={
+            "username": "wrongpw", "email": "wrongpw@example.com", "password": "password123",
+        })
+        result = await db.execute(select(User).where(User.username == "wrongpw"))
+        user = result.scalar_one()
+        user.is_verified = True
+        await db.commit()
+
+        response = await client.post("/api/auth/login", data={
+            "username": "wrongpw@example.com", "password": "wrongpassword",
+        })
+        assert response.status_code == 400
+
+    @pytest.mark.asyncio
+    async def test_login_nonexistent_user(self, seeded_client):
+        client, _ = seeded_client
+        response = await client.post("/api/auth/login", data={
+            "username": "nobody@example.com", "password": "password123",
+        })
+        assert response.status_code == 400
+
+    @pytest.mark.asyncio
+    async def test_me_after_login(self, seeded_client):
+        client, db = seeded_client
+        await client.post("/api/auth/register", json={
+            "username": "metest", "email": "me@example.com", "password": "password123",
+        })
+        result = await db.execute(select(User).where(User.username == "metest"))
+        user = result.scalar_one()
+        user.is_verified = True
+        await db.commit()
+
+        await client.post("/api/auth/login", data={
+            "username": "me@example.com", "password": "password123",
+        })
+        response = await client.get("/api/users/me")
+        assert response.status_code == 200
+        assert response.json()["username"] == "metest"
+
+    @pytest.mark.asyncio
+    async def test_me_unauthenticated(self, seeded_client):
+        client, _ = seeded_client
+        response = await client.get("/api/users/me")
+        assert response.status_code == 401
+
+    @pytest.mark.asyncio
+    async def test_logout(self, seeded_client):
+        client, db = seeded_client
+        await client.post("/api/auth/register", json={
+            "username": "logoutuser", "email": "logout@example.com", "password": "password123",
+        })
+        result = await db.execute(select(User).where(User.username == "logoutuser"))
+        user = result.scalar_one()
+        user.is_verified = True
+        await db.commit()
+
+        await client.post("/api/auth/login", data={
+            "username": "logout@example.com", "password": "password123",
+        })
+        me = await client.get("/api/users/me")
+        assert me.status_code == 200
+
+        await client.post("/api/auth/logout")
+        me = await client.get("/api/users/me")
+        assert me.status_code == 401

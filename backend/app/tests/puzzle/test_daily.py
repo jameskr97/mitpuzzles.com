@@ -1,145 +1,12 @@
 """tests for daily puzzle endpoints."""
 
 import pytest
-import pytest_asyncio
-from collections.abc import AsyncGenerator
 from datetime import datetime, timezone
 
-from httpx import AsyncClient, ASGITransport
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-
-import uuid6
-
-from app.main import app
-from app.dependencies import get_async_session
-from app.models import Base
-from app.modules.puzzle.models import Puzzle, FreeplayPuzzleAttempt, DailyPuzzle, DailyPuzzleAttempt
-from app.modules.tracking import Device
-from app.modules.authentication import User, AccessToken
-
-
-# --- helpers ---
-
-async def create_device(db: AsyncSession) -> Device:
-    device = Device(id=uuid6.uuid7(), user_agent="test-agent")
-    db.add(device)
-    await db.flush()
-    return device
-
-
-async def create_user(db: AsyncSession, username: str, email: str) -> User:
-    user = User(
-        id=uuid6.uuid7(),
-        username=username,
-        email=email,
-        hashed_password="$argon2id$fake",
-        is_active=True,
-        is_superuser=False,
-        is_verified=True,
-    )
-    db.add(user)
-    await db.flush()
-    return user
-
-
-async def create_puzzle(db: AsyncSession, puzzle_type="sudoku", size="9x9", difficulty="easy") -> Puzzle:
-    puzzle = Puzzle(
-        id=uuid6.uuid7(),
-        complete_id=str(uuid6.uuid7()),
-        definition_id=str(uuid6.uuid7()),
-        solution_id=str(uuid6.uuid7()),
-        puzzle_type=puzzle_type,
-        puzzle_size=size,
-        puzzle_difficulty=difficulty,
-        puzzle_data={"rows": 9, "cols": 9, "initial_state": [], "solution": []},
-        is_active=True,
-    )
-    db.add(puzzle)
-    await db.flush()
-    return puzzle
-
-
-async def authenticate(client: AsyncClient, db: AsyncSession, user: User) -> None:
-    """create an access token and set the cookie on the client."""
-    import secrets
-    token = secrets.token_urlsafe(32)
-    access_token = AccessToken(token=token, user_id=user.id)
-    db.add(access_token)
-    await db.flush()
-    client.cookies.set("access_token", token)
-
-
-async def create_daily_puzzle(db: AsyncSession, puzzle: Puzzle, date: datetime) -> DailyPuzzle:
-    daily = DailyPuzzle(
-        puzzle_date=date.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=None),
-        puzzle_id=puzzle.id,
-    )
-    db.add(daily)
-    await db.flush()
-    return daily
-
-
-async def create_daily_attempt(
-    db: AsyncSession,
-    daily_puzzle: DailyPuzzle,
-    device: Device,
-    user: User | None,
-    start: int,
-    finish: int,
-    is_solved: bool = True,
-) -> DailyPuzzleAttempt:
-    attempt = FreeplayPuzzleAttempt(
-        id=uuid6.uuid7(),
-        device_id=device.id,
-        user_id=user.id if user else None,
-        puzzle_id=daily_puzzle.puzzle_id,
-        timestamp_start=start,
-        timestamp_finish=finish,
-        action_history=[],
-        board_state=[],
-        is_solved=is_solved,
-    )
-    db.add(attempt)
-    await db.flush()
-
-    daily_attempt = DailyPuzzleAttempt(
-        user_id=user.id if user else None,
-        device_id=device.id,
-        daily_puzzle_id=daily_puzzle.id,
-        attempt_id=attempt.id,
-    )
-    db.add(daily_attempt)
-    await db.flush()
-    return daily_attempt
-
-
-# --- fixture ---
-
-@pytest_asyncio.fixture
-async def seeded_client(postgres_url) -> AsyncGenerator[tuple[AsyncClient, AsyncSession], None]:
-    engine = create_async_engine(postgres_url)
-
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
-    session_maker = async_sessionmaker(engine, expire_on_commit=False)
-
-    async def override_session() -> AsyncGenerator[AsyncSession, None]:
-        async with session_maker() as session:
-            yield session
-
-    app.dependency_overrides[get_async_session] = override_session
-    transport = ASGITransport(app=app)
-
-    async with session_maker() as db:
-        async with AsyncClient(transport=transport, base_url="http://test") as client:
-            yield client, db
-
-    app.dependency_overrides.clear()
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-    await engine.dispose()
-
+from app.tests.conftest import (
+    create_device, create_user, create_puzzle, authenticate,
+    create_daily_puzzle, create_daily_attempt,
+)
 
 TODAY = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
@@ -348,6 +215,114 @@ class TestDailyLeaderboard:
         response = await client.get(f"/api/puzzle/daily/{TODAY}/leaderboard")
         assert response.status_code == 200
         assert response.json()["count"] == 0
+
+
+class TestDailyClaimAttempt:
+    @pytest.mark.asyncio
+    async def test_claim_anonymous_attempt(self, seeded_client):
+        """logging in claims today's anonymous daily attempt."""
+        client, db = seeded_client
+        device = await create_device(db)
+        user = await create_user(db, "claimer", "claimer@test.com")
+        puzzle = await create_puzzle(db)
+        daily = await create_daily_puzzle(db, puzzle, datetime.now(timezone.utc))
+        # anonymous attempt (no user)
+        await create_daily_attempt(db, daily, device, None, start=1000, finish=6000)
+        await authenticate(client, db, user)
+        await db.commit()
+
+        response = await client.post(
+            "/api/puzzle/daily/claim",
+            cookies={"device_id": str(device.id)},
+        )
+        assert response.status_code == 200
+        assert response.json()["claimed"] == True
+
+        # verify: leaderboard should now show the user
+        lb = await client.get(f"/api/puzzle/daily/{TODAY}/leaderboard")
+        assert lb.json()["count"] == 1
+        assert lb.json()["leaderboard"][0]["username"] == "claimer"
+
+    @pytest.mark.asyncio
+    async def test_claim_does_nothing_if_already_claimed(self, seeded_client):
+        """claiming when user already has an attempt returns false."""
+        client, db = seeded_client
+        device = await create_device(db)
+        user = await create_user(db, "already", "already@test.com")
+        puzzle = await create_puzzle(db)
+        daily = await create_daily_puzzle(db, puzzle, datetime.now(timezone.utc))
+        # user already has an attempt
+        await create_daily_attempt(db, daily, device, user, start=1000, finish=6000)
+        await authenticate(client, db, user)
+        await db.commit()
+
+        response = await client.post(
+            "/api/puzzle/daily/claim",
+            cookies={"device_id": str(device.id)},
+        )
+        assert response.status_code == 200
+        assert response.json()["claimed"] == False
+
+    @pytest.mark.asyncio
+    async def test_claim_does_nothing_if_no_anonymous_attempt(self, seeded_client):
+        """claiming with no anonymous attempt on this device returns false."""
+        client, db = seeded_client
+        device = await create_device(db)
+        user = await create_user(db, "noattempt", "noattempt@test.com")
+        puzzle = await create_puzzle(db)
+        await create_daily_puzzle(db, puzzle, datetime.now(timezone.utc))
+        await authenticate(client, db, user)
+        await db.commit()
+
+        response = await client.post(
+            "/api/puzzle/daily/claim",
+            cookies={"device_id": str(device.id)},
+        )
+        assert response.status_code == 200
+        assert response.json()["claimed"] == False
+
+    @pytest.mark.asyncio
+    async def test_claim_does_not_steal_other_device_attempt(self, seeded_client):
+        """claiming only works for the current device's attempt."""
+        client, db = seeded_client
+        device1 = await create_device(db)
+        device2 = await create_device(db)
+        user = await create_user(db, "thief", "thief@test.com")
+        puzzle = await create_puzzle(db)
+        daily = await create_daily_puzzle(db, puzzle, datetime.now(timezone.utc))
+        # anonymous attempt on device2, not device1
+        await create_daily_attempt(db, daily, device2, None, start=1000, finish=6000)
+        await authenticate(client, db, user)
+        await db.commit()
+
+        # try to claim from device1
+        response = await client.post(
+            "/api/puzzle/daily/claim",
+            cookies={"device_id": str(device1.id)},
+        )
+        assert response.status_code == 200
+        assert response.json()["claimed"] == False
+
+    @pytest.mark.asyncio
+    async def test_claim_does_not_overwrite_other_user(self, seeded_client):
+        """if another user already claimed this device's attempt, can't re-claim."""
+        client, db = seeded_client
+        device = await create_device(db)
+        user1 = await create_user(db, "first", "first@test.com")
+        user2 = await create_user(db, "second", "second@test.com")
+        puzzle = await create_puzzle(db)
+        daily = await create_daily_puzzle(db, puzzle, datetime.now(timezone.utc))
+        # user1 already has this attempt
+        await create_daily_attempt(db, daily, device, user1, start=1000, finish=6000)
+        await authenticate(client, db, user2)
+        await db.commit()
+
+        response = await client.post(
+            "/api/puzzle/daily/claim",
+            cookies={"device_id": str(device.id)},
+        )
+        assert response.status_code == 200
+        assert response.json()["claimed"] == False
 
 
 class TestDailyOnePuzzlePerDate:
