@@ -138,6 +138,15 @@ class PuzzleNormalizer:
             normalized["row_hints"] = puzzle.get("row_clues")
             normalized["col_hints"] = puzzle.get("col_clues")
             normalized["regions"] = puzzle.get("regions")
+
+        ##################################################################
+        # difficulty value if present and numeric
+        if "difficulty" in puzzle:
+            try:
+                normalized["difficulty_value"] = float(puzzle["difficulty"])
+            except (ValueError, TypeError):
+                pass
+
         return normalized
 
     def generate_ids(self, normalized_puzzle: Dict[str, Any]) -> Dict[str, str]:
