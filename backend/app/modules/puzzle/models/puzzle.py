@@ -1,18 +1,16 @@
 from datetime import datetime, timezone
 import uuid
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 from sqlalchemy import String, DateTime, Index, UUID, Boolean, text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.types import JSON
 
 from app.models import Base
 
 class Puzzle(Base):
-    """
-    Stores pre-generated puzzles of all types.
-    Puzzles are created offline and loaded into the database.
-    """
+    """stores pre-generated puzzles of all types"""
 
     __tablename__ = "puzzle"
     __table_args__ = (
@@ -36,6 +34,9 @@ class Puzzle(Base):
     puzzle_size: Mapped[str] = mapped_column(String(32), nullable=False)  # 5x5, 9x9, 10x10...
     puzzle_difficulty: Mapped[str] = mapped_column(String(32), nullable=True)  # easy, medium, hard...
     puzzle_data: Mapped[Dict[str, Any]] = mapped_column(JSON, nullable=False)  # JSON Field for puzzle data
+
+    # structure metrics
+    metrics: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONB, nullable=True)
 
     # Distribution control
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)

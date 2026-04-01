@@ -98,10 +98,10 @@ class PuzzleService:
         return frames
 
     async def get_attempt_with_puzzle(self, attempt_id: uuid.UUID) -> Optional[FreeplayPuzzleAttempt]:
-        """get a freeplay attempt by id with its puzzle eagerly loaded."""
+        """get a freeplay attempt by id with its puzzle and user eagerly loaded."""
         result = await self.db.execute(
             select(FreeplayPuzzleAttempt)
-            .options(selectinload(FreeplayPuzzleAttempt.puzzle))
+            .options(selectinload(FreeplayPuzzleAttempt.puzzle), selectinload(FreeplayPuzzleAttempt.user))
             .where(FreeplayPuzzleAttempt.id == attempt_id)
         )
         return result.scalars().first()
@@ -380,6 +380,21 @@ class PuzzleService:
             is_solved=attempt_data.is_solved,
             used_tutorial=attempt_data.used_tutorial,
         )
+
+        # compute game metrics before saving
+        from app.modules.puzzle.services.game_metrics import compute_game_metrics
+        initial_state = puzzle.puzzle_data.get("initial_state") or puzzle.puzzle_data.get("game_state")
+        solution = puzzle.puzzle_data.get("solution") or puzzle.puzzle_data.get("game_board")
+        if initial_state and solution:
+            metrics = compute_game_metrics(
+                puzzle_type=puzzle.puzzle_type,
+                initial_state=initial_state,
+                solution=solution,
+                action_history=attempt_data.action_history or [],
+                is_solved=attempt_data.is_solved,
+            )
+            if "error" not in metrics:
+                attempt.metrics = metrics
 
         self.db.add(attempt)
         await self.db.commit()

@@ -3,6 +3,7 @@ import uuid
 from typing import Dict, Any, Optional, List
 
 from sqlalchemy import DateTime, Index, UUID, Boolean, text, ForeignKey, BigInteger
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column, relationship, declared_attr
 from sqlalchemy.types import JSON
@@ -36,6 +37,9 @@ class FreeplayPuzzleAttempt(Base):
     board_state: Mapped[List[Any]] = mapped_column(JSON, default=list, nullable=False)
     used_tutorial: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     is_solved: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    # game metrics
+    metrics: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONB, nullable=True)
 
     # Use declared_attr for relationships that need table name
     @declared_attr
