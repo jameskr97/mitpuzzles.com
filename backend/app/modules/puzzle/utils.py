@@ -25,19 +25,18 @@ def is_research_format(board_state, action_history):
     """
     check if data is already in research format by looking for -1 (empty cell marker).
 
-    this function exists for the minority number of games that used an older data storage format.
-    when exported, all the games are given the same format, but in order to ensure this, we need to check
-    which games ARE vs AR NOT in the desired format.
-    TODO(james): retroactively convert all old-format stored games to the new format
+    prioritizes action_history over board_state: the first move on any cell will have
+    old_value=-1 in research format, which is a more reliable signal than board_state
+    (which may have no empty cells if the puzzle was completed).
     """
-    if board_state:
-        for row in board_state:
-            if isinstance(row, list) and -1 in row:
-                return True
-
     if action_history:
         for action in action_history:
             if action.get("old_value") == -1 or action.get("new_value") == -1:
+                return True
+
+    if board_state:
+        for row in board_state:
+            if isinstance(row, list) and -1 in row:
                 return True
 
     return False
