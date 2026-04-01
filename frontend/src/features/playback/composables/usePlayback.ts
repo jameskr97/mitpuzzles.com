@@ -17,7 +17,10 @@ export function usePlayback(
   const puzzle_definition = ref<any>(null);
   const frames = ref<PlaybackFrame[]>([]);
   const timestamp_start = ref(0);
+  const timestamp_finish = ref<number | null>(null);
   const is_solved = ref(false);
+  const metrics = ref<Record<string, any> | null>(null);
+  const username = ref<string | null>(null);
 
   // use shared controls or create own
   const controls = shared_controls ?? usePlaybackControls(() => frames.value.length);
@@ -36,7 +39,10 @@ export function usePlayback(
       puzzle_definition.value = data.puzzle_definition;
       frames.value = data.frames;
       timestamp_start.value = data.timestamp_start;
+      timestamp_finish.value = data.timestamp_finish ?? null;
       is_solved.value = data.is_solved;
+      metrics.value = data.metrics ?? null;
+      username.value = data.username ?? null;
     } catch (e) {
       error.value = "failed to load attempt";
     } finally {
@@ -84,7 +90,10 @@ export function usePlayback(
     puzzle_definition,
     frames,
     timestamp_start,
+    timestamp_finish,
     is_solved,
+    metrics,
+    username,
     puzzle_type,
     canvas_component,
     canvas_state,
