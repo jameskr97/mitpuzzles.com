@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed } from "vue";
+import { useAsyncState } from "@vueuse/core";
 import MarkdownIt from "markdown-it";
 import Container from "@/core/components/ui/Container.vue";
 import { Button } from "@/core/components/ui/button";
@@ -26,8 +27,15 @@ interface NewsPost {
   published_at: string | null;
 }
 
-const posts = ref<NewsPost[]>([]);
-const loading = ref(true);
+const { state: posts, isLoading: loading, execute: fetch_posts } = useAsyncState(
+  async () => {
+    const res = await fetch("/api/news/admin/list", { credentials: "include" });
+    if (!res.ok) return [];
+    return (await res.json()) as NewsPost[];
+  },
+  [] as NewsPost[],
+  { resetOnExecute: false },
+);
 
 // editor state
 const editor_open = ref(false);
@@ -44,14 +52,6 @@ function format_date(iso: string): string {
   });
 }
 
-async function fetch_posts() {
-  try {
-    const res = await fetch("/api/news/admin/list", { credentials: "include" });
-    if (res.ok) posts.value = await res.json();
-  } finally {
-    loading.value = false;
-  }
-}
 
 function open_new() {
   editing_id.value = null;
@@ -98,7 +98,6 @@ async function delete_post(id: string) {
   await fetch_posts();
 }
 
-onMounted(fetch_posts);
 </script>
 
 <template>

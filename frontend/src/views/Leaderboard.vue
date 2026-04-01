@@ -12,7 +12,9 @@ const metadata_store = usePuzzleMetadataStore();
 const puzzle_types = Object.keys(ACTIVE_GAMES);
 
 // per-type state
-const selected = reactive<Record<string, { size: string; difficulty: string | null; period: string; method: string }>>({});
+const selected = reactive<Record<string, { size: string; difficulty: string | null; period: string; method: string }>>(
+  {},
+);
 const leaderboards = ref<Record<string, LeaderboardEntry[]>>({});
 const loading = ref<Record<string, boolean>>({});
 
@@ -127,7 +129,7 @@ function variant_key(v: { size: string; difficulty?: string | null }): string {
 }
 
 function on_variant_change(pt: string, key: string) {
-  const variant = metadata_store.getVariants(pt).find(v => variant_key(v) === key);
+  const variant = metadata_store.getVariants(pt).find((v) => variant_key(v) === key);
   if (variant) {
     selected[pt].size = variant.size;
     selected[pt].difficulty = variant.difficulty ?? null;
@@ -154,7 +156,7 @@ function on_method_change(pt: string, val: string) {
     </Container>
 
     <!-- leaderboard columns -->
-    <div class="grid grid-cols-4 gap-2">
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
       <Container v-for="pt in puzzle_types" :key="pt" class="flex flex-col">
         <!-- type header -->
         <div class="flex items-center gap-1.5 mb-1">
@@ -169,11 +171,7 @@ function on_method_change(pt: string, val: string) {
             :value="variant_key(selected[pt])"
             @change="on_variant_change(pt, ($event.target as HTMLSelectElement).value)"
           >
-            <option
-              v-for="v in metadata_store.getVariants(pt)"
-              :key="variant_key(v)"
-              :value="variant_key(v)"
-            >
+            <option v-for="v in metadata_store.getVariants(pt)" :key="variant_key(v)" :value="variant_key(v)">
               {{ get_variant_label(v) }}
             </option>
           </select>

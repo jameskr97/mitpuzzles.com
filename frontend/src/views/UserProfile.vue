@@ -28,7 +28,13 @@ const stats = ref({
   total_puzzles_solved: 0,
   total_puzzles_attempted: 0,
   total_time_seconds: 0,
-  puzzle_type_stats: [] as { puzzle_type: string; solved_count: number; attempt_count: number; best_time: number | null; avg_time: number | null }[],
+  puzzle_type_stats: [] as {
+    puzzle_type: string;
+    solved_count: number;
+    attempt_count: number;
+    best_time: number | null;
+    avg_time: number | null;
+  }[],
   daily_streak: { current_streak: 0, longest_streak: 0, total_dailies_solved: 0, fastest_daily_count: 0 },
 });
 
@@ -78,17 +84,22 @@ async function load_featured_solve(index: number, attempt_id: string, puzzle_typ
     featured_frames[index] = frames;
     const controls = featured_controls[index];
     const canvas_component = ACTIVE_GAMES[data.puzzle_definition?.puzzle_type]?.component ?? null;
-    featured_games.value = [...featured_games.value, {
-      puzzle_type,
-      best_time,
-      frames,
-      canvas_component,
-      canvas_state: computed(() => {
-        const frame = frames[Math.min(controls.current_frame.value, frames.length - 1)];
-        return frame ? { definition: data.puzzle_definition, board: frame.board, violations: [], solved: false } : null;
-      }),
-      controls,
-    }];
+    featured_games.value = [
+      ...featured_games.value,
+      {
+        puzzle_type,
+        best_time,
+        frames,
+        canvas_component,
+        canvas_state: computed(() => {
+          const frame = frames[Math.min(controls.current_frame.value, frames.length - 1)];
+          return frame
+            ? { definition: data.puzzle_definition, board: frame.board, violations: [], solved: false }
+            : null;
+        }),
+        controls,
+      },
+    ];
   } catch {
     // skip failed loads
   }
@@ -148,7 +159,6 @@ onMounted(async () => {
   </Container>
 
   <div v-else class="flex flex-col gap-2">
-
     <!-- row 1: header + stats -->
     <ProfileHeader
       :username="stats.username"
@@ -184,10 +194,9 @@ onMounted(async () => {
           :canvas_state="featured.canvas_state"
           :controls="featured.controls"
         />
-        <ProfileGameLog :games="game_log" />
+        <ProfileGameLog :games="game_log" class="col-span-2" />
       </div>
-      <ProfileActivityFeed :activity="activity_feed" class="overflow-hidden h-0 min-h-full"  />
+      <ProfileActivityFeed :activity="activity_feed" class="overflow-hidden h-0 min-h-full" />
     </div>
-
   </div>
 </template>
