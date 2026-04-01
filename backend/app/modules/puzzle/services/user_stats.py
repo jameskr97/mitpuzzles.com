@@ -305,6 +305,7 @@ class UserStatsService:
             "sudoku": "🔢", "nonograms": "🏁", "minesweeper": "💣",
             "lightup": "💡", "hashi": "🌉", "mosaic": "🧩",
             "tents": "⛺", "aquarium": "🐠", "kakurasu": "⬛",
+            "norinori": "🀄",
         }
 
         query = (
@@ -341,50 +342,101 @@ class UserStatsService:
 
         return feed
 
-    async def _get_game_log(self, user_id: uuid.UUID, limit: int = 10) -> List[Dict[str, Any]]:
-        """get recent game attempts."""
+    async def _get_game_log(self, user_id: uuid.UUID, display_limit: int = 10) -> List[Dict[str, Any]]:
+        """get recent puzzles shown to user, including unplayed ones.
+        Returns up to display_limit line items (skip groups count as one)."""
         duration_expr = (
             FreeplayPuzzleAttempt.timestamp_finish - FreeplayPuzzleAttempt.timestamp_start
         ) / 1000.0
 
+        # fetch more rows than needed since skips collapse
         query = (
             select(
-                FreeplayPuzzleAttempt.id.label("attempt_id"),
+                PuzzleShown.attempt_id,
+                PuzzleShown.shown_at,
                 Puzzle.puzzle_type,
                 Puzzle.puzzle_size,
                 Puzzle.puzzle_difficulty,
                 FreeplayPuzzleAttempt.is_solved,
                 FreeplayPuzzleAttempt.timestamp_finish,
+                FreeplayPuzzleAttempt.metrics,
                 case(
                     (FreeplayPuzzleAttempt.is_solved == True, duration_expr),
                     else_=None,
                 ).label("time"),
             )
-            .join(Puzzle, FreeplayPuzzleAttempt.puzzle_id == Puzzle.id)
-            .where(
-                FreeplayPuzzleAttempt.user_id == user_id,
-                FreeplayPuzzleAttempt.timestamp_finish.is_not(None),
-            )
-            .order_by(FreeplayPuzzleAttempt.timestamp_finish.desc())
-            .limit(limit)
+            .join(Puzzle, PuzzleShown.puzzle_id == Puzzle.id)
+            .outerjoin(FreeplayPuzzleAttempt, PuzzleShown.attempt_id == FreeplayPuzzleAttempt.id)
+            .where(PuzzleShown.user_id == user_id)
+            .order_by(PuzzleShown.shown_at.desc())
         )
         result = await self.db.execute(query)
         rows = result.all()
 
-        return [
-            {
-                "attempt_id": str(row.attempt_id),
+        # build entries, collapsing sequential skips, stopping at display_limit
+        results = []
+        skip_count = 0
+
+        def flush_skips():
+            nonlocal skip_count
+            if skip_count > 0:
+                results.append({
+                    "attempt_id": None,
+                    "puzzle_type": "",
+                    "puzzle_size": "",
+                    "puzzle_difficulty": None,
+                    "solved": False,
+                    "status": "skipped",
+                    "skip_count": skip_count,
+                    "time": None,
+                    "date": "",
+                })
+                skip_count = 0
+
+        for row in rows:
+            has_attempt = row.attempt_id is not None
+            is_solved = row.is_solved if has_attempt else None
+            status = "solved" if is_solved else ("abandoned" if has_attempt and row.timestamp_finish else "skipped")
+
+            if status == "skipped":
+                skip_count += 1
+                continue
+
+            flush_skips()
+            if len(results) >= display_limit:
+                break
+
+            # determine date
+            if row.timestamp_finish and isinstance(row.timestamp_finish, (int, float)):
+                date_str = datetime.utcfromtimestamp(row.timestamp_finish / 1000).strftime("%Y-%m-%d")
+            elif row.shown_at:
+                date_str = row.shown_at.strftime("%Y-%m-%d") if hasattr(row.shown_at, "strftime") else str(row.shown_at)[:10]
+            else:
+                date_str = ""
+
+            entry = {
+                "attempt_id": str(row.attempt_id) if row.attempt_id else None,
                 "puzzle_type": row.puzzle_type,
                 "puzzle_size": row.puzzle_size,
                 "puzzle_difficulty": row.puzzle_difficulty,
-                "solved": row.is_solved,
+                "solved": bool(is_solved),
+                "status": status,
                 "time": round(row.time, 2) if row.time else None,
-                "date": datetime.utcfromtimestamp(row.timestamp_finish / 1000).strftime("%Y-%m-%d")
-                    if isinstance(row.timestamp_finish, (int, float))
-                    else str(row.timestamp_finish)[:10],
+                "date": date_str,
             }
-            for row in rows
-        ]
+            if row.metrics:
+                entry["actual_actions"] = row.metrics.get("actual_actions")
+                entry["efficiency"] = row.metrics.get("efficiency")
+            results.append(entry)
+
+            if len(results) >= display_limit:
+                break
+
+        # flush trailing skips
+        if skip_count > 0 and len(results) < display_limit:
+            flush_skips()
+
+        return results
 
     async def _get_featured_solves(
         self, user_id: uuid.UUID, puzzle_type_stats: List[Dict[str, Any]]
