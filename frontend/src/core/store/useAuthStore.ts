@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import posthog from "posthog-js";
 import { useAppStore } from "./useAppStore";
+import { useDailyPuzzleStore } from "@/core/store/puzzle/useDailyPuzzleStore";
 import { api } from "@/core/services/client";
 import { i18next } from "@/i18n.ts";
 import { capture_error } from "@/core/services/posthog.ts";
@@ -70,6 +71,7 @@ export const useAuthStore = defineStore("auth", {
       }
 
       await this.fetchCurrentUser();
+      await useDailyPuzzleStore().claimForUser();
       this.loading = false;
       return this.user;
     },

@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from typing import Optional, Dict, Any
 
 from fastapi import HTTPException
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -93,7 +93,7 @@ class DailyPuzzleService:
                 time_seconds = (freeplay_attempt.timestamp_finish - freeplay_attempt.timestamp_start) / 1000.0
                 completion_time = format_duration(time_seconds)
 
-        return {
+        result_dict = {
             "puzzle_type": daily_puzzle.puzzle.puzzle_type,
             "puzzle_size": daily_puzzle.puzzle.puzzle_size,
             "puzzle_difficulty": daily_puzzle.puzzle.puzzle_difficulty,
@@ -102,6 +102,11 @@ class DailyPuzzleService:
             "is_solved": is_solved,
             "completion_time": completion_time,
         }
+
+        if is_solved and freeplay_attempt:
+            result_dict["board_state"] = freeplay_attempt.board_state
+
+        return result_dict
 
     async def submit_daily_attempt(
         self,
@@ -141,3 +146,53 @@ class DailyPuzzleService:
             await self.db.commit()
 
         return {"status": "Daily puzzle submitted.", "id": str(freeplay_attempt.id)}
+
+    async def claim_daily_for_user(self, user_id: uuid.UUID, device_id: uuid.UUID) -> bool:
+        """Claim today's anonymous daily attempt for a user who just logged in/registered.
+
+        Only claims if:
+        - There's a daily puzzle for today
+        - The device has an attempt for today's daily
+        - That attempt has no user_id set
+        """
+        today = datetime.now(timezone.utc).replace(tzinfo=None)
+        daily_puzzle = await self.db.scalar(
+            select(DailyPuzzle).where(
+                func.date(DailyPuzzle.puzzle_date) == today.date()
+            )
+        )
+        if not daily_puzzle:
+            return False
+
+        # check if this user already has an attempt for today
+        existing_user_attempt = await self.db.scalar(
+            select(DailyPuzzleAttempt).where(
+                DailyPuzzleAttempt.daily_puzzle_id == daily_puzzle.id,
+                DailyPuzzleAttempt.user_id == user_id,
+            )
+        )
+        if existing_user_attempt:
+            return False
+
+        daily_attempt = await self.db.scalar(
+            select(DailyPuzzleAttempt).where(
+                DailyPuzzleAttempt.daily_puzzle_id == daily_puzzle.id,
+                DailyPuzzleAttempt.device_id == device_id,
+                DailyPuzzleAttempt.user_id.is_(None),
+            )
+        )
+        if not daily_attempt:
+            return False
+
+        daily_attempt.user_id = user_id
+
+        # also claim the linked freeplay attempt
+        if daily_attempt.attempt_id:
+            freeplay_attempt = await self.db.scalar(
+                select(FreeplayPuzzleAttempt).where(FreeplayPuzzleAttempt.id == daily_attempt.attempt_id)
+            )
+            if freeplay_attempt and freeplay_attempt.user_id is None:
+                freeplay_attempt.user_id = user_id
+
+        await self.db.commit()
+        return True

@@ -7,13 +7,15 @@
  *
  * Games provide their own rendering via the default slot.
  */
-import { computed, onUnmounted, provide, ref } from "vue";
+import { computed, onUnmounted, provide, ref, inject } from "vue";
 import { emitter } from "@/core/services/event-bus";
 import { Button } from "@/core/components/ui/button";
 import type { GameController, GameDefinition } from "@/core/games/types/game-controller";
 import Container from "@/core/components/ui/Container.vue";
 import { usePuzzleScaleStore } from "@/core/store/puzzle/usePuzzleScaleStore";
 import { usePuzzleProgressStore } from "@/core/store/puzzle/usePuzzleProgressStore";
+import { useAuthStore } from "@/core/store/useAuthStore";
+import { useAppStore } from "@/core/store/useAppStore";
 import { ACTIVE_GAMES } from "@/constants";
 import { useGameLayout } from "@/core/composables/useGameLayout";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/core/components/ui/dialog";
@@ -37,6 +39,8 @@ const is_daily = props.controller.puzzle_type === "daily";
 const layout = useGameLayout(puzzle_type, { auto_show_instructions: !is_daily });
 const game_entry = ACTIVE_GAMES[puzzle_type];
 const game_title = computed(() => puzzle_type.charAt(0).toUpperCase() + puzzle_type.slice(1));
+const auth_store = useAuthStore();
+const app_store = useAppStore();
 
 // Provide controller and layout for child components
 provide("game-controller", props.controller);
@@ -90,6 +94,20 @@ const container_width = computed(() => {
       <!-- Status Bar (hidden when error) -->
       <GameLayoutStatusbar v-if="!error" :controller="controller" />
 
+      <!-- Daily solve congrats bar -->
+      <Container
+        v-if="is_daily && controller.state.value.solved"
+        class="w-full md:max-w-prose mx-auto text-center py-2"
+      >
+        <p class="text-green-700 font-semibold">
+          Congrats! You solved it in {{ controller.formatted_time.value }}.
+        </p>
+        <p v-if="!auth_store.isAuthenticated" class="text-sm text-gray-500 mt-1">
+          Want to appear on the leaderboard?
+          <button class="text-blue-600 underline" @click="app_store.open_login_modal()">Make an account</button>!
+        </p>
+      </Container>
+
       <!-- Error State -->
       <Container v-if="error" class="w-full max-w-full mx-auto py-12">
         <div class="text-center">
@@ -105,7 +123,11 @@ const container_width = computed(() => {
         :style="container_width ? { width: container_width + 'px' } : {}"
       >
         <p class="text-gray-600 text-center">
-          {{ $t("daily:start_prompt", { puzzle_type: game_title }) }}
+          <i18next :translation="$t('daily:start_prompt', { puzzle_type: game_title })">
+            <template #instructionsLink>
+              <span class="underline text-blue-500 cursor-pointer" @click="layout.instructions_visible.value = true">{{ $t("daily:start_prompt_instructions_link") }}</span>
+            </template>
+          </i18next>
         </p>
         <Button size="lg" @click="handle_start">
           {{ $t("ui:action.start") }}

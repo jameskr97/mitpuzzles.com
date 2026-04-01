@@ -12,7 +12,7 @@ from app.modules.puzzle.schemas import (
     DailyTodayResponse,
     PuzzleSubmitResponse,
     FreeplayAttemptCreate,
-    LeaderboardResponse,
+    LeaderboardResponse, DailyClaimResponse,
 )
 from app.modules.puzzle.services import DailyPuzzleService, LeaderboardService
 from app.modules.puzzle.formatting import format_puzzle_for_frontend
@@ -81,3 +81,14 @@ async def submit_daily_attempt(
         raise HTTPException(status_code=400, detail="invalid date format. use YYYY-MM-DD.")
 
     return await DailyPuzzleService(db).submit_daily_attempt(puzzle_date, device_id, user, attempt_data)
+
+
+@router.post("/daily/claim", response_model=DailyClaimResponse)
+async def claim_daily_attempt(
+    db: AsyncDatabase,
+    device_id: uuid.UUID = Depends(get_device_id),
+    user: User = Depends(fastapi_users.current_user()),
+):
+    """Claim today's anonymous daily attempt for the authenticated user."""
+    claimed = await DailyPuzzleService(db).claim_daily_for_user(user.id, device_id)
+    return {"claimed": claimed}

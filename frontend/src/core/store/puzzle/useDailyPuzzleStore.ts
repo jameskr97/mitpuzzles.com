@@ -41,6 +41,14 @@ export const useDailyPuzzleStore = defineStore("puzzle.daily", {
       const def = this.definition;
       return def ? { definition: def, board: def.initial_state } : null;
     },
+    solved_state() {
+      const board = this.daily?.puzzle.board_state;
+      if (!board || !this.daily?.puzzle.is_solved || !this.definition) return null;
+      return {
+        definition: this.definition,
+        board,
+      };
+    },
   },
 
   actions: {
@@ -98,11 +106,21 @@ export const useDailyPuzzleStore = defineStore("puzzle.daily", {
       this.leaderboard = data.leaderboard as LeaderboardEntry[];
     },
 
+    async claimForUser() {
+      const { data, error } = await api.POST("/api/puzzle/daily/claim");
+      if (error) return false;
+      if (data.claimed) {
+        await this.refreshLeaderboard();
+      }
+      return data.claimed;
+    },
+
     async refresh() {
       this.initialized = false;
       this.daily = null;
       this.leaderboard = [];
       await this.init();
     },
+
   },
 });

@@ -7,6 +7,26 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.errors import ErrorResponse
 
 
+class PuzzleMetrics(BaseModel):
+    """Structural metrics for a puzzle definition."""
+    # common
+    min_actions: int
+    board_size: int
+    empty_cells: int
+    clue_cells: int
+    solution_density: float
+
+    # type-specific
+    mine_count: Optional[int] = None      # minesweeper
+    given_count: Optional[int] = None     # sudoku
+    bulb_count: Optional[int] = None      # lightup
+    tent_count: Optional[int] = None      # tents
+    water_cells: Optional[int] = None     # aquarium
+    black_cells: Optional[int] = None     # kakurasu, nonograms
+    shaded_cells: Optional[int] = None    # mosaic
+    bridge_count: Optional[int] = None    # hashi
+
+
 class FilterOption(BaseModel):
     """a single filter option with its count."""
     value: str
@@ -207,6 +227,7 @@ class DailyPuzzleStatus(BaseModel):
     daily_puzzle_id: str
     is_solved: bool
     completion_time: Optional[str]
+    board_state: Optional[List[Any]] = None
 
 
 class DailyTodayResponse(BaseModel):

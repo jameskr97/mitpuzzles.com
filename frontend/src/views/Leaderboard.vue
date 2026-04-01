@@ -192,7 +192,7 @@ function on_method_change(pt: string, val: string) {
             @change="on_method_change(pt, ($event.target as HTMLSelectElement).value)"
           >
             <option value="best">Best</option>
-            <option value="ao_n">Ao3</option>
+            <option value="ao_n">AO3</option>
           </select>
         </div>
 

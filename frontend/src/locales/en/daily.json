@@ -4,5 +4,7 @@
   "play": "Play",
   "completed": "Completed",
   "not_started": "Not Started",
-  "start_prompt": "Please review the rules before starting this {{puzzle_type}} game. Once you're ready, click the button below."
+  "start_prompt": "Today's daily puzzle is a game of {{puzzle_type}}! Please {instructionsLink} before starting. Once you're ready, click the button below.",
+  "start_prompt_instructions_link": "review the instructions",
+  "start_prompt_account": "Make an account to appear on the leaderboard."
 }
