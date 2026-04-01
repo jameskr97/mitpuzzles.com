@@ -21,7 +21,7 @@ const visible_games = computed(() =>
 </script>
 
 <template>
-  <div class="flex flex-col gap-2">
+  <div class="flex flex-col gap-2 max-w-7xl mx-auto">
     <EmailVerificationBanner data-testid="banner-email-verify" />
     <DemographicBanner />
     <AlertEmailAlreadyVerified v-if="$route.query.alreadyVerified" data-testid="banner-email-already-verified" />

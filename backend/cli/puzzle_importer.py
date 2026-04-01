@@ -159,7 +159,7 @@ async def _import_normalized_async(path: Path, merge_strategy: str, dry_run: boo
             
             # invariant - this is a new puzzle
             if verbose:
-                console.print(f"  Inserting new puzzle {complete_id[:8]}...")
+                console.print(f"  [green]Inserting new puzzle[/green] {complete_id[:8]}... ({puzzle_data['puzzle_type']} {puzzle_data['puzzle_size']} {puzzle_data.get('difficulty_label', '')})")
 
             if not dry_run:
                 new_puzzle = Puzzle(

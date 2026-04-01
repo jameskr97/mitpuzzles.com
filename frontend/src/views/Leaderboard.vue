@@ -147,7 +147,7 @@ function on_method_change(pt: string, val: string) {
 </script>
 
 <template>
-  <div class="flex flex-col gap-2">
+  <div class="flex flex-col gap-2 max-w-7xl mx-auto">
     <!-- header -->
     <Container>
       <h1 class="text-2xl font-bold">Leaderboard</h1>
