@@ -62,6 +62,7 @@ export const useAuthStore = defineStore("auth", {
       const { error } = await api.POST("/api/auth/login", {
         body: { username: credentials.email, password: credentials.password, scope: "" },
         bodySerializer: (body) => new URLSearchParams(body as Record<string, string>),
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
       });
 
       if (error) {
