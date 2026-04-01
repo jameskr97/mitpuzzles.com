@@ -8,7 +8,8 @@ import {
   useVueTable,
 } from "@tanstack/vue-table";
 import { ArrowUpDown } from "lucide-vue-next";
-import { h, onMounted, ref } from "vue";
+import { h, ref } from "vue";
+import { useAsyncState } from "@vueuse/core";
 import { api } from "@/core/services/client";
 
 import { valueUpdater } from "@/core/components/ui/table/utils";
@@ -41,9 +42,14 @@ interface FeedbackItem {
   is_authenticated: boolean;
 }
 
-const feedback_list = ref<FeedbackItem[]>([]);
-const loading = ref(false);
-const error = ref<string | null>(null);
+const { state: feedback_list, isLoading: loading, error } = useAsyncState(
+  async () => {
+    const { data } = await api.GET("/api/feedback/admin/list");
+    return (data ?? []) as FeedbackItem[];
+  },
+  [] as FeedbackItem[],
+  { resetOnExecute: false },
+);
 
 const selected_feedback = ref<FeedbackItem | null>(null);
 const dialog_open = ref(false);
@@ -127,23 +133,6 @@ const table = useVueTable({
   },
 });
 
-const fetch_feedback = async () => {
-  try {
-    loading.value = true;
-    error.value = null;
-    const { data } = await api.GET("/api/feedback/admin/list");
-    if (data) feedback_list.value = data;
-  } catch (err) {
-    error.value = "Failed to load feedback";
-    console.error("Error fetching feedback:", err);
-  } finally {
-    loading.value = false;
-  }
-};
-
-onMounted(() => {
-  fetch_feedback();
-});
 </script>
 
 <template>

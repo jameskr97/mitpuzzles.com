@@ -359,20 +359,9 @@ class UserProfileResponse(BaseModel):
     total_puzzles_attempted: int
     total_time_seconds: float
 
-    # per-type breakdown
-    puzzle_type_stats: List[PuzzleTypeStatsEntry]
-
-    # daily streak
-    daily_streak: DailyStreakStats
-
-    # solve time chart
-    solve_time_history: List[SolveTimeSeriesEntry]
-
-    # activity feed
+    puzzle_type_stats: List[PuzzleTypeStatsEntry] # per-type breakdown
+    daily_streak: DailyStreakStats # daily streak
+    solve_time_history: List[SolveTimeSeriesEntry] # solve time chart
     activity_feed: List[ActivityDay]
-
-    # recent games
     game_log: List[GameLogEntry]
-
-    # featured fastest solves (top 2 most-played)
-    featured_solves: List[FeaturedSolve]
+    featured_solves: List[FeaturedSolve] # featured fastest solves (top 2 most-played)

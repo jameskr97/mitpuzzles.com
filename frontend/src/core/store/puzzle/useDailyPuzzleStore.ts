@@ -22,6 +22,7 @@ emitter.on("puzzle:solved:daily", async () => {
 const DAILY_KEY = "daily";
 const DAILY_DATE_KEY = "mitlogic.daily_date";
 
+// @ts-ignore
 export const useDailyPuzzleStore = defineStore("puzzle.daily", {
   state: () => ({
     daily: null as DailyTodayResponse | null,
@@ -39,12 +40,14 @@ export const useDailyPuzzleStore = defineStore("puzzle.daily", {
     definition: () => usePuzzleProgressStore().get_definition(DAILY_KEY),
     preview_state() {
       const def = this.definition;
+      // @ts-expect-error ts compiler can't tell that this.definition is called by pinia so we don't call it.
       return def ? { definition: def, board: def.initial_state } : null;
     },
-    solved_state() {
+    solved_state(): PuzzleDefinition | null {
       const board = this.daily?.puzzle.board_state;
       if (!board || !this.daily?.puzzle.is_solved || !this.definition) return null;
       return {
+        // @ts-expect-error ts compiler can't tell that this.definition is called by pinia so we don't call it.
         definition: this.definition,
         board,
       };

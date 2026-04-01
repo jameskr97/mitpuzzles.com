@@ -19,14 +19,14 @@ import AppLogo from "@/core/components/AppLogo.vue";
 import AppFeedbackModal from "@/core/components/AppFeedbackModal.vue";
 import AppSidebarUser from "@/core/components/AppSidebarUser.vue";
 import { useAppStore } from "@/core/store/useAppStore.ts";
-import { User, Info, MessageSquare, ShieldCheck, LogIn, Trophy } from "lucide-vue-next";
+import { User, Info, MessageSquare, ShieldCheck, LogIn, Trophy, LayoutDashboardIcon } from "lucide-vue-next";
 import { Separator } from "@/core/components/ui/separator";
 
 const user = useAuthStore();
 const appStore = useAppStore();
 const sidebar = useSidebar();
 const is_dev = import.meta.env.DEV;
-const visible_games = Object.values(ACTIVE_GAMES).filter(g => !g.admin_only || user.isAdmin || is_dev);
+const visible_games = Object.values(ACTIVE_GAMES).filter((g) => !g.admin_only || user.isAdmin || is_dev);
 
 const close_sidebar_on_mobile = () => {
   if (sidebar.isMobile.value) {
@@ -48,11 +48,7 @@ const close_sidebar_on_mobile = () => {
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton asChild tooltip="Daily Puzzle">
-                <router-link
-                  :to="{ name: 'game-daily'}"
-                  class="text-xl"
-                  @click.capture="close_sidebar_on_mobile"
-                >
+                <router-link :to="{ name: 'game-daily' }" class="text-xl" @click.capture="close_sidebar_on_mobile">
                   <span>🗓</span>
                   <span>Daily Puzzle</span>
                 </router-link>
@@ -94,13 +90,12 @@ const close_sidebar_on_mobile = () => {
           </SidebarMenu>
         </SidebarGroupContent>
       </SidebarGroup>
-
     </SidebarContent>
-    <SidebarFooter>
+    <SidebarFooter class="shadow-2xl rounded-lg border pt-0">
       <SidebarGroup>
         <SidebarMenu>
           <!-- Profile (logged in only) -->
-          <SidebarMenuButton v-if="user.isAuthenticated && user.user?.username" asChild>
+          <SidebarMenuButton v-if="user.isAuthenticated" asChild>
             <router-link :to="'/@/' + user.user.username" @click.capture="close_sidebar_on_mobile">
               <User class="size-4" />
               {{ $t("ui:nav.profile") }}
@@ -112,6 +107,13 @@ const close_sidebar_on_mobile = () => {
             <router-link :to="{ name: 'leaderboard' }" @click.capture="close_sidebar_on_mobile">
               <Trophy class="size-4" />
               Leaderboard
+            </router-link>
+          </SidebarMenuButton>
+
+          <SidebarMenuButton v-if="user.isAdmin" asChild>
+            <router-link :to="{ name: 'dashboard' }" @click.capture="close_sidebar_on_mobile">
+              <LayoutDashboardIcon class="size-4" />
+              WIP Dashboard
             </router-link>
           </SidebarMenuButton>
 
