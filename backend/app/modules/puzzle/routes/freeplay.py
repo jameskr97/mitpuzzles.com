@@ -149,16 +149,12 @@ async def get_puzzle_stats(db: AsyncDatabase, puzzle_id: uuid.UUID):
     return await service.get_puzzle_stats(puzzle_id)
 
 
-@router.get("/freeplay/attempts/{attempt_id}", response_model=AttemptPlaybackResponse, responses={404: {"model": ErrorResponse}, 403: {"model": ErrorResponse}})
+@router.get("/freeplay/attempts/{attempt_id}", response_model=AttemptPlaybackResponse, responses={404: {"model": ErrorResponse}})
 async def get_attempt_playback(
     db: AsyncDatabase,
     attempt_id: uuid.UUID,
-    user: User = Depends(fastapi_users.current_user()),
 ):
-    """get attempt data for playback. admin only."""
-    if not user.is_superuser:
-        raise HTTPException(status_code=403, detail="admin privileges required")
-
+    """get attempt data for playback."""
     service = PuzzleService(db)
     attempt = await service.get_attempt_with_puzzle(attempt_id)
     if not attempt:
@@ -166,6 +162,8 @@ async def get_attempt_playback(
 
     initial_state = attempt.puzzle.puzzle_data.get("initial_state", [])
     frames = service.reconstruct_playback_frames(initial_state, attempt.action_history)
+
+    username = attempt.user.username if attempt.user_id and attempt.user else None
 
     return AttemptPlaybackResponse(
         id=attempt.id,
@@ -176,6 +174,8 @@ async def get_attempt_playback(
         timestamp_start=attempt.timestamp_start,
         timestamp_finish=attempt.timestamp_finish,
         is_solved=attempt.is_solved,
+        metrics=attempt.metrics,
+        username=username,
     )
 
 
@@ -244,3 +244,15 @@ async def get_user_solve_history(
 ):
     """get individual solve times for graphing."""
     return await UserStatsService(db).get_user_solve_history(user.id, puzzle_type=puzzle_type)
+
+@router.get("/{puzzle_id}/leaderboard", response_model=LeaderboardResponse, responses={404: {"model": ErrorResponse}})
+async def get_puzzle_leaderboard(
+    db: AsyncDatabase,
+    puzzle_id: uuid.UUID,
+    limit: int = Query(10, ge=1, le=100),
+    user: Optional[User] = Depends(fastapi_users.current_user(optional=True)),
+):
+    """get leaderboard for a specific puzzle."""
+    service = LeaderboardService(db)
+    data = await service.get_puzzle_leaderboard(puzzle_id, limit, user)
+    return LeaderboardResponse.model_validate(data)

@@ -4,11 +4,11 @@ from typing import Optional, List
 
 from fastapi import APIRouter, HTTPException, Query, Depends
 from fastapi.responses import JSONResponse
-from sqlalchemy import select, func, case
+from sqlalchemy import select, func, case, text as sa_text
 
 from app.dependencies import AsyncDatabase
 from app.modules.authentication import User
-from app.modules.puzzle.schemas import ErrorResponse
+from app.modules.puzzle.schemas import ErrorResponse, RecentGameEntry
 from app.modules.puzzle.services import PuzzleAdminService
 from app.modules.puzzle.models import Puzzle, FreeplayPuzzleAttempt
 from app.modules.puzzle.routes.dependencies import require_admin
@@ -21,6 +21,78 @@ async def get_game_data_summary(db: AsyncDatabase, user: User = Depends(require_
     """get summary of all game data for admin users."""
     return await PuzzleAdminService(db).get_game_data_summary()
 
+
+
+@router.get("/admin/puzzle/{puzzle_id}")
+async def get_puzzle_admin_detail(
+    db: AsyncDatabase,
+    puzzle_id: uuid.UUID,
+    user: User = Depends(require_admin),
+):
+    """get puzzle details with aggregate stats for admin view."""
+    from sqlalchemy.orm import selectinload
+
+    puzzle = await db.scalar(select(Puzzle).where(Puzzle.id == puzzle_id))
+    if not puzzle:
+        raise HTTPException(status_code=404, detail="puzzle not found")
+
+    # aggregate attempt stats
+    duration_expr = (FreeplayPuzzleAttempt.timestamp_finish - FreeplayPuzzleAttempt.timestamp_start) / 1000.0
+
+    stats_query = (
+        select(
+            func.count(FreeplayPuzzleAttempt.id).label("total_attempts"),
+            func.count(FreeplayPuzzleAttempt.id).filter(FreeplayPuzzleAttempt.is_solved == True).label("solved"),
+            func.avg(case(
+                (FreeplayPuzzleAttempt.is_solved == True, duration_expr),
+                else_=None,
+            )).label("avg_time"),
+            func.min(case(
+                (FreeplayPuzzleAttempt.is_solved == True, duration_expr),
+                else_=None,
+            )).label("best_time"),
+        )
+        .where(
+            FreeplayPuzzleAttempt.puzzle_id == puzzle_id,
+            FreeplayPuzzleAttempt.timestamp_finish.is_not(None),
+        )
+    )
+    stats = (await db.execute(stats_query)).one()
+
+    # recent attempts
+    attempts_query = (
+        select(FreeplayPuzzleAttempt)
+        .options(selectinload(FreeplayPuzzleAttempt.user))
+        .where(FreeplayPuzzleAttempt.puzzle_id == puzzle_id, FreeplayPuzzleAttempt.timestamp_finish.is_not(None))
+        .order_by(FreeplayPuzzleAttempt.timestamp_finish.desc())
+        .limit(20)
+    )
+    attempts = (await db.execute(attempts_query)).scalars().all()
+
+    from app.modules.puzzle.formatting import format_puzzle_with_solution
+    from app.modules.puzzle.schemas import PuzzleDefinitionResponse
+
+    return {
+        "puzzle": PuzzleDefinitionResponse.model_validate(format_puzzle_with_solution(puzzle)),
+        "metrics": puzzle.metrics,
+        "stats": {
+            "total_attempts": stats.total_attempts or 0,
+            "solved": stats.solved or 0,
+            "solve_rate": round(100 * (stats.solved or 0) / stats.total_attempts, 1) if stats.total_attempts else 0,
+            "avg_time": round(stats.avg_time, 2) if stats.avg_time else None,
+            "best_time": round(stats.best_time, 2) if stats.best_time else None,
+        },
+        "attempts": [
+            {
+                "attempt_id": str(a.id),
+                "username": a.user.username if a.user else None,
+                "is_solved": a.is_solved,
+                "time": round((a.timestamp_finish - a.timestamp_start) / 1000.0, 2) if a.timestamp_start else None,
+                "metrics": a.metrics,
+            }
+            for a in attempts
+        ],
+    }
 
 @router.get("/admin/freeplay/preview")
 async def preview_freeplay_export(
