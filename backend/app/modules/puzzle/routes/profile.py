@@ -1,5 +1,6 @@
 """user profile routes — public stats page."""
 
+import uuid
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Depends
@@ -27,10 +28,10 @@ async def get_user_profile_stats(
     db: AsyncDatabase,
     current_user: Optional[User] = Depends(fastapi_users.current_user(optional=True)),
 ):
-    """get public profile stats for a user."""
-    # look up user by username
+    """get public profile stats for a user by username."""
     result = await db.execute(select(User).where(User.username == username))
     user = result.scalars().first()
+
     if not user:
         raise HTTPException(status_code=404, detail="user not found")
 

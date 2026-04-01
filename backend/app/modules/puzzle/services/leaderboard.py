@@ -198,6 +198,46 @@ class LeaderboardService:
 
         return _build_leaderboard_response(all_rows, limit, user)
 
+    async def get_puzzle_leaderboard(
+        self,
+        puzzle_id: uuid.UUID,
+        limit: int = 10,
+        user=None,
+    ) -> Dict[str, Any]:
+        """get leaderboard for a specific puzzle by puzzle_id."""
+        completion_time = (FreeplayPuzzleAttempt.timestamp_finish - FreeplayPuzzleAttempt.timestamp_start) / 1000.0
+
+        # best time per user for this puzzle
+        best_times = (
+            select(
+                FreeplayPuzzleAttempt.user_id,
+                func.min(completion_time).label("best_time_seconds"),
+            )
+            .where(
+                FreeplayPuzzleAttempt.puzzle_id == puzzle_id,
+                FreeplayPuzzleAttempt.is_solved == True,
+                FreeplayPuzzleAttempt.user_id.is_not(None),
+                FreeplayPuzzleAttempt.timestamp_finish.is_not(None),
+                FreeplayPuzzleAttempt.timestamp_start.is_not(None),
+                FreeplayPuzzleAttempt.used_tutorial == False,
+            )
+            .group_by(FreeplayPuzzleAttempt.user_id)
+            .subquery()
+        )
+
+        query = (
+            select(
+                best_times.c.user_id,
+                best_times.c.best_time_seconds.label("completion_time_seconds"),
+                User.username,
+            )
+            .join(User, best_times.c.user_id == User.id)
+            .order_by(best_times.c.best_time_seconds.asc())
+        )
+
+        all_rows = (await self.db.execute(query)).all()
+        return _build_leaderboard_response(all_rows, limit, user)
+
     async def get_daily_leaderboard(
         self,
         daily_puzzle_id: uuid.UUID,

@@ -27,6 +27,22 @@ class PuzzleMetrics(BaseModel):
     bridge_count: Optional[int] = None    # hashi
 
 
+class AttemptMetrics(BaseModel):
+    """per-attempt game metrics computed from action_history + solution."""
+    min_actions: int
+    actual_actions: int
+    positive_actions: int
+    assist_actions: int
+    efficiency: float
+    solve_efficiency: float
+    mistakes: int
+    corrections: int
+    cells_changed_multiple_times: int
+    wasted_actions: int
+    is_solved: bool
+    action_breakdown: Dict[str, int]
+
+
 class FilterOption(BaseModel):
     """a single filter option with its count."""
     value: str
@@ -131,6 +147,8 @@ class AttemptPlaybackResponse(BaseModel):
     timestamp_start: int
     timestamp_finish: Optional[int] = None
     is_solved: bool
+    metrics: Optional[AttemptMetrics] = None
+    username: Optional[str] = None
 
 
 class LeaderboardEntryResponse(BaseModel):
@@ -265,6 +283,8 @@ class DailyStreakStats(BaseModel):
     total_dailies_solved: int
     fastest_daily_count: int
 
+class DailyClaimResponse(BaseModel):
+    claimed: bool
 
 class SolveTimePoint(BaseModel):
     """single data point for the solve time chart."""
@@ -293,13 +313,32 @@ class ActivityDay(BaseModel):
 
 class GameLogEntry(BaseModel):
     """a single recent game entry."""
-    attempt_id: str
+    attempt_id: Optional[str] = None
     puzzle_type: str
     puzzle_size: str
     puzzle_difficulty: Optional[str] = None
     time: Optional[float] = None
     solved: bool
+    status: str  # "solved", "abandoned", "skipped"
+    skip_count: Optional[int] = None
     date: str
+    actual_actions: Optional[int] = None
+    efficiency: Optional[float] = None
+
+
+class RecentGameEntry(BaseModel):
+    """a recently played game with board state for admin monitoring."""
+    attempt_id: str
+    puzzle_id: str
+    puzzle_type: str
+    puzzle_size: str
+    puzzle_difficulty: Optional[str] = None
+    board_state: Optional[List[Any]] = None
+    is_solved: bool
+    username: Optional[str] = None
+    time: Optional[float] = None
+    metrics: Optional[AttemptMetrics] = None
+    definition: PuzzleDefinitionResponse
 
 
 class FeaturedSolve(BaseModel):
