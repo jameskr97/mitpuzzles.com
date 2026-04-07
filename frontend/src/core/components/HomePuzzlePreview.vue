@@ -9,6 +9,7 @@ const props = defineProps({
   state: { type: Object, required: false },
   puzzleClass: { type: String, required: false, default: "" },
   containerClass: { type: String, required: false, default: "" },
+  titleClass: { type: String, required: false, default: "" },
 });
 
 const container = ref();
@@ -17,7 +18,10 @@ const puzzleRef = ref();
 
 <template>
   <router-link :to="{ name: 'game-' + page }">
-    <Container class="overflow-hidden hover:-translate-y-0.5 transition-all duration-200 mb-0 pb-0" :class="containerClass">
+    <Container
+      class="overflow-hidden hover:-translate-y-0.5 transition-all duration-200 mb-0 pb-0"
+      :class="containerClass"
+    >
       <div class="flex flex-col gap-1">
         <div class="overflow-hidden min-w-0">
           <div
@@ -30,7 +34,7 @@ const puzzleRef = ref();
           </div>
         </div>
       </div>
-      <div class="text-center mt-1">{{ props.title }}</div>
+      <div class="text-center h-full justify-self-center" :class="titleClass">{{ props.title }}</div>
     </Container>
   </router-link>
 </template>

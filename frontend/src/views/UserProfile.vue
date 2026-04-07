@@ -1,18 +1,13 @@
 <script setup lang="ts">
 /** public user profile page — fetches stats and renders sub-components */
-import { ref, shallowRef, computed, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import Container from "@/core/components/ui/Container.vue";
-import { ACTIVE_GAMES } from "@/constants";
-import type { PlaybackFrame } from "@/core/types";
-import { usePlaybackControls } from "@/features/playback/composables/usePlaybackControls";
 
 import ProfileHeader from "@/features/profile/ProfileHeader.vue";
 import ProfileSolveChart from "@/features/profile/ProfileSolveChart.vue";
 import ProfileSidebar from "@/features/profile/ProfileSidebar.vue";
-import ProfileFeaturedSolve from "@/features/profile/ProfileFeaturedSolve.vue";
 import ProfileGameLog from "@/features/profile/ProfileGameLog.vue";
-import ProfileActivityFeed from "@/features/profile/ProfileActivityFeed.vue";
 
 const route = useRoute();
 const username = route.params.username as string;
@@ -39,7 +34,6 @@ const stats = ref({
 });
 
 const solve_time_history = ref<Record<string, { date: string; avg_time: number }[]>>({});
-const activity_feed = ref<{ date: string; entries: { icon: string; text: string; detail?: string }[] }[]>([]);
 
 interface GameLogEntry {
   puzzle_type: string;
@@ -57,53 +51,6 @@ const solve_rate = computed(() => {
   if (stats.value.total_puzzles_attempted === 0) return 0;
   return Math.round((stats.value.total_puzzles_solved / stats.value.total_puzzles_attempted) * 100);
 });
-
-// -- featured solves (pre-create 2 playback control slots during setup) --
-interface FeaturedGame {
-  puzzle_type: string;
-  best_time: number;
-  frames: PlaybackFrame[];
-  canvas_component: any;
-  canvas_state: any;
-  controls: ReturnType<typeof usePlaybackControls>;
-}
-
-const featured_frames: PlaybackFrame[][] = [[], []];
-const featured_controls = [
-  usePlaybackControls(() => featured_frames[0].length),
-  usePlaybackControls(() => featured_frames[1].length),
-];
-const featured_games = shallowRef<FeaturedGame[]>([]);
-
-async function load_featured_solve(index: number, attempt_id: string, puzzle_type: string, best_time: number) {
-  try {
-    const res = await fetch(`/api/puzzle/freeplay/attempts/${attempt_id}`, { credentials: "include" });
-    if (!res.ok) return;
-    const data = await res.json();
-    const frames: PlaybackFrame[] = data.frames;
-    featured_frames[index] = frames;
-    const controls = featured_controls[index];
-    const canvas_component = ACTIVE_GAMES[data.puzzle_definition?.puzzle_type]?.component ?? null;
-    featured_games.value = [
-      ...featured_games.value,
-      {
-        puzzle_type,
-        best_time,
-        frames,
-        canvas_component,
-        canvas_state: computed(() => {
-          const frame = frames[Math.min(controls.current_frame.value, frames.length - 1)];
-          return frame
-            ? { definition: data.puzzle_definition, board: frame.board, violations: [], solved: false }
-            : null;
-        }),
-        controls,
-      },
-    ];
-  } catch {
-    // skip failed loads
-  }
-}
 
 // -- fetch --
 onMounted(async () => {
@@ -132,13 +79,7 @@ onMounted(async () => {
     }
     solve_time_history.value = history;
 
-    activity_feed.value = data.activity_feed;
     game_log.value = data.game_log;
-
-    for (let i = 0; i < Math.min(data.featured_solves.length, 2); i++) {
-      const featured = data.featured_solves[i];
-      await load_featured_solve(i, featured.attempt_id, featured.puzzle_type, featured.best_time);
-    }
   } catch (e) {
     error.value = "failed to load profile";
   } finally {
@@ -181,22 +122,7 @@ onMounted(async () => {
       />
     </div>
 
-    <!-- row 3: featured + recent games | activity -->
-    <div class="grid grid-cols-[2fr_1fr] gap-2 grid-rows-1">
-      <div class="grid grid-cols-2 gap-2 min-h-0">
-        <ProfileFeaturedSolve
-          v-for="featured in featured_games"
-          :key="featured.puzzle_type"
-          :puzzle_type="featured.puzzle_type"
-          :best_time="featured.best_time"
-          :frames="featured.frames"
-          :canvas_component="featured.canvas_component"
-          :canvas_state="featured.canvas_state"
-          :controls="featured.controls"
-        />
-        <ProfileGameLog :games="game_log" class="col-span-2" />
-      </div>
-      <ProfileActivityFeed :activity="activity_feed" class="overflow-hidden h-0 min-h-full" />
-    </div>
+    <!-- row 3: recent games -->
+    <ProfileGameLog :games="game_log" />
   </div>
 </template>

@@ -1,12 +1,10 @@
 <script setup lang="ts">
 /** dedicated leaderboard page — multi-column view across puzzle types */
-import { ref, reactive, computed, watch, onMounted } from "vue";
+import { ref, reactive, onMounted } from "vue";
 import Container from "@/core/components/ui/Container.vue";
 import { ACTIVE_GAMES } from "@/constants";
 import { usePuzzleMetadataStore } from "@/core/store/puzzle/usePuzzleMetadataStore";
-import PlaybackTimeline from "@/features/playback/components/PlaybackTimeline.vue";
-import { usePlaybackControls } from "@/features/playback/composables/usePlaybackControls";
-import type { LeaderboardEntry, PuzzleVariant, PlaybackFrame } from "@/core/types";
+import type { LeaderboardEntry, PuzzleVariant } from "@/core/types";
 
 const metadata_store = usePuzzleMetadataStore();
 const puzzle_types = Object.keys(ACTIVE_GAMES);
@@ -22,54 +20,6 @@ for (const pt of puzzle_types) {
   const variants = metadata_store.getVariants(pt);
   const v = variants.length > 0 ? variants[0] : { size: "", difficulty: null };
   selected[pt] = { size: v.size, difficulty: v.difficulty ?? null, period: "all_time", method: "best" };
-}
-
-// -- preview playback state --
-interface PreviewState {
-  attempt_id: string | null;
-  frames: PlaybackFrame[];
-  definition: any;
-  controls: ReturnType<typeof usePlaybackControls>;
-}
-
-// pre-create controls during setup for each puzzle type
-const preview_frames: Record<string, PlaybackFrame[]> = {};
-const preview_controls: Record<string, ReturnType<typeof usePlaybackControls>> = {};
-for (const pt of puzzle_types) {
-  preview_frames[pt] = [];
-  preview_controls[pt] = usePlaybackControls(() => preview_frames[pt].length);
-}
-
-const previews = ref<Record<string, { attempt_id: string | null; frames: PlaybackFrame[]; definition: any }>>({});
-
-async function load_preview(puzzle_type: string, attempt_id: string) {
-  try {
-    const res = await fetch(`/api/puzzle/freeplay/attempts/${attempt_id}`, { credentials: "include" });
-    if (!res.ok) return;
-    const data = await res.json();
-    preview_frames[puzzle_type] = data.frames;
-    preview_controls[puzzle_type].seek(0);
-    previews.value = {
-      ...previews.value,
-      [puzzle_type]: { attempt_id, frames: data.frames, definition: data.puzzle_definition },
-    };
-  } catch {
-    // skip
-  }
-}
-
-function get_canvas_state(pt: string) {
-  const p = previews.value[pt];
-  if (!p?.frames?.length) return null;
-  const idx = Math.min(preview_controls[pt].current_frame.value, p.frames.length - 1);
-  const frame = p.frames[idx];
-  return frame ? { definition: p.definition, board: frame.board, violations: [], solved: false } : null;
-}
-
-function select_entry(pt: string, entry: LeaderboardEntry) {
-  if (entry.attempt_id) {
-    load_preview(pt, entry.attempt_id);
-  }
 }
 
 // -- leaderboard fetching --
@@ -92,11 +42,6 @@ async function fetch_leaderboard(puzzle_type: string) {
       const data = await res.json();
       const entries = data.leaderboard ?? [];
       leaderboards.value = { ...leaderboards.value, [puzzle_type]: entries };
-      // auto-load #1's preview
-      const top = entries.find((e: LeaderboardEntry) => e.attempt_id);
-      if (top?.attempt_id) {
-        load_preview(puzzle_type, top.attempt_id);
-      }
     }
   } catch {
     // keep existing data
@@ -194,27 +139,6 @@ function on_method_change(pt: string, val: string) {
           </select>
         </div>
 
-        <!-- preview: board + timeline -->
-        <div v-if="previews[pt]?.frames?.length" class="mb-2">
-          <div class="w-full overflow-hidden pointer-events-none select-none">
-            <component
-              v-if="ACTIVE_GAMES[pt]?.component && get_canvas_state(pt)"
-              :is="ACTIVE_GAMES[pt].component"
-              :state="get_canvas_state(pt)"
-            />
-          </div>
-          <PlaybackTimeline
-            :frames="previews[pt].frames"
-            :current_frame="preview_controls[pt].current_frame.value"
-            :is_playing="preview_controls[pt].is_playing.value"
-            :moves_per_second="preview_controls[pt].moves_per_second.value"
-            size="small"
-            @seek="preview_controls[pt].seek"
-            @toggle-play="preview_controls[pt].toggle_play"
-            @set-mps="preview_controls[pt].set_mps"
-          />
-        </div>
-
         <!-- loading -->
         <div v-if="loading[pt]" class="text-center text-gray-400 text-xs py-4">loading...</div>
 
@@ -227,10 +151,7 @@ function on_method_change(pt: string, val: string) {
             v-for="entry in leaderboards[pt]"
             :key="entry.rank"
             class="flex items-center justify-between py-1 text-sm border-b border-gray-100 last:border-0"
-            :class="{
-              'font-bold': entry.is_current_user,
-              'bg-blue-50': entry.attempt_id === previews[pt]?.attempt_id,
-            }"
+            :class="{ 'font-bold': entry.is_current_user }"
           >
             <div class="flex items-center gap-2 min-w-0">
               <span class="text-gray-400 text-xs w-4 text-right shrink-0">{{ entry.rank }}</span>
@@ -241,11 +162,7 @@ function on_method_change(pt: string, val: string) {
                 {{ entry.username }}
               </router-link>
             </div>
-            <span
-              class="text-xs shrink-0 ml-2"
-              :class="entry.attempt_id ? 'text-blue-500 cursor-pointer hover:underline' : 'text-gray-500'"
-              @click="select_entry(pt, entry)"
-            >
+            <span class="text-xs shrink-0 ml-2 text-gray-500">
               {{ entry.duration_display }}
             </span>
           </div>

@@ -9,7 +9,6 @@ import { useAuthStore } from "@/core/store/useAuthStore.ts";
 import EmailVerificationBanner from "@/core/components/EmailVerificationBanner.vue";
 import DemographicBanner from "@/core/components/DemographicBanner.vue";
 import { computed } from "vue";
-import NewsFeed from "@/core/components/NewsFeed.vue";
 import CreateAccountCTA from "@/core/components/alert/CreateAccountCTA.vue";
 import DailyLeaderboardCompact from "@/features/daily/DailyLeaderboardCompact.vue";
 
@@ -36,12 +35,11 @@ const visible_games = computed(() =>
     </Container>
 
     <!-- puzzle grid: 4 columns -->
-    <div class="grid grid-cols-2 md:grid-cols-4 w-full gap-2">
-      <div class="grid grid-cols-subgrid col-span-4 grid-rows-1">
-        <HomeDailyPreview />
-        <DailyLeaderboardCompact class="min-h-0 overflow-hidden" />
-        <NewsFeed class="overflow-hidden h-0 min-h-full col-span-2" />
-      </div>
+    <div class="grid grid-cols-2 md:grid-cols-6 w-full gap-2">
+<!--      <div class="grid grid-cols-subgrid col-span-full grid-rows-1 pb-8">-->
+      <HomeDailyPreview class="col-span-2 row-span-2"/>
+<!--      <DailyLeaderboardCompact class="min-h-0 overflow-hidden row-span-2 p-0 m-0" />-->
+<!--      </div>-->
 
       <HomePuzzlePreview
         v-for="game in visible_games"

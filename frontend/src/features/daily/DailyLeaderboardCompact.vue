@@ -18,7 +18,7 @@ onMounted(() => {
 
 <template>
   <Container class="flex flex-col">
-    <div class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Daily Leaderboard</div>
+    <div class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Daily Puzzle Leaderboard</div>
     <div v-if="daily_store.leaderboard.length === 0" class="text-sm text-gray-400 text-center py-2">
       No entries yet.
     </div>
