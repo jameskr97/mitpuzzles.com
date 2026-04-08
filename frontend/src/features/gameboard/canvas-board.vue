@@ -62,6 +62,8 @@ const props = withDefaults(
     enableExport?: boolean;
     /** Whether to draw grid lines (default: true) */
     drawGridLines?: boolean;
+    /** Use smooth (anti-aliased) rendering instead of pixelated (default: false) */
+    smooth?: boolean;
   }>(),
   {
     scale: 1,
@@ -85,7 +87,8 @@ const props = withDefaults(
     drawGutterRightOutsideBorder: true,
     drawGutterBottomOutsideBorder: true,
     enableExport: false,
-    drawGridLines: true
+    drawGridLines: true,
+    smooth: false
   }
 );
 
@@ -875,7 +878,8 @@ defineExpose({
       @keydown="handle_keydown"
       @dblclick="props.enableExport && exportAsPng()"
       @dragstart.prevent
-      class="block !w-full [touch-action:manipulation] [image-rendering:pixelated]"
+      class="block !w-full [touch-action:manipulation]"
+      :class="{ '[image-rendering:pixelated]': !props.smooth }"
       :style="{ aspectRatio: `${boardWidth} / ${boardHeight}` }"
     />
   </div>

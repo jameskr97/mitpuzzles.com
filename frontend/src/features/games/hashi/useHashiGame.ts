@@ -17,16 +17,21 @@ export interface HashiGameReturn {
   /** Current bridge count per island */
   island_bridge_counts: ComputedRef<Map<string, number>>;
 
+  /** Islands manually marked as exhausted by the player */
+  exhausted: Ref<Set<string>>;
+
   /** Grid dimensions */
   rows: number;
   cols: number;
 
-  /** Toggle a bridge between two islands */
+  /** Toggle a bridge between two islands (left-click only) */
   toggle_bridge: (
     island1: [number, number],
     island2: [number, number],
-    button: number
   ) => { old_count: number; new_count: number } | null;
+
+  /** Toggle exhausted mark on an island (right-click) */
+  toggle_exhausted: (island: [number, number]) => boolean;
 
   /** Check solution */
   check_solution: () => Promise<boolean>;
@@ -56,7 +61,8 @@ function same_position(a: [number, number], b: [number, number]): boolean {
  */
 export function useHashiGame(
   definition: PuzzleDefinition<HashiMeta>,
-  saved_bridges?: HashiBridge[] | null
+  saved_bridges?: HashiBridge[] | null,
+  saved_exhausted?: string[] | null,
 ): HashiGameReturn {
   const rows = definition.rows;
   const cols = definition.cols;
@@ -64,6 +70,9 @@ export function useHashiGame(
 
   // Bridge state
   const bridges = ref<HashiBridge[]>(saved_bridges ? [...saved_bridges] : []);
+
+  // Exhausted marks (player-toggled)
+  const exhausted = ref<Set<string>>(new Set(saved_exhausted ?? []));
 
   // Pre-compute island positions from initial_state
   // Islands are cells with values > 0 (the value is the required bridge count)
@@ -174,11 +183,21 @@ export function useHashiGame(
     return false;
   }
 
-  /** toggle a bridge between two islands */
+  /** Toggle exhausted mark on an island */
+  function toggle_exhausted(island: [number, number]): boolean {
+    const key = `${island[0]},${island[1]}`;
+    if (!islands.value.has(key)) return false;
+    const next = new Set(exhausted.value);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    exhausted.value = next;
+    return true;
+  }
+
+  /** toggle a bridge between two islands (left-click: cycle 0→1→2→0) */
   function toggle_bridge(
     island1: [number, number],
     island2: [number, number],
-    button: number
   ): { old_count: number; new_count: number } | null {
     // Validate both positions are islands
     if (!is_island(island1[0], island1[1]) || !is_island(island2[0], island2[1])) {
@@ -193,15 +212,8 @@ export function useHashiGame(
     const existing = get_bridge(island1, island2);
     const old_count = existing?.count || 0;
 
-    // Calculate new count based on button
-    let new_count: number;
-    if (button === 2) {
-      // Right click: decrement (2 → 1 → 0, or 0 → 2 if we want reverse cycle)
-      new_count = old_count === 0 ? 2 : old_count - 1;
-    } else {
-      // Left click: increment and wrap
-      new_count = (old_count + 1) % 3;
-    }
+    // Left click: increment and wrap
+    const new_count = (old_count + 1) % 3;
 
     // Check if adding a new bridge would cross existing ones
     if (new_count > 0 && old_count === 0 && would_cross_bridge(island1, island2)) {
@@ -234,6 +246,7 @@ export function useHashiGame(
    */
   function clear(): void {
     bridges.value = [];
+    exhausted.value = new Set();
   }
 
   /**
@@ -287,9 +300,11 @@ export function useHashiGame(
     bridges,
     islands,
     island_bridge_counts,
+    exhausted,
     rows,
     cols,
     toggle_bridge,
+    toggle_exhausted,
     check_solution,
     clear,
     get_bridge,

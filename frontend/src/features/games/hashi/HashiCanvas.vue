@@ -17,6 +17,7 @@ const props = defineProps<{
     definition: { rows: number; cols: number; initial_state: number[][] };
     bridges?: HashiBridge[];
     island_bridge_counts?: Map<string, number>;
+    exhausted?: Set<string>;
     tutorial_mode?: boolean;
   };
 }>();
@@ -52,7 +53,8 @@ function find_island_in_direction(row: number, col: number, dr: number, dc: numb
 }
 
 const emit = defineEmits<{
-  (e: "bridge-toggle", island1: [number, number], island2: [number, number], button: number): void;
+  (e: "bridge-toggle", island1: [number, number], island2: [number, number]): void;
+  (e: "exhausted-toggle", island: [number, number]): void;
 }>();
 
 const { theme } = useCanvasTheme();
@@ -182,17 +184,40 @@ function handle_mousedown(event: MouseEvent): void {
   if (!cell) return;
   event.preventDefault();
 
-  if (is_island(cell.row, cell.col)) {
+  const click_dist = Math.sqrt(cell.dx * cell.dx + cell.dy * cell.dy);
+  const on_island = is_island(cell.row, cell.col) && click_dist <= ISLAND_RADIUS_RATIO;
+
+  // Right-click on island → toggle exhausted mark
+  if (event.button === 2 && on_island) {
+    emit("exhausted-toggle", [cell.row, cell.col]);
+    cancel_drag();
+    return;
+  }
+
+  const is_island_cell = is_island(cell.row, cell.col);
+
+  if (on_island) {
     drag_state.source = [cell.row, cell.col];
     drag_state.destination = null;
     drag_state.dragging = false;
     drag_state.button = event.button;
     drag_state.click_offset = { dx: cell.dx, dy: cell.dy };
+  } else if (is_island_cell) {
+    // clicked on island cell but outside circle — toggle bridge in click direction
+    const { dx, dy } = cell;
+    let dr = 0, dc = 0;
+    if (Math.abs(dx) > Math.abs(dy)) dc = dx > 0 ? 1 : -1;
+    else dr = dy > 0 ? 1 : -1;
+    const neighbor = find_island_in_direction(cell.row, cell.col, dr, dc);
+    if (neighbor) {
+      emit("bridge-toggle", [cell.row, cell.col], neighbor);
+    }
+    cancel_drag();
   } else {
     // clicked between islands — toggle the bridge directly
     const bridge = find_bridge_at_cell(cell.row, cell.col);
     if (bridge) {
-      emit("bridge-toggle", bridge.island1, bridge.island2, event.button);
+      emit("bridge-toggle", bridge.island1, bridge.island2);
     }
     cancel_drag();
   }
@@ -213,7 +238,7 @@ function handle_mouseup(_event: MouseEvent): void {
 
   if (drag_state.dragging && drag_state.destination) {
     // completed a drag between two islands
-    emit("bridge-toggle", drag_state.source, drag_state.destination, drag_state.button);
+    emit("bridge-toggle", drag_state.source, drag_state.destination);
   } else if (!drag_state.dragging) {
     // clicked an island without dragging — find adjacent island in click direction
     const { dx, dy } = drag_state.click_offset;
@@ -223,7 +248,7 @@ function handle_mouseup(_event: MouseEvent): void {
     else dr = dy > 0 ? 1 : -1;
     const neighbor = find_island_in_direction(row, col, dr, dc);
     if (neighbor) {
-      emit("bridge-toggle", drag_state.source, neighbor, drag_state.button);
+      emit("bridge-toggle", drag_state.source, neighbor);
     }
   }
 
@@ -275,6 +300,7 @@ const cell_renderer = computed((): CellRenderer => {
   const current_bridges = cell_bridges.value;
   const current_islands = islands.value;
   const current_counts = island_bridge_counts.value;
+  const current_exhausted = props.state.exhausted ?? new Set<string>();
   const tutorial_mode = props.state.tutorial_mode ?? false;
   const current_drag = drag_state;
   const all_bridges = bridges.value;
@@ -297,7 +323,7 @@ const cell_renderer = computed((): CellRenderer => {
     if (is_island_cell) {
       ctx.strokeStyle = current_theme.text;
       ctx.lineWidth = BRIDGE_WIDTH;
-      ctx.lineCap = "butt";
+      ctx.lineCap = "round";
 
       for (const bridge of all_bridges) {
         const [r1, c1] = bridge.island1;
@@ -332,7 +358,7 @@ const cell_renderer = computed((): CellRenderer => {
     } else if (bridge_info) {
       ctx.strokeStyle = current_theme.text;
       ctx.lineWidth = BRIDGE_WIDTH;
-      ctx.lineCap = "butt";
+      ctx.lineCap = "round";
 
       if (bridge_info.horizontal > 0) {
         if (bridge_info.horizontal === 1) {
@@ -385,20 +411,20 @@ const cell_renderer = computed((): CellRenderer => {
       ctx.beginPath();
       ctx.arc(cx, cy, island_radius, 0, Math.PI * 2);
 
-      if (is_drag_source) ctx.fillStyle = current_theme.selectFill || "#e0e7ff";
-      else if (is_drag_dest) ctx.fillStyle = current_theme.targetFill || "#fef3c7";
-      else ctx.fillStyle = current_theme.background;
+      const is_exhausted = current_exhausted.has(key);
+
+      ctx.fillStyle = current_theme.background;
       ctx.fill();
 
-      if (is_drag_source) { ctx.strokeStyle = current_theme.selectBorder || "#4f46e5"; ctx.lineWidth = 3; }
-      else if (is_drag_dest) { ctx.strokeStyle = current_theme.targetBorder || "#f59e0b"; ctx.lineWidth = 3; }
-      else if (is_satisfied && tutorial_mode) { ctx.strokeStyle = current_theme.hint; ctx.lineWidth = 3; }
+      if (is_drag_source) { ctx.strokeStyle = current_theme.hint; ctx.lineWidth = 2.5; }
+      else if (is_drag_dest) { ctx.strokeStyle = current_theme.hint; ctx.lineWidth = 2.5; }
+      else if (is_exhausted) { ctx.strokeStyle = "#22c55e"; ctx.lineWidth = 2.5; }
+      else if (is_satisfied && tutorial_mode) { ctx.strokeStyle = current_theme.hint; ctx.lineWidth = 2; }
       else { ctx.strokeStyle = current_theme.text; ctx.lineWidth = 2; }
       ctx.stroke();
 
       let text_color: string;
-      if (is_drag_source) text_color = current_theme.selectBorder || "#4f46e5";
-      else if (is_drag_dest) text_color = current_theme.targetBorder || "#f59e0b";
+      if (is_exhausted) text_color = "#22c55e";
       else if (is_satisfied && tutorial_mode) text_color = current_theme.hint;
       else text_color = current_theme.text;
 
@@ -419,5 +445,6 @@ const cell_renderer = computed((): CellRenderer => {
     :inside-border-thickness="0"
     outside-border-color="#fff"
     grid-color="transparent"
+    :smooth="true"
   />
 </template>
