@@ -93,7 +93,7 @@ onMounted(async () => {
     />
 
     <!-- row 2: chart + stats + sidebar -->
-    <div class="grid grid-cols-[3fr_1fr_1fr] gap-2">
+    <div class="grid grid-cols-1 md:grid-cols-[3fr_1fr_1fr] gap-2">
       <ProfileSolveChart :solve_time_history="solve_time_history" />
       <ProfileStats
         :total_puzzles_solved="stats.total_puzzles_solved"

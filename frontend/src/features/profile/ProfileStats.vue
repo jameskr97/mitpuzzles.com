@@ -24,7 +24,7 @@ function capitalize(s: string): string {
 </script>
 
 <template>
-  <Container class="text-sm flex flex-col gap-3">
+  <Container class="text-sm flex flex-col gap-1">
     <div class="flex justify-between">
       <span class="text-gray-500">Puzzles Solved</span>
       <span class="font-medium">{{ total_puzzles_solved }}</span>

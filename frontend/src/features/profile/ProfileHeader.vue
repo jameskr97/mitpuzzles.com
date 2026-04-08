@@ -10,10 +10,7 @@ defineProps<{
 <template>
   <Container>
     <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold flex items-center gap-2">
-        <span class="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" />
-        {{ username }}
-      </h1>
+      <h1 class="text-2xl font-bold">{{ username }}</h1>
       <router-link
         v-if="is_own_profile"
         :to="{ name: 'account' }"
