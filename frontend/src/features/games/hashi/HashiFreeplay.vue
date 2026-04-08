@@ -6,6 +6,7 @@
  * bridge-based interaction (different from cell-based games).
  */
 import { inject } from "vue";
+import { useRoute } from "vue-router";
 import { useHashiGame, type HashiGameReturn } from "./useHashiGame";
 import { useFreeplayServices } from "@/features/freeplay/composables";
 import { useDailyServices } from "@/features/daily/composables/useDailyServices";
@@ -16,6 +17,8 @@ import type { HashiMeta, HashiBridge } from "@/core/games/types/puzzle-types.ts"
 
 const puzzle_type = "hashi";
 const mode = inject<string | null>("puzzle-type-override", null);
+const route = useRoute();
+const challenge_attempt_id = route.query.attempt as string | undefined;
 
 // convert saved board format { bridges: [r1, c1, r2, c2, count][], exhausted?: string[] } back
 function parse_saved_bridges(saved: any): HashiBridge[] {
@@ -48,7 +51,7 @@ function serialize_state(game: HashiGameReturn): { bridges: number[][]; exhauste
 
 const services = mode === "daily"
   ? useDailyServices<HashiMeta>()
-  : await useFreeplayServices<HashiMeta>(puzzle_type, { starting_state: [] });
+  : await useFreeplayServices<HashiMeta>(puzzle_type, { starting_state: [], attempt_id: challenge_attempt_id });
 
 const session = useGameSession({
   puzzle_type: mode === "daily" ? "daily" : puzzle_type,

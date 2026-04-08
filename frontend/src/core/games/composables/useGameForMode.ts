@@ -4,6 +4,7 @@
  */
 
 import { inject } from "vue";
+import { useRoute } from "vue-router";
 import { useFreeplayGame, type FreeplayGameConfig } from "@/features/freeplay/composables/useFreeplayGame";
 import { useDailyGame } from "@/features/daily/composables/useDailyGame";
 import type { GridGameReturn } from "@/core/games/types/game-return";
@@ -21,5 +22,8 @@ export async function useGameForMode<TReturn extends GridGameReturn<TMeta>, TMet
     });
   }
 
-  return useFreeplayGame(config);
+  const route = useRoute();
+  const attempt_id = route.query.attempt as string | undefined;
+
+  return useFreeplayGame(config, { attempt_id });
 }

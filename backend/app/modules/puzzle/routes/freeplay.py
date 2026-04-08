@@ -17,6 +17,7 @@ from app.modules.puzzle.schemas import (
     FreeplayAttemptCreate,
     LeaderboardResponse,
     AttemptPlaybackResponse,
+    AttemptSummaryResponse,
 )
 from app.modules.puzzle.services import PuzzleService, LeaderboardService, UserStatsService
 from app.modules.puzzle.formatting import format_puzzle_for_frontend, format_puzzle_with_solution
@@ -118,7 +119,7 @@ async def browse_puzzles(
     )
 
 
-@router.get("/definition/{puzzle_id}", responses={404: {"model": ErrorResponse}, 403: {"model": ErrorResponse}})
+@router.get("/definition/{puzzle_id}", response_model=PuzzleDefinitionResponse, responses={404: {"model": ErrorResponse}, 403: {"model": ErrorResponse}})
 async def get_puzzle(
     db: AsyncDatabase,
     puzzle_id: uuid.UUID,
@@ -147,6 +148,31 @@ async def get_puzzle_stats(db: AsyncDatabase, puzzle_id: uuid.UUID):
     if not puzzle:
         raise HTTPException(status_code=404, detail=f"No puzzle found with id {puzzle_id}")
     return await service.get_puzzle_stats(puzzle_id)
+
+
+@router.get("/freeplay/attempts/{attempt_id}/summary", response_model=AttemptSummaryResponse, responses={404: {"model": ErrorResponse}})
+async def get_attempt_summary(
+    db: AsyncDatabase,
+    attempt_id: uuid.UUID,
+):
+    """lightweight attempt info for challenge share links."""
+    service = PuzzleService(db)
+    attempt = await service.get_attempt_with_puzzle(attempt_id)
+    if not attempt:
+        raise HTTPException(status_code=404, detail="attempt not found")
+
+    username = attempt.user.username if attempt.user_id and attempt.user else None
+    time = None
+    if attempt.timestamp_finish and attempt.timestamp_start:
+        time = round((attempt.timestamp_finish - attempt.timestamp_start) / 1000.0, 2)
+
+    return AttemptSummaryResponse(
+        puzzle_id=attempt.puzzle_id,
+        puzzle_type=attempt.puzzle.puzzle_type,
+        username=username,
+        time=time,
+        is_solved=attempt.is_solved,
+    )
 
 
 @router.get("/freeplay/attempts/{attempt_id}", response_model=AttemptPlaybackResponse, responses={404: {"model": ErrorResponse}})

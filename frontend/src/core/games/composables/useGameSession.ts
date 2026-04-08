@@ -22,7 +22,7 @@ export interface GameSessionServices<TMeta = any> {
   formatted_time: ComputedRef<string>;
   current_variant: Ref<PuzzleVariant>;
   tutorial_used: Ref<boolean> | ComputedRef<boolean>;
-  mark_solved: () => Promise<void>;
+  mark_solved: () => Promise<string | null>;
   mark_tutorial_used: () => void;
   request_new_puzzle: () => Promise<PuzzleDefinition<TMeta> | null>;
   start_game?: () => Promise<void>;
@@ -64,6 +64,8 @@ export function useGameSession<TReturn extends BaseGameReturn<TMeta>, TMeta = an
     broadcast: true,
   });
 
+  const last_attempt_id = ref<string | null>(null);
+
   const ui = ref<GameUIState>({
     show_solved_state: services.is_solved.value,
     tutorial_mode: false,
@@ -98,7 +100,8 @@ export function useGameSession<TReturn extends BaseGameReturn<TMeta>, TMeta = an
     ui.value.animate_failure = !is_correct;
 
     if (is_correct) {
-      await services.mark_solved();
+      const id = await services.mark_solved();
+      last_attempt_id.value = id;
     } else {
       setTimeout(() => {
         ui.value.show_solved_state = false;
@@ -151,6 +154,7 @@ export function useGameSession<TReturn extends BaseGameReturn<TMeta>, TMeta = an
     clear_puzzle,
     request_new_puzzle,
     start_game: services.start_game,
+    last_attempt_id,
   };
 
   const puzzle_state = computed(() => {

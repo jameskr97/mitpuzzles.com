@@ -1,4 +1,4 @@
-import { computed, ref, inject, type Ref, type ComputedRef } from "vue";
+import { computed, ref, type Ref, type ComputedRef } from "vue";
 import { usePuzzleMetadataStore } from "@/core/store/puzzle/usePuzzleMetadataStore.ts";
 import { usePuzzleProgressStore } from "@/core/store/puzzle/usePuzzleProgressStore.ts";
 import { usePuzzleHistoryStore } from "@/core/store/puzzle/usePuzzleHistoryStore.ts";
@@ -35,8 +35,8 @@ export interface FreeplayServicesReturn<TMeta = any> {
   /** Request a new puzzle */
   request_new_puzzle: () => Promise<PuzzleDefinition<TMeta> | null>;
 
-  /** Mark puzzle as solved */
-  mark_solved: () => Promise<void>;
+  /** Mark puzzle as solved, returns attempt_id */
+  mark_solved: () => Promise<string | null>;
 
   /** Reset puzzle progress (clear board) */
   reset_progress: (initial_board: number[][]) => Promise<void>;
@@ -49,6 +49,7 @@ export interface FreeplayServicesReturn<TMeta = any> {
 
   /** Upload attempt history */
   upload_attempt_history: () => Promise<void>;
+
 }
 
 /**
@@ -56,7 +57,7 @@ export interface FreeplayServicesReturn<TMeta = any> {
  */
 export async function useFreeplayServices<TMeta = any>(
   puzzle_type: string,
-  options?: { starting_state?: number[][] }
+  options?: { starting_state?: number[][]; attempt_id?: string }
 ): Promise<FreeplayServicesReturn<TMeta>> {
   // Initialize stores
   const session_store = useSessionTrackingStore();
@@ -94,11 +95,23 @@ export async function useFreeplayServices<TMeta = any>(
   const progress_key = computed(() => puzzle_type);
   const error = ref<string | null>(null);
 
+  // check for challenge attempt
+  const challenge_attempt_id = options?.attempt_id;
+  let challenge_puzzle_id: string | null = null;
+
+  if (challenge_attempt_id) {
+    const { data: summaryData } = await api.GET("/api/puzzle/freeplay/attempts/{attempt_id}/summary" as any, {
+      params: { path: { attempt_id: challenge_attempt_id } },
+    });
+    if (summaryData) {
+      const s = summaryData as any;
+      challenge_puzzle_id = s.puzzle_id;
+    }
+  }
+
   // load puzzle definition — use challenge puzzle_id, try progress store, or fetch new
-  const challenge_puzzle_id = inject<string | null>("challenge-puzzle-id", null);
   let puzzle_definition: PuzzleDefinition<TMeta> | null = null;
   if (challenge_puzzle_id) {
-    // challenge mode: load a specific puzzle by ID
     const { data: defData, error: defError } = await api.GET("/api/puzzle/definition/{puzzle_id}", {
       params: { path: { puzzle_id: challenge_puzzle_id } },
     });
@@ -175,11 +188,12 @@ export async function useFreeplayServices<TMeta = any>(
   /**
    * Mark puzzle as solved
    */
-  async function mark_solved(): Promise<void> {
+  async function mark_solved(): Promise<string | null> {
     const pk = progress_key.value;
     await progress_store.mark_puzzle_solved(pk);
-    await history_store.upload_attempt_history(pk, "freeplay");
+    const attempt_id = await history_store.upload_attempt_history(pk, "freeplay");
     emitter.emit("puzzle:solved:freeplay", { puzzle_type, variant: current_variant.value });
+    return attempt_id;
   }
 
   /**

@@ -7,7 +7,7 @@
  *
  * Games provide their own rendering via the default slot.
  */
-import { computed, onUnmounted, provide, ref, inject } from "vue";
+import { computed, onMounted, onUnmounted, provide, ref } from "vue";
 import { useRoute } from "vue-router";
 import { emitter } from "@/core/services/event-bus";
 import { Button } from "@/core/components/ui/button";
@@ -42,11 +42,23 @@ const game_entry = ACTIVE_GAMES[puzzle_type];
 const game_title = computed(() => puzzle_type.charAt(0).toUpperCase() + puzzle_type.slice(1));
 const auth_store = useAuthStore();
 const app_store = useAppStore();
-const current_route = useRoute();
-
 // challenge mode
-const challenger = current_route.query.by as string | undefined;
-const challenger_time = current_route.query.time ? Number(current_route.query.time) : null;
+const current_route = useRoute();
+const challenge_info = ref<{ username: string | null; time: number } | null>(null);
+
+onMounted(async () => {
+  const attempt_id = current_route.query.attempt as string | undefined;
+  if (!attempt_id) return;
+  try {
+    const res = await fetch(`/api/puzzle/freeplay/attempts/${attempt_id}/summary`, { credentials: "include" });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data.time) {
+      challenge_info.value = { username: data.username ?? null, time: data.time };
+    }
+  } catch { /* ignore */ }
+});
+
 function format_challenge_time(seconds: number): string {
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
@@ -78,17 +90,9 @@ async function handle_start() {
 // share challenge link
 const share_copied = ref(false);
 function share_puzzle() {
-  const puzzle_id = props.controller.state.value.definition?.id;
-  if (!puzzle_id) return;
-  const time = props.controller.formatted_time.value;
-  const username = auth_store.user?.username;
-  const base = `${window.location.origin}/puzzle/${puzzle_id}`;
-  const params = new URLSearchParams();
-  if (username) params.set("by", username);
-  // parse formatted time (m:ss) to seconds for the URL
-  const parts = time.split(":").map(Number);
-  if (parts.length === 2) params.set("time", String(parts[0] * 60 + parts[1]));
-  const url = params.toString() ? `${base}?${params}` : base;
+  const attempt_id = props.controller.last_attempt_id?.value;
+  if (!attempt_id) return;
+  const url = `${window.location.origin}/${puzzle_type}?attempt=${attempt_id}`;
   navigator.clipboard.writeText(url);
   share_copied.value = true;
   setTimeout(() => { share_copied.value = false; }, 2000);
@@ -119,10 +123,13 @@ const container_width = computed(() => {
   <div class="flex flex-col md:flex-row md:justify-center gap-2 w-full">
     <div class="flex flex-col gap-2 h-full min-w-0">
       <!-- Challenge banner -->
-      <Container v-if="challenger && challenger_time && !controller.state.value.solved" class="text-center py-2 lg:min-w-[65ch]">
+      <Container v-if="challenge_info && !controller.state.value.solved" class="text-center py-2 lg:min-w-[65ch]">
         <p class="text-sm text-gray-600">
-          <span class="font-semibold">{{ challenger }}</span> solved this in
-          <span class="font-semibold">{{ format_challenge_time(challenger_time) }}</span>. Can you do better?
+          <template v-if="challenge_info.username">
+            <span class="font-semibold">{{ challenge_info.username }}</span> solved this in
+          </template>
+          <template v-else>Someone solved this in</template>
+          <span class="font-semibold">{{ format_challenge_time(challenge_info.time) }}</span>. Can you do better?
         </p>
       </Container>
 
@@ -145,7 +152,7 @@ const container_width = computed(() => {
           <button class="text-blue-600 underline" @click="app_store.open_login_modal()">Make an account</button>!
         </p>
         <button
-          class="mt-2 px-3 py-1 text-xs rounded border transition-colors"
+          class="mt-2 px-3 py-1 text-xs rounded border transition-colors max-w-50 mx-auto"
           :class="share_copied ? 'bg-green-100 border-green-300 text-green-700' : 'bg-white border-gray-300 text-gray-600 hover:border-gray-400'"
           @click="share_puzzle"
         >

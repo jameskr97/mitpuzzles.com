@@ -69,4 +69,7 @@ export interface GameController {
 
   // optional — marks this as a demo/test game with no backend puzzles
   is_demo?: boolean;
+
+  // attempt ID from the last successful solve (for share links)
+  last_attempt_id?: Ref<string | null>;
 }

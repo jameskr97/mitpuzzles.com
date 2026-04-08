@@ -139,6 +139,15 @@ class PlaybackFrame(BaseModel):
     cell: Optional[Dict[str, int]] = None
 
 
+class AttemptSummaryResponse(BaseModel):
+    """lightweight attempt info for challenge share links"""
+    puzzle_id: uuid.UUID
+    puzzle_type: str
+    username: Optional[str] = None
+    time: Optional[float] = None
+    is_solved: bool
+
+
 class AttemptPlaybackResponse(BaseModel):
     """schema for attempt playback — precomputed board frames"""
     id: uuid.UUID

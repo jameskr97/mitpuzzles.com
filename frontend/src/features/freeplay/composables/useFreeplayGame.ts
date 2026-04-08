@@ -12,9 +12,10 @@ export interface FreeplayGameConfig<TReturn extends GridGameReturn<TMeta>, TMeta
 }
 
 export async function useFreeplayGame<TReturn extends GridGameReturn<TMeta>, TMeta = any>(
-  config: FreeplayGameConfig<TReturn, TMeta>
+  config: FreeplayGameConfig<TReturn, TMeta>,
+  options?: { attempt_id?: string },
 ): Promise<FreeplayGameReturn<TReturn>> {
-  const services = await useFreeplayServices<TMeta>(config.puzzle_type);
+  const services = await useFreeplayServices<TMeta>(config.puzzle_type, { attempt_id: options?.attempt_id });
 
   return useGameSession({
     puzzle_type: config.puzzle_type,

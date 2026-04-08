@@ -207,7 +207,7 @@ export const usePuzzleHistoryStore = defineStore("game.history", {
     },
 
     /** uploads event history to server when puzzle is completed */
-    async upload_attempt_history(puzzle_type: string, mode: "freeplay" | "experiment" = "freeplay"): Promise<void> {
+    async upload_attempt_history(puzzle_type: string, mode: "freeplay" | "experiment" = "freeplay"): Promise<string | null> {
       const events = this.get_events(puzzle_type, mode);
 
       if (events.length === 0) {
@@ -222,13 +222,13 @@ export const usePuzzleHistoryStore = defineStore("game.history", {
 
       if (!has_non_visibility_events) {
         log("Skipping upload for %s - only visibility events", puzzle_type);
-        return;
+        return null;
       }
 
       const payload = this.get_upload_payload(puzzle_type, mode);
       if (!payload) {
         console.warn(`No payload to upload for ${puzzle_type} in mode ${mode}`);
-        return;
+        return null;
       }
 
       try {
@@ -241,6 +241,9 @@ export const usePuzzleHistoryStore = defineStore("game.history", {
         if (!response.ok) {
           throw new Error(`Upload failed: ${response.statusText}`);
         }
+
+        const data = await response.json();
+        return data.id ?? null;
       } catch (error) {
         console.error('Failed to upload attempt history:', error);
         throw error;
