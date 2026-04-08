@@ -16,6 +16,7 @@ export const routes: RouteRecordRaw[] = [
   route.view("/@/:username", "user-profile", "UserProfile"),
   route.view("/leaderboard", "leaderboard", "Leaderboard"),
   route.view("/game/:attempt_id", "game-playback", "GamePlayback"),
+  route.view("/puzzle/:puzzle_id", "puzzle-challenge", "PuzzleChallenge"),
   route.view("/about-us", "about-us", "AboutUs"),
   route.view("/privacy-policy", "privacy-policy", "privacy-policy"),
   route.view("/board2", "board2", "board2"),

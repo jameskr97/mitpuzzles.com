@@ -8,6 +8,7 @@
  * Games provide their own rendering via the default slot.
  */
 import { computed, onUnmounted, provide, ref, inject } from "vue";
+import { useRoute } from "vue-router";
 import { emitter } from "@/core/services/event-bus";
 import { Button } from "@/core/components/ui/button";
 import type { GameController, GameDefinition } from "@/core/games/types/game-controller";
@@ -41,6 +42,16 @@ const game_entry = ACTIVE_GAMES[puzzle_type];
 const game_title = computed(() => puzzle_type.charAt(0).toUpperCase() + puzzle_type.slice(1));
 const auth_store = useAuthStore();
 const app_store = useAppStore();
+const current_route = useRoute();
+
+// challenge mode
+const challenger = current_route.query.by as string | undefined;
+const challenger_time = current_route.query.time ? Number(current_route.query.time) : null;
+function format_challenge_time(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return mins > 0 ? `${mins}:${secs.toString().padStart(2, "0")}` : `${secs}s`;
+}
 
 // Provide controller and layout for child components
 provide("game-controller", props.controller);
@@ -62,6 +73,25 @@ async function handle_start() {
     await props.controller.start_game();
   }
   game_started.value = true;
+}
+
+// share challenge link
+const share_copied = ref(false);
+function share_puzzle() {
+  const puzzle_id = props.controller.state.value.definition?.id;
+  if (!puzzle_id) return;
+  const time = props.controller.formatted_time.value;
+  const username = auth_store.user?.username;
+  const base = `${window.location.origin}/puzzle/${puzzle_id}`;
+  const params = new URLSearchParams();
+  if (username) params.set("by", username);
+  // parse formatted time (m:ss) to seconds for the URL
+  const parts = time.split(":").map(Number);
+  if (parts.length === 2) params.set("time", String(parts[0] * 60 + parts[1]));
+  const url = params.toString() ? `${base}?${params}` : base;
+  navigator.clipboard.writeText(url);
+  share_copied.value = true;
+  setTimeout(() => { share_copied.value = false; }, 2000);
 }
 
 // Compute container width based on scale
@@ -88,15 +118,23 @@ const container_width = computed(() => {
 
   <div class="flex flex-col md:flex-row md:justify-center gap-2 w-full">
     <div class="flex flex-col gap-2 h-full min-w-0">
+      <!-- Challenge banner -->
+      <Container v-if="challenger && challenger_time && !controller.state.value.solved" class="text-center py-2 lg:min-w-[65ch]">
+        <p class="text-sm text-gray-600">
+          <span class="font-semibold">{{ challenger }}</span> solved this in
+          <span class="font-semibold">{{ format_challenge_time(challenger_time) }}</span>. Can you do better?
+        </p>
+      </Container>
+
       <!-- Control Bar -->
       <GameLayoutControlbar :controller="controller" class="lg:min-w-[65ch]" />
 
       <!-- Status Bar (hidden when error) -->
       <GameLayoutStatusbar v-if="!error" :controller="controller" />
 
-      <!-- Daily solve congrats bar -->
+      <!-- Solve congrats bar -->
       <Container
-        v-if="is_daily && controller.state.value.solved"
+        v-if="controller.state.value.solved"
         class="w-full md:max-w-prose mx-auto text-center py-2"
       >
         <p class="text-green-700 font-semibold">
@@ -106,6 +144,13 @@ const container_width = computed(() => {
           Want to appear on the leaderboard?
           <button class="text-blue-600 underline" @click="app_store.open_login_modal()">Make an account</button>!
         </p>
+        <button
+          class="mt-2 px-3 py-1 text-xs rounded border transition-colors"
+          :class="share_copied ? 'bg-green-100 border-green-300 text-green-700' : 'bg-white border-gray-300 text-gray-600 hover:border-gray-400'"
+          @click="share_puzzle"
+        >
+          {{ share_copied ? 'Link copied!' : 'Share puzzle' }}
+        </button>
       </Container>
 
       <!-- Error State -->

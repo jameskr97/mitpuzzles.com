@@ -6,13 +6,12 @@ import Container from "@/core/components/ui/Container.vue";
 
 import ProfileHeader from "@/features/profile/ProfileHeader.vue";
 import ProfileSolveChart from "@/features/profile/ProfileSolveChart.vue";
+import ProfileStats from "@/features/profile/ProfileStats.vue";
 import ProfileSidebar from "@/features/profile/ProfileSidebar.vue";
-import ProfileGameLog from "@/features/profile/ProfileGameLog.vue";
 
 const route = useRoute();
 const username = route.params.username as string;
 
-// -- state --
 const loading = ref(true);
 const error = ref<string | null>(null);
 
@@ -34,18 +33,6 @@ const stats = ref({
 });
 
 const solve_time_history = ref<Record<string, { date: string; avg_time: number }[]>>({});
-
-interface GameLogEntry {
-  puzzle_type: string;
-  puzzle_size: string;
-  puzzle_difficulty: string | null;
-  time: number | null;
-  solved: boolean;
-  date: string;
-  attempt_id: string;
-}
-
-const game_log = ref<GameLogEntry[]>([]);
 
 const solve_rate = computed(() => {
   if (stats.value.total_puzzles_attempted === 0) return 0;
@@ -79,7 +66,6 @@ onMounted(async () => {
     }
     solve_time_history.value = history;
 
-    game_log.value = data.game_log;
   } catch (e) {
     error.value = "failed to load profile";
   } finally {
@@ -100,21 +86,22 @@ onMounted(async () => {
   </Container>
 
   <div v-else class="flex flex-col gap-2">
-    <!-- row 1: header + stats -->
+    <!-- row 1: header -->
     <ProfileHeader
       :username="stats.username"
       :is_own_profile="stats.is_own_profile"
-      :total_puzzles_solved="stats.total_puzzles_solved"
-      :total_puzzles_attempted="stats.total_puzzles_attempted"
-      :solve_rate="solve_rate"
-      :current_streak="stats.daily_streak.current_streak"
-      :fastest_daily_count="stats.daily_streak.fastest_daily_count"
-      :puzzle_type_stats="stats.puzzle_type_stats"
     />
 
-    <!-- row 2: chart + sidebar -->
-    <div class="grid grid-cols-[4fr_1fr] gap-2">
+    <!-- row 2: chart + stats + sidebar -->
+    <div class="grid grid-cols-[3fr_1fr_1fr] gap-2">
       <ProfileSolveChart :solve_time_history="solve_time_history" />
+      <ProfileStats
+        :total_puzzles_solved="stats.total_puzzles_solved"
+        :total_puzzles_attempted="stats.total_puzzles_attempted"
+        :solve_rate="solve_rate"
+        :current_streak="stats.daily_streak.current_streak"
+        :puzzle_type_stats="stats.puzzle_type_stats"
+      />
       <ProfileSidebar
         :member_since="stats.member_since"
         :total_time_seconds="stats.total_time_seconds"
@@ -122,7 +109,5 @@ onMounted(async () => {
       />
     </div>
 
-    <!-- row 3: recent games -->
-    <ProfileGameLog :games="game_log" />
   </div>
 </template>

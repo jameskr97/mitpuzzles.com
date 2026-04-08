@@ -1,4 +1,4 @@
-import { computed, ref, type Ref, type ComputedRef } from "vue";
+import { computed, ref, inject, type Ref, type ComputedRef } from "vue";
 import { usePuzzleMetadataStore } from "@/core/store/puzzle/usePuzzleMetadataStore.ts";
 import { usePuzzleProgressStore } from "@/core/store/puzzle/usePuzzleProgressStore.ts";
 import { usePuzzleHistoryStore } from "@/core/store/puzzle/usePuzzleHistoryStore.ts";
@@ -94,10 +94,20 @@ export async function useFreeplayServices<TMeta = any>(
   const progress_key = computed(() => puzzle_type);
   const error = ref<string | null>(null);
 
-  // load puzzle definition — try existing from progress store, otherwise fetch new
-  let puzzle_definition = progress_store.get_definition<TMeta>(puzzle_type);
-  if (!puzzle_definition) {
-    puzzle_definition = await fetch_new_puzzle<TMeta>(puzzle_type, current_variant.value);
+  // load puzzle definition — use challenge puzzle_id, try progress store, or fetch new
+  const challenge_puzzle_id = inject<string | null>("challenge-puzzle-id", null);
+  let puzzle_definition: PuzzleDefinition<TMeta> | null = null;
+  if (challenge_puzzle_id) {
+    // challenge mode: load a specific puzzle by ID
+    const { data: defData, error: defError } = await api.GET("/api/puzzle/definition/{puzzle_id}", {
+      params: { path: { puzzle_id: challenge_puzzle_id } },
+    });
+    if (!defError) puzzle_definition = defData as PuzzleDefinition<TMeta>;
+  } else {
+    puzzle_definition = progress_store.get_definition<TMeta>(puzzle_type);
+    if (!puzzle_definition) {
+      puzzle_definition = await fetch_new_puzzle<TMeta>(puzzle_type, current_variant.value);
+    }
   }
   if (!puzzle_definition) {
     error.value = "No puzzles available for this game type. Please check back later.";
