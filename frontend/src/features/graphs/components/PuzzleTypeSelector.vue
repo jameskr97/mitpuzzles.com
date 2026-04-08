@@ -20,7 +20,7 @@ const emit = defineEmits<{
   (e: "update", value: { puzzle_type: string; puzzle_size: string; puzzle_difficulty: string }): void;
 }>();
 
-const selected_type = ref(props.puzzleType || Object.keys(ACTIVE_GAMES)[0]);
+const selected_type = ref(props.puzzleType);
 const selected_size = ref(props.puzzleSize);
 const selected_difficulty = ref(props.puzzleDifficulty);
 
@@ -30,6 +30,13 @@ const sizes = ref<string[]>([]);
 const difficulties = ref<string[]>([]);
 
 async function load_variants() {
+  if (!selected_type.value) {
+    variants.value = [];
+    sizes.value = [];
+    difficulties.value = [];
+    return;
+  }
+
   const { data } = await api.GET("/api/puzzle/definition/types");
   if (!data) return;
 
@@ -80,6 +87,7 @@ onMounted(async () => {
 <template>
   <div class="flex gap-2 items-center">
     <select v-model="selected_type" class="text-xs border rounded px-1.5 py-1">
+      <option value="">all puzzles</option>
       <option v-for="t in Object.keys(ACTIVE_GAMES)" :key="t" :value="t">{{ t }}</option>
     </select>
     <select v-model="selected_size" class="text-xs border rounded px-1.5 py-1">

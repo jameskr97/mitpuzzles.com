@@ -380,6 +380,71 @@ async def get_action_counts(
     }
 
 
+@router.get("/attempts")
+async def get_attempts(
+    db: AsyncDatabase,
+    puzzle_type: Optional[str] = Query(None),
+    puzzle_size: Optional[str] = Query(None),
+    puzzle_difficulty: Optional[str] = Query(None),
+):
+    """per-attempt data with all metric fields for a puzzle class. Powers configurable graphs."""
+    duration_expr = (FreeplayPuzzleAttempt.timestamp_finish - FreeplayPuzzleAttempt.timestamp_start) / 1000.0
+
+    conditions = [
+        FreeplayPuzzleAttempt.is_solved == True,
+        FreeplayPuzzleAttempt.timestamp_finish.is_not(None),
+        FreeplayPuzzleAttempt.timestamp_start.is_not(None),
+        FreeplayPuzzleAttempt.metrics.is_not(None),
+    ]
+    if puzzle_type:
+        conditions.append(Puzzle.puzzle_type == puzzle_type)
+    if puzzle_size:
+        conditions.append(Puzzle.puzzle_size == puzzle_size)
+    if puzzle_difficulty:
+        conditions.append(Puzzle.puzzle_difficulty == puzzle_difficulty)
+
+    query = (
+        select(
+            Puzzle.puzzle_type,
+            Puzzle.puzzle_size,
+            Puzzle.puzzle_difficulty,
+            Puzzle.puzzle_data["difficulty_value"].label("difficulty_value"),
+            duration_expr.label("time"),
+            FreeplayPuzzleAttempt.metrics,
+            FreeplayPuzzleAttempt.timestamp_finish,
+        )
+        .join(Puzzle, FreeplayPuzzleAttempt.puzzle_id == Puzzle.id)
+        .where(and_(*conditions))
+        .order_by(FreeplayPuzzleAttempt.timestamp_finish.asc())
+    )
+    result = await db.execute(query)
+
+    attempts = []
+    for row in result.all():
+        t = row.time
+        if not t or t < 1 or t > 3600:
+            continue
+        m = row.metrics or {}
+        attempts.append({
+            "puzzle_type": row.puzzle_type,
+            "puzzle_size": row.puzzle_size,
+            "puzzle_difficulty": row.puzzle_difficulty,
+            "time": round(t, 2),
+            "efficiency": round(m.get("efficiency", 0), 4),
+            "solve_efficiency": round(m.get("solve_efficiency", 0), 4),
+            "mistakes": m.get("mistakes", 0),
+            "corrections": m.get("corrections", 0),
+            "actual_actions": m.get("actual_actions", 0),
+            "min_actions": m.get("min_actions", 0),
+            "assist_actions": m.get("assist_actions", 0),
+            "wasted_actions": m.get("wasted_actions", 0),
+            "difficulty_score": round(float(row.difficulty_value), 4) if row.difficulty_value else None,
+            "timestamp": row.timestamp_finish,
+        })
+
+    return {"attempts": attempts, "count": len(attempts)}
+
+
 @router.get("/solve-times")
 async def get_solve_times(
     db: AsyncDatabase,
