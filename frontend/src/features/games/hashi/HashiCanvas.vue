@@ -418,13 +418,13 @@ const cell_renderer = computed((): CellRenderer => {
 
       if (is_drag_source) { ctx.strokeStyle = current_theme.hint; ctx.lineWidth = 2.5; }
       else if (is_drag_dest) { ctx.strokeStyle = current_theme.hint; ctx.lineWidth = 2.5; }
-      else if (is_exhausted) { ctx.strokeStyle = "#22c55e"; ctx.lineWidth = 2.5; }
-      else if (is_satisfied && tutorial_mode) { ctx.strokeStyle = current_theme.hint; ctx.lineWidth = 2; }
+      else if (is_exhausted) { ctx.strokeStyle = current_theme.hint; ctx.lineWidth = 2.5; }
+      else if (is_satisfied) { ctx.strokeStyle = current_theme.hint; ctx.lineWidth = 2; }
       else { ctx.strokeStyle = current_theme.text; ctx.lineWidth = 2; }
       ctx.stroke();
 
       let text_color: string;
-      if (is_exhausted) text_color = "#22c55e";
+      if (is_exhausted) text_color = current_theme.hint;
       else if (is_satisfied && tutorial_mode) text_color = current_theme.hint;
       else text_color = current_theme.text;
 
