@@ -14,7 +14,7 @@ from testcontainers.postgres import PostgresContainer
 from app.main import app
 from app.dependencies import get_async_session
 from app.models import Base
-from app.modules.puzzle.models import Puzzle, FreeplayPuzzleAttempt, DailyPuzzle, DailyPuzzleAttempt
+from app.modules.puzzle.models import Puzzle, FreeplayPuzzleAttempt, DailyPuzzle, DailyPuzzleAttempt, PuzzleShown
 from app.modules.tracking import Device
 from app.modules.authentication import User, AccessToken
 
@@ -178,6 +178,27 @@ async def create_attempt(
     db.add(attempt)
     await db.flush()
     return attempt
+
+
+async def create_puzzle_shown(
+    db: AsyncSession,
+    puzzle: Puzzle,
+    device: Device,
+    user: User | None,
+    attempt: FreeplayPuzzleAttempt | None = None,
+    shown_at: datetime | None = None,
+) -> PuzzleShown:
+    record = PuzzleShown(
+        id=uuid6.uuid7(),
+        device_id=device.id,
+        user_id=user.id if user else None,
+        puzzle_id=puzzle.id,
+        attempt_id=attempt.id if attempt else None,
+        shown_at=shown_at or datetime.utcnow(),
+    )
+    db.add(record)
+    await db.flush()
+    return record
 
 
 async def create_daily_puzzle(db: AsyncSession, puzzle: Puzzle, date: datetime) -> DailyPuzzle:

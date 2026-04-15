@@ -14,15 +14,12 @@ from app.modules.puzzle.models import (
     FreeplayPuzzleAttempt,
     DailyPuzzleAttempt,
     PuzzleShown,
+    UserLeaderboardScore,
 )
 from app.modules.puzzle.utils import format_duration
 from app.modules.authentication import User
 
 LEADERBOARD_TOP_N_AVERAGE = 3
-AO3_CACHE_TTL_SECONDS = 60
-
-# in-memory cache: key → (timestamp, result)
-_ao3_cache: Dict[str, tuple[float, Dict[str, Any]]] = {}
 
 
 class LeaderboardService:
@@ -107,14 +104,6 @@ class LeaderboardService:
         the user's score is the lowest mean from any valid window.
         results are cached in-memory for AO3_CACHE_TTL_SECONDS.
         """
-        import time
-        cache_key = f"{puzzle_type}:{puzzle_size}:{puzzle_difficulty}:{time_period}:{limit}"
-        now = time.monotonic()
-        if cache_key in _ao3_cache:
-            cached_at, cached_result = _ao3_cache[cache_key]
-            if now - cached_at < AO3_CACHE_TTL_SECONDS:
-                # re-tag current user on cached data
-                return _retag_current_user(cached_result, user)
         n = LEADERBOARD_TOP_N_AVERAGE
         cutoff = _time_cutoff(time_period)
 
@@ -197,6 +186,156 @@ class LeaderboardService:
         ]
 
         return _build_leaderboard_response(all_rows, limit, user)
+
+    async def compute_best_ao_n(
+        self,
+        user_id: uuid.UUID,
+        puzzle_type: str,
+        puzzle_size: str,
+        puzzle_difficulty: str,
+        n: int = 3,
+    ) -> Optional[float]:
+        """compute a user's best average-of-n time (in seconds) for a puzzle category.
+
+        returns None if the user doesn't have n consecutive solved assignments.
+        """
+        completion_time = (FreeplayPuzzleAttempt.timestamp_finish - FreeplayPuzzleAttempt.timestamp_start) / 1000.0
+
+        query = (
+            select(completion_time.label("duration"))
+            .select_from(PuzzleShown)
+            .join(Puzzle, PuzzleShown.puzzle_id == Puzzle.id)
+            .outerjoin(
+                FreeplayPuzzleAttempt,
+                and_(
+                    PuzzleShown.attempt_id == FreeplayPuzzleAttempt.id,
+                    FreeplayPuzzleAttempt.is_solved == True,
+                    FreeplayPuzzleAttempt.used_tutorial == False,
+                    FreeplayPuzzleAttempt.timestamp_finish.is_not(None),
+                    FreeplayPuzzleAttempt.timestamp_start.is_not(None),
+                ),
+            )
+            .where(and_(
+                PuzzleShown.user_id == user_id,
+                Puzzle.puzzle_type == puzzle_type,
+                Puzzle.puzzle_size == puzzle_size,
+                Puzzle.puzzle_difficulty == puzzle_difficulty,
+            ))
+            .order_by(PuzzleShown.shown_at.asc())
+        )
+
+        rows = (await self.db.execute(query)).all()
+        durations = [r.duration for r in rows]
+
+        if len(durations) < n:
+            return None
+
+        best = None
+        for i in range(len(durations) - n + 1):
+            window = durations[i:i + n]
+            if any(d is None for d in window):
+                continue
+            mean = sum(window) / n
+            if best is None or mean < best:
+                best = mean
+
+        return best
+
+    async def update_user_ao_score(
+        self,
+        user_id: uuid.UUID,
+        puzzle_type: str,
+        puzzle_size: str,
+        puzzle_difficulty: str,
+        score_type: str = "ao3",
+        commit: bool = True,
+    ) -> Optional[float]:
+        """compute and upsert a user's best ao score. returns the score or None."""
+        n = int(score_type.removeprefix("ao"))
+        best = await self.compute_best_ao_n(user_id, puzzle_type, puzzle_size, puzzle_difficulty, n)
+
+        if best is None:
+            return None
+
+        time_ms = round(best * 1000.0)
+
+        # check for existing record
+        existing = await self.db.scalar(
+            select(UserLeaderboardScore).where(and_(
+                UserLeaderboardScore.user_id == user_id,
+                UserLeaderboardScore.puzzle_type == puzzle_type,
+                UserLeaderboardScore.puzzle_size == puzzle_size,
+                UserLeaderboardScore.puzzle_difficulty == puzzle_difficulty,
+                UserLeaderboardScore.score_type == score_type,
+            ))
+        )
+
+        if existing:
+            if time_ms < existing.time_ms:
+                existing.time_ms = time_ms
+        else:
+            record = UserLeaderboardScore(
+                user_id=user_id,
+                puzzle_type=puzzle_type,
+                puzzle_size=puzzle_size,
+                puzzle_difficulty=puzzle_difficulty,
+                score_type=score_type,
+                time_ms=time_ms,
+            )
+            self.db.add(record)
+
+        if commit:
+            await self.db.commit()
+
+        return time_ms
+
+    async def backfill_ao_scores(
+        self,
+        score_type: str = "ao3",
+        on_progress=None,
+    ) -> dict:
+        """backfill best ao scores for all users across all puzzle categories.
+
+        on_progress is an optional callback(user_id, puzzle_type, size, difficulty, score).
+        returns {processed: int, updated: int}.
+        """
+        n = int(score_type.removeprefix("ao"))
+
+        # find all distinct (user, type, size, difficulty) combos with enough puzzle_shown records
+        combos_query = (
+            select(
+                PuzzleShown.user_id,
+                Puzzle.puzzle_type,
+                Puzzle.puzzle_size,
+                Puzzle.puzzle_difficulty,
+            )
+            .join(Puzzle, PuzzleShown.puzzle_id == Puzzle.id)
+            .where(PuzzleShown.user_id.is_not(None))
+            .group_by(PuzzleShown.user_id, Puzzle.puzzle_type, Puzzle.puzzle_size, Puzzle.puzzle_difficulty)
+            .having(func.count() >= n)
+        )
+
+        combos = (await self.db.execute(combos_query)).all()
+        processed = 0
+        updated = 0
+
+        for row in combos:
+            score = await self.update_user_ao_score(
+                user_id=row.user_id,
+                puzzle_type=row.puzzle_type,
+                puzzle_size=row.puzzle_size,
+                puzzle_difficulty=row.puzzle_difficulty,
+                score_type=score_type,
+                commit=False,
+            )
+            processed += 1
+            if score is not None:
+                updated += 1
+            if on_progress:
+                on_progress(row.user_id, row.puzzle_type, row.puzzle_size, row.puzzle_difficulty, score)
+
+        await self.db.flush()
+        return {"processed": processed, "updated": updated}
 
     async def get_puzzle_leaderboard(
         self,

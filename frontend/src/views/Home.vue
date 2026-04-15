@@ -4,13 +4,14 @@ import AlertEmailAlreadyVerified from "@/core/components/alert/AlertEmailAlready
 import AlertEmailVerifiySuccess from "@/core/components/alert/AlertEmailVerifiySuccess.vue";
 import HomePuzzlePreview from "@/core/components/HomePuzzlePreview.vue";
 import HomeDailyPreview from "@/core/components/HomeDailyPreview.vue";
+import DailyLeaderboardCompact from "@/features/daily/DailyLeaderboardCompact.vue";
 import { ACTIVE_GAMES } from "@/constants.ts";
 import { useAuthStore } from "@/core/store/useAuthStore.ts";
 import EmailVerificationBanner from "@/core/components/EmailVerificationBanner.vue";
 import DemographicBanner from "@/core/components/DemographicBanner.vue";
 import { computed } from "vue";
 import CreateAccountCTA from "@/core/components/alert/CreateAccountCTA.vue";
-import DailyLeaderboardCompact from "@/features/daily/DailyLeaderboardCompact.vue";
+
 
 const authStore = useAuthStore();
 const is_dev = import.meta.env.DEV;
@@ -36,14 +37,13 @@ const visible_games = computed(() =>
 
     <!-- puzzle grid: 4 columns -->
     <div class="grid grid-cols-2 md:grid-cols-6 w-full gap-2">
-<!--      <div class="grid grid-cols-subgrid col-span-full grid-rows-1 pb-8">-->
       <HomeDailyPreview class="col-span-2 row-span-2"/>
-<!--      <DailyLeaderboardCompact class="min-h-0 overflow-hidden row-span-2 p-0 m-0" />-->
-<!--      </div>-->
+      <DailyLeaderboardCompact class="col-span-2 row-start-3" />
 
       <HomePuzzlePreview
-        v-for="game in visible_games"
+        v-for="(game, i) in visible_games"
         class="rounded"
+        :class="{ 'col-start-3': i === 8 }"
         :title="game.name"
         :page="game.key"
         :key="game.key"

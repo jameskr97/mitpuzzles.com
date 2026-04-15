@@ -13,6 +13,7 @@ export function create_game_entry(icon: string, key: string, options?: { admin_o
   return {
     key,
     icon,
+    title: component_name,
     name: i18next.t(`puzzle:${key}:title`),
     // Canvas component for home page preview
     component: defineAsyncComponent({ loader: () => import(`@/features/games/${key}/${_.capitalize(key)}Canvas.vue`) }),

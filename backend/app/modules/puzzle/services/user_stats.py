@@ -82,6 +82,9 @@ class UserStatsService:
         self,
         user_id: uuid.UUID,
         puzzle_type: Optional[str] = None,
+        puzzle_types: Optional[List[str]] = None,
+        puzzle_sizes: Optional[List[str]] = None,
+        puzzle_difficulties: Optional[List[str]] = None,
     ) -> List[Dict[str, Any]]:
         """get individual solved attempts ordered by time, for graphing."""
         duration_expr = (
@@ -107,6 +110,12 @@ class UserStatsService:
 
         if puzzle_type:
             query = query.where(Puzzle.puzzle_type == puzzle_type)
+        if puzzle_types:
+            query = query.where(Puzzle.puzzle_type.in_(puzzle_types))
+        if puzzle_sizes:
+            query = query.where(Puzzle.puzzle_size.in_(puzzle_sizes))
+        if puzzle_difficulties:
+            query = query.where(Puzzle.puzzle_difficulty.in_(puzzle_difficulties))
 
         result = await self.db.execute(query)
         rows = result.all()
