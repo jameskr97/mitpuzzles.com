@@ -45,6 +45,10 @@ function on_cell_mousedown(coord: { row: number; col: number; zone: string }, ev
   is_dragging.value = true;
   drag_button.value = event.button;
   dragged_cells.value = new Set([`${coord.row},${coord.col}`]);
+}
+
+function on_cell_click(coord: { row: number; col: number; zone: string }, event: MouseEvent) {
+  if (coord.zone !== "game") return;
   emit("cell-click", coord.row, coord.col, event.button);
 }
 
@@ -121,6 +125,7 @@ const cell_renderer = computed((): CellRenderer => {
     :inside-border-thickness="1"
     :outside-border-thickness="2"
     @cell-mousedown="on_cell_mousedown"
+    @cell-click="on_cell_click"
     @cell-enter="on_cell_enter"
     @cell-leave="on_cell_leave"
     @board-leave="on_board_leave"
