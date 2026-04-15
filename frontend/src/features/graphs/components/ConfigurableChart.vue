@@ -303,6 +303,34 @@ function render() {
       row.append("text").attr("x", -8).attr("y", 4).attr("text-anchor", "end").style("font-size", "9px").style("fill", "#6b7280").text(String(val));
     });
   }
+
+  // legend for series mode
+  if (has_series.value && props.series && props.series.length > 1) {
+    const row_height = 14;
+    const legend_padding = 6;
+    const legend_h = props.series.length * row_height + legend_padding * 2;
+
+    const legend = g.append("g")
+      .attr("transform", `translate(${inner_w - 10}, 0)`);
+
+    const max_text_w = Math.max(...props.series.map(s => s.label.length * 6), 30);
+    const legend_w = max_text_w + 20 + legend_padding * 2;
+
+    legend.append("rect")
+      .attr("x", -legend_w + legend_padding)
+      .attr("y", -legend_padding)
+      .attr("width", legend_w)
+      .attr("height", legend_h)
+      .attr("rx", 4)
+      .attr("fill", "white")
+      .attr("opacity", 0.85);
+
+    props.series.forEach((s, i) => {
+      const row = legend.append("g").attr("transform", `translate(0, ${i * row_height + legend_padding})`);
+      row.append("circle").attr("r", 4).attr("cx", 0).attr("cy", 0).attr("fill", s.color);
+      row.append("text").attr("x", -8).attr("y", 4).attr("text-anchor", "end").style("font-size", "9px").style("fill", "#6b7280").text(s.label);
+    });
+  }
 }
 
 let resize_observer: ResizeObserver | null = null;
