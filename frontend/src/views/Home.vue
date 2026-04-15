@@ -37,7 +37,7 @@ const visible_games = computed(() =>
 
     <!-- puzzle grid: 4 columns -->
     <div class="grid grid-cols-2 md:grid-cols-6 w-full gap-2">
-      <HomeDailyPreview class="col-span-2 row-span-2"/>
+      <HomeDailyPreview class="col-span-2 row-span-2 p-10"/>
       <DailyLeaderboardCompact class="col-span-2 row-start-3" />
 
       <HomePuzzlePreview
