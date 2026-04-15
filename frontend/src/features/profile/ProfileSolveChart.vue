@@ -118,6 +118,13 @@ const points = computed(() => {
         <PopoverContent align="start" class="w-36 p-2">
           <div class="text-[10px] text-gray-400 uppercase tracking-wide mb-1">rolling average</div>
           <button
+            class="block w-full text-left text-xs px-2 py-1 rounded transition-colors"
+            :class="smoothing_window === 1 ? 'bg-gray-100 font-medium' : 'hover:bg-gray-50'"
+            @click="smoothing_window = 1"
+          >
+            Raw
+          </button>
+          <button
             v-for="n in [3, 5]"
             :key="n"
             class="block w-full text-left text-xs px-2 py-1 rounded transition-colors"
