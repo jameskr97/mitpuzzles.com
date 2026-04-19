@@ -12,7 +12,6 @@ import DemographicBanner from "@/core/components/DemographicBanner.vue";
 import { computed } from "vue";
 import CreateAccountCTA from "@/core/components/alert/CreateAccountCTA.vue";
 
-
 const authStore = useAuthStore();
 const is_dev = import.meta.env.DEV;
 const visible_games = computed(() =>
@@ -37,8 +36,10 @@ const visible_games = computed(() =>
 
     <!-- puzzle grid: 4 columns -->
     <div class="grid grid-cols-2 md:grid-cols-6 w-full gap-2">
-      <HomeDailyPreview class="col-span-2 row-span-2 p-10"/>
-      <DailyLeaderboardCompact class="col-span-2 row-start-3" />
+      <div class="col-span-2 row-span-3 flex flex-col gap-2 p-4">
+        <HomeDailyPreview class="col-span-2 row-span-2" />
+        <DailyLeaderboardCompact class="col-span-2 row-start-3" />
+      </div>
 
       <HomePuzzlePreview
         v-for="(game, i) in visible_games"
