@@ -187,8 +187,9 @@ function handle_mousedown(event: MouseEvent): void {
   const click_dist = Math.sqrt(cell.dx * cell.dx + cell.dy * cell.dy);
   const on_island = is_island(cell.row, cell.col) && click_dist <= ISLAND_RADIUS_RATIO;
 
-  // Right-click on island → toggle exhausted mark
-  if (event.button === 2 && on_island) {
+  // Right-click (or ctrl+click on mac) on island to toggle exhausted mark
+  const is_right_click = event.button === 2 || (event.button === 0 && event.ctrlKey);
+  if (is_right_click && on_island) {
     emit("exhausted-toggle", [cell.row, cell.col]);
     cancel_drag();
     return;
