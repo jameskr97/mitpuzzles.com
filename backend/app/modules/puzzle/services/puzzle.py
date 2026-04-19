@@ -413,6 +413,16 @@ class PuzzleService:
             duration = (attempt_data.timestamp_finish - attempt_data.timestamp_start) / 1000.0 if attempt_data.timestamp_start else None
             await self._upsert_activity(user.id, puzzle.puzzle_type, attempt_data.is_solved, duration)
 
+        # update precomputed ao3 score if user solved
+        if user and attempt_data.is_solved and not attempt_data.used_tutorial:
+            from app.modules.puzzle.services.leaderboard import LeaderboardService
+            await LeaderboardService(self.db).update_user_ao_score(
+                user_id=user.id,
+                puzzle_type=puzzle.puzzle_type,
+                puzzle_size=puzzle.puzzle_size,
+                puzzle_difficulty=puzzle.puzzle_difficulty,
+            )
+
         return attempt
 
     async def _upsert_activity(self, user_id: uuid.UUID, puzzle_type: str, is_solved: bool, duration: float | None):

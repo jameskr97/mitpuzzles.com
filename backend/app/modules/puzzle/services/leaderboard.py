@@ -16,7 +16,7 @@ from app.modules.puzzle.models import (
     PuzzleShown,
     UserLeaderboardScore,
 )
-from app.modules.puzzle.utils import format_duration
+from app.modules.puzzle.utils import format_duration, redact_username
 from app.modules.authentication import User
 
 LEADERBOARD_TOP_N_AVERAGE = 3
@@ -97,94 +97,32 @@ class LeaderboardService:
         user=None,
         time_period: str = "all_time",
     ) -> Dict[str, Any]:
-        """leaderboard using best sliding window of N consecutive assignments.
+        """leaderboard using precomputed best ao3 scores from user_leaderboard_score."""
+        score_type = f"ao{LEADERBOARD_TOP_N_AVERAGE}"
 
-        walks the puzzle_shown (assignment) log in chronological order.
-        a window of N consecutive assignments only counts if all N were solved.
-        the user's score is the lowest mean from any valid window.
-        results are cached in-memory for AO3_CACHE_TTL_SECONDS.
-        """
-        n = LEADERBOARD_TOP_N_AVERAGE
-        cutoff = _time_cutoff(time_period)
-
-        completion_time = (FreeplayPuzzleAttempt.timestamp_finish - FreeplayPuzzleAttempt.timestamp_start) / 1000.0
-
-        # fetch the assignment log with solve times (null if not solved)
         conditions = [
-            PuzzleShown.user_id.is_not(None),
-            Puzzle.puzzle_type == puzzle_type,
-            Puzzle.puzzle_size == puzzle_size,
-            Puzzle.puzzle_difficulty == puzzle_difficulty,
+            UserLeaderboardScore.puzzle_type == puzzle_type,
+            UserLeaderboardScore.puzzle_size == puzzle_size,
+            UserLeaderboardScore.puzzle_difficulty == puzzle_difficulty,
+            UserLeaderboardScore.score_type == score_type,
         ]
+
+        cutoff = _time_cutoff(time_period)
         if cutoff:
-            conditions.append(PuzzleShown.shown_at >= cutoff)
+            conditions.append(UserLeaderboardScore.updated_at >= cutoff)
 
         query = (
             select(
-                PuzzleShown.user_id,
-                # null if no attempt or not solved
-                completion_time.label("duration"),
+                UserLeaderboardScore.user_id,
+                (UserLeaderboardScore.time_ms / 1000.0).label("completion_time_seconds"),
+                User.username,
             )
-            .join(Puzzle, PuzzleShown.puzzle_id == Puzzle.id)
-            .outerjoin(
-                FreeplayPuzzleAttempt,
-                and_(
-                    PuzzleShown.attempt_id == FreeplayPuzzleAttempt.id,
-                    FreeplayPuzzleAttempt.is_solved == True,
-                    FreeplayPuzzleAttempt.used_tutorial == False,
-                    FreeplayPuzzleAttempt.timestamp_finish.is_not(None),
-                    FreeplayPuzzleAttempt.timestamp_start.is_not(None),
-                ),
-            )
+            .join(User, UserLeaderboardScore.user_id == User.id)
             .where(and_(*conditions))
-            .order_by(PuzzleShown.user_id, PuzzleShown.shown_at.asc())
+            .order_by(UserLeaderboardScore.time_ms.asc())
         )
 
-        rows = (await self.db.execute(query)).all()
-
-        # slide window of N across each user's assignment sequence
-        user_best: dict[uuid.UUID, float] = {}
-        for uid, group in groupby(rows, key=lambda r: r.user_id):
-            # each entry is (user_id, duration_or_none)
-            durations = [r.duration for r in group]
-            if len(durations) < n:
-                continue
-            best = None
-            for i in range(len(durations) - n + 1):
-                window = durations[i:i + n]
-                # all N must be solved (non-null)
-                if any(d is None for d in window):
-                    continue
-                mean = sum(window) / n
-                if best is None or mean < best:
-                    best = mean
-            if best is not None:
-                user_best[uid] = best
-
-        if not user_best:
-            return _build_leaderboard_response([], limit, user)
-
-        # fetch usernames
-        username_rows = (await self.db.execute(
-            select(User.id, User.username).where(User.id.in_(user_best.keys()))
-        )).all()
-        usernames = {row.id: row.username for row in username_rows}
-
-        # build sorted result rows matching the interface _build_leaderboard_response expects
-        sorted_users = sorted(user_best.items(), key=lambda x: x[1])
-
-        class Row:
-            def __init__(self, user_id, completion_time_seconds, username):
-                self.user_id = user_id
-                self.completion_time_seconds = completion_time_seconds
-                self.username = username
-                self.attempt_id = None
-
-        all_rows = [
-            Row(uid, t, usernames.get(uid, "???"))
-            for uid, t in sorted_users
-        ]
-
+        all_rows = (await self.db.execute(query)).all()
         return _build_leaderboard_response(all_rows, limit, user)
 
     async def compute_best_ao_n(
@@ -470,7 +408,7 @@ def _build_leaderboard_response(all_rows, limit: int, user) -> Dict[str, Any]:
         entries.append({
             "rank": rank,
             "duration_display": format_duration(row.completion_time_seconds),
-            "username": row.username,
+            "username": redact_username(row.username),
             "is_current_user": is_current,
             "attempt_id": str(row.attempt_id) if hasattr(row, "attempt_id") else None,
         })
@@ -490,7 +428,7 @@ def _build_leaderboard_response(all_rows, limit: int, user) -> Dict[str, Any]:
             entries.append({
                 "rank": neighbor_idx + 1,
                 "duration_display": format_duration(row.completion_time_seconds),
-                "username": row.username,
+                "username": redact_username(row.username),
                 "is_current_user": bool(row.user_id == user.id),
                 "attempt_id": str(row.attempt_id) if hasattr(row, "attempt_id") else None,
             })
