@@ -1,3 +1,18 @@
+import re
+
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+def redact_username(username: str | None) -> str:
+    """redact usernames that look like email addresses."""
+    if not username:
+        return "anonymous"
+    if _EMAIL_RE.match(username):
+        local = username.split("@")[0]
+        return local[0] + "***" if local else "***"
+    return username
+
+
 def format_duration(time_seconds: float) -> str:
     """format a duration in seconds to a human-readable string like '1h:23m:45.67s'."""
     parts = []
