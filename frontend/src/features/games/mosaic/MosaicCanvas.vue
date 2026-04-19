@@ -47,9 +47,9 @@ function on_cell_mousedown(coord: { row: number; col: number; zone: string }, ev
   dragged_cells.value = new Set([`${coord.row},${coord.col}`]);
 }
 
-function on_cell_click(coord: { row: number; col: number; zone: string }, event: MouseEvent) {
+function on_cell_click(coord: { row: number; col: number; zone: string }) {
   if (coord.zone !== "game") return;
-  emit("cell-click", coord.row, coord.col, event.button);
+  emit("cell-click", coord.row, coord.col, drag_button.value);
 }
 
 function on_cell_enter(coord: { row: number; col: number; zone: string }, _event: MouseEvent) {
