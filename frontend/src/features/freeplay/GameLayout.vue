@@ -215,6 +215,7 @@ const container_width = computed(() => {
       <GameLayoutLeaderboard
         v-else
         :puzzle_type="puzzle_type"
+        :puzzle_id="definition.id"
         :current_variant="controller.current_variant.value"
         class="w-full md:w-80 flex-shrink"
       />

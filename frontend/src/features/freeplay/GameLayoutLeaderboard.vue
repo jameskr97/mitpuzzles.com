@@ -4,7 +4,7 @@
  *
  * Works with the new GameController interface.
  */
-import { inject, watch, computed, ref } from "vue";
+import { inject, watch, computed, ref, onMounted, onUnmounted } from "vue";
 import type { GameController } from "@/core/games/types/game-controller";
 import LeaderboardTable from "@/core/components/LeaderboardTable.vue";
 import Container from "@/core/components/ui/Container.vue";
@@ -15,6 +15,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/core/components/ui/to
 import { Info } from "lucide-vue-next";
 import { usePuzzleLeaderboardStore } from "@/core/store/puzzle/usePuzzleLeaderboardStore";
 import { useTranslation } from "i18next-vue";
+import { api } from "@/core/services/client";
+import { emitter } from "@/core/services/event-bus";
 
 const { t } = useTranslation();
 
@@ -22,6 +24,7 @@ import type { PuzzleVariant } from "@/core/types";
 
 const props = defineProps<{
   puzzle_type: string;
+  puzzle_id: string;
   current_variant: PuzzleVariant;
 }>();
 
@@ -31,11 +34,25 @@ const controller = inject<GameController>("game-controller")!;
 const is_leaderboard_open = ref(true);
 const scoring_method = ref<string>("ao_n");
 const time_period = ref<string>("weekly");
+const this_puzzle_entries = ref<any[]>([]);
 
 const size = computed(() => props.current_variant.size);
 const difficulty = computed(() => props.current_variant.difficulty ?? "");
 
 const leaderboard_store = usePuzzleLeaderboardStore();
+
+async function fetch_this_puzzle() {
+  const { data } = await api.GET("/api/puzzle/{puzzle_id}/leaderboard", {
+    params: { path: { puzzle_id: props.puzzle_id }, query: { limit: 10 } },
+  });
+  if (data) this_puzzle_entries.value = data.leaderboard;
+}
+
+watch(() => props.puzzle_id, fetch_this_puzzle, { immediate: true });
+
+const on_solve = () => fetch_this_puzzle();
+onMounted(() => emitter.on("puzzle:solved:freeplay", on_solve));
+onUnmounted(() => emitter.off("puzzle:solved:freeplay", on_solve));
 
 // refresh leaderboard when variant, time period, or scoring method changes
 watch(
@@ -88,6 +105,7 @@ const tutorial_message = computed(() => {
 
 // Get leaderboard entries
 const leaderboard_entries = computed(() => {
+  if (scoring_method.value === "this_puzzle") return this_puzzle_entries.value;
   return leaderboard_store.getLeaderboard(props.puzzle_type, size.value, difficulty.value, time_period.value, scoring_method.value);
 });
 </script>
@@ -111,12 +129,13 @@ const leaderboard_entries = computed(() => {
           </TooltipContent>
         </Tooltip>
         <Select v-model="scoring_method">
-          <SelectTrigger class="h-8 w-24 text-sm">
+          <SelectTrigger class="h-8 w-30 text-sm">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="ao_n">{{ $t('freeplay:leaderboard.scoring_ao3') }}</SelectItem>
             <SelectItem value="best">{{ $t('freeplay:leaderboard.scoring_best') }}</SelectItem>
+            <SelectItem value="this_puzzle">This Puzzle</SelectItem>
           </SelectContent>
         </Select>
         <v-icon
@@ -131,8 +150,8 @@ const leaderboard_entries = computed(() => {
     <template v-if="is_leaderboard_open">
       <Separator class="mt-2 mb-1" />
 
-      <!-- Time period selector (hidden in daily mode) -->
-      <div class="flex justify-between">
+      <!-- Time period selector (hidden for this_puzzle mode) -->
+      <div v-if="scoring_method !== 'this_puzzle'" class="flex justify-between">
         <Button
           class="px-3"
           v-for="period in [
@@ -160,6 +179,7 @@ const leaderboard_entries = computed(() => {
           v-else
           :entries="leaderboard_entries"
           :time_label="scoring_method === 'ao_n' ? $t('ui:table.avg_time') : $t('ui:table.time')"
+
         />
       </div>
 
