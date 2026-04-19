@@ -13,7 +13,7 @@ export const routes: RouteRecordRaw[] = [
   route.view("/verify-email", "verify-email", "SignupVerifyEmail", false),
   route.view("/reset-password", "reset-password", "ResetPassword", false),
   route.view("/account", "account", "AccountSettings", true, true),
-  route.view("/@/:username", "user-profile", "UserProfile"),
+  route.view("/stats", "user-profile", "UserProfile", true, true),
   route.view("/leaderboard", "leaderboard", "Leaderboard"),
   route.view("/game/:attempt_id", "game-playback", "GamePlayback"),
   route.view("/about-us", "about-us", "AboutUs"),

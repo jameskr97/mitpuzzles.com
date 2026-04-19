@@ -96,7 +96,7 @@ const close_sidebar_on_mobile = () => {
         <SidebarMenu>
           <!-- Profile (logged in only) -->
           <SidebarMenuButton v-if="user.isAuthenticated" asChild>
-            <router-link :to="'/@/' + user.user.username" @click.capture="close_sidebar_on_mobile">
+            <router-link to="/stats" @click.capture="close_sidebar_on_mobile">
               <User class="size-4" />
               {{ $t("ui:nav.profile") }}
             </router-link>

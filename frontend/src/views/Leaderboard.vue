@@ -155,12 +155,7 @@ function on_method_change(pt: string, val: string) {
           >
             <div class="flex items-center gap-2 min-w-0">
               <span class="text-gray-400 text-xs w-4 text-right shrink-0">{{ entry.rank }}</span>
-              <router-link
-                :to="{ name: 'user-profile', params: { username: entry.username } }"
-                class="truncate hover:underline"
-              >
-                {{ entry.username }}
-              </router-link>
+              <span class="truncate">{{ entry.username }}</span>
             </div>
             <span class="text-xs shrink-0 ml-2 text-gray-500">
               {{ entry.duration_display }}

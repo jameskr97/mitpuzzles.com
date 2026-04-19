@@ -17,7 +17,6 @@ const smoothing_window = ref(5);
 const custom_input = ref("");
 
 const props = defineProps<{
-  username: string;
   solve_time_history: Record<string, { date: string; avg_time: number }[]>;
 }>();
 
@@ -37,7 +36,7 @@ async function on_filter_update(filters: { puzzle_type: string; puzzle_size: str
     if (filters.puzzle_size) params.append("puzzle_size", filters.puzzle_size);
     if (filters.puzzle_difficulty) params.append("puzzle_difficulty", filters.puzzle_difficulty);
 
-    const res = await fetch(`/api/users/${props.username}/solve-history?${params}`, { credentials: "include" });
+    const res = await fetch(`/api/me/solve-history?${params}`, { credentials: "include" });
     if (!res.ok) return;
     const data: { puzzle_type: string; data: { date: string; avg_time: number }[] }[] = await res.json();
 

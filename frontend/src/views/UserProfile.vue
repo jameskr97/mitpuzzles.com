@@ -1,16 +1,16 @@
 <script setup lang="ts">
-/** public user profile page — fetches stats and renders sub-components */
+/** user statistics page — own profile only */
 import { ref, computed, onMounted } from "vue";
-import { useRoute } from "vue-router";
 import Container from "@/core/components/ui/Container.vue";
+import { useAuthStore } from "@/core/store/useAuthStore";
 
 import ProfileHeader from "@/features/profile/ProfileHeader.vue";
 import ProfileSolveChart from "@/features/profile/ProfileSolveChart.vue";
 import ProfileStats from "@/features/profile/ProfileStats.vue";
 import ProfileSidebar from "@/features/profile/ProfileSidebar.vue";
 
-const route = useRoute();
-const username = route.params.username as string;
+const auth = useAuthStore();
+const username = auth.user?.username ?? "";
 
 const loading = ref(true);
 const error = ref<string | null>(null);
@@ -42,7 +42,7 @@ const solve_rate = computed(() => {
 // -- fetch --
 onMounted(async () => {
   try {
-    const res = await fetch(`/api/users/${username}/stats`, { credentials: "include" });
+    const res = await fetch("/api/me/stats", { credentials: "include" });
     if (!res.ok) {
       error.value = res.status === 404 ? "user not found" : "failed to load profile";
       return;
@@ -94,7 +94,7 @@ onMounted(async () => {
 
     <!-- row 2: chart + stats + sidebar -->
     <div class="grid grid-cols-1 md:grid-cols-[3fr_1fr_1fr] gap-2">
-      <ProfileSolveChart :username="username" :solve_time_history="solve_time_history" />
+      <ProfileSolveChart :solve_time_history="solve_time_history" />
       <ProfileStats
         :total_puzzles_solved="stats.total_puzzles_solved"
         :total_puzzles_attempted="stats.total_puzzles_attempted"

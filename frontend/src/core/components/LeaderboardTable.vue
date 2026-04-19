@@ -30,9 +30,7 @@ withDefaults(defineProps<{
         <TableCell>{{ entry.rank }}</TableCell>
         <TableCell>{{ entry.duration_display }}</TableCell>
         <TableCell>
-          <router-link :to="{ name: 'user-profile', params: { username: entry.username } }" class="hover:underline">
-            {{ entry.username }}
-          </router-link>
+          {{ entry.username }}
         </TableCell>
       </TableRow>
     </TableBody>

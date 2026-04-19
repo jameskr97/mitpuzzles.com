@@ -131,13 +131,9 @@ const metrics_rows = computed(() => {
     <!-- player info -->
     <Container>
       <div class="flex flex-col gap-1">
-        <router-link
-          v-if="username"
-          :to="{ name: 'user-profile', params: { username } }"
-          class="text-2xl font-bold text-blue-600 hover:underline"
-        >
+        <span v-if="username" class="text-2xl font-bold">
           {{ username }}
-        </router-link>
+        </span>
         <span v-else class="text-sm text-gray-400">Anonymous</span>
         <span v-if="solve_date" class="text-xs text-gray-400">{{ solve_date }}</span>
       </div>

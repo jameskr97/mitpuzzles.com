@@ -1,10 +1,8 @@
-"""user profile routes — public stats page."""
+"""user statistics routes — own profile only."""
 
-import uuid
 from typing import Optional, List
 
-from fastapi import APIRouter, HTTPException, Depends, Query
-from sqlalchemy import select
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies import AsyncDatabase
@@ -15,49 +13,35 @@ from app.modules.puzzle.schemas import (
 )
 from app.modules.puzzle.services.user_stats import UserStatsService
 
-router = APIRouter(prefix="/api", tags=["User Profile"])
+router = APIRouter(prefix="/api/me", tags=["User Statistics"])
 
 
 @router.get(
-    "/users/{username}/stats",
+    "/stats",
     response_model=UserProfileResponse,
     responses={404: {"model": ErrorResponse}},
 )
-async def get_user_profile_stats(
-    username: str,
+async def get_my_stats(
     db: AsyncDatabase,
-    current_user: Optional[User] = Depends(fastapi_users.current_user(optional=True)),
+    user: User = Depends(fastapi_users.current_user()),
 ):
-    """get public profile stats for a user by username."""
-    result = await db.execute(select(User).where(User.username == username))
-    user = result.scalars().first()
-
-    if not user:
-        raise HTTPException(status_code=404, detail="user not found")
-
+    """get statistics for the current user."""
     stats_service = UserStatsService(db)
     profile = await stats_service.get_user_profile(user)
-
-    profile["is_own_profile"] = current_user is not None and current_user.id == user.id
+    profile["is_own_profile"] = True
 
     return UserProfileResponse.model_validate(profile)
 
 
-@router.get("/users/{username}/solve-history")
-async def get_user_solve_history(
-    username: str,
+@router.get("/solve-history")
+async def get_my_solve_history(
     db: AsyncDatabase,
+    user: User = Depends(fastapi_users.current_user()),
     puzzle_type: Optional[List[str]] = Query(default=None),
     puzzle_size: Optional[List[str]] = Query(default=None),
     puzzle_difficulty: Optional[List[str]] = Query(default=None),
 ):
-    """get solve time history for a user, filterable by type/size/difficulty."""
-    result = await db.execute(select(User).where(User.username == username))
-    user = result.scalars().first()
-
-    if not user:
-        raise HTTPException(status_code=404, detail="user not found")
-
+    """get solve time history for the current user."""
     service = UserStatsService(db)
     history = await service.get_user_solve_history(
         user_id=user.id,
