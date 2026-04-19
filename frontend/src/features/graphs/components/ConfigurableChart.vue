@@ -44,6 +44,8 @@ const props = withDefaults(defineProps<{
   tension?: number;
   /** Point radius */
   pointRadius?: number;
+  /** Horizontal reference lines */
+  referenceLines?: { value: number; label?: string; color?: string; dash?: string }[];
 }>(), {
   height: 256,
   line: false,
@@ -199,6 +201,28 @@ function render() {
     .attr("y2", d => y_scale(d))
     .attr("stroke", "#f3f4f6")
     .attr("stroke-width", 1);
+
+  // Reference lines
+  if (props.referenceLines) {
+    for (const rl of props.referenceLines) {
+      const y_pos = y_scale(rl.value);
+      if (y_pos < 0 || y_pos > inner_h) continue;
+      g.append("line")
+        .attr("x1", 0).attr("x2", inner_w)
+        .attr("y1", y_pos).attr("y2", y_pos)
+        .attr("stroke", rl.color ?? "#9ca3af")
+        .attr("stroke-width", 1)
+        .attr("stroke-dasharray", rl.dash ?? "6,3");
+      if (rl.label) {
+        g.append("text")
+          .attr("x", inner_w - 4).attr("y", y_pos - 4)
+          .attr("text-anchor", "end")
+          .style("font-size", "9px")
+          .style("fill", rl.color ?? "#9ca3af")
+          .text(rl.label);
+      }
+    }
+  }
 
   // Tooltip
   const tooltip = d3.select(container_ref.value)

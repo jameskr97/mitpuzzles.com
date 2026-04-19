@@ -21,11 +21,13 @@ const props = defineProps<{
 }>();
 
 const history = ref<Record<string, { date: string; avg_time: number }[]>>({ ...props.solve_time_history });
+const site_averages = ref<Record<string, number>>({});
 const loading = ref(false);
 
 async function on_filter_update(filters: { puzzle_type: string; puzzle_size: string; puzzle_difficulty: string }) {
   if (!filters.puzzle_type) {
     history.value = { ...props.solve_time_history };
+    site_averages.value = {};
     return;
   }
 
@@ -45,6 +47,9 @@ async function on_filter_update(filters: { puzzle_type: string; puzzle_size: str
       result[series.puzzle_type] = series.data;
     }
     history.value = result;
+
+    const avg_res = await fetch(`/api/me/site-average?${params}`, { credentials: "include" });
+    if (avg_res.ok) site_averages.value = await avg_res.json();
   } finally {
     loading.value = false;
   }
@@ -80,6 +85,15 @@ const series = computed<ChartSeries[]>(() =>
     key: type,
     label: capitalize(type),
     color: CHART_COLORS[type] ?? "#888",
+  }))
+);
+
+const reference_lines = computed(() =>
+  Object.entries(site_averages.value).map(([type, avg]) => ({
+    value: avg,
+    label: `${capitalize(type)} avg`,
+    color: "#9ca3af",
+    dash: "6,3",
   }))
 );
 
@@ -167,6 +181,7 @@ const points = computed(() => {
       :tension="0.3"
       :point-radius="2"
       :height="256"
+      :reference-lines="reference_lines"
     />
   </Container>
 </template>

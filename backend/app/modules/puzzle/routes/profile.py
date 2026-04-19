@@ -3,10 +3,12 @@
 from typing import Optional, List
 
 from fastapi import APIRouter, Depends, Query
+from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies import AsyncDatabase
 from app.modules.authentication import User, fastapi_users
+from app.modules.puzzle.models import Puzzle, FreeplayPuzzleAttempt
 from app.modules.puzzle.schemas import (
     ErrorResponse,
     UserProfileResponse,
@@ -59,3 +61,41 @@ async def get_my_solve_history(
         by_type[pt].append({"date": str(entry["finished_at"])[:10], "avg_time": entry["duration"]})
 
     return [{"puzzle_type": pt, "data": points} for pt, points in by_type.items()]
+
+
+@router.get("/site-average")
+async def get_site_average(
+    db: AsyncDatabase,
+    puzzle_type: Optional[List[str]] = Query(default=None),
+    puzzle_size: Optional[List[str]] = Query(default=None),
+    puzzle_difficulty: Optional[List[str]] = Query(default=None),
+):
+    """get site-wide average solve time per puzzle type."""
+    duration_expr = (
+        FreeplayPuzzleAttempt.timestamp_finish - FreeplayPuzzleAttempt.timestamp_start
+    ) / 1000.0
+
+    query = (
+        select(
+            Puzzle.puzzle_type,
+            func.avg(duration_expr).label("avg_time"),
+        )
+        .join(Puzzle, FreeplayPuzzleAttempt.puzzle_id == Puzzle.id)
+        .where(
+            FreeplayPuzzleAttempt.is_solved == True,
+            FreeplayPuzzleAttempt.timestamp_finish.is_not(None),
+            FreeplayPuzzleAttempt.used_tutorial == False,
+            duration_expr <= 600,
+        )
+        .group_by(Puzzle.puzzle_type)
+    )
+
+    if puzzle_type:
+        query = query.where(Puzzle.puzzle_type.in_(puzzle_type))
+    if puzzle_size:
+        query = query.where(Puzzle.puzzle_size.in_(puzzle_size))
+    if puzzle_difficulty:
+        query = query.where(Puzzle.puzzle_difficulty.in_(puzzle_difficulty))
+
+    rows = (await db.execute(query)).all()
+    return {row.puzzle_type: round(row.avg_time, 2) for row in rows}
