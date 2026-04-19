@@ -11,6 +11,7 @@ import { computed, onMounted, onUnmounted, provide, ref } from "vue";
 import { useRoute } from "vue-router";
 import { emitter } from "@/core/services/event-bus";
 import { Button } from "@/core/components/ui/button";
+import { Share2 } from "lucide-vue-next";
 import type { GameController, GameDefinition } from "@/core/games/types/game-controller";
 import Container from "@/core/components/ui/Container.vue";
 import { usePuzzleScaleStore } from "@/core/store/puzzle/usePuzzleScaleStore";
@@ -87,13 +88,15 @@ async function handle_start() {
   game_started.value = true;
 }
 
-// share challenge link
+
+// share
 const share_copied = ref(false);
+const share_url = computed(() => {
+  const puzzle_id = props.controller.state.value.definition.id;
+  return `${window.location.origin}/${puzzle_type}?challenge=${puzzle_id}`;
+});
 function share_puzzle() {
-  const attempt_id = props.controller.last_attempt_id?.value;
-  if (!attempt_id) return;
-  const url = `${window.location.origin}/${puzzle_type}?attempt=${attempt_id}`;
-  navigator.clipboard.writeText(url);
+  navigator.clipboard.writeText(share_url.value);
   share_copied.value = true;
   setTimeout(() => { share_copied.value = false; }, 2000);
 }
@@ -139,26 +142,6 @@ const container_width = computed(() => {
       <!-- Status Bar (hidden when error) -->
       <GameLayoutStatusbar v-if="!error" :controller="controller" />
 
-      <!-- Solve congrats bar -->
-      <Container
-        v-if="controller.state.value.solved"
-        class="w-full md:max-w-prose mx-auto text-center py-2"
-      >
-        <p class="text-green-700 font-semibold">
-          Congrats! You solved it in {{ controller.formatted_time.value }}.
-        </p>
-        <p v-if="!auth_store.isAuthenticated" class="text-sm text-gray-500 mt-1">
-          Want to appear on the leaderboard?
-          <button class="text-blue-600 underline" @click="app_store.open_login_modal()">Make an account</button>!
-        </p>
-        <button
-          class="mt-2 px-3 py-1 text-xs rounded border transition-colors max-w-50 mx-auto"
-          :class="share_copied ? 'bg-green-100 border-green-300 text-green-700' : 'bg-white border-gray-300 text-gray-600 hover:border-gray-400'"
-          @click="share_puzzle"
-        >
-          {{ share_copied ? 'Link copied!' : 'Share puzzle' }}
-        </button>
-      </Container>
 
       <!-- Error State -->
       <Container v-if="error" class="w-full max-w-full mx-auto py-12">
@@ -199,6 +182,27 @@ const container_width = computed(() => {
       >
         <slot />
       </Container>
+
+      <!-- Share bar + CTA (below puzzle, after solve) -->
+      <div v-if="controller.state.value.solved" class="flex flex-col items-center gap-2 max-w-md mx-auto w-full">
+        <div class="flex items-center gap-2 w-full">
+          <input
+            type="text"
+            readonly
+            :value="share_url"
+            class="flex-1 text-xs px-2 py-1 border rounded bg-gray-50 select-all"
+            @focus="($event.target as HTMLInputElement).select()"
+          />
+          <Button variant="outline" size="sm" class="shrink-0" @click="share_puzzle">
+            <Share2 class="w-3 h-3 mr-1" />
+            {{ share_copied ? 'Copied!' : 'Share' }}
+          </Button>
+        </div>
+        <p v-if="!auth_store.isAuthenticated" class="text-sm">
+          Want to appear on the leaderboard?
+          <button class="text-blue-600 underline" @click="app_store.open_login_modal()">Make an account</button>!
+        </p>
+      </div>
 
       <!-- Extra slot for game-specific controls (e.g., Sudoku number pad) -->
       <slot v-if="game_started" name="controls" />
